@@ -1,0 +1,11 @@
+
+rootProject.name = 'core'
+def isIncludedBuild = gradle.parent != null
+def libDir = '../../deviceCommonLib/deviceDaemonLib'
+if(!isIncludedBuild && file(libDir).exists()) {
+	includeBuild (libDir){
+		dependencySubstitution {
+			substitute module('com.github.hotzkow:platformInterfaceLib') with project(':')
+		}
+	}
+}

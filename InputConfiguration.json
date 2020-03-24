@@ -1,0 +1,58 @@
+{
+  "Domains" : [
+    {
+      "Name" : "News",
+      "Informations" : [
+        {
+          "Name" : "Rss url",
+          "ResourceIds" : [
+            "source_url"
+          ],
+          "Texts" : []
+        }
+      ],
+      "AppPackages" : [
+        "com.crazyhitty.chdev.ks.munch"
+      ]
+    },
+    {
+      "Name" : "Book",
+      "Informations" : [
+        {
+          "Name" : "Book title",
+          "ResourceIds" : [
+            "title"
+          ],
+          "Texts" : []
+        },
+        {
+          "Name" : "Author",
+          "ResourceIds" : [
+            "author"
+          ],
+          "Texts" : []
+        },
+        {
+          "Name" : "ISBN",
+          "ResourceIds" : [
+            "isbn"
+          ],
+          "Texts" : []
+        }
+      ],
+      "AppPackages" : [
+        "com.eleybourn.bookcatalogue"
+      ]
+    }
+  ],
+  "Dictionary" : [
+    {
+      "InformationType" : "Rss url",
+      "Strings" : [
+        "http://feeds.bbci.co.uk/news/world/rss.xml",
+        "http://rssfeeds.usatoday.com/usatoday-newstopstories&x=1",
+        "https://techcrunch.com/rssfeeds/"
+      ]
+    }
+  ]
+}

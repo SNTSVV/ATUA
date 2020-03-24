@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.droidmate:deviceDaemonLib:2.4.4-RC1@jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.m2/repository/org/droidmate/deviceDaemonLib/2.4.4-RC1/deviceDaemonLib-2.4.4-RC1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.m2/repository/org/droidmate/deviceDaemonLib/2.4.4-RC1/deviceDaemonLib-2.4.4-RC1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

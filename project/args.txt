@@ -1,0 +1,1 @@
+--Core-configPath=./defauig-RT.properties --StatementCoverage-enableCoverage=trueltConf

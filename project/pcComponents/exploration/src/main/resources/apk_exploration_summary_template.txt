@@ -1,0 +1,21 @@
+==============================================================
+$exploration_title
+==============================================================
+
+Total run time      : $total_run_time
+Total actions count : $total_actions_count // including the final action terminating exploration
+Total resets count  : $total_resets_count // including the initial action
+$exception
+--------------------------------------------------------------
+Unique API calls count observed in the run: $unique_apis_count
+
+Below follows a list of first calls to unique Android SDK API methods.
+ 
+     Time  Action  Thread  API signature
+$api_entries     
+
+--------------------------------------------------------------
+Unique [API call, event] pairs count observed in the run: $unique_api_event_pairs_count
+
+     Time  Action  Event                                                                  Thread  API signature
+$api_event_entries

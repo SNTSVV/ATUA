@@ -1,0 +1,59 @@
+// DroidMate, an automated execution generator for Android apps.
+// Copyright (C) 2012-2018. Saarland University
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Current Maintainers:
+// Nataniel Borges Jr. <nataniel dot borges at cispa dot saarland>
+// Jenny Hotzkow <jenny dot hotzkow at cispa dot saarland>
+//
+// Former Maintainers:
+// Konrad Jamrozik <jamrozik at st dot cs dot uni-saarland dot de>
+//
+// web: www.droidmate.org
+/*
+  This project contains classes summarizing the actions and strategies used for the UI exploration, none of which are compiled on an Android device.
+  Because none of them are run on an Android Device, the classes in this project can and are compiled with Java 8.
+*/
+
+dependencies {
+	compile (project.ext.dmExplorationModel) {
+		// includes platformInterfaceLib
+	}
+	compile (project.ext.dmCommon) {  // FIXME why does dmCommon include explorationModel?
+	//	exclude( module: "com.github.hotzkow:platformInterfaceLib" )
+		exclude( module: "explorationModel" )
+	}
+	implementation (project.ext.dmDriverLib)
+
+	api 'com.natpryce:konfig:1.6.6.0'  // configuration library (since StatementCoverageMF access config parameters)
+	
+	testImplementation "org.jetbrains.kotlin:kotlin-test"
+	testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
+
+	// for event probability strategy (should be in its own fork)
+	implementation 'org.apache.commons:commons-lang3:3.8'
+	implementation 'com.google.jimfs:jimfs:1.1'
+
+	// jdk dependency necessary for kotlin/stream library used by RandomWidget
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+	// used in VisualizationGraph
+	implementation 'org.json:json:20160212'
+	implementation 'com.google.code.gson:gson:2.8.5'
+
+
+}
+configureTest([project, ['**/ReporterTestSuite.class']])
+

@@ -1,0 +1,182 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+
+// Copyright (c) 2012-2016 Saarland University
+// All rights reserved.
+//
+// Author: Konrad Jamrozik, jamrozik@st.cs.uni-saarland.de
+//
+// This file is part of the "DroidMate" project.
+//
+// www.droidmate.org
+
+buildscript {
+	repositories {
+		mavenCentral()
+		mavenLocal()
+	}
+	apply from: file("${rootProject.projectDir}/versions.gradle") // contains kotlin_version
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${project.ext.kotlin_version}"
+		classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1' // for jitpack gradle support?
+	}
+}
+
+apply from: file("${rootProject.projectDir}/versions.gradle")
+
+wrapper{
+	gradleVersion = '5.4'  //define what gradle wrapper version is to be used on wrapper initialization (only if there is no wrapper yet or 'gradlew wrapper' is called)
+}
+
+allprojects {
+	group = "org.droidmate"
+	version = "2.0.1-RC1"
+
+	/* Merge all the build directories into one. */
+//	buildDir = rootProject.file('build')  //TODO that means the apk/class paths are changing
+
+	repositories {
+		maven { url = "https://soot-build.cs.upb.de/nexus/repository/soot-release/" }
+		maven { url = "https://soot-build.cs.upb.de/nexus/repository/soot-snapshot/" }
+		maven { url = 'https://jitpack.io'	}
+		jcenter()
+		mavenCentral()
+		mavenLocal()
+	}
+
+	apply from: file("${rootProject.projectDir}/versions.gradle")
+/* this is necessary as long as we do not publish the library into its own repository, since the CI server does not seam to support composite builds but only multi-project hierarchies */
+	configurations.all {
+		resolutionStrategy{
+			// force certain versions of dependencies (including transitive)
+			//  *append new forced modules as comma separated strings
+//			force dmDriverLib
+			// cache dynamic versions for 10 minutes
+			
+			dependencySubstitution {
+				def targetProject = findProject(":deviceDaemonLib")
+				if (targetProject != null) {
+					def substitution = substitute module("com.github.hotzkow:platformInterfaceLib") with project(":deviceDaemonLib")
+					if(substitution != null) {
+//					println "use composite build directory (deviceLib) instead of artifact from server"
+						substitution because "use local git submodule for development instead of external dependency"
+					}
+				}
+				if(findProject(":explorationModel") != null) {
+//				println "use composite build directory (explorationModel) instead of artifact from server"
+					substitute module("com.github.hotzkow:explorationModel") with project(":explorationModel")
+				}
+			}
+
+			cacheDynamicVersionsFor 10*60, 'seconds'
+			// don't cache changing modules at all
+			cacheChangingModulesFor 0, 'seconds'
+		}
+	}
+}
+
+apply from: file("project/log.gradle")
+apply from: file("project/functions.gradle")
+
+project.ext { // direct child projects would be childProjects
+	pcJvmTargets = subprojects.find() { it.name == 'pcComponents' }.subprojects
+	artifactModules = allprojects.findAll {
+		it.name in [ "droidmate-2", "core", "exploration",    // internal artifacts
+		             "deviceDaemonLib", "explorationModel" ]  // external for platform independency
+	}
+}
+
+task Debug {
+	println("determine release artifacts")
+	println(artifactModules)
+}
+
+configure(artifactModules){
+	apply plugin: 'maven'
+	apply plugin: 'java'
+
+	task sourcesJar(type: Jar, dependsOn: "classes") {
+		classifier = 'sources'
+		from sourceSets.main.allJava
+		from sourceSets.main.allSource
+		from sourceSets.test.allSource
+	}
+
+	artifacts {
+		archives sourcesJar
+	}
+}
+
+configure(pcJvmTargets) {
+
+	apply from: file("${rootProject.projectDir}/versions.gradle")
+
+	apply plugin: "kotlin"
+	compileKotlin {
+		sourceCompatibility = project.ext.javaVersion
+		targetCompatibility = project.ext.javaVersion
+		kotlinOptions {
+			jvmTarget = project.ext.javaVersion
+		}
+	}
+
+	dependencies {
+		implementation "org.jetbrains.kotlin:kotlin-stdlib"
+		implementation "org.jetbrains.kotlin:kotlin-reflect"
+		implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.ext.coroutines_version}"
+		implementation 'org.slf4j:slf4j-api:1.7.25'
+	}
+}
+
+apply plugin: 'application'
+mainClassName = "org.droidmate.api.ExplorationAPI"
+//mainClassName = "org.droidmate.app.Debug"
+// Run by ':project:run'
+(tasks.run as JavaExec).configure {
+
+	sourceSets.main.runtimeClasspath = classpath
+
+	workingDir rootDir
+	def argsFile = Paths.get("$rootDir/args.txt")
+	if (Files.exists(argsFile))
+	{
+		List<String> appArgs = argsFile.text.readLines().first().split(" ") as List<String>
+		args appArgs
+	}
+}
+
+apply plugin: "kotlin"
+
+dependencies {
+	compile project(":project:pcComponents:core")
+}
+
+jar {
+	manifest {
+		attributes 'Main-Class': "org.droidmate.api.ExplorationAPI"
+	}
+}
+
+// include all dependencies (resolvedArtifacts) in publishing (i.e. for publishToMavenLocal)
+apply plugin: 'maven-publish' //FIXME no longer working
+task resolveDependencies{ doFirst {
+	configurations.compile.resolvedConfiguration.resolvedArtifacts.eachWithIndex { resolvedArtifact, n ->
+
+		println "artifact: ${resolvedArtifact.name}"
+		if (resolvedArtifact.name != "all")
+			project.publishing {
+				publications {
+					println ".m2 publish: $resolvedArtifact"
+					"mavenArtifact${resolvedArtifact.name}${n}"(MavenPublication) {
+						artifact(resolvedArtifact.file) {
+							groupId = resolvedArtifact.moduleVersion.id.group
+							artifactId = resolvedArtifact.moduleVersion.id.name
+							version = resolvedArtifact.moduleVersion.id.version
+							classifier = resolvedArtifact.classifier
+						}
+					}
+				}
+			}
+	}
+}}
+publish.dependsOn(resolveDependencies)
