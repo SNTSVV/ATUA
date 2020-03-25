@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression
+package org.droidmate.exploration.strategy.autaut
 
 enum class PhaseState {
     NULL,

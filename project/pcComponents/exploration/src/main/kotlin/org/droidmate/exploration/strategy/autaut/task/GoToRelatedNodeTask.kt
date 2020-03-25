@@ -1,12 +1,12 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.strategy.regression.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GoToTargetNodeTask protected constructor(
+class GoToRelatedNodeTask protected constructor(
          regressionWatcher: RegressionTestingMF,
         regressionTestingStrategy: RegressionTestingStrategy,
        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherNode(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
@@ -31,13 +31,13 @@ class GoToTargetNodeTask protected constructor(
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
-        var instance: GoToTargetNodeTask? = null
+        var instance: GoToRelatedNodeTask? = null
         fun getInstance(regressionWatcher: RegressionTestingMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
-                        useCoordinateClicks: Boolean): GoToTargetNodeTask {
+                        useCoordinateClicks: Boolean): GoToRelatedNodeTask {
             if (instance == null) {
-                instance = GoToTargetNodeTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = GoToRelatedNodeTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

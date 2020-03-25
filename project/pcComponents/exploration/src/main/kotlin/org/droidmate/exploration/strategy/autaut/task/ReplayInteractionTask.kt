@@ -1,16 +1,15 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.strategy.regression.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.collections.HashMap
 
 class ReplayInteractionTask constructor(
         regressionTestingMF: RegressionTestingMF,

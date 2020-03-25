@@ -26,11 +26,11 @@ import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticEven
 import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.regression.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
-import org.droidmate.exploration.strategy.regression.task.TextInput
-import org.droidmate.exploration.strategy.regression.task.ExerciseTargetComponentTask
-import org.droidmate.exploration.strategy.regression.task.GoToAnotherNode
-import org.droidmate.exploration.strategy.regression.task.RandomExplorationTask
-import org.droidmate.exploration.strategy.regression.task.GoToTargetNodeTask
+import org.droidmate.exploration.strategy.autaut.task.TextInput
+import org.droidmate.exploration.strategy.autaut.task.ExerciseTargetComponentTask
+import org.droidmate.exploration.strategy.autaut.task.GoToAnotherNode
+import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
+import org.droidmate.exploration.strategy.autaut.task.GoToTargetNodeTask
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State

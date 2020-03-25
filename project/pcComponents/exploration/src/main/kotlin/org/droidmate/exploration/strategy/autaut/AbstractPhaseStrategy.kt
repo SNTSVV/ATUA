@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression
+package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.isClick
@@ -13,10 +13,9 @@ import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.A
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.regression.staticModel.*
-import org.droidmate.exploration.strategy.regression.task.AbstractStrategyTask
-import org.droidmate.exploration.strategy.regression.task.RandomExplorationTask
+import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
+import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
 import org.droidmate.explorationModel.interaction.State
-import kotlin.random.Random
 
 abstract class AbstractPhaseStrategy(
         val regressionTestingStrategy: RegressionTestingStrategy,

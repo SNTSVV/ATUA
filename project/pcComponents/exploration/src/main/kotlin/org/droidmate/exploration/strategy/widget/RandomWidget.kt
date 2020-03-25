@@ -35,7 +35,6 @@ import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.exploration.modelFeatures.ActionCounterMF
 import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
 import org.droidmate.exploration.strategy.AExplorationStrategy
 import org.droidmate.explorationModel.debugOutput
 import org.droidmate.explorationModel.debugT
@@ -43,8 +42,7 @@ import org.droidmate.explorationModel.emptyId
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.configuration.ConfigProperties.Strategies.textInput
-import org.droidmate.deviceInterface.exploration.TextInsert
-import org.droidmate.exploration.strategy.regression.task.TextInput
+import org.droidmate.exploration.strategy.autaut.task.TextInput
 import java.util.Random
 import kotlin.streams.asSequence
 

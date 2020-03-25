@@ -1,14 +1,13 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
-import org.droidmate.exploration.modelFeatures.regression.staticModel.EventType
 import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
-import org.droidmate.exploration.strategy.regression.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget

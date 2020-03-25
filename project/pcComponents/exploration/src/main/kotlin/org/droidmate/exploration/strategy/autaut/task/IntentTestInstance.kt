@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 data class IntentTestInstance (
         val activity: String,

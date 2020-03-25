@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression
+package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
@@ -15,7 +15,7 @@ import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.A
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.regression.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
-import org.droidmate.exploration.strategy.regression.task.*
+import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.regression.textInput.DataField
 import org.droidmate.exploration.modelFeatures.regression.textInput.InputConfiguration

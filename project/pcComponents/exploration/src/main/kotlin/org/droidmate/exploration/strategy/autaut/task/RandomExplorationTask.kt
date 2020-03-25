@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.regression.task
+package org.droidmate.exploration.strategy.autaut.task
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
@@ -6,7 +6,7 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.regression.staticModel.Helper
-import org.droidmate.exploration.strategy.regression.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
