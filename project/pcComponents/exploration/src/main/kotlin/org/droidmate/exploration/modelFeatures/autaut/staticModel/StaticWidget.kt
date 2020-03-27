@@ -1,6 +1,6 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AttributePath
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import kotlin.collections.ArrayList

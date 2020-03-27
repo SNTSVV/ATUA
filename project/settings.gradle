@@ -24,7 +24,7 @@
  * Detailed information about configuring a multiproject build in Gradle can be found at
  * http://www.gradle.org/docs/current/userguide/multi_project_builds.html
  */
-rootProject.name = 'droidmate'
+rootProject.name = 'autaut'
 
 include(
 		"projects:uiautomator-daemon-lib",

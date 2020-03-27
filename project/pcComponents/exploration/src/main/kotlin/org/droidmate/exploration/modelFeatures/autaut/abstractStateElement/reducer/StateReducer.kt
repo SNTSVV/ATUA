@@ -1,9 +1,9 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AttributePath
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.Cardinality
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.WidgetGroup
-import org.droidmate.exploration.modelFeatures.regression.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Cardinality
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 

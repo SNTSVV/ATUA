@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.intent
+package org.droidmate.exploration.modelFeatures.autaut.intent
 
 /*
  * IntentField.java - part of the GATOR project

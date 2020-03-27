@@ -28,7 +28,6 @@ package org.droidmate.configuration
 import com.natpryce.konfig.*
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder
 import org.apache.commons.lang3.builder.StandardToStringStyle
-import org.droidmate.api.ExplorationAPI
 import org.droidmate.configuration.ConfigProperties.ApiMonitorServer.monitorSocketTimeout
 import org.droidmate.configuration.ConfigProperties.ApiMonitorServer.monitorUseLogcat
 import org.droidmate.configuration.ConfigProperties.Core.configPath
@@ -96,7 +95,7 @@ import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.socketTime
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.startTimeout
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.waitForInteractableTimeout
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.waitForIdleTimeout
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.coverageDir
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.enableCoverage
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.onlyCoverAppPackageName

@@ -1,8 +1,8 @@
-package org.droidmate.exploration.modelFeatures.regression
+package org.droidmate.exploration.modelFeatures.autaut
 
-import org.droidmate.exploration.modelFeatures.regression.intent.IntentData
-import org.droidmate.exploration.modelFeatures.regression.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.intent.IntentData
+import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.json.JSONArray
 import org.json.JSONObject

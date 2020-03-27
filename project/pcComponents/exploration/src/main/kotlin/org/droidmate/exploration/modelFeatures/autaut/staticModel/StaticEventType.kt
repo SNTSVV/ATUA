@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 enum class EventType {
     // "usual" ones

@@ -3,10 +3,11 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ActionQueue
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.closeAndReturn
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.textInput.DataField
-import org.droidmate.exploration.modelFeatures.regression.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.textInput.DataField
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -18,11 +19,10 @@ class FillTextInputTask private constructor(
         regressionWatcher: RegressionTestingMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
+
     override fun isTaskEnd(currentState: State<*>): Boolean {
-        if (fillDataMode == FillDataMode.SIMPLE)
-            return true
-        if (fillDataMode == FillDataMode.FULL)
-            return true
+        if (currentState.widgets.filter { fillTextDecision.containsKey(it) && fillTextDecision[it] == false }.isNotEmpty())
+            return false
         return true
     }
 
@@ -42,15 +42,7 @@ class FillTextInputTask private constructor(
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         if (fillDataMode == FillDataMode.SIMPLE)
         {
-            val fillTextActions = fillTextBoxSimply(currentState)
-            if (fillTextActions.size > 0)
-            {
-                return ActionQueue(fillTextActions,delay)
-            }
-            else
-            {
-                return ExplorationAction.closeAndReturn()
-            }
+            return fillTextBoxSimply(currentState)
         }
         else
         {
@@ -59,6 +51,7 @@ class FillTextInputTask private constructor(
     }
 
     override fun reset() {
+        TextInput.resetInputData()
     }
 
     override fun hasAnotherOption(currentState: State<*>): Boolean {
@@ -78,23 +71,18 @@ class FillTextInputTask private constructor(
         return  Helper.getInputFields(currentState).isNotEmpty()
 }
 
-    internal fun fillTextBoxSimply(currentState: State<*>): List<ExplorationAction> {
+    internal fun fillTextBoxSimply(currentState: State<*>): ExplorationAction {
         val allInputWidgets = Helper.getInputFields(currentState)
         if (allInputWidgets.size == 0)
-            return emptyList()
+            return ExplorationAction.pressBack()
         else
         {
-            val actionList = ArrayList<ExplorationAction>()
-            allInputWidgets.forEach {
-                if(fillTextDecision.containsKey(it) && fillTextDecision[it]!! == true)
-                {
-                    val inputValue = TextInput.getSetTextInputValue(it,currentState)
-                    val inputAction = it.setText(inputValue,sendEnter = false,enableValidation = false)
-                    TextInput.historyTextInput.add(inputValue)
-                    actionList.add(inputAction)
-                }
-            }
-            return actionList
+            val actionOnInput = allInputWidgets.filter { fillTextDecision.containsKey(it) && fillTextDecision[it]!! == false }.random()
+            val inputValue = TextInput.getSetTextInputValue(actionOnInput,currentState)
+            val inputAction = actionOnInput.setText(inputValue,sendEnter = false,enableValidation = false)
+            TextInput.historyTextInput.add(inputValue)
+            fillTextDecision[actionOnInput] = true
+            return inputAction
         }
     }
 
@@ -108,28 +96,22 @@ class FillTextInputTask private constructor(
                 if (TextInput.historyTextInput.contains(it.text))
                 {
                     if (random.nextInt(100)<25)
-                        fillTextDecision.put(it,true)
-                    else
                         fillTextDecision.put(it,false)
-                }
-                else
-                {
-                    fillTextDecision.put(it,true)
-                }
-            }
-            else
-            {
-                if (random.nextBoolean())
-                {
-                    fillTextDecision.put(it,true)
                 }
                 else
                 {
                     fillTextDecision.put(it,false)
                 }
             }
+            else
+            {
+                if (random.nextBoolean())
+                {
+                    fillTextDecision.put(it,false)
+                }
+            }
         }
-        return fillTextDecision.isNotEmpty() && fillTextDecision.filter { it.value == true }.isNotEmpty()
+        return fillTextDecision.isNotEmpty()
     }
 
     companion object {

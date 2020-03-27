@@ -1,7 +1,7 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 import org.droidmate.exploration.modelFeatures.graph.*
-import org.droidmate.exploration.modelFeatures.regression.*
+import org.droidmate.exploration.modelFeatures.autaut.*
 import org.json.JSONArray
 import org.json.JSONObject
 import org.slf4j.Logger

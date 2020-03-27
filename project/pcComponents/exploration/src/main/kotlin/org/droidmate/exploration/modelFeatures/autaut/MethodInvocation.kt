@@ -1,7 +1,7 @@
-package org.droidmate.exploration.modelFeatures.regression
+package org.droidmate.exploration.modelFeatures.autaut
 
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticEvent
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticEvent
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 
 
 data class Widget_MethodInvocations (

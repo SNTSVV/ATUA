@@ -1,7 +1,8 @@
-package org.droidmate.exploration.modelFeatures.regression.textInput
+package org.droidmate.exploration.modelFeatures.autaut.textInput
 
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import javax.sound.sampled.Line
 import kotlin.random.Random
 
 class InputConfiguration {
@@ -22,6 +23,11 @@ class InputConfiguration {
 
 
     }
+
+    fun resetCurrentDataInputs()
+    {
+        currentDataInputs.clear()
+    }
     fun getInputDataField(inputWidget: Widget, state: State<*>): String {
         val inputWidgetResourceId = getInputWidgetResourceId(inputWidget,state )
         val dataField = informationTypes.flatMap { it.dataFields }.find {
@@ -31,7 +37,7 @@ class InputConfiguration {
             return ""
         if (!currentDataInputs.containsKey(dataField.informationType))
         {
-            val instance = dataField.informationType.data[Random.nextInt(0,dataField.informationType.data.size)]
+            val instance = dataField.informationType.data.random()
             currentDataInputs.put(dataField.informationType, instance)
         }
         val dataInput = currentDataInputs[dataField.informationType]!!

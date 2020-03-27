@@ -7,10 +7,10 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.ActionCounterMF
 import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
-import org.droidmate.exploration.modelFeatures.regression.staticModel.EventType
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.regression.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter

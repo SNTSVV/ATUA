@@ -7,8 +7,8 @@ import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.*
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.*
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger

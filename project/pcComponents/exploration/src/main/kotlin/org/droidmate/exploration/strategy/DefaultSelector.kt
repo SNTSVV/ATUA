@@ -1,7 +1,7 @@
 package org.droidmate.exploration.strategy
 
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State

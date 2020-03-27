@@ -1,7 +1,7 @@
 package org.droidmate.exploration.strategy.autaut.task
 
-import org.droidmate.exploration.modelFeatures.regression.textInput.DataField
-import org.droidmate.exploration.modelFeatures.regression.textInput.InputConfiguration
+import org.droidmate.exploration.modelFeatures.autaut.textInput.DataField
+import org.droidmate.exploration.modelFeatures.autaut.textInput.InputConfiguration
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import kotlin.random.Random
@@ -31,6 +31,14 @@ class TextInput () {
                 else -> inputString(widget, state)
             }
             return inputValue
+        }
+
+        fun resetInputData()
+        {
+            if (inputConfiguration!=null)
+            {
+                inputConfiguration!!.resetCurrentDataInputs()
+            }
         }
 
         protected open fun inputString(widget: Widget, state: State<*>): String{

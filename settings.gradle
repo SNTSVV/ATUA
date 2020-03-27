@@ -24,7 +24,7 @@ pluginManagement {  // this seams essential to make simultaneous includes of and
 	}
 }
 
-rootProject.name = 'droidmate-2'
+rootProject.name = 'autaut'
 
 // right now this is probably not even necessary due to our strange deploy hacks in core/deviceControlDaemon.gradle
 include("project:deviceComponents") // to include the build of the android modules (this probably requires a dependency to the library publish task before 'DeviceControlDaemon' can be compiled)

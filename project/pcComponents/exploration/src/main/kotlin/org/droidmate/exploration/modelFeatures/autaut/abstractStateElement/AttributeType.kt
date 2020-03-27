@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
 enum class AttributeType {
     index,

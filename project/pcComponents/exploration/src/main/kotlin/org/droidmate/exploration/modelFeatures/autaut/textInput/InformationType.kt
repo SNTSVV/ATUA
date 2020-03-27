@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.textInput
+package org.droidmate.exploration.modelFeatures.autaut.textInput
 
 class InformationType (val name: String,
                        val appPackages: ArrayList<String> = ArrayList(),

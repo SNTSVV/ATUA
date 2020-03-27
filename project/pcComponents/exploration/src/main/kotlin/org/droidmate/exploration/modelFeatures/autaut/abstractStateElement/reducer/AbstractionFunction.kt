@@ -1,9 +1,9 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AttributePath
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.localReducer.LocalReducerLV0
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.localReducer.LocalReducerLV1
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.localReducer.LocalReducerLV2
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.LocalReducerLV0
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.LocalReducerLV1
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.LocalReducerLV2
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 

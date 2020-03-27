@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.textInput
+package org.droidmate.exploration.modelFeatures.autaut.textInput
 
 open class InformationInstance (val data: HashMap<DataField,String> = HashMap(),
                            val informationType: InformationType){

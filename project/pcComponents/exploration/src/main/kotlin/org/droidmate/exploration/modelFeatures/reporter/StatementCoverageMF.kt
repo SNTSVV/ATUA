@@ -35,7 +35,7 @@ import kotlinx.coroutines.sync.withLock
 import org.droidmate.coverage.INSTRUMENTATION_FILE_SUFFIX
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.ModelFeature
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State

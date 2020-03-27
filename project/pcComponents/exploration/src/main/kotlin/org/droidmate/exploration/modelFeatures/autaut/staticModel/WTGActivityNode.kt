@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 class WTGActivityNode(classType: String,
                       nodeId: String = getNodeId()):WTGNode(classType,nodeId){

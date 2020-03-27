@@ -1,2 +1,2 @@
-package org.droidmate.exploration.modelFeatures.regression.dynamicElement
+package org.droidmate.exploration.modelFeatures.autaut.dynamicElement
 

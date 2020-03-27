@@ -8,11 +8,11 @@ import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractAction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractInteraction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
 import org.droidmate.explorationModel.interaction.State

@@ -1,8 +1,6 @@
-package org.droidmate.exploration.modelFeatures.regression.intent
+package org.droidmate.exploration.modelFeatures.autaut.intent
 
-import com.google.common.collect.Lists
 import com.google.common.collect.Sets
-import java.util.ArrayList
 
 class IntentFilter(val activity: String) {
     private val mActions: MutableSet<String> = Sets.newHashSet()

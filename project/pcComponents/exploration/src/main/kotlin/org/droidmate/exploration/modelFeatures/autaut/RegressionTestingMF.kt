@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression
+package org.droidmate.exploration.modelFeatures.autaut
 
 import com.natpryce.konfig.PropertyGroup
 import com.natpryce.konfig.booleanType
@@ -17,14 +17,14 @@ import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.exploration.modelFeatures.explorationWatchers.CrashListMF
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
-import org.droidmate.exploration.modelFeatures.regression.textInput.InputConfiguration
-import org.droidmate.exploration.modelFeatures.regression.textInput.InputConfigurationFileHelper
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.*
-import org.droidmate.exploration.modelFeatures.regression.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.regression.staticModel.EventType
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticEvent
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticWidget
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.textInput.InputConfiguration
+import org.droidmate.exploration.modelFeatures.autaut.textInput.InputConfigurationFileHelper
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.*
+import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticEvent
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.TextInput
 import org.droidmate.exploration.strategy.autaut.task.ExerciseTargetComponentTask
@@ -62,6 +62,9 @@ class RegressionTestingMF(private val appName: String,
     private val abandonnedWTGNodes = arrayListOf<WTGNode>()
     private val disableEdges = HashMap<Edge<AbstractState, AbstractInteraction>, Int>()
     val interestingInteraction = HashMap<State<*>, ArrayList<Interaction<*>>>()
+    val blackListWidgets = HashMap<AbstractState, Widget>()
+
+
     var isRecentItemAction: Boolean = false
     var isRecentPressMenu: Boolean = false
     val generalDictionary = ArrayList<String>()
@@ -724,6 +727,11 @@ class RegressionTestingMF(private val appName: String,
         val event = sourceAbsState.staticEventMapping[abstractInteraction]
         statementMF!!.mutex.withLock {
             val recentExecutedStatementSize = statementMF!!.recentExecutedStatements.size
+            if (recentExecutedStatementSize == 0)
+            {
+
+            }
+
             statementMF!!.recentExecutedStatements.forEach {
                 if (!edgeStatementCoverage.contains(it)) {
                     edgeStatementCoverage.add(it)

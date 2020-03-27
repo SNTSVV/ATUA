@@ -1,7 +1,7 @@
-package org.droidmate.exploration.modelFeatures.regression
+package org.droidmate.exploration.modelFeatures.autaut
 
-import org.droidmate.exploration.modelFeatures.regression.staticModel.EventType
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 
 open class WindowTransition (val source: String,
                              val target: String,

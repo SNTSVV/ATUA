@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
 data class AbstractAction (
     val actionName: String,

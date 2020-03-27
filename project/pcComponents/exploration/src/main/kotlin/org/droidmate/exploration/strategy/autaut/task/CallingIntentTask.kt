@@ -3,7 +3,7 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.callIntent
 import org.droidmate.exploration.actions.closeAndReturn
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 

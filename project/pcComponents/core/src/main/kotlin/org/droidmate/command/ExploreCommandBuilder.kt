@@ -7,7 +7,7 @@ import org.droidmate.configuration.ConfigProperties.Selectors.resetEvery
 import org.droidmate.configuration.ConfigProperties.Selectors.stopOnExhaustion
 import org.droidmate.configuration.ConfigProperties.Selectors.timeLimit
 import org.droidmate.configuration.ConfigurationWrapper
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.reporter.*
 import org.droidmate.exploration.strategy.*
 import org.droidmate.exploration.strategy.login.LoginWithGoogle

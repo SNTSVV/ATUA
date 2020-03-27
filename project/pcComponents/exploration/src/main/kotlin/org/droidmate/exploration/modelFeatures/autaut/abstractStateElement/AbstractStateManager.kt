@@ -1,15 +1,14 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.AbstractionFunction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.StateReducer
-import org.droidmate.exploration.modelFeatures.regression.staticModel.StaticWidget
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.AbstractionFunction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.StateReducer
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.LoggerFactory
-import java.util.logging.Logger
 
 class AbstractStateManager () {
     val ABSTRACT_STATES: ArrayList<AbstractState> = ArrayList()

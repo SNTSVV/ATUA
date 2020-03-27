@@ -3,9 +3,9 @@ package org.droidmate.exploration.strategy.autaut.task
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.regression.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -111,6 +111,8 @@ class RandomExplorationTask constructor(
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
         attemptCount++
+        if (recentFillData && !fillDataTask.isTaskEnd(currentState))
+            return fillDataTask.chooseAction(currentState)
         val currentAbstractState = regressionTestingMF.getAbstractState(currentState)
         val executeSystemEvent = random.nextInt(100)/(100*1.0)
         if (executeSystemEvent < 0.05) {
@@ -152,10 +154,6 @@ class RandomExplorationTask constructor(
 //        {
 //            return ExplorationAction.rotate(360-regressionTestingMF.currentRotation)
 //        }
-        if (prevAbState != regressionTestingMF.getAbstractState(currentState))
-        {
-            recentFillData = false
-        }
         if (!recentFillData && fillData && fillDataTask.isAvailable(currentState))
         {
             fillDataTask.initialize(currentState)
@@ -270,6 +268,8 @@ class RandomExplorationTask constructor(
         initialExerciseCount = -1
         currentExerciseCount = -1
         recentFillData = false
+        fillDataTask.reset()
+
     }
 
     override fun initialize(currentState: State<*>) {

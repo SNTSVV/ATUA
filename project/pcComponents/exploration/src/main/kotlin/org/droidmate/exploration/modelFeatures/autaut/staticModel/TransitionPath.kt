@@ -1,12 +1,12 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.Graph
 import org.droidmate.exploration.modelFeatures.graph.IGraph
 import org.droidmate.exploration.modelFeatures.graph.Vertex
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractInteraction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.WidgetGroup
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
 
 class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractState, AbstractInteraction> =
                               Graph(root,

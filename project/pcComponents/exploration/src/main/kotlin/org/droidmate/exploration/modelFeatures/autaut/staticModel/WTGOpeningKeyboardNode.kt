@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.staticModel
+package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 class WTGOpeningKeyboardNode(nodeId: String= getNodeId(),
                              wtgRelatedNode: WTGNode):WTGAppStateNode(nodeId=nodeId, wtgRelatedNode = wtgRelatedNode){

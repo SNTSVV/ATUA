@@ -5,10 +5,10 @@ import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractInteraction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.regression.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget

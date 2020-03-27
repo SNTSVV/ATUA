@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression
+package org.droidmate.exploration.modelFeatures.autaut
 
 class AndroidSystemWidgets{
     companion object{

@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.textInput
+package org.droidmate.exploration.modelFeatures.autaut.textInput
 
 import org.json.JSONArray
 import org.json.JSONObject

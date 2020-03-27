@@ -29,8 +29,8 @@ wrapper{
 }
 
 allprojects {
-	group = "org.droidmate"
-	version = "2.0.1-RC1"
+	group = "org.autaut"
+	version = "1.0"
 
 	/* Merge all the build directories into one. */
 //	buildDir = rootProject.file('build')  //TODO that means the apk/class paths are changing
@@ -81,7 +81,7 @@ apply from: file("project/functions.gradle")
 project.ext { // direct child projects would be childProjects
 	pcJvmTargets = subprojects.find() { it.name == 'pcComponents' }.subprojects
 	artifactModules = allprojects.findAll {
-		it.name in [ "droidmate-2", "core", "exploration",    // internal artifacts
+		it.name in [ "autaut", "core", "exploration",    // internal artifacts
 		             "deviceDaemonLib", "explorationModel" ]  // external for platform independency
 	}
 }

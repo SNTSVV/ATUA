@@ -10,8 +10,8 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State

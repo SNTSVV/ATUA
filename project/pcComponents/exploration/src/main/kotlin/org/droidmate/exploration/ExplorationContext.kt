@@ -32,7 +32,7 @@ import org.droidmate.device.android_sdk.IApk
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.exploration.modelFeatures.explorationWatchers.CrashListMF
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.coverageDir
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.enableCoverage
@@ -40,7 +40,6 @@ import org.droidmate.explorationModel.*
 import org.droidmate.explorationModel.config.ConfigProperties.Output.debugMode
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.*
-import org.droidmate.misc.EnvironmentConstants
 import org.droidmate.misc.TimeDiffWithTolerance
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

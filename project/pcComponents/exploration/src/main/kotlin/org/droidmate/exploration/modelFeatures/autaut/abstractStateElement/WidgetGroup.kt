@@ -1,6 +1,6 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.reducer.WidgetReducer
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.WidgetReducer
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*

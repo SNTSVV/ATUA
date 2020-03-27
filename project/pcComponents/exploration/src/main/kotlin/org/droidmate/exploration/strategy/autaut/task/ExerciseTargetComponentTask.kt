@@ -4,9 +4,9 @@ import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
-import org.droidmate.exploration.modelFeatures.regression.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractAction
-import org.droidmate.exploration.modelFeatures.regression.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -179,6 +179,8 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
+        if (recentFillData && !fillDataTask.isTaskEnd(currentState))
+            return fillDataTask.chooseAction(currentState)
         if (!recentFillData && fillDataTask.isAvailable(currentState))
         {
             fillDataTask.initialize(currentState)

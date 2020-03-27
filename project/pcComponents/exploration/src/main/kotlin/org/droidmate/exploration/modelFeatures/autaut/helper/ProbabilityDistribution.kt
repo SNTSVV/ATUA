@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.helper
+package org.droidmate.exploration.modelFeatures.autaut.helper
 
 import kotlin.random.Random
 

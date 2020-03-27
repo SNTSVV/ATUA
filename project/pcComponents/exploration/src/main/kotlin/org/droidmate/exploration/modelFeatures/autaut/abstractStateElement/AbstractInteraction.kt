@@ -1,6 +1,5 @@
-package org.droidmate.exploration.modelFeatures.regression.abstractStateElement
+package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
-import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.explorationModel.interaction.Interaction
 
 class AbstractInteraction(

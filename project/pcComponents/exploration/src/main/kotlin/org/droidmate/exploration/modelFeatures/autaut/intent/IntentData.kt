@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.regression.intent
+package org.droidmate.exploration.modelFeatures.autaut.intent
 
 data class IntentData (
         val scheme: String="",
