@@ -242,11 +242,14 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
             return null
         regressionTestingMF.isRecentItemAction = true
         var childWidgets = Helper.getAllInteractiveChild(currentState.widgets, chosenWidget)
-        if (childWidgets.size == 0) {
+        if (childWidgets.isEmpty()) {
             childWidgets = Helper.getAllInteractiveChild2(currentState.widgets, chosenWidget)
         }
-        if (childWidgets.size == 0) {
+        if (childWidgets.isEmpty()) {
             childWidgets = Helper.getAllChild(currentState.widgets, chosenWidget)
+        }
+        if (childWidgets.isEmpty()) {
+            return null
         }
         val actionableWidgets = childWidgets.filter {
             when (action) {

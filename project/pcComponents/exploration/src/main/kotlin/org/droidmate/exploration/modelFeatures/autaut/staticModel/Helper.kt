@@ -124,7 +124,7 @@ class Helper {
                 state.widgets.filter {it.enabled &&  it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty()}
 
         fun getInputFields(state: State<*>)=
-                getVisibleInteractableWidgets(state).filter { it.isInputField }
+                state.widgets.filter { it.isInputField }
         fun getUnmappedWidgets(visibleWidgets: List<Widget>, bestMatchedNode: WTGNode, state: State<*>): List<Widget> {
             return visibleWidgets.filter { w ->
                 bestMatchedNode.widgets.map { it.mappedRuntimeWidgets }

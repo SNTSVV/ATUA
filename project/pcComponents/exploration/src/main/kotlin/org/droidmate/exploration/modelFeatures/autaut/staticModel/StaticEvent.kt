@@ -34,6 +34,8 @@ open class StaticEvent (
             EventType.press_back -> "PressBack"
             EventType.callIntent -> "CallIntent"
             EventType.implicit_home_event -> "MinimizeMaximize"
+            EventType.scroll -> "Swipe"
+            EventType.swipe -> "Swipe"
             else -> eventType.name
         }
     }
@@ -68,7 +70,7 @@ open class StaticEvent (
             {
                 "Click" -> EventType.click
                 "LongClick" -> EventType.long_click
-                "Swipe" -> EventType.scroll
+                "Swipe" -> EventType.swipe
                 "TextInput" -> EventType.enter_text
                 "PressMenu" -> EventType.implicit_menu
                 "PressBack" -> EventType.press_back

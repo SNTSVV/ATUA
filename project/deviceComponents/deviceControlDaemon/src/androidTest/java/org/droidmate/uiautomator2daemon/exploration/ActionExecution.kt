@@ -134,6 +134,9 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 					nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK)
 					Log.d(logTag, "click non-focusable input-field")
 				}
+				if(nodeInfo.isFocusable){
+					nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLEAR_FOCUS)
+				}
 				// do this for API Level above 19 (exclusive)
 				val args = Bundle()
 				args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
@@ -144,9 +147,7 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 						Log.d(logTag, "trigger enter")
 						env.device.pressEnter()
 					}  // when doing multiple action sending enter may trigger a continue button but not all elements are yet filled
-					if(nodeInfo.isFocusable){
-						nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLEAR_FOCUS)
-					}
+
 					delay(delay)
 				} }
 		is RotateUI -> env.device.rotate(rotation, env.automation)

@@ -67,15 +67,15 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                           private val modifiedMethodFileName: String = "modifiedMethodCoverage.txt") : ModelFeature() {
     override val coroutineContext: CoroutineContext = CoroutineName("StatementCoverageMF") + Job()
 
-    private val executedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() //methodid -> first executed
-    private val executedModifiedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
-    private val executedModifiedMethodStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
-    private val statementInstrumentationMap= HashMap<String, String>() //statementid -> statement
-    private val methodStatementInstrumentationMap = HashMap<String, String>() //statementid -> methodid
-    private val methodInstrumentationMap= HashMap<String, String>() //method id -> method
-    private val modMethodInstrumentationMap= HashMap<String, String>() //method id -> method
-    private val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
-    private val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
+     val executedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() //methodid -> first executed
+     val executedModifiedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
+     val executedModifiedMethodStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
+     val statementInstrumentationMap= HashMap<String, String>() //statementid -> statement
+     val methodStatementInstrumentationMap = HashMap<String, String>() //statementid -> methodid
+     val methodInstrumentationMap= HashMap<String, String>() //method id -> method
+     val modMethodInstrumentationMap= HashMap<String, String>() //method id -> method
+     val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
+     val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
 
     val recentExecutedStatements: ArrayList<String> = ArrayList()
     val recentExecutedMethods: ArrayList<String> = ArrayList()
@@ -448,34 +448,18 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     fun produceModMethodCoverageOutput(context: ExplorationContext<*,*,*>){
         val sb = StringBuilder()
         sb.appendln(statement_header)
-        sb.appendln("Total number of statements: ${statementInstrumentationMap.size}")
-        sb.appendln("Total number of methods: ${methodInstrumentationMap.size}")
-        sb.appendln("Total number of modified methods: ${modMethodInstrumentationMap.size}")
-        sb.appendln("Total number of statements belonging to modified methods: ${
+        sb.appendln("Statements;${statementInstrumentationMap.size}")
+        sb.appendln("Methods;${methodInstrumentationMap.size}")
+        sb.appendln("ModifiedMethods;${modMethodInstrumentationMap.size}")
+        sb.appendln("ModifiedMethodsStatements;${
                 methodStatementInstrumentationMap.filter { modMethodInstrumentationMap.contains(it.value) }.size
         } ")
-        sb.appendln("Number of covered statements: ${executedStatementsMap.size}")
-        sb.appendln("Number of covered methods: ${executedMethodsMap.size}")
-        sb.appendln("Number of covered modified methods: ${executedModifiedMethodsMap.size}")
+        sb.appendln("CoveredStatements;${executedStatementsMap.size}")
+        sb.appendln("CoveredMethods;${executedMethodsMap.size}")
+        sb.appendln("CoveredModifiedMethods;${executedModifiedMethodsMap.size}")
         val executedModifiedMethodStatement = executedStatementsMap.filter { modMethodInstrumentationMap.contains(methodStatementInstrumentationMap[it.key]) }
-        sb.appendln("Number of covered statements belonging to modified methods: ${executedModifiedMethodStatement.size}")
-        if (regressionTestingMF != null)
-        {
-            val reachableModifiedMethods = modMethodInstrumentationMap.filter { e ->
-                regressionTestingMF!!.unreachableModifiedMethods.find { e.value.contains(it) }==null
-            }
-            val reachableStmtOfModMethods = methodStatementInstrumentationMap.filter { reachableModifiedMethods.contains(it.value) }
-            sb.appendln("Total number of alive modified methods: ${reachableModifiedMethods.size}")
-            sb.appendln("Total number of statements belonging to alive modified methods: ${reachableStmtOfModMethods.size}")
-            val executedReachableModifiedMethods = executedModifiedMethodsMap.filter{ reachableModifiedMethods.contains(it.key) }
-            val executedReachableModMethodStmts = executedStatementsMap.filter { reachableModifiedMethods.contains(methodStatementInstrumentationMap[it.key]) }
-            sb.appendln("Number of covered alive modified methods: " +
-                    "${executedReachableModifiedMethods.size}")
-            sb.appendln("Number of covered statements belonging to alive modified methods: "+
-            "${executedReachableModMethodStmts.size}")
-
-        }
-        sb.appendln("List of covered modified methods:")
+        sb.appendln("CoveredModifiedMethodsStatements;${executedModifiedMethodStatement.size}")
+        sb.appendln("ListCoveredModifiedMethods")
         if (executedModifiedMethodsMap.isNotEmpty()) {
             val sortedMethods = executedModifiedMethodsMap.entries
                     .sortedBy { it.value }
@@ -487,7 +471,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                     }
 
         }
-        sb.appendln("List of uncovered modified methods:")
+        sb.appendln("ListUnCoveredModifiedMethods")
         modMethodInstrumentationMap.filter {!executedModifiedMethodsMap.containsKey(it.key) }.forEach{
             sb.appendln("${it.key};${it.value}")
         }

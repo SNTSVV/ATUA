@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/deviceControlDaemon.iml" filepath="$PROJECT_DIR$/deviceControlDaemon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/deviceControlDaemon.iml" filepath="$PROJECT_DIR$/deviceControlDaemon.iml" group="deviceControlDaemon" />
     </modules>
   </component>
 </project>

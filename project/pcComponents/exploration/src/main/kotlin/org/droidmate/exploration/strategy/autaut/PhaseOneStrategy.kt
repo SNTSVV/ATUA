@@ -4,6 +4,7 @@ import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.exploration.ExplorationContext
+import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
@@ -147,6 +148,7 @@ class PhaseOneStrategy(
         return targetEvents.map { it.value }.flatMap { it }
     }
 
+    var clickedOnKeyboard = false
     override fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction {
         var chosenAction:ExplorationAction
         val currentState = eContext.getCurrentState()
@@ -160,10 +162,27 @@ class PhaseOneStrategy(
             strategyTask = null
             return dealWithCamera(eContext, currentState)
         }
-        if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty() && strategyTask !is FillTextInputTask) {
-            log.info("The keyboard is open and Text input filling was executed.")
-            log.info("Try close the keyboard.")
-            chosenAction = GlobalAction(actionType = ActionType.CloseKeyboard)
+        if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
+                && currentState.visibleTargets.filter { it.packageName==eContext.apk.packageName}.isEmpty()) {
+            if (!clickedOnKeyboard) {
+                chosenAction = currentState.visibleTargets.random().click()
+                clickedOnKeyboard = true
+            }
+            else
+            {
+                val searchButton = currentState.visibleTargets.filter { it.isKeyboard }.find { it.contentDesc.toLowerCase().contains("search") }
+                if (searchButton!=null)
+                {
+                    chosenAction = searchButton.click()
+                }
+                else
+                {
+                    log.info("The keyboard is open.")
+                    log.info("Try close the keyboard.")
+                    chosenAction = GlobalAction(actionType = ActionType.CloseKeyboard)
+                }
+                clickedOnKeyboard = false
+            }
             //strategyTask = null
             return chosenAction
         } else if (currentAppState.isOutOfApplication

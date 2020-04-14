@@ -23,11 +23,20 @@ class FillTextInputTask private constructor(
     override fun isTaskEnd(currentState: State<*>): Boolean {
         if (currentState.widgets.filter { fillTextDecision.containsKey(it) && fillTextDecision[it] == false }.isNotEmpty())
             return false
-        return true
+        var isEnd = true
+/*        currentState.widgets.filter { filledTexts.containsKey(it)}.asSequence().forEach {
+            if (it.text!=filledTexts[it])
+            {
+                isEnd = false
+                fillTextDecision[it]=false
+            }
+        }*/
+        return isEnd
     }
 
     var fillDataMode: FillDataMode = FillDataMode.SIMPLE
     protected val filledData = HashMap<DataField, Boolean>()
+    val filledTexts = HashMap<Widget,String>()
     override fun initialize(currentState: State<*>) {
         reset()
         currentState.actionableWidgets.filter { it.isInputField}.forEach {
@@ -79,9 +88,10 @@ class FillTextInputTask private constructor(
         {
             val actionOnInput = allInputWidgets.filter { fillTextDecision.containsKey(it) && fillTextDecision[it]!! == false }.random()
             val inputValue = TextInput.getSetTextInputValue(actionOnInput,currentState)
-            val inputAction = actionOnInput.setText(inputValue,sendEnter = false,enableValidation = false)
+            val inputAction = actionOnInput.setText(inputValue,sendEnter = false ,enableValidation = false)
             TextInput.historyTextInput.add(inputValue)
             fillTextDecision[actionOnInput] = true
+            filledTexts[actionOnInput] = inputValue
             return inputAction
         }
     }

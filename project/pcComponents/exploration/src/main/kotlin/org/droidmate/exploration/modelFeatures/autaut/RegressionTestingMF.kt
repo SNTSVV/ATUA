@@ -43,6 +43,7 @@ import presto.android.gui.clients.regression.informationRetrieval.InformationRet
 import java.nio.file.Files
 import java.nio.file.Path
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -52,7 +53,7 @@ class RegressionTestingMF(private val appName: String,
                           private val resourceDir: Path,
                           private val getCurrentActivity: suspend () -> String) : ModelFeature() {
     val textFilledValues = ArrayList<String>()
-    private val targetWidgetFileName = "targetWidgetReport.txt"
+    private val targetWidgetFileName = "autaut-report.txt"
     override val coroutineContext: CoroutineContext = CoroutineName("RegressionTestingModelFeature") + Job()
     private var statementMF: StatementCoverageMF?=null
     private var crashlist: CrashListMF?=null
@@ -123,6 +124,33 @@ class RegressionTestingMF(private val appName: String,
     val staticEventWindowCorrelation = HashMap<StaticEvent, HashMap<WTGNode,Double>>()
     val eventWindowCorrelation = HashMap<StaticEvent, HashMap<WTGNode,Double>>()
 
+    var stage1MethodCoverage: Double = 0.0
+    var stage2MethodCoverage: Double = 0.0
+    var stage1ModifiedMethodCoverage: Double = 0.0
+    var stage2ModifiedCoverage: Double = 0.0
+    var stage1StatementCoverage: Double = 0.0
+    var stage2StatementCoverage: Double =0.0
+    var stage1ModifiedStatementCoverage: Double = 0.0
+    var stage2ModifiedStatementCoverage: Double =0.0
+    var stage1Actions: Int = 0
+    var stage2Actions: Int = 0
+    var stage3Actions: Int = 0
+
+    fun getMethodCoverage(): Double{
+        return statementMF!!.getCurrentMethodCoverage()
+    }
+
+    fun getStatementCoverage(): Double {
+        return statementMF!!.getCurrentCoverage()
+    }
+
+    fun getModifiedMethodCoverage(): Double {
+        return statementMF!!.getCurrentModifiedMethodCoverage()
+    }
+
+    fun getModifiedMethodStatementCoverage(): Double {
+        return statementMF!!.getCurrentModifiedMethodStatementCoverage()
+    }
     fun getTargetIntentFilters_P1(): List<IntentFilter>{
         return targetIntFilters.filter { it.value < 1 }.map { it.key }
     }
@@ -757,8 +785,8 @@ class RegressionTestingMF(private val appName: String,
                     if (abstractInteraction.modifiedMethods[it] == false) {
                         abstractInteraction.modifiedMethods[it] = true
 
-                        log.info("New modified method covered:")
-                        log.info(statementMF!!.getMethodName(it))
+//                        log.info("New modified method covered:")
+//                        log.info(statementMF!!.getMethodName(it))
                     }
                 } else {
                     if (statementMF!!.isModifiedMethod(it)) {
@@ -766,8 +794,8 @@ class RegressionTestingMF(private val appName: String,
                         if (!allTargetStaticEvents.contains(event) && event !=null) {
                             allTargetStaticEvents.add(event)
                         }
-                        log.info("New modified method covered:")
-                        log.info(statementMF!!.getMethodName(it))
+//                        log.info("New modified method covered:")
+//                        log.info(statementMF!!.getMethodName(it))
                     }
                 }
                 if (allEventHandlers.contains(it) || modifiedMethodTopCallersMap.containsKey(it))
@@ -779,7 +807,7 @@ class RegressionTestingMF(private val appName: String,
                     {
                         abstractInteraction.handlers.put(it,true)
                     }
-                    log.info("Handlers logged: ${statementMF!!.getMethodName(it)}")
+//                    log.info("Handlers logged: ${statementMF!!.getMethodName(it)}")
                 }
             }
             statementMF!!.recentExecutedMethods.clear()
@@ -1410,14 +1438,50 @@ class RegressionTestingMF(private val appName: String,
     //endregion
     fun produceTargetWidgetReport(context: ExplorationContext<*,*,*>) {
         val sb = StringBuilder()
-        sb.appendln("Strategy statistics:")
-        sb.appendln("ExerciseTargetComponent: ${ExerciseTargetComponentTask.executedCount} ")
-        sb.appendln("GoToTargetNode: ${GoToTargetNodeTask.executedCount}")
-        sb.appendln("GoToAnotherNode: ${GoToAnotherNode.executedCount}")
-        sb.appendln("RandomExploration: ${RandomExplorationTask.executedCount}")
+        sb.appendln("Statements;${statementMF!!.statementInstrumentationMap.size}")
+        sb.appendln("Methods;${statementMF!!.methodInstrumentationMap.size}")
+        sb.appendln("ModifiedMethods;${statementMF!!.modMethodInstrumentationMap.size}")
+        sb.appendln("ModifiedMethodsStatements;${
+        statementMF!!.methodStatementInstrumentationMap.filter { statementMF!!.modMethodInstrumentationMap.contains(it.value) }.size
+        } ")
+        sb.appendln("CoveredStatements;${statementMF!!.executedStatementsMap.size}")
+        sb.appendln("CoveredMethods;${statementMF!!.executedMethodsMap.size}")
+        sb.appendln("CoveredModifiedMethods;${statementMF!!.executedModifiedMethodsMap.size}")
+        val executedModifiedMethodStatement = statementMF!!.executedStatementsMap.filter { statementMF!!.modMethodInstrumentationMap.contains(statementMF!!.methodStatementInstrumentationMap[it.key]) }
+        sb.appendln("CoveredModifiedMethodsStatements;${statementMF!!.executedModifiedMethodStatementsMap.size}")
+        sb.appendln("ListCoveredModifiedMethods")
+        if (statementMF!!.executedModifiedMethodsMap.isNotEmpty()) {
+            val sortedMethods = statementMF!!.executedModifiedMethodsMap.entries
+                    .sortedBy { it.value }
+            val initialDate = sortedMethods.first().value
+            sortedMethods
+                    .forEach {
+                        sb.appendln("${it.key};${statementMF!!.modMethodInstrumentationMap[it.key]};${Duration.between(initialDate.toInstant(), it.value.toInstant()).toMillis() / 1000}")
+                    }
+
+        }
+        sb.appendln("ListUnCoveredModifiedMethods")
+        statementMF!!.modMethodInstrumentationMap.filterNot {statementMF!!.executedModifiedMethodsMap.containsKey(it.key) }.forEach{
+            sb.appendln("${it.key};${it.value}")
+        }
+        sb.appendln("Phase1StatementMethodCoverage;$stage1StatementCoverage")
+        sb.appendln("Phase1MethodCoverage;$stage1MethodCoverage")
+        sb.appendln("Phase1ModifiedStatementCoverage;$stage1ModifiedStatementCoverage")
+        sb.appendln("Phase1ModifiedMethodCoverage;$stage1ModifiedMethodCoverage")
+        sb.appendln("Phase1ActionCount;$stage1Actions")
+        sb.appendln("Phase2StatementMethodCoverage;$stage2StatementCoverage")
+        sb.appendln("Phase2MethodCoverage;$stage2MethodCoverage")
+        sb.appendln("Phase2ModifiedMethodCoverage;$stage2ModifiedCoverage")
+        sb.appendln("Phase2ModifiedStatementCoverage;$stage2ModifiedStatementCoverage")
+        sb.appendln("Phase2ActionCount;$stage2Actions")
+        sb.appendln("StrategyStatistics;")
+        sb.appendln("ExerciseTargetComponent;${ExerciseTargetComponentTask.executedCount}")
+        sb.appendln("GoToTargetNode;${GoToTargetNodeTask.executedCount}")
+        sb.appendln("GoToAnotherNode;${GoToAnotherNode.executedCount}")
+        sb.appendln("RandomExploration;${RandomExplorationTask.executedCount}")
         var totalEvents = allTargetStaticEvents.size
-        sb.append("Total target events: $totalEvents\n")
-        sb.append("Triggered events:\n")
+        sb.appendln("TotalTargetEvents;$totalEvents")
+        sb.appendln("TriggeredEvents;")
         val triggeredEvents = allTargetStaticEvents.filter { !untriggeredTargetEvents.contains(it) }
         triggeredEvents.forEach {
             if (it.widget!=null){
@@ -1429,8 +1493,7 @@ class RegressionTestingMF(private val appName: String,
             }
 
         }
-        sb.append("Miss events: ${totalEvents - triggeredEvents.size}\n")
-
+        sb.appendln("MissEvents;${totalEvents - triggeredEvents.size}")
         untriggeredTargetEvents
                 .forEach {
                     if (it.widget!=null){
@@ -1441,8 +1504,7 @@ class RegressionTestingMF(private val appName: String,
                         sb.append("Widget null:${it.eventType}\n")
                     }
                 }
-
-        sb.appendln("Unreached node: ")
+        sb.appendln("Unreached node;")
         WTGNode.allNodes.filterNot {
             it is WTGAppStateNode || it is WTGLauncherNode
                 || it is WTGOutScopeNode || it is WTGFakeNode
@@ -1458,7 +1520,7 @@ class RegressionTestingMF(private val appName: String,
         }*/
 
         val numberOfAppStates = AbstractStateManager.instance.ABSTRACT_STATES.size
-        sb.appendln("Number of App states: $numberOfAppStates")
+        sb.appendln("NumberOfAppStates;$numberOfAppStates")
 //        disablePaths.forEach {
 //            sb.append("State ${it.first.uid}-${it.second.getNextRoot()!!.toString()}\n")
 //            sb.append("**Path details:\n")
@@ -1593,6 +1655,22 @@ class RegressionTestingMF(private val appName: String,
             result.put(event,eventDependency)
         }
         return result
+    }
+
+    fun updateStage1Info(eContext: ExplorationContext<*,*,*>) {
+        stage1ModifiedMethodCoverage = statementMF!!.getCurrentModifiedMethodCoverage()
+        stage1StatementCoverage = statementMF!!.getCurrentCoverage()
+        stage1MethodCoverage = statementMF!!.getCurrentMethodCoverage()
+        stage1ModifiedStatementCoverage = statementMF!!.getCurrentModifiedMethodStatementCoverage()
+        stage1Actions = eContext.explorationTrace.getActions().size
+    }
+
+    fun updateStage2Info(eContext: ExplorationContext<*,*,*>) {
+        stage2ModifiedCoverage = statementMF!!.getCurrentModifiedMethodCoverage()
+        stage2StatementCoverage = statementMF!!.getCurrentCoverage()
+        stage2MethodCoverage = statementMF!!.getCurrentMethodCoverage()
+        stage2ModifiedStatementCoverage = statementMF!!.getCurrentModifiedMethodStatementCoverage()
+        stage2Actions = eContext.explorationTrace.getActions().size
     }
 
     companion object {

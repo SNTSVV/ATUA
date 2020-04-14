@@ -7,6 +7,7 @@ import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.closeAndReturn
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
@@ -24,26 +25,35 @@ abstract class AbstractPhaseStrategy(
 ) {
     lateinit var phaseState: PhaseState
     lateinit var regressionTestingMF: RegressionTestingMF
-
+    var isClickedShutterButton = false
     var strategyTask: AbstractStrategyTask? = null
     abstract fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction
     internal fun dealWithCamera(eContext: ExplorationContext<*,*,*>, currentState: State<*>): ExplorationAction {
         val gotItButton = currentState.widgets.find { it.text.toLowerCase().equals("got it") }
         if (gotItButton != null)
             return gotItButton.click()
-        val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
-        if (shutterbutton!=null)
-        {
-            val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-            if (clickActions.isNotEmpty())
-                return clickActions.random()
+        if (!isClickedShutterButton){
+            val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
+            if (shutterbutton!=null)
+            {
+                val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
+                if (clickActions.isNotEmpty()) {
+                    isClickedShutterButton = true
+                    return clickActions.random()
+                }
+            }
         }
         val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
         if (doneButton!=null)
         {
             val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-            if (clickActions.isNotEmpty())
+            if (clickActions.isNotEmpty()) {
                 return clickActions.random()
+            }
+        }
+        else
+        {
+            return ExplorationAction.pressBack()
         }
         return tryRandom(eContext)
     }

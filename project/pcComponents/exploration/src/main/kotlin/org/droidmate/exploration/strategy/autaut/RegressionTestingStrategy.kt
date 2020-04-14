@@ -48,15 +48,6 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
      */
     protected val mutex = Mutex()
 
-    override suspend fun ExplorationContext<*, *, *>.computeCandidates(): List<Widget> {
-        var candidates = strategyTask!!.chooseWidgets(eContext.getCurrentState())
-        var nonCrashingWidgets = candidates.nonCrashingWidgets()
-        this.lastTarget?.let { nonCrashingWidgets = nonCrashingWidgets.filterNot { p -> p.uid == it.uid } }
-        candidates = candidates.filter { nonCrashingWidgets.contains(it) }
-        log.debug("Available target Widgets: ${candidates.size}")
-        return candidates
-    }
-
     override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> chooseRandomWidget(eContext: ExplorationContext<M, S, W>): ExplorationAction {
         return chooseRegression(eContext)
     }
@@ -64,8 +55,8 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     var currentPhase: Int = 1
     internal fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
         var chosenAction: ExplorationAction = ExplorationAction.closeAndReturn()
-        val currentWTGNode = regressionWatcher.getAbstractState(eContext.getCurrentState())
-        if (currentWTGNode==null)
+        val currentAbstractState = regressionWatcher.getAbstractState(eContext.getCurrentState())
+        if (currentAbstractState==null)
         {
             var action:ExplorationAction?=null
             runBlocking {
@@ -76,16 +67,24 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         if (phaseStrategy is PhaseOneStrategy && regressionWatcher.modifiedMethodCoverageFromLastChangeCount>50)
         {
             phaseStrategy = PhaseTwoStrategy(this,delay,useCoordinateClicks)
+            regressionWatcher.updateStage1Info(eContext)
         }
         else if (phaseStrategy is PhaseTwoStrategy)
         {
-            if ((phaseStrategy as PhaseTwoStrategy).attempt < 0)
-                phaseStrategy = PhaseThreeStrategy(this,delay, useCoordinateClicks)
+            if ((phaseStrategy as PhaseTwoStrategy).attempt < 0 && regressionWatcher.modifiedMethodCoverageFromLastChangeCount>50) {
+                phaseStrategy = PhaseThreeStrategy(this, delay, useCoordinateClicks)
+                regressionWatcher.updateStage2Info(eContext)
+            }
+            else
+                (phaseStrategy as PhaseTwoStrategy).attempt++
         }
         log.debug("Current activity: ${regressionWatcher.getStateActivity(eContext.getCurrentState())}")
         runBlocking {
             val availableWidgets = eContext.getCurrentState().widgets
-
+            if (prevNode!=null && prevNode!!.activity!=currentAbstractState.activity)
+            {
+                phaseStrategy.isClickedShutterButton = false
+            }
             chosenAction = phaseStrategy.nextAction(eContext)
         }
 

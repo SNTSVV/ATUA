@@ -5,3 +5,10 @@ buildSrc
 out
 .gradle
 apks
+.gradle
+buildSrc
+out
+project/deviceComponents/deviceControlDaemon/.gradle
+project/deviceComponents/deviceControlDaemon/.idea
+project/deviceComponents/deviceControlDaemon/build
+project/pcComponents/exploration/build
