@@ -16,7 +16,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.collections.ArrayList
 
-open class GoToAnotherNode protected constructor(
+open class GoToAnotherWindow protected constructor(
          regressionWatcher: RegressionTestingMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks) {
@@ -260,13 +260,13 @@ open class GoToAnotherNode protected constructor(
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
 
-        var instance: GoToAnotherNode? = null
+        var instance: GoToAnotherWindow? = null
         var executedCount:Int = 0
         fun getInstance(regressionWatcher: RegressionTestingMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
-                        delay: Long, useCoordinateClicks: Boolean): GoToAnotherNode {
+                        delay: Long, useCoordinateClicks: Boolean): GoToAnotherWindow {
             if (instance == null) {
-                instance = GoToAnotherNode(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks)
+                instance = GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

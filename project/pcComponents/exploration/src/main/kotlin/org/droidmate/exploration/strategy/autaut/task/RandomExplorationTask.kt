@@ -6,6 +6,7 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.exploration.strategy.autaut.PhaseOneStrategy
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -143,11 +144,17 @@ class RandomExplorationTask constructor(
             if (!regressionTestingMF.isPressBackCanGoToHomescreen(currentState))
             {
                 log.debug("Randomly back")
-                return ExplorationAction.closeAndReturn()
+                return ExplorationAction.pressBack()
             }
             if(clickNavigationUpTask.isAvailable(currentState))
             {
                 return clickNavigationUpTask.chooseAction(currentState)
+            }
+        } else if (executeSystemEvent < 0.25) {
+            //Try swipe on unscrollable widget
+            val widgets = chooseWidgets(currentState).filter { !it.scrollable }
+            if (widgets.isNotEmpty()) {
+                return chooseActionWithName("Swipe", "",widgets.random(),currentState)?:ExplorationAction.pressBack()
             }
         }
 //        if (regressionTestingMF.currentRotation!=0)
@@ -160,11 +167,23 @@ class RandomExplorationTask constructor(
             recentFillData = true
             return fillDataTask.chooseAction(currentState)
         }
-        val chosenWidgets = ArrayList<Widget>()
         if (currentAbstractState != null)
         {
             prevAbState = currentAbstractState
         }
+        if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
+                && currentState.visibleTargets.filter { it.packageName==regressionTestingStrategy.eContext.apk.packageName}.isEmpty()) {
+            val searchButton = currentState.visibleTargets.filter { it.isKeyboard }.find { it.contentDesc.toLowerCase().contains("search") }
+            if (searchButton!=null)
+            {
+                return searchButton.click()
+            }
+            else
+            {
+                return ExplorationAction.closeAndReturn()
+            }
+        }
+        val chosenWidgets = ArrayList<Widget>()
 //        if (random.nextInt(100)/100.toDouble()< SWIPE_PROB )
 //        {
 //            val scrollableWidgets = currentState.widgets.filter {
@@ -186,7 +205,7 @@ class RandomExplorationTask constructor(
         chosenWidgets.addAll(chooseWidgets(currentState))
         //choose randomly 1 widget
         if (chosenWidgets.isEmpty())
-            return ExplorationAction.closeAndReturn().also {
+            return ExplorationAction.pressBack().also {
                 log.info("Empty widgets --> PressBack")
             }
         val candidates = runBlocking { getCandidates(chosenWidgets)}
@@ -210,10 +229,11 @@ class RandomExplorationTask constructor(
             {
                 action = "ItemClick"
             }
-            return chooseActionWithName(action,"", chosenWidget,currentState)?:ExplorationAction.closeAndReturn().also {
+            return chooseActionWithName(action,"", chosenWidget,currentState)?:ExplorationAction.pressBack().also {
                 log.info("Cannot get itemClick for ListView --> PressBack")
             }
         }
+
         var actionList: List<ExplorationAction>
         if (!chosenWidget.clickable && chosenWidget.scrollable)
         {
@@ -249,7 +269,7 @@ class RandomExplorationTask constructor(
         }
         else
         {
-            return regressionTestingStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.closeAndReturn()
+            return regressionTestingStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
         }
     }
 

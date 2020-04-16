@@ -84,6 +84,7 @@ class Helper {
                             } else {
                                 matchWidgets[it] = 1
                             }
+                            //TODO Fix
                             if (it is WTGAppStateNode && matchingWidget!!.appStateTextProperty[it]!=widget.text)
                             {
                                 if (propertyChangedWidgets.contains(it)) {

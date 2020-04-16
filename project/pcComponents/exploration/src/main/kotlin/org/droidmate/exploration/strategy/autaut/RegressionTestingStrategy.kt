@@ -64,19 +64,14 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
             }
             return action?:ExplorationAction.closeAndReturn()
         }
-        if (phaseStrategy is PhaseOneStrategy && regressionWatcher.modifiedMethodCoverageFromLastChangeCount>50)
-        {
-            phaseStrategy = PhaseTwoStrategy(this,delay,useCoordinateClicks)
-            regressionWatcher.updateStage1Info(eContext)
-        }
-        else if (phaseStrategy is PhaseTwoStrategy)
-        {
-            if ((phaseStrategy as PhaseTwoStrategy).attempt < 0 && regressionWatcher.modifiedMethodCoverageFromLastChangeCount>50) {
+        if (phaseStrategy.isEnd()) {
+            if (phaseStrategy is PhaseOneStrategy) {
+                phaseStrategy = PhaseTwoStrategy(this,delay,useCoordinateClicks)
+                regressionWatcher.updateStage1Info(eContext)
+            } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
             }
-            else
-                (phaseStrategy as PhaseTwoStrategy).attempt++
         }
         log.debug("Current activity: ${regressionWatcher.getStateActivity(eContext.getCurrentState())}")
         runBlocking {

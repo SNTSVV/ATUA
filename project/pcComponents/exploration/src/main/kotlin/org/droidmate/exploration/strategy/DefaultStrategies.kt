@@ -231,8 +231,9 @@ object DefaultStrategies: Logging {
 			// which handle the touch event for this button, however as a consequence we may click non-interactive labels
 			// that is why we restricted this strategy to be executed at most [maxTries] from the same state
 			val allowButton: Widget = eContext.getCurrentState().widgets.filter{it.isVisible}.let { widgets ->
-				widgets.firstOrNull { it.resourceId == "com.android.packageinstaller:id/permission_allow_button" }
-					?: widgets.firstOrNull { it.text.toUpperCase() == "ALLOW" } ?: widgets.first { it.text.toUpperCase() == "OK" }
+				widgets.firstOrNull { it.resourceId == "com.android.packageinstaller:id/permission_allow_button" ||
+				it.resourceId == "com.android.permissioncontroller:id/permission_allow_foreground_only_button" }
+					?: widgets.firstOrNull { it.text.contains("ALLOW") } ?: widgets.first { it.text.toUpperCase() == "OK" }
 			}
 
 			return allowButton.click(ignoreClickable = true)

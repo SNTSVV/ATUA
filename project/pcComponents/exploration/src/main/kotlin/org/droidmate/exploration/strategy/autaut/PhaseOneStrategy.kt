@@ -14,6 +14,7 @@ import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.random.Random
 
 class PhaseOneStrategy(
         regressionTestingStrategy: RegressionTestingStrategy,
@@ -24,11 +25,28 @@ class PhaseOneStrategy(
         delay = delay,
         useCoordinateClicks = useCoordinateClicks
 ) {
+    override fun isEnd(): Boolean {
+        if (regressionTestingMF.untriggeredTargetEvents.isEmpty())
+            return true
+        if (attemps < 0 && regressionTestingMF.modifiedMethodCoverageFromLastChangeCount > 50)
+            return true
+        return false
+    }
+
     var attemps: Int
+    var targetStaticNode: WTGNode? = null
     init {
         phaseState = PhaseState.P1_INITIAL
         regressionTestingMF = regressionTestingStrategy.eContext.getOrCreateWatcher()
         attemps = WTGNode.allMeaningNodes.size
+        selectTargetNode()
+    }
+
+    private fun selectTargetNode() {
+        if (Random.nextBoolean()) {
+            //Try a window having handlers trigger modified method
+
+        }
     }
 
     override fun getPathsToOtherWindows(currentState: State<*>): List<TransitionPath> {
@@ -162,30 +180,7 @@ class PhaseOneStrategy(
             strategyTask = null
             return dealWithCamera(eContext, currentState)
         }
-        if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
-                && currentState.visibleTargets.filter { it.packageName==eContext.apk.packageName}.isEmpty()) {
-            if (!clickedOnKeyboard) {
-                chosenAction = currentState.visibleTargets.random().click()
-                clickedOnKeyboard = true
-            }
-            else
-            {
-                val searchButton = currentState.visibleTargets.filter { it.isKeyboard }.find { it.contentDesc.toLowerCase().contains("search") }
-                if (searchButton!=null)
-                {
-                    chosenAction = searchButton.click()
-                }
-                else
-                {
-                    log.info("The keyboard is open.")
-                    log.info("Try close the keyboard.")
-                    chosenAction = GlobalAction(actionType = ActionType.CloseKeyboard)
-                }
-                clickedOnKeyboard = false
-            }
-            //strategyTask = null
-            return chosenAction
-        } else if (currentAppState.isOutOfApplication
+        else if (currentAppState.isOutOfApplication
                 || Helper.getVisibleWidgets(currentState).find { it.resourceId == "android:id/floating_toolbar_menu_item_text" } != null) {
             log.info("App goes to an out of scope node.")
             log.info("Try press back.")
@@ -207,25 +202,6 @@ class PhaseOneStrategy(
                     log.info("Current task is end.")
                     log.info("Choose new task.")
                     chooseTask_P1(eContext, currentState)
-                    //FIXME update AppState Visit count
-                    /* if (regressionWatcher.abstractStateVisitCount[currentAppState]!! > 1 && currentAbstractState.hasOptionsMenu && !regressionWatcher.optionsMenuCheck.contains(currentAppState)) {
-                         val moreOptionWidget = regressionWatcher.getToolBarMoreOptions(currentState)
-                         if (moreOptionWidget != null) {
-                             log.info("This node may More Option widget.")
-                             log.info("Try click this widget.")
-                             regressionWatcher.optionsMenuCheck.add(currentAppState!!)
-                             return moreOptionWidget.click()
-                         } else {
-                             log.info("This node may have Options Menu.")
-                             log.info("Try press Options Menu key.")
-                             regressionWatcher.optionsMenuCheck.add(currentAppState!!)
-                             regressionWatcher.isRecentPressMenu = true
-                             return ExplorationAction.pressMenu()
-                         }
-
-                     } else {
-
-                     }*/
                 } else {
                     log.info("Continue ${strategyTask!!.javaClass.name} task.")
                 }
@@ -244,24 +220,23 @@ class PhaseOneStrategy(
         log.debug("Choosing Task")
         val fillDataTask = FillTextInputTask.getInstance(regressionTestingMF,regressionTestingStrategy,delay, useCoordinateClicks)
         val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val reachTargetNodeTask = GoToTargetNodeTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherNode.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
+        val reachTargetNodeTask = GoToTargetWindowTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
         val randomExplorationTask = RandomExplorationTask.getInstance(regressionTestingMF, regressionTestingStrategy,delay, useCoordinateClicks)
         val openNavigationBarTask = OpenNavigationBarTask.getInstance(regressionTestingMF,regressionTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
         val currentAppState = regressionTestingMF.getAbstractState(currentState)!!
 
-/*         if(regressionWatcher.abstractStateVisitCount[currentAppState] == 1)
+        if(regressionTestingMF.windowVisitCount[currentAppState.staticNode]!! == 1)
         {
             strategyTask = randomExplorationTask.also {
                 it.initialize(currentState)
                 it.backAction = false
-                it.setAttempOnUnexercised(currentState)
             }
             //regressionWatcher.modifiedMethodCoverageFromLastChangeCount=0
             log.info("This node has no target events and is first visited.")
             log.info("Random exploration Task chosen ")
-        }*/
+        }
 /*        else if(currentState.widgets.find { it.isKeyboard }!=null && fillDataTask.isAvailable(currentState)
                 && strategyTask!=fillDataTask)
         {
@@ -277,7 +252,7 @@ class PhaseOneStrategy(
              strategyTask = fillDataTask.also { it.initialize(currentState) }
              log.debug("FillDataTask task chosen")
          }*/
-        if (!regressionTestingMF.openNavigationCheck.contains(currentAppState)
+        else if (!regressionTestingMF.openNavigationCheck.contains(currentAppState)
                 && openNavigationBarTask.isAvailable(currentState))
         {
             strategyTask = openNavigationBarTask.also { it.initialize(currentState) }
@@ -306,7 +281,7 @@ class PhaseOneStrategy(
             log.info("Last task is not fully random exploration.")
             log.info("Fully random exploration Task chosen ")
         }
-        else if (strategyTask == null || strategyTask is GoToAnotherNode)
+        else if (strategyTask == null || strategyTask is GoToAnotherWindow)
         {
             strategyTask = randomExplorationTask.also {
                 it.initialize(currentState)

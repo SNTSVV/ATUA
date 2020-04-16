@@ -6,10 +6,10 @@ import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GoToRelatedNodeTask protected constructor(
+class GoToTargetWindowTask protected constructor(
          regressionWatcher: RegressionTestingMF,
         regressionTestingStrategy: RegressionTestingStrategy,
-       delay: Long, useCoordinateClicks: Boolean) : GoToAnotherNode(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
+       delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
 
     override fun chooseRandomOption(currentState: State<*>) {
         log.debug("Change options")
@@ -31,13 +31,13 @@ class GoToRelatedNodeTask protected constructor(
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
-        var instance: GoToRelatedNodeTask? = null
+        var instance: GoToTargetWindowTask? = null
         fun getInstance(regressionWatcher: RegressionTestingMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
-                        useCoordinateClicks: Boolean): GoToRelatedNodeTask {
+                        useCoordinateClicks: Boolean): GoToTargetWindowTask {
             if (instance == null) {
-                instance = GoToRelatedNodeTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = GoToTargetWindowTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

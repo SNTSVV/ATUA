@@ -5,6 +5,7 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reduc
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.StateReducer
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.exploration.strategy.autaut.task.TextInput
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -45,7 +46,7 @@ class AbstractStateManager () {
             }
             else
             {
-                homeState = AbstractState(activity="",isHomeScreen = true, staticNode = WTGLauncherNode.instance!!,isFromLaunch = isFromLaunch)
+                homeState = AbstractState(activity=i_activity,isHomeScreen = true, staticNode = WTGLauncherNode.instance!!,isFromLaunch = isFromLaunch)
                 homeState!!.guiStates.add(guiState)
                 ABSTRACT_STATES.add(homeState)
             }
@@ -114,6 +115,7 @@ class AbstractStateManager () {
         }
         do {
             val widget_WidgetGroupHashMap = StateReducer.reduce(guiState,activity)
+            TextInput.saveSpecificTextInputData(guiState)
             val guiReducedWidgetGroup = widget_WidgetGroupHashMap.map { it.value }.distinct()
             val matchingTestState = ABSTRACT_STATES.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
                     && it.activity == activity && regressionTestingMF.currentRotation == it.rotation}

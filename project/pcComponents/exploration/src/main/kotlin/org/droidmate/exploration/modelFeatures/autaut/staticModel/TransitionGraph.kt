@@ -36,7 +36,7 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                 val sourceNode = getOrCreateWTGNode(windowInfo)
                 if (sourceNode is WTGLauncherNode)
                 {
-                    this.add(root.data,sourceNode, FakeEvent())
+                    this.add(root.data,sourceNode, LaunchAppEvent(sourceNode))
                 }
                 //for each possbile transition to another window
                 val transitions = jMap[key] as JSONArray
@@ -80,7 +80,7 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                             staticWidget = null
                         }
                         val event: StaticEvent
-                        event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType)
+                        event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType,sourceNode)
                         edgeConditions.put(this.add(sourceNode,targetNode,event), HashMap())
 
                     }
@@ -98,7 +98,8 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                         this.add(owner,o, StaticEvent(eventType = EventType.implicit_menu,
                                 eventHandlers = ArrayList(),
                                 widget = null,
-                                activity = o.classType))
+                                activity = o.classType,
+                                sourceWindow = o))
                     }
                 }
 
@@ -120,7 +121,7 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                 if (activityNode!=null)
                 {
                     if (this.edges(activityNode,wtgNode).isEmpty())
-                        this.add(activityNode,wtgNode, StaticEvent(EventType.implicit_menu, ArrayList(), null, activityNode.classType))
+                        this.add(activityNode,wtgNode, StaticEvent(EventType.implicit_menu, ArrayList(), null, activityNode.classType, sourceWindow = activityNode))
                 }
 
             }

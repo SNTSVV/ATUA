@@ -5,8 +5,8 @@ open class StaticEvent (
             val eventType: EventType,
             val eventHandlers: ArrayList<String>,
             val widget: StaticWidget?,
-            var activity: String
-       // var sourceWindow: WTGNode?
+            var activity: String,
+             var sourceWindow: WTGNode
 )
 {
     val modifiedMethods = HashMap<String,Boolean>() //method id,
@@ -77,11 +77,12 @@ open class StaticEvent (
                 "MinimizeMaximize" -> EventType.implicit_home_event
                 "RotateUI" -> EventType.implicit_rotate_event
                 "CallIntent" -> EventType.callIntent
+                "LaunchApp" -> EventType.implicit_launch_event
                 else -> EventType.fake_action
             }
         }
     }
 }
 
-class FakeEvent(): StaticEvent(EventType.fake_action, arrayListOf(),null,"")
+class LaunchAppEvent(launcher: WTGNode): StaticEvent(EventType.implicit_launch_event, arrayListOf(),null,"",sourceWindow = launcher)
 

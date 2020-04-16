@@ -77,7 +77,7 @@ abstract class AbstractPhaseStrategy(
                 return ExplorationAction.closeAndReturn()
         }
     }
-
+    abstract fun isEnd(): Boolean
 
     fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, parentNodes: List<AbstractState>, finalTarget: AbstractState
                                        , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean

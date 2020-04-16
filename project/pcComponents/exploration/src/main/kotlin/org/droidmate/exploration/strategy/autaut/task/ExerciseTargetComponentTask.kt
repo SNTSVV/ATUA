@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.random.Random
 
 class ExerciseTargetComponentTask private constructor(
          regressionWatcher: RegressionTestingMF,
@@ -29,6 +30,7 @@ class ExerciseTargetComponentTask private constructor(
     var fillData = true
     var recentFillData = false
     private var prevAbstractState: AbstractState?=null
+    var tryRandom = false
     private val fillDataTask = FillTextInputTask.getInstance(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
     override fun chooseRandomOption(currentState: State<*>) {
         log.debug("Do nothing")
@@ -44,7 +46,6 @@ class ExerciseTargetComponentTask private constructor(
 
         return true
     }
-
 
     private var mainTaskFinished:Boolean = false
     private val randomExplorationTask = RandomExplorationTask(regressionWatcher,regressionTestingStrategy, delay,useCoordinateClicks,true,3)
@@ -179,6 +180,11 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
+        if (tryRandom) {
+            if (Random.nextBoolean()) {
+                randomExplorationTask.chooseAction(currentState)
+            }
+        }
         if (recentFillData && !fillDataTask.isTaskEnd(currentState))
             return fillDataTask.chooseAction(currentState)
         if (!recentFillData && fillDataTask.isAvailable(currentState))

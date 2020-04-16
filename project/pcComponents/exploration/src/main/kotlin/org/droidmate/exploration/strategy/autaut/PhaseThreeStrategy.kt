@@ -34,6 +34,10 @@ class PhaseThreeStrategy(
         delay = delay,
         useCoordinateClicks = useCoordinateClicks
 ) {
+    override fun isEnd(): Boolean {
+        return false
+    }
+
     val statementMF: StatementCoverageMF
     var remainPhaseStateCount: Int = 0
 
@@ -286,8 +290,8 @@ class PhaseThreeStrategy(
     fun chooseTask(eContext: ExplorationContext<*, *, *>, currentState: State<*>){
         log.debug("Choosing Task")
         val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetNodeTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherNode.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
         val randomExplorationTask = RandomExplorationTask.getInstance(regressionTestingMF, regressionTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
         val currentAppState = regressionTestingMF.getAbstractState(currentState)
@@ -504,7 +508,7 @@ class PhaseThreeStrategy(
         appStateList.forEach {appState ->
             edges.addAll(regressionTestingMF.abstractTransitionGraph.edges(appState))
             appStateModifiedMethodMap.put(appState, ArrayList())
-            appState.staticEventMapping.map { it.value }.map { it.modifiedMethods }.forEach { hmap ->
+            appState.abstractInteractions.map { it.modifiedMethods }.forEach { hmap ->
                 hmap.forEach { m, _ ->
                     if (!appStateModifiedMethodMap[appState]!!.contains(m)) {
                         appStateModifiedMethodMap[appState]!!.add(m)
@@ -528,7 +532,7 @@ class PhaseThreeStrategy(
         }
 
         //calculate modified method score
-        val totalAppStateCount = appStateList.size
+        val totalAppStateCount = edges.size
         modifiedMethodTriggerCount.forEach { m, c ->
             val score = 1-c/totalAppStateCount.toDouble()
             modifiedMethodWeights.put(m,score)

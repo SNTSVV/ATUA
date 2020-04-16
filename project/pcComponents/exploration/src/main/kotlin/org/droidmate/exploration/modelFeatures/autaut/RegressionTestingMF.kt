@@ -28,9 +28,9 @@ import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.TextInput
 import org.droidmate.exploration.strategy.autaut.task.ExerciseTargetComponentTask
-import org.droidmate.exploration.strategy.autaut.task.GoToAnotherNode
+import org.droidmate.exploration.strategy.autaut.task.GoToAnotherWindow
 import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
-import org.droidmate.exploration.strategy.autaut.task.GoToTargetNodeTask
+import org.droidmate.exploration.strategy.autaut.task.GoToTargetWindowTask
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -79,6 +79,7 @@ class RegressionTestingMF(private val appName: String,
     private val allMeaningfulWidgets =   arrayListOf<StaticWidget>() //widgetId -> idWidget
     val allTargetStaticWidgets = arrayListOf<StaticWidget>() //widgetId -> idWidget
     val allTargetStaticEvents = arrayListOf<StaticEvent>()
+    val allTargetWindows = arrayListOf<WTGNode>()
     val allEventHandlers = hashSetOf<String>()
     private val allActivityOptionMenuItems = mutableMapOf<String,ArrayList<StaticWidget> >()  //idWidget
     private val allContextMenuItems = arrayListOf<StaticWidget>()
@@ -107,7 +108,7 @@ class RegressionTestingMF(private val appName: String,
     var isFisrtVisitedNode: Boolean = false
     var isRecentlyFillText = false
     val abstractStateVisitCount = HashMap<AbstractState, Int>()
-    val activityVisitCount = HashMap<String, Int>()
+    val windowVisitCount = HashMap<WTGNode, Int>()
     var appPrevState: State<*>? =null
 
     val allAvailableTransitionPaths =  HashMap<Pair<AbstractState,AbstractState>,ArrayList<TransitionPath>>()
@@ -244,21 +245,21 @@ class RegressionTestingMF(private val appName: String,
                     lastExecutedInteraction = null
 
                     getCurrentEventCoverage()
-                    val currentMethodCov = statementMF!!.getCurrentMethodCoverage()
-                    if (currentMethodCov > lastMethodCoverage)
+                    val currentCov = statementMF!!.getCurrentCoverage()
+                    if (currentCov > lastMethodCoverage)
                     {
                         methodCoverageFromLastChangeCount = 0
-                        lastMethodCoverage = currentMethodCov
+                        lastMethodCoverage = currentCov
                     }
                     else
                     {
                         methodCoverageFromLastChangeCount += 1
                     }
-                    val currentModifiedMethodCov = statementMF!!.getCurrentModifiedMethodStatementCoverage()
-                    if (currentModifiedMethodCov > lastModifiedMethodCoverage)
+                    val currentModifiedMethodStmtCov = statementMF!!.getCurrentModifiedMethodStatementCoverage()
+                    if (currentModifiedMethodStmtCov > lastModifiedMethodCoverage)
                     {
                         modifiedMethodCoverageFromLastChangeCount = 0
-                        lastModifiedMethodCoverage = currentModifiedMethodCov
+                        lastModifiedMethodCoverage = currentModifiedMethodStmtCov
                     }
                     else
                     {
@@ -574,14 +575,14 @@ class RegressionTestingMF(private val appName: String,
 
 
     private fun increaseNodeVisit(abstractState: AbstractState) {
-        if (!activityVisitCount.containsKey(abstractState.activity))
+        if (!windowVisitCount.containsKey(abstractState.staticNode))
         {
-            activityVisitCount[abstractState.activity] = 1
+            windowVisitCount[abstractState.staticNode] = 1
 
         }
         else
         {
-            activityVisitCount[abstractState.activity] = activityVisitCount[abstractState.activity]!! + 1
+            windowVisitCount[abstractState.staticNode] = windowVisitCount[abstractState.staticNode]!! + 1
         }
         if (!abstractStateVisitCount.contains(abstractState)) {
             abstractStateVisitCount[abstractState] = 1
@@ -689,6 +690,7 @@ class RegressionTestingMF(private val appName: String,
                     eventType = eventType,
                     widget = null,
                     activity = prevAbstractState.activity,
+                    sourceWindow = prevAbstractState.staticNode,
                     eventHandlers = ArrayList()
             )
             newStaticEvent.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
@@ -705,10 +707,11 @@ class RegressionTestingMF(private val appName: String,
             {
                 prevAbstractState.staticWidgetMapping[widgetGroup]!!.forEach { staticWidget->
                       val newStaticEvent = StaticEvent(
-                        eventType = eventType,
-                        widget = staticWidget,
-                        activity = prevAbstractState.activity,
-                        eventHandlers = ArrayList()
+                              eventType = eventType,
+                              widget = staticWidget,
+                              activity = prevAbstractState.activity,
+                              sourceWindow = prevAbstractState.staticNode,
+                              eventHandlers = ArrayList()
                 )
                     newStaticEvent.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
                     newStaticEvent.modifiedMethodStatement.putAll(abstractInteraction.modifiedMethodStatement)
@@ -734,6 +737,7 @@ class RegressionTestingMF(private val appName: String,
                         eventType = eventType,
                         widget = staticWidget,
                         activity = prevAbstractState.activity,
+                        sourceWindow = prevAbstractState.staticNode,
                         eventHandlers = ArrayList()
                 )
                 newStaticEvent.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
@@ -1154,9 +1158,9 @@ class RegressionTestingMF(private val appName: String,
             return ""
     }
 
-    fun getAbstractState(state: State<*>): AbstractState?
+    fun getAbstractState(state: State<*>): AbstractState
     {
-        return AbstractStateManager.instance.getAbstractState(state)
+        return AbstractStateManager.instance.getAbstractState(state)!!
     }
 
 
@@ -1177,6 +1181,7 @@ class RegressionTestingMF(private val appName: String,
             readWindowWidgets(jObj)
             readMenuItemTexts(jObj)
             readActivityDialogs(jObj)
+            readWindowHandlers(jObj)
             log.debug("Reading modified method invocation")
             readModifiedMethodTopCallers(jObj)
             readModifiedMethodInvocation(jObj)
@@ -1192,12 +1197,20 @@ class RegressionTestingMF(private val appName: String,
 
     val methodTermsHashMap = HashMap<String, HashMap<String, Long>>()
     val windowTermsHashMap = HashMap<WTGNode, HashMap<String,Long>>()
+    val windowHandlersHashMap = HashMap<WTGNode, Set<String>>()
 
     private fun readWindowDependency(jObj: JSONObject) {
         val jsonWindowTerm = jObj.getJSONObject("windowsDependency")
         if (jsonWindowTerm != null)
         {
             windowTermsHashMap.putAll(StaticAnalysisJSONFileHelper.readWindowTerms(jsonWindowTerm, transitionGraph))
+        }
+    }
+
+    private fun readWindowHandlers (jObj: JSONObject) {
+        val jsonWindowHandlers = jObj.getJSONObject("windowHandlers")
+        if (jsonWindowHandlers != null) {
+            windowHandlersHashMap.putAll(StaticAnalysisJSONFileHelper.readWindowHandlers(jsonWindowHandlers,transitionGraph))
         }
     }
 
@@ -1233,10 +1246,10 @@ class RegressionTestingMF(private val appName: String,
                     intentActivityNode = WTGActivityNode.getOrCreateNode(WTGActivityNode.getNodeId(), qualifiedActivityName)
                 }
                 u.forEach {
-                    val intentEvent = StaticEvent(activity = qualifiedActivityName, eventType = EventType.callIntent,
-                            eventHandlers = ArrayList(), widget = null)
-                    intentEvent.data = it
                     for (meaningNode in WTGNode.allMeaningNodes) {
+                        val intentEvent = StaticEvent(activity = qualifiedActivityName, eventType = EventType.callIntent,
+                                eventHandlers = ArrayList(), widget = null,sourceWindow = meaningNode)
+                        intentEvent.data = it
                         transitionGraph.add(meaningNode, intentActivityNode!!, intentEvent)
                     }
 
@@ -1319,6 +1332,11 @@ class RegressionTestingMF(private val appName: String,
                 statementCoverageMF = statementMF!!)
         untriggeredWidgets.addAll(allTargetStaticWidgets)
         untriggeredTargetEvents.addAll(allTargetStaticEvents)
+        allTargetStaticEvents.forEach {
+            val sourceWindow = it.sourceWindow
+            if (!allTargetWindows.contains(sourceWindow))
+                allTargetWindows.add(sourceWindow)
+        }
         allTargetStaticEvents.filter { listOf<EventType>(EventType.item_click, EventType.item_long_click,
                 EventType.item_selected).contains(it.eventType)}.forEach {
             val eventInfo = HashMap<String,Int>()
@@ -1476,8 +1494,8 @@ class RegressionTestingMF(private val appName: String,
         sb.appendln("Phase2ActionCount;$stage2Actions")
         sb.appendln("StrategyStatistics;")
         sb.appendln("ExerciseTargetComponent;${ExerciseTargetComponentTask.executedCount}")
-        sb.appendln("GoToTargetNode;${GoToTargetNodeTask.executedCount}")
-        sb.appendln("GoToAnotherNode;${GoToAnotherNode.executedCount}")
+        sb.appendln("GoToTargetNode;${GoToTargetWindowTask.executedCount}")
+        sb.appendln("GoToAnotherNode;${GoToAnotherWindow.executedCount}")
         sb.appendln("RandomExploration;${RandomExplorationTask.executedCount}")
         var totalEvents = allTargetStaticEvents.size
         sb.appendln("TotalTargetEvents;$totalEvents")

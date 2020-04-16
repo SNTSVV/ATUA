@@ -148,6 +148,7 @@ class StaticAnalysisJSONFileHelper() {
                                         eventTypeString = jsonEventType,
                                         widget = staticWidget,
                                         activity = wtgNode.classType,
+                                        sourceWindow = wtgNode,
                                         allTargetStaticEvents = ArrayList())
                                 allEventHandlers.addAll(event.eventHandlers)
                             }
@@ -218,6 +219,7 @@ class StaticAnalysisJSONFileHelper() {
                                         eventTypeString = jsonEventType,
                                         widget = staticWidget,
                                         activity = sourceNode.classType,
+                                        sourceWindow = sourceNode,
                                         allTargetStaticEvents = allTargetStaticEvents)
                                 if (transitionGraph.edges(sourceNode).find { it.label == event } == null) {
                                     //this event has not appeared in graph
@@ -268,6 +270,7 @@ class StaticAnalysisJSONFileHelper() {
                                            eventTypeString: String,
                                            widget: StaticWidget?,
                                            activity: String,
+                                           sourceWindow: WTGNode,
                                            allTargetStaticEvents: ArrayList<StaticEvent>): StaticEvent {
             var event = StaticEvent.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.activity == activity }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
@@ -280,7 +283,7 @@ class StaticAnalysisJSONFileHelper() {
             }
             event = StaticEvent(eventHandlers = ArrayList(eventHandlers)
                     , eventType = EventType.valueOf(eventTypeString)
-                    , widget = widget, activity = activity)
+                    , widget = widget, activity = activity, sourceWindow = sourceWindow)
             allTargetStaticEvents.add(event)
             return event
         }
@@ -446,7 +449,8 @@ class StaticAnalysisJSONFileHelper() {
                                     eventType = EventType.valueOf(eventType),
                                     eventHandlers = ArrayList(),
                                     activity = sourceNode.classType,
-                                    widget = staticWidget
+                                    widget = staticWidget,
+                                    sourceWindow = sourceNode
                             )
                         }
                         val correlation = HashMap<WTGNode, Double>()
@@ -501,6 +505,24 @@ class StaticAnalysisJSONFileHelper() {
                 }
             }
             return windowTerms
+        }
+
+        fun readWindowHandlers(jsonObj: JSONObject, transitionGraph: TransitionGraph): Map<WTGNode, Set<String>> {
+            val windowHandlers = HashMap<WTGNode, HashSet<String>>()
+            jsonObj.keys().asSequence().forEach { windowName ->
+                val windowInfo = windowParser(windowName)
+                val window = transitionGraph.getOrCreateWTGNode(windowInfo)
+                if (window != null)
+                {
+                    val handlers = HashSet<String>()
+                    windowHandlers.put(window,handlers)
+                    val jsonHandlers = jsonObj[windowName] as JSONArray
+                    jsonHandlers.forEach {
+                        handlers.add(it.toString())
+                    }
+                }
+            }
+            return windowHandlers
         }
     }
 }
