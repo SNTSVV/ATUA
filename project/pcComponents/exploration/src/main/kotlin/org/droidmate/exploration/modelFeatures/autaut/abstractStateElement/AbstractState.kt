@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.AbstractionFunction
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
@@ -10,7 +11,7 @@ open class AbstractState (
         val activity: String,
         val widgets: ArrayList<WidgetGroup> = ArrayList(),
         val guiStates: ArrayList<State<*>> = ArrayList(),
-        val staticNode: WTGNode,
+        var window: WTGNode,
         val staticWidgetMapping: HashMap<WidgetGroup, ArrayList<StaticWidget>> = HashMap(),
         val abstractInteractions: ArrayList<AbstractInteraction> = ArrayList(),
         val staticEventMapping: HashMap<AbstractInteraction, StaticEvent> = HashMap(),
@@ -21,7 +22,7 @@ open class AbstractState (
         val isAppHasStoppedDialogBox: Boolean = false,
         val isOutOfApplication: Boolean = false,
         var hasOptionsMenu: Boolean = true,
-        var rotation:Int = 0
+        var rotation: Rotation
 
 ) {
         val unexercisedWidgetCount: Int
@@ -42,8 +43,9 @@ class VirtualAbstractState(activity: String,
                            staticNode: WTGNode,
                            isHomeScreen: Boolean=false): AbstractState(
         activity = activity,
-        staticNode = staticNode,
-        isFromLaunch = false
+        window = staticNode,
+        isFromLaunch = false,
+        rotation = Rotation.PORTRAIT
         )
 
-class AppResetAbstractState():AbstractState(activity = "", staticNode = WTGLauncherNode.getOrCreateNode(),isFromLaunch = false)
+class AppResetAbstractState():AbstractState(activity = "", window = WTGLauncherNode.getOrCreateNode(),isFromLaunch = false,rotation = Rotation.PORTRAIT)

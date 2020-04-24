@@ -43,7 +43,9 @@ class ExerciseTargetComponentTask private constructor(
         if (recentFillData && eventList.isNotEmpty()) {
             return false
         }
-
+        if (isCameraOpening(currentState)) {
+            return false
+        }
         return true
     }
 
@@ -99,7 +101,7 @@ class ExerciseTargetComponentTask private constructor(
     override fun chooseWidgets(currentState: State<*>): List<Widget> {
         //check if we can encounter any target component in current state
         var candidates= ArrayList<Widget>()
-        candidates.addAll(regressionTestingMF.getRuntimeWidgets(chosenAbstractAction!!.widgetGroup!!,currentState))
+        candidates.addAll(regressionTestingMF.getRuntimeWidgets(chosenAbstractAction!!.widgetGroup!!,currentAbstractState!!, currentState))
         if (candidates.isNotEmpty())
         {
             return candidates
@@ -180,11 +182,10 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
-        if (tryRandom) {
-            if (Random.nextBoolean()) {
-                randomExplorationTask.chooseAction(currentState)
-            }
+        if (isCameraOpening(currentState)) {
+            randomExplorationTask.chooseAction(currentState)
         }
+        randomExplorationTask.isClickedShutterButton = false
         if (recentFillData && !fillDataTask.isTaskEnd(currentState))
             return fillDataTask.chooseAction(currentState)
         if (!recentFillData && fillDataTask.isAvailable(currentState))
@@ -197,6 +198,9 @@ class ExerciseTargetComponentTask private constructor(
         if (currentAbstractState != null) {
             prevAbstractState = currentAbstractState
         }
+        //TODO check eventList is not empty
+        if (eventList.isEmpty())
+            return randomExplorationTask.chooseAction(currentState)
         chosenAbstractAction = eventList.random()
 
         eventList.remove(chosenAbstractAction!!)

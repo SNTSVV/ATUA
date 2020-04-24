@@ -13,6 +13,15 @@ open class WTGNode(val classType: String,
     get() {return widgets.filter { !it.exercised && widgetState[it]?:true && it.interactive && it.mappedRuntimeWidgets.isNotEmpty()}.size}
     var hasOptionsMenu = true
     open fun isStatic() = false
+    open fun addWidget(staticWidget: StaticWidget): StaticWidget {
+        if (widgets.contains(staticWidget))
+            return staticWidget
+        widgets.add(staticWidget)
+        staticWidget.activity = classType
+        staticWidget.wtgNode = this
+        return staticWidget
+    }
+
     override fun toString(): String {
         return "$classType-$nodeId"
     }

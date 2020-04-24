@@ -144,12 +144,12 @@ class StaticAnalysisJSONFileHelper() {
                                     (!StaticEvent.isNoWidgetEvent(jsonEventType) &&
                                             staticWidget != null)) {
                                 val event = getOrCreateTargetEvent(
-                                        eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) },
+                                        eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
                                         widget = staticWidget,
                                         activity = wtgNode.classType,
                                         sourceWindow = wtgNode,
-                                        allTargetStaticEvents = ArrayList())
+                                        allTargetStaticEvents = HashSet())
                                 allEventHandlers.addAll(event.eventHandlers)
                             }
 
@@ -162,8 +162,8 @@ class StaticAnalysisJSONFileHelper() {
 
         fun readModifiedMethodInvocation(jsonObj: JSONObject,
                                          transitionGraph: TransitionGraph,
-                                         allTargetStaticWidgets: ArrayList<StaticWidget>,
-                                         allTargetStaticEvents: ArrayList<StaticEvent>,
+                                         allTargetStaticWidgets: HashSet<StaticWidget>,
+                                         allTargetStaticEvents: HashSet<StaticEvent>,
                                          statementCoverageMF: StatementCoverageMF
         ) {
             jsonObj.keys().asSequence().forEach { key ->
@@ -215,7 +215,7 @@ class StaticAnalysisJSONFileHelper() {
                                             staticWidget != null)) {
                                 val jsonEventHandler = jsonEvent["eventHandlers"] as JSONArray
                                 val event = getOrCreateTargetEvent(
-                                        eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) },
+                                        eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
                                         widget = staticWidget,
                                         activity = sourceNode.classType,
@@ -266,12 +266,12 @@ class StaticAnalysisJSONFileHelper() {
 
 
         }
-        private fun getOrCreateTargetEvent(eventHandlers: List<String>,
+        private fun getOrCreateTargetEvent(eventHandlers: Set<String>,
                                            eventTypeString: String,
                                            widget: StaticWidget?,
                                            activity: String,
                                            sourceWindow: WTGNode,
-                                           allTargetStaticEvents: ArrayList<StaticEvent>): StaticEvent {
+                                           allTargetStaticEvents: HashSet<StaticEvent>): StaticEvent {
             var event = StaticEvent.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.activity == activity }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
             if (event != null) {
@@ -507,7 +507,7 @@ class StaticAnalysisJSONFileHelper() {
             return windowTerms
         }
 
-        fun readWindowHandlers(jsonObj: JSONObject, transitionGraph: TransitionGraph): Map<WTGNode, Set<String>> {
+        fun readWindowHandlers(jsonObj: JSONObject, transitionGraph: TransitionGraph, statementCoverageMF: StatementCoverageMF): Map<WTGNode, Set<String>> {
             val windowHandlers = HashMap<WTGNode, HashSet<String>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
@@ -518,11 +518,21 @@ class StaticAnalysisJSONFileHelper() {
                     windowHandlers.put(window,handlers)
                     val jsonHandlers = jsonObj[windowName] as JSONArray
                     jsonHandlers.forEach {
-                        handlers.add(it.toString())
+                        val methodId = statementCoverageMF.getMethodId(it.toString())
+                        handlers.add(methodId)
                     }
                 }
             }
             return windowHandlers
+        }
+
+        fun readActivityAlias(jsonObj: JSONObject, regressionTestingMF: RegressionTestingMF): HashMap<String, String> {
+            val activityAlias = HashMap<String, String>()
+            jsonObj.keys().asSequence().forEach { alias ->
+                val activity = jsonObj.get(alias).toString()
+                activityAlias.put(alias,activity)
+            }
+            return activityAlias
         }
     }
 }

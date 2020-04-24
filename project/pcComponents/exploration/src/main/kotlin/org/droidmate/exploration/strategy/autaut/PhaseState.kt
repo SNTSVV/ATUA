@@ -3,6 +3,10 @@ package org.droidmate.exploration.strategy.autaut
 enum class PhaseState {
     NULL,
     P1_INITIAL,
+    P1_GO_TO_TARGET_NODE,
+    P1_EXERCISE_TARGET_NODE,
+    P1_RANDOM_IN_EXERCISE_TARGET_NODE,
+    P1_RANDOM_EXPLORATION,
     //phase 2
     P2_INITIAL,
     P2_RANDOM_EXPLORATION,
@@ -12,8 +16,9 @@ enum class PhaseState {
     //phase 3
     P3_INITIAL,
     P3_EXERCISE_TARGET_NODE,
-    P3_GO_TO_ANOTHER_NODE,
+    P3_GO_TO_RELATED_NODE,
     P3_GO_TO_TARGET_NODE,
+    P3_EXPLORATION_IN_RELATED_WINDOW,
     P3_RANDOM_EXPLORATION
 
 }

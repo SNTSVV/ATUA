@@ -58,7 +58,7 @@ class TextInput () {
 
             }
             val reuseString = random.nextBoolean()
-            if (reuseString )
+            if (reuseString && historyTextInput.isNotEmpty())
             {
                 if (random.nextBoolean() && specificTextInput.containsKey(widget.uid))
                     return specificTextInput[widget.uid]!!.random()

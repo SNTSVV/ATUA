@@ -283,14 +283,20 @@ class AndroidDevice constructor(private val serialNumber: String,
 			}
 			if (lastMatchedLine!=null)
 			{
-				val matchedActivityRegex = "[\\w\\d\\.]+\\/(\\.[\\w\\d]+)+".toRegex()
+				val matchedActivityRegex = "[\\w\\d\\.]+\\/(\\.?[\\w\\d]+)+".toRegex()
 				val matchedResult = matchedActivityRegex.find(lastMatchedLine)
 				if (matchedResult != null)
 				{
 					val activity = matchedResult.value
 					val charIndex = activity.indexOf("/")
-					val normalizedActivity = activity.removeRange(charIndex,charIndex+1).trim()
-					return normalizedActivity
+					val afterSlash = activity.get(charIndex+1)
+					if (afterSlash == '.') {
+						val normalizedActivity = activity.removeRange(charIndex,charIndex+1).trim()
+						return normalizedActivity
+					} else {
+						val normalizedActivity = activity.substring(charIndex+1)
+						return normalizedActivity
+					}
 				}
 			}
 			return ""

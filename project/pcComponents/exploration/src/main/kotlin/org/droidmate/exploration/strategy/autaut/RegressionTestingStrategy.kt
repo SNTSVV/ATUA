@@ -12,6 +12,7 @@ import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
@@ -51,22 +52,20 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> chooseRandomWidget(eContext: ExplorationContext<M, S, W>): ExplorationAction {
         return chooseRegression(eContext)
     }
+
     var prevNode: AbstractState? = null
     var currentPhase: Int = 1
-    internal fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
+
+    internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
         var chosenAction: ExplorationAction = ExplorationAction.closeAndReturn()
-        val currentAbstractState = regressionWatcher.getAbstractState(eContext.getCurrentState())
-        if (currentAbstractState==null)
-        {
-            var action:ExplorationAction?=null
-            runBlocking {
-                action = super.chooseRandomWidget(eContext)
-            }
-            return action?:ExplorationAction.closeAndReturn()
+        val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
+        if (currentAbstractState == null) {
+            return ExplorationAction.closeAndReturn()
         }
         if (phaseStrategy.isEnd()) {
             if (phaseStrategy is PhaseOneStrategy) {
-                phaseStrategy = PhaseTwoStrategy(this,delay,useCoordinateClicks)
+                val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
+                phaseStrategy = PhaseTwoStrategy(this, delay, useCoordinateClicks,unreachableWindow)
                 regressionWatcher.updateStage1Info(eContext)
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this, delay, useCoordinateClicks)
@@ -74,21 +73,9 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
             }
         }
         log.debug("Current activity: ${regressionWatcher.getStateActivity(eContext.getCurrentState())}")
-        runBlocking {
-            val availableWidgets = eContext.getCurrentState().widgets
-            if (prevNode!=null && prevNode!!.activity!=currentAbstractState.activity)
-            {
-                phaseStrategy.isClickedShutterButton = false
-            }
-            chosenAction = phaseStrategy.nextAction(eContext)
-        }
-
-
+        val availableWidgets = eContext.getCurrentState().widgets
+        chosenAction = phaseStrategy.nextAction(eContext)
         prevNode = regressionWatcher.getAbstractState(eContext.getCurrentState())
-        if (!chosenAction.name.isPressMenu())
-        {
-            regressionWatcher.isRecentPressMenu = false
-        }
         return chosenAction
     }
 

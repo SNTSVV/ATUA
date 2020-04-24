@@ -59,6 +59,7 @@ open class StaticEvent (
             return (action == EventType.implicit_on_activity_result.name
                     || action == EventType.implicit_on_activity_newIntent.name
                     || action == EventType.implicit_power_event.name
+                    || action == EventType.implicit_lifecycle_event.name
                     || action == EventType.press_key.name
                     || action == EventType.dialog_press_key.name
                     || action == EventType.dialog_dismiss.name

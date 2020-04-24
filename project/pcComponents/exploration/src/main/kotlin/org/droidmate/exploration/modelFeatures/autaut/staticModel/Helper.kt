@@ -45,12 +45,14 @@ class Helper {
                 shouldMerge = true
             }
             if (shouldMerge) {
+                RegressionTestingMF.log.info("Merge $optionsMenuNode to $activityNode")
                 transitionGraph.mergeNode(optionsMenuNode, activityNode)
+                transitionGraph.removeVertex(optionsMenuNode)
                 regressionTestingMF.staticEventWindowCorrelation.filter { it.value.containsKey(optionsMenuNode) }.forEach { event, correlation ->
-                    val optionsMenuNodeScore = correlation[optionsMenuNode]!!
-                    correlation.put(activityNode,optionsMenuNodeScore)
                     correlation.remove(optionsMenuNode)
                 }
+
+
                 return true
             }
             return false
@@ -125,7 +127,7 @@ class Helper {
                 state.widgets.filter {it.enabled &&  it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty()}
 
         fun getInputFields(state: State<*>)=
-                state.widgets.filter { it.isInputField }
+                state.widgets.filter { it.isInputField || it.checked != null }
         fun getUnmappedWidgets(visibleWidgets: List<Widget>, bestMatchedNode: WTGNode, state: State<*>): List<Widget> {
             return visibleWidgets.filter { w ->
                 bestMatchedNode.widgets.map { it.mappedRuntimeWidgets }

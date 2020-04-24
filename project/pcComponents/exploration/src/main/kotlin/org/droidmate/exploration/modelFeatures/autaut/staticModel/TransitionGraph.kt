@@ -22,89 +22,91 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
     val methodCoverageInfo: HashMap<Edge<*,*>,ArrayList<String>> = HashMap()
 
     fun constructFromJson(jObj: JSONObject){
-            var jMap = jObj.getJSONObject("allActivityNodes")
-            jMap.keys().asSequence().forEach { key ->
-                val windowInfo = StaticAnalysisJSONFileHelper.windowParser(jMap[key]!! as String)
-                //val sourceNode = getOrCreateWTGNode(windowInfo)
+        var jMap = jObj.getJSONObject("allActivityNodes")
+        jMap.keys().asSequence().forEach { key ->
+            val windowInfo = StaticAnalysisJSONFileHelper.windowParser(jMap[key]!! as String)
+            //val sourceNode = getOrCreateWTGNode(windowInfo)
+        }
+
+         jMap = jObj.getJSONObject("allTransitions")
+        //for each Activity transition
+        jMap.keys().asSequence().forEach { key ->
+            val source = key as String
+            log.debug("source: $source")
+            val windowInfo = StaticAnalysisJSONFileHelper.windowParser(source)
+            val sourceNode = getOrCreateWTGNode(windowInfo)
+            if (sourceNode is WTGLauncherNode)
+            {
+                this.add(root.data,sourceNode, LaunchAppEvent(sourceNode))
             }
-             jMap = jObj.getJSONObject("allTransitions")
-            //for each Activity transition
-            jMap.keys().asSequence().forEach { key ->
-                val source = key as String
-                log.debug("source: $source")
-                val windowInfo = StaticAnalysisJSONFileHelper.windowParser(source)
-                val sourceNode = getOrCreateWTGNode(windowInfo)
-                if (sourceNode is WTGLauncherNode)
+            //for each possbile transition to another window
+            val transitions = jMap[key] as JSONArray
+            transitions.forEach { it ->
+                val transition = it as JSONObject
+                var ignoreWidget = false
+                val action = transition["action"] as String
+                if (!StaticEvent.isIgnoreEvent(action))
                 {
-                    this.add(root.data,sourceNode, LaunchAppEvent(sourceNode))
-                }
-                //for each possbile transition to another window
-                val transitions = jMap[key] as JSONArray
-                transitions.forEach { it ->
-                    val transition = it as JSONObject
-                    var ignoreWidget = false
-                    val action = transition["action"] as String
-                    if (!StaticEvent.isIgnoreEvent(action))
+                    if (StaticEvent.isNoWidgetEvent(action)
+                    )
                     {
-                        if (StaticEvent.isNoWidgetEvent(action)
-                        )
-                        {
-                            ignoreWidget = true
-                        }
-
-                        val target = transition["target"] as String
-                        log.debug("action: $action")
-                        log.debug("target: $target")
-                        val targetInfo = StaticAnalysisJSONFileHelper.windowParser(target)
-                        val targetNode = getOrCreateWTGNode(targetInfo)
-                        if (targetNode is WTGOptionsMenuNode || sourceNode is WTGLauncherNode)
-                        {
-                            ignoreWidget = true
-                        }
-                        val staticWidget: StaticWidget?
-
-                        if (ignoreWidget == false)
-                        {
-                            val targetView = transition["widget"] as String
-                            log.info("parsing widget: $targetView")
-                            val widgetInfo =  StaticAnalysisJSONFileHelper.widgetParser(targetView)
-                            staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
-                                    resourceId = widgetInfo["resourceId"]!!,
-                                    resourceIdName = widgetInfo["resourceIdName"]!!,
-                                    className = widgetInfo["className"]!!
-                                    , wtgNode = sourceNode
-                                    ,activity = sourceNode.classType)
-                        }
-                        else
-                        {
-                            staticWidget = null
-                        }
-                        val event: StaticEvent
-                        event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType,sourceNode)
-                        edgeConditions.put(this.add(sourceNode,targetNode,event), HashMap())
-
+                        ignoreWidget = true
                     }
 
-                    //construct graph
-                }
-            }
-            WTGOptionsMenuNode.allNodes.forEach {o ->
-                val owner = WTGActivityNode.allNodes.find { a -> a.classType == o.classType }
-                if (owner != null)
-                {
-                    val edges = this.edges(owner,o)
-                    if (edges.isEmpty())
+                    val target = transition["target"] as String
+                    log.debug("action: $action")
+                    log.debug("target: $target")
+                    val targetInfo = StaticAnalysisJSONFileHelper.windowParser(target)
+                    val targetNode = getOrCreateWTGNode(targetInfo)
+                    if (targetNode is WTGOptionsMenuNode || sourceNode is WTGLauncherNode)
                     {
-                        this.add(owner,o, StaticEvent(eventType = EventType.implicit_menu,
-                                eventHandlers = ArrayList(),
-                                widget = null,
-                                activity = o.classType,
-                                sourceWindow = o))
+                        ignoreWidget = true
                     }
+                    val staticWidget: StaticWidget?
+
+                    if (ignoreWidget == false)
+                    {
+                        val targetView = transition["widget"] as String
+                        log.info("parsing widget: $targetView")
+                        val widgetInfo =  StaticAnalysisJSONFileHelper.widgetParser(targetView)
+                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                resourceId = widgetInfo["resourceId"]!!,
+                                resourceIdName = widgetInfo["resourceIdName"]!!,
+                                className = widgetInfo["className"]!!
+                                , wtgNode = sourceNode
+                                ,activity = sourceNode.classType)
+                    }
+                    else
+                    {
+                        staticWidget = null
+                    }
+                    val event: StaticEvent
+                    event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType,sourceNode)
+                    edgeConditions.put(this.add(sourceNode,targetNode,event), HashMap())
+
                 }
 
+                //construct graph
             }
         }
+        WTGOptionsMenuNode.allNodes.forEach {o ->
+            val owner = WTGActivityNode.allNodes.find { a -> a.classType == o.classType }
+            if (owner != null)
+            {
+                val edges = this.edges(owner,o)
+                if (edges.isEmpty())
+                {
+                    this.add(owner,o, StaticEvent(eventType = EventType.implicit_menu,
+                            eventHandlers = ArrayList(),
+                            widget = null,
+                            activity = o.classType,
+                            sourceWindow = o))
+                }
+            }
+
+        }
+
+    }
 
     fun getOrCreateWTGNode(windowInfo: HashMap<String, String>): WTGNode {
             val wtgNode = when (windowInfo["NodeType"]) {
@@ -148,22 +150,26 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
         }
 
         fun getOptionsMenu(wtgNode: WTGNode): WTGNode? {
-            val edges = this.edges(wtgNode).filter { it.destination != null && it.destination!!.data is WTGOptionsMenuNode}
-                    .filter {  it.label.eventType!= EventType.implicit_back_event
-                            || ( it.destination != null && it.label.eventType== EventType.implicit_menu && it.destination!!.data != wtgNode)}
+            if (wtgNode is WTGOptionsMenuNode) {
+                return null
+            }
+            val edges = this.edges(wtgNode).filter {
+                it.destination != null
+                        && it.destination!!.data is WTGOptionsMenuNode
+                        &&  it.label.eventType!= EventType.implicit_back_event }
             return edges.map { it.destination!!.data }.firstOrNull()
         }
 
         fun getContextMenus(wtgNode: WTGNode): List<WTGContextMenuNode>{
             val edges = this.edges(wtgNode).filter { it.destination != null}
                     .filter { it.destination!!.data is WTGContextMenuNode }
-            return edges.map { it.destination!!.data as WTGContextMenuNode }
+            return edges.map { it.destination!!.data as WTGContextMenuNode }.toMutableList()
         }
 
         fun getDialogs(wtgNode: WTGNode): List<WTGDialogNode> {
             val edges = this.edges(wtgNode).filter { it.destination != null}
                     .filter { it.destination!!.data is WTGDialogNode }
-            return edges.map { it.destination!!.data as WTGDialogNode }
+            return edges.map { it.destination!!.data as WTGDialogNode }.toMutableList()
         }
 
         fun getWindowBackward(wtgNode: WTGNode): List<Edge<*, *>>{
@@ -208,28 +214,33 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
             return true
         }
 
-    fun mergeNode(toBeMergedNode: WTGNode, toMergeNode: WTGNode) {
-        toBeMergedNode.widgets.forEach {
-            if (!toMergeNode.widgets.contains(it))
-                toMergeNode.widgets.add(it)
+    fun mergeNode(source: WTGNode, dest: WTGNode) {
+        source.widgets.forEach {
+            //source.widgets.remove(it)
+            if (!dest.widgets.contains(it)) {
+               dest.addWidget(it)
+            }
         }
-        val edges = this.edges(toBeMergedNode)
+        source.widgets.clear()
+
+        val edges = this.edges(source).toMutableList()
         edges.forEach {
-            it.label.activity = toMergeNode.classType
-            this.add(toMergeNode, it.destination?.data ,it.label)
+            it.label.activity = dest.classType
+            it.label.sourceWindow = dest
+            this.add(dest, it.destination?.data, it.label)
         }
 
         this.getVertices().forEach { v ->
             val outEdges = this.edges(v)
-            outEdges.filter { it.destination!=null && it.destination!!.data == toBeMergedNode }.forEach {e ->
-              update(v.data,e.destination?.data,toMergeNode,e.label,e.label)
+            outEdges.filter { it.destination!=null && it.destination!!.data == source }.forEach { e ->
+              update(v.data,e.destination?.data,dest,e.label,e.label)
             }
         }
     }
 
     fun getUnknownNodes(activityNode: WTGActivityNode): List<WTGNode> {
         val edges = this.edges(activityNode).filter { it.destination != null && it.label.eventType!= EventType.implicit_back_event}
-                .filter { it.destination!!.data is WTGAppStateNode }
+                .filter { it.destination!!.data is WTGAppStateNode }.toMutableList()
         return edges.map { it.destination!!.data as WTGAppStateNode }
     }
 

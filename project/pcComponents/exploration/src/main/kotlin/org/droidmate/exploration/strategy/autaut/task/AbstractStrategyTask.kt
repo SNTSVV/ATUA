@@ -9,6 +9,7 @@ import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
@@ -165,19 +166,19 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 "PressMenu" -> pressMenuOrClickMoreOption(currentState)
                 "PressBack" -> ExplorationAction.pressBack()
                 "PressHome" -> ExplorationAction.minimizeMaximize()
+                "MinimizeMaximize" -> ExplorationAction.minimizeMaximize()
                 "RotateUI" -> {
-                    if (regressionTestingMF.currentRotation==0) {
-                        regressionTestingMF.currentRotation = 90
+                    if (regressionTestingMF.currentRotation==Rotation.PORTRAIT) {
                         ExplorationAction.rotate(90)
                     }
                     else
                     {
-                        regressionTestingMF.currentRotation = 0
                         ExplorationAction.rotate(-90)
                     }
 
                 }
                 "CallIntent" -> callIntent(data)
+                "Swipe" -> doSwipe(currentState)
                 else -> ExplorationAction.pressBack()
             }
         }
@@ -194,11 +195,30 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         }
     }
 
+    private fun doSwipe(currentState: State<*>): ExplorationAction? {
+        var outBoundLayout = currentState.widgets.find { it.resourceId == "android.id/content"}
+        if (outBoundLayout == null) {
+            outBoundLayout = currentState.widgets.find { !it.hasParent}
+        }
+        if (outBoundLayout == null) {
+            return ExplorationAction.pressBack()
+        }
+        val screenHeight = outBoundLayout!!.visibleBounds.height
+        val screenWidth = outBoundLayout!!.visibleBounds.width
+        if (random.nextBoolean()) {
+            //Swipe up
+            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2))
+        } else {
+            //Swipe right
+            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2))
+        }
+    }
+
     private fun chooseActionForNonItemEvent(action: String, chosenWidget: Widget, currentState: State<*>, data: Any?): ExplorationAction? {
         if (action == "TextInput" && chosenWidget.isInputField) {
             return chooseActionForTextInput(chosenWidget, currentState)
         }
-        if (action == "Swipe" && data is String && data.isNotBlank()) {
+        if (action == "Swipe" && data is String) {
             if (data == "SwipeUp") {
                 return chosenWidget.swipeUp()
             }
@@ -209,6 +229,9 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 return chosenWidget.swipeLeft()
             if (data == "SwipeRight")
                 return chosenWidget.swipeRight()
+            if (data == "") {
+                return arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
+            }
         }
         val actionList = chosenWidget.availableActions(delay, useCoordinateClicks)
         val widgetActions = actionList.filter {
@@ -334,6 +357,13 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         val choseSwipe = swipeActions[random.nextInt(swipeActions.size)]
         actionList.add(choseSwipe)
     }
+    internal fun haveOpenNavigationBar(currentState: State<*>): Boolean {
+        if (currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") } != null)
+        {
+            return true
+        }
+        return false
+    }
 
     internal fun pressMenuOrClickMoreOption(currentState: State<*>): ExplorationAction {
         val moreOptionWidget = regressionTestingMF.getToolBarMoreOptions(currentState)
@@ -341,29 +371,24 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
             return moreOptionWidget.click()
 
         } else {
+            if (haveOpenNavigationBar(currentState))
+            {
+                return clickOnOpenNavigation(currentState)
+            }
             regressionTestingMF.isRecentPressMenu = true
             return ExplorationAction.pressMenu()
         }
     }
+
+     fun clickOnOpenNavigation(currentState: State<*>): ExplorationAction {
+        val openNavigationWidget = currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") }!!
+        return chooseActionWithName("Click", null, openNavigationWidget, currentState)!!
+    }
+
+    fun isCameraOpening(currentState: State<*>): Boolean {
+        return currentState.widgets.any{it.packageName == "com.android.camera2"}
+    }
     /** filters out all crashing marked widgets from the actionable widgets of the current state **/
     suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { regressionTestingStrategy.eContext.crashlist.isBlacklistedInState(it.uid,regressionTestingStrategy.eContext.getCurrentState().uid) }
 
-    internal fun eventTypeToActionName(eventType: EventType): String{
-        return when (eventType){
-           EventType.click, EventType.touch -> "Click"
-            EventType.long_click -> "LongClick"
-           EventType.item_click -> "ItemClick"
-           EventType.item_long_click -> "ItemLongClick"
-           EventType.item_selected -> "ItemSelected"
-            EventType.enter_text -> "TextInput"
-            EventType.editor_action -> "EditorAction"
-            EventType.implicit_menu -> "PressMenu"
-            EventType.implicit_rotate_event -> "RotateUI"
-            EventType.implicit_back_event -> "PressBack"
-            EventType.press_back -> "PressBack"
-            EventType.callIntent -> "CallIntent"
-            EventType.implicit_home_event -> "PressHome"
-            else -> eventType.name
-        }
-    }
 }

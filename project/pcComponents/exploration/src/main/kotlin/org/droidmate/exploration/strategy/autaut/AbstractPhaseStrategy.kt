@@ -1,18 +1,15 @@
 package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.isClick
 import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.actions.availableActions
-import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.closeAndReturn
-import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
@@ -25,40 +22,50 @@ abstract class AbstractPhaseStrategy(
 ) {
     lateinit var phaseState: PhaseState
     lateinit var regressionTestingMF: RegressionTestingMF
-    var isClickedShutterButton = false
+
     var strategyTask: AbstractStrategyTask? = null
     abstract fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction
-    internal fun dealWithCamera(eContext: ExplorationContext<*,*,*>, currentState: State<*>): ExplorationAction {
-        val gotItButton = currentState.widgets.find { it.text.toLowerCase().equals("got it") }
-        if (gotItButton != null)
-            return gotItButton.click()
-        if (!isClickedShutterButton){
-            val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
-            if (shutterbutton!=null)
+
+    abstract fun getPathsToOtherWindows(currentState: State<*>): List<TransitionPath>
+    abstract fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath>
+    open fun getPathsToWindow(currentState: State<*>, targetWindow: WTGNode): List<TransitionPath> {
+        val transitionPaths = ArrayList<TransitionPath>()
+        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        if (currentAbstractState==null)
+            return transitionPaths
+        val targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow }.toHashSet()
+        while (targetStates.isNotEmpty()) {
+            val targetState = targetStates.first()
+            targetStates.remove(targetState)
+            val existingPaths: List<TransitionPath>?
+            existingPaths = regressionTestingMF.allAvailableTransitionPaths[Pair(currentAbstractState,targetState)]
+            if (existingPaths != null && existingPaths.isNotEmpty())
             {
-                val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-                if (clickActions.isNotEmpty()) {
-                    isClickedShutterButton = true
-                    return clickActions.random()
+                transitionPaths.addAll(existingPaths)
+            }
+            else {
+                //check if there is any edge from App State to that node
+                val feasibleEdges = regressionTestingMF.abstractTransitionGraph.edges().filter {e ->
+                    e.destination?.data!!.window == targetWindow
+                }
+                if (feasibleEdges.isNotEmpty())
+                {
+                    val childParentMap = HashMap<AbstractState, Pair<AbstractState, AbstractInteraction>?>()
+                    childParentMap.put(currentAbstractState, null)
+                    findPathToTargetComponentByBFS(currentState = currentState
+                            , root = currentAbstractState
+                            , traversingNodes = listOf(Pair(first = regressionTestingMF.windowStack.peek(),second = currentAbstractState))
+                            , finalTarget = targetState
+                            , allPaths = transitionPaths
+                            , includeBackEvent = true
+                            , childParentMap = childParentMap
+                            , level = 0)
                 }
             }
         }
-        val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
-        if (doneButton!=null)
-        {
-            val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-            if (clickActions.isNotEmpty()) {
-                return clickActions.random()
-            }
-        }
-        else
-        {
-            return ExplorationAction.pressBack()
-        }
-        return tryRandom(eContext)
+
+        return transitionPaths
     }
-    abstract fun getPathsToOtherWindows(currentState: State<*>): List<TransitionPath>
-    abstract fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath>
     abstract fun getCurrentTargetEvents(currentState: State<*>):  List<AbstractAction>
     internal fun tryRandom(eContext: ExplorationContext<*, *, *>): ExplorationAction {
 
@@ -79,113 +86,109 @@ abstract class AbstractPhaseStrategy(
     }
     abstract fun isEnd(): Boolean
 
-    fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, parentNodes: List<AbstractState>, finalTarget: AbstractState
+    fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<WTGNode, AbstractState>>, finalTarget: AbstractState
                                        , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean
                                        , childParentMap: HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?>, level: Int) {
-        if (parentNodes.isEmpty())
+        if (traversingNodes.isEmpty())
             return
-        val nextLevelNodes = ArrayList<AbstractState>()
-        for (source in parentNodes)
+        val graph = regressionTestingMF.abstractTransitionGraph
+        val nextLevelNodes = ArrayList<Pair<WTGNode,AbstractState>>()
+        for (traversing in traversingNodes)
         {
-
+            val source = traversing.second
+            val prevWindow = traversing.first
             if (includeBackEvent)
             {
-                //ingore any similar state that pressback can lead to homescreen
-                if (!regressionTestingMF.isPressBackCanGoToHomescreen(source)) {
-                    //if backNodes is empty -> no avaible information, so try get back state from ancestors
-                    val backNodes = ArrayList<AbstractState>()
-                    if (backNodes.isEmpty())
-                    {
-                        val backCandidates = regressionTestingMF.abstractTransitionGraph.edges().filter {
-                            it.destination!=null
-                                    && it.destination!!.data == source
-                                    && !it.label.abstractAction.actionName.isPressBack()
-                        }
-                        backCandidates.forEach {
-                            val ancestor = it.source.data
-                            if (!backNodes.contains(ancestor))
-                            {
-                                backNodes.add(ancestor)
-                            }
+                //if backNodes is empty -> no avaible information, so try get back state from ancestors
+                val backNodes = ArrayList<AbstractState>()
+                if (backNodes.isEmpty())
+                {
+                    val backCandidates = graph.edges().filter {
+                        it.destination!=null
+                                && it.destination!!.data == source
+                                && it.source.data.window != it.destination!!.data.window
+                                && !it.label.abstractAction.actionName.isPressBack()
+                    }
+                    backCandidates.forEach {
+                        val ancestor = it.source.data
+                        if (!backNodes.contains(ancestor))
+                        {
+                            backNodes.add(ancestor)
                         }
                     }
+                }
 
-                    if (backNodes.isEmpty())
-                    {
+                if (backNodes.isEmpty())
+                {
 
-                        val backCandiates = regressionTestingMF.abstractTransitionGraph.edges(source).filter {
-                            it.label.abstractAction.actionName.isPressBack()
-                                    && it.destination!=null
-                                    && it.destination!!.data.staticNode !is WTGLauncherNode
-                                    && it.destination!!.data.staticNode !is WTGOutScopeNode
-                        }
-                        backCandiates.forEach {
-                            val ancestor = it.destination!!.data
-                            if (!backNodes.contains(ancestor))
-                            {
-                                backNodes.add(ancestor)
-                            }
+                    val backCandiates = graph.edges(source).filter {
+                        it.label.abstractAction.actionName.isPressBack()
+                                && it.destination!=null
+                                && it.destination!!.data.window !is WTGLauncherNode
+                                && it.destination!!.data.window !is WTGOutScopeNode
+                                && it.label.prevWindow != null
+                                && isTheSamePrevWindow(prevWindow, it)
+                    }
+                    backCandiates.forEach {
+                        val ancestor = it.destination!!.data
+                        if (!backNodes.contains(ancestor))
+                        {
+                            backNodes.add(ancestor)
                         }
                     }
+                }
 
-                    backNodes.forEach { ancestor ->
-                        //Avoid loop
-                        if (!childParentMap.containsKey(ancestor)) {
-                            var backEdge = regressionTestingMF.abstractTransitionGraph.edges(source)
-                                    .find { it.label.abstractAction.actionName.isPressBack()
-                                            && it.destination?.data?.staticNode==ancestor.staticNode}
-                            if (backEdge!=null)
-                            {
-                                val backEvent = backEdge.label
-                                val isDisableEdge: Boolean = regressionTestingMF.checkIsDisableEdge(backEdge)
-                                if (!isDisableEdge) {
-                                    childParentMap.put(ancestor,Pair(source,backEvent))
-                                    if (ancestor == finalTarget) {
-                                        val fullPath = createTransitionPath(ancestor, root,childParentMap)
-                                        allPaths.add(fullPath)
-                                        regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
-                                        return
-                                    } else {
-                                        nextLevelNodes.add(ancestor)
-                                    }
+                backNodes.forEach { ancestor ->
+                    //Avoid loop
+                    if (!childParentMap.containsKey(ancestor)) {
+                        var backEdge = graph.edges(source)
+                                .find { it.label.abstractAction.actionName.isPressBack()
+                                        && it.destination?.data?.window==ancestor.window
+                                        && it.label.prevWindow != null
+                                        && isTheSamePrevWindow(prevWindow, it)}
+                        if (backEdge!=null)
+                        {
+                            val backEvent = backEdge.label
+                            childParentMap.put(ancestor,Pair(source,backEvent))
+                            if (ancestor == finalTarget) {
+                                val fullPath = createTransitionPath(ancestor, root,childParentMap)
+                                allPaths.add(fullPath)
+                                regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
+                                return
+                            } else {
+                                if(source.window != ancestor.window) {
+                                    nextLevelNodes.add(Pair(first = source.window, second = ancestor))
+                                } else {
+                                    // keep current prevWindow
+                                    nextLevelNodes.add(Pair(first = prevWindow, second = ancestor ))
                                 }
                             }
+                        }
 //                        if (backEvent == null) {
 //                            backEvent = StaticEvent(EventType.implicit_back_event, ArrayList<String>(),
 //                                    null, source)
 //                            transitionGraph.add(source, ancestor, backEvent)
 //                        }
-                        }
                     }
                 }
 
             }
-            val possibleTransitions = regressionTestingMF.abstractTransitionGraph.edges(source).filter{
+            val possibleTransitions = graph.edges(source).filter{
                 it.destination!=null
                         && it.source != it.destination
-                        && it.destination!!.data.staticNode !is WTGOutScopeNode
-                        && it.destination!!.data.staticNode !is WTGLauncherNode
-                        && it.destination!!.data.staticNode !is WTGFakeNode
-                        && it.destination!!.data.staticNode !is WTGOpeningKeyboardNode
-            }.filter { !regressionTestingMF.checkIsDisableEdge(it) }
+                        && it.destination!!.data.window !is WTGOutScopeNode
+                        && it.destination!!.data.window !is WTGFakeNode
+                        && it.destination!!.data.window !is WTGOpeningKeyboardNode
+                        && !it.label.abstractAction.actionName.equals("MinimizeMaximize")
+                        && isTheSamePrevWindow(prevWindow,it)
+            }
             val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
-
             possibleTransitions.filter {
                 !it.label.abstractAction.actionName.isPressBack()
+                        && includingRotateUIOrNot(it)
             }.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
-                val reliableTransition =  u.filter { !it.label.isImplicit }
+                val reliableTransition =  u.filter { !it.label.isImplicit || it.label.prevWindow == null }
                 val implicitTransitions = u.filter { it.label.isImplicit }
-                /*if (reliableTransition.isNotEmpty())
-                {
-                    if (Random.nextBoolean())
-                    {
-                        processedTransition.addAll(implicitTransitions)
-                    }
-                }
-                else
-                {
-                    processedTransition.addAll(implicitTransitions)
-                }*/
                 if (reliableTransition.isEmpty())
                 {
                     processedTransition.addAll(implicitTransitions)
@@ -213,12 +216,31 @@ abstract class AbstractPhaseStrategy(
                             regressionTestingMF.registerTransitionPath(root,finalTarget,fullGraph)
                             return
                         }
-                        nextLevelNodes.add(nextNode)
+                        if (source.window != nextNode.window) {
+                            nextLevelNodes.add(Pair(first = source.window,second=nextNode))
+                        } else {
+                            // keep current prevWindow
+                            nextLevelNodes.add(Pair(first = prevWindow,second=nextNode))
+                        }
+
                     }
                 }
             }
         }
+
         findPathToTargetComponentByBFS(currentState, root, nextLevelNodes, finalTarget, allPaths, includeBackEvent, childParentMap, level+1)
+    }
+
+    private fun includingRotateUIOrNot(it: Edge<AbstractState, AbstractInteraction>): Boolean {
+        if (regressionTestingMF.appRotationSupport)
+            return true
+        return it.label.abstractAction.actionName != "RotateUI"
+    }
+
+    private fun isTheSamePrevWindow(prevWindow: WTGNode?, it: Edge<AbstractState, AbstractInteraction>): Boolean {
+        return (
+                (prevWindow != null && it.label.prevWindow == prevWindow)
+                        || prevWindow == null || it.label.prevWindow == null)
     }
 
     private fun createTransitionPath(finalTarget: AbstractState, startingNode: AbstractState, childParentMap: HashMap<AbstractState, Pair<AbstractState, AbstractInteraction>?>): TransitionPath {
@@ -238,4 +260,5 @@ abstract class AbstractPhaseStrategy(
         }
         return fullPath
     }
+
 }

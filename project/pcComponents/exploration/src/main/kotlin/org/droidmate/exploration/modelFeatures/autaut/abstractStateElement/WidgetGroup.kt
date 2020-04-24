@@ -17,8 +17,7 @@ data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardi
         val selectedGuiWidgets = ArrayList<Widget>()
         guiState.widgets.forEach {
             val reducedAttributePath = WidgetReducer.reduce(it,guiState,abstractState.activity,tempFullAttributePaths,tempRelativeAttributePaths)
-            if (reducedAttributePath.equals(attributePath))
-            {
+            if (reducedAttributePath.equals(attributePath)) {
                 selectedGuiWidgets.add(it)
             }
         }

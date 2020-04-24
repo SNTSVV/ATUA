@@ -2,12 +2,14 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
+import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
@@ -21,27 +23,38 @@ open class GoToAnotherWindow protected constructor(
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks) {
 
+    private var tryOpenNavigationBar: Boolean = false
+    private var tryScroll: Boolean = false
     protected var mainTaskFinished:Boolean = false
     protected var prevState: State<*>?=null
     protected var prevAbState: AbstractState?=null
-    protected val randomExplorationTask = RandomExplorationTask(regressionWatcher,regressionTestingStrategy,delay,useCoordinateClicks,true,1)
+    protected var randomExplorationTask: RandomExplorationTask? = null
+
     protected var isFillingText: Boolean = false
     protected var currentEdge: Edge<AbstractState, AbstractInteraction>?=null
     protected var expectedNextAbState: AbstractState?=null
     protected var currentPath: TransitionPath? = null
     protected val possiblePaths = ArrayList<TransitionPath>()
 
+    var targetWindow: WTGNode? = null
+    var useInputTargetWindow: Boolean = false
+
     override fun chooseRandomOption(currentState: State<*>) {
         currentPath = possiblePaths.random()
         possiblePaths.remove(currentPath!!)
         expectedNextAbState=currentPath!!.root.data
         val destination = currentPath!!.getFinalDestination()
-        log.debug("Try to reach ${destination.staticNode}")
+        log.debug("Try to reach ${destination.window}")
         mainTaskFinished = false
+        isFillingText = false
+        tryOpenNavigationBar = false
+        tryScroll = false
     }
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         if (mainTaskFinished)
+            return true
+        if (currentPath == null)
             return true
         //if app reached the final destination
         val currentAppState = regressionTestingMF.getAbstractState(currentState)
@@ -49,17 +62,18 @@ open class GoToAnotherWindow protected constructor(
         {
             return true
         }
-        //if this is the end of the path
-        if (expectedNextAbState == currentPath!!.getFinalDestination() )
-        {
-           return true
-        }
-        //this is in the middle of the path
         //if currentNode is expectedNextNode
         if (expectedNextAbState!=null) {
             if (!isReachExpectedNode(currentState)) {
                 log.debug("Fail to reach expected node")
                 addIncorrectPath()
+                // Try another path if current state is not target node
+                if (currentAppState.window != targetWindow) {
+                    if (isAvailable(currentState)) {
+                        initialize(currentState)
+                        return false
+                    }
+                }
                 return true
             }
             else
@@ -75,8 +89,11 @@ open class GoToAnotherWindow protected constructor(
 
     private fun isReachExpectedNode(currentState: State<*>):Boolean {
         val currentAbState = regressionTestingMF.getAbstractState(currentState)
-        if (expectedNextAbState!!.activity != currentAbState!!.activity)
+        if (expectedNextAbState!!.window != currentAbState!!.window)
             return false
+        if (expectedNextAbState is VirtualAbstractState) {
+            return true
+        }
         if (expectedNextAbState == currentAbState)
         {
             return true
@@ -88,10 +105,14 @@ open class GoToAnotherWindow protected constructor(
             if (nextEdge == null)
                 return false
             val nextEvent = nextEdge.label
-            if (nextEvent.abstractAction.widgetGroup == null)
-                return true
+            if (nextEvent.abstractAction.widgetGroup == null) {
+                if (expectedNextAbState!!.isOpeningKeyboard == currentAbState.isOpeningKeyboard)
+                    return true
+                return false
+            }
+              
             val widget = nextEvent.abstractAction.widgetGroup
-            if (regressionTestingMF.getRuntimeWidgets(widget,currentState).isNotEmpty())
+            if (regressionTestingMF.getRuntimeWidgets(widget, nextEdge.source.data, currentState).isNotEmpty())
                 return true
             return false
         }
@@ -100,7 +121,7 @@ open class GoToAnotherWindow protected constructor(
     }
 
     override fun hasAnotherOption(currentState: State<*>): Boolean {
-        if (currentPath!!.root.data.activity == regressionTestingMF.getAbstractState(currentState)!!.activity
+        if (currentPath!!.root.data.window == regressionTestingMF.getAbstractState(currentState)!!.window
                 && possiblePaths.size > 0) {//still in the source activity
             log.debug("Can change to another option.")
             return true
@@ -109,13 +130,13 @@ open class GoToAnotherWindow protected constructor(
     }
 
     override fun initialize(currentState: State<*>) {
-        randomExplorationTask.fillData=true
+        randomExplorationTask = RandomExplorationTask(regressionTestingMF,regressionTestingStrategy,delay,useCoordinateClicks,true,1)
+        randomExplorationTask!!.fillData=true
         chooseRandomOption(currentState)
     }
 
     override fun reset() {
         possiblePaths.clear()
-        currentPath = null
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
@@ -127,11 +148,24 @@ open class GoToAnotherWindow protected constructor(
         return false
     }
 
-
+    open fun isAvailable(currentState: State<*>, targetWindow: WTGNode): Boolean {
+        reset()
+        this.targetWindow = targetWindow
+        this.useInputTargetWindow = true
+        initPossiblePaths(currentState)
+        if (possiblePaths.size > 0) {
+            return true
+        }
+        return false
+    }
 
     open protected fun initPossiblePaths(currentState: State<*>) {
         possiblePaths.clear()
-        possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
+        if (useInputTargetWindow && targetWindow!=null) {
+            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
+        } else {
+            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
+        }
     }
 
     override fun chooseWidgets(currentState: State<*>): List<Widget> {
@@ -141,7 +175,7 @@ open class GoToAnotherWindow protected constructor(
         }
         else
         {
-            return regressionTestingMF.getRuntimeWidgets(currentEdge!!.label.abstractAction.widgetGroup!!, currentState)
+            return regressionTestingMF.getRuntimeWidgets(currentEdge!!.label.abstractAction.widgetGroup!!,currentEdge!!.source.data ,currentState)
         }
     }
     open fun increaseExecutedCount(){
@@ -158,8 +192,8 @@ open class GoToAnotherWindow protected constructor(
             prevAbState = expectedNextAbState
         }
         if (currentPath == null || expectedNextAbState == null)
-            return randomExplorationTask.chooseAction(currentState)
-        log.info("Destination: ${currentPath!!.getFinalDestination().staticNode}")
+            return randomExplorationTask!!.chooseAction(currentState)
+        log.info("Destination: ${currentPath!!.getFinalDestination().window}")
         if (expectedNextAbState!!.activity == regressionTestingMF.getAbstractState(currentState)!!.activity) {
             if (!isFillingText)
             {
@@ -169,7 +203,7 @@ open class GoToAnotherWindow protected constructor(
                 regressionTestingMF.setTargetNode(currentEdge!!.destination!!.data)
                 nextNode = currentEdge!!.destination!!.data
                 expectedNextAbState = nextNode
-                log.info("Next expected node: ${nextNode.staticNode}")
+                log.info("Next expected node: ${nextNode.window}")
                 //log.info("Event: ${currentEdge!!.label.abstractAction.actionName} on ${currentEdge!!.label.abstractAction.widgetGroup}")
                 //Fill text input (if required)
                 if (currentPath!!.edgeConditions.containsKey(currentEdge!!) && currentEdge!!.label.abstractAction.actionName != "Swipe")
@@ -177,9 +211,9 @@ open class GoToAnotherWindow protected constructor(
                     val actionList = ArrayList<ExplorationAction>()
                     val textInputData = currentPath!!.edgeConditions[currentEdge!!]!!.filter { it.key.attributePath.isInputField() }
                     textInputData.forEach {
-                        if (regressionTestingMF.getRuntimeWidgets(it.key,currentState).isNotEmpty())
+                        if (regressionTestingMF.getRuntimeWidgets(it.key,currentEdge!!.source.data,currentState).isNotEmpty())
                         {
-                            val textInputWidget = regressionTestingMF.getRuntimeWidgets(it.key,currentState).random()
+                            val textInputWidget = regressionTestingMF.getRuntimeWidgets(it.key,currentEdge!!.source.data,currentState).random()
                             if (textInputWidget.text!=it.value)
                             {
                                 actionList.add(textInputWidget.setText(it.value))
@@ -199,14 +233,40 @@ open class GoToAnotherWindow protected constructor(
                 if (currentEdge!!.label.abstractAction.widgetGroup != null) {
                     val widgets = chooseWidgets(currentState)
                     if (widgets.isNotEmpty()) {
-
+                        tryOpenNavigationBar = false
+                        tryScroll = false
                         val candidates = runBlocking { getCandidates(widgets) }
                         val chosenWidget = candidates[random.nextInt(candidates.size)]
                         val actionName = currentEdge!!.label.abstractAction.actionName
                         val actionCondition = currentPath!!.edgeConditions[currentEdge!!]
                         return chooseActionWithName(actionName, actionCondition?.get(currentEdge!!.label.abstractAction.widgetGroup!!)?:"", chosenWidget, currentState) ?: ExplorationAction.pressBack()
                     } else {
+                        // process for some special case
+                        // if the current state in the path is VirtualAbstractState
                         expectedNextAbState = prevAbState
+                        if (expectedNextAbState is VirtualAbstractState) {
+                            //1. if the window has a drawer layout, should try open navigation bar
+                            if (!tryOpenNavigationBar && haveOpenNavigationBar(currentState)) {
+                                tryOpenNavigationBar = true
+                                return clickOnOpenNavigation(currentState)
+                            } else {
+                                val scrollableWidgets = currentState.widgets.filter { it.scrollable }
+                                if (!tryScroll) {
+                                    scrollAttempt = scrollableWidgets.size
+                                    tryScroll = true
+                                }
+                                if (tryScroll && scrollAttempt > 0) {
+                                    scrollAttempt--
+                                    val candidates = runBlocking { getCandidates(scrollableWidgets) }
+                                    if (candidates.isNotEmpty()) {
+                                        return scrollableWidgets.random().availableActions(delay, useCoordinateClicks).filter {
+                                            it is Swipe
+                                                    && it.stepSize > 0
+                                        }.random()
+                                    }
+                                }
+                            }
+                        }
                         addIncorrectPath()
                         if (hasAnotherOption(currentState)) {
                             chooseRandomOption(currentState)
@@ -215,30 +275,21 @@ open class GoToAnotherWindow protected constructor(
                         else
                         {
                             log.debug("Try all options but can not get any widget, finish task.")
-                            return randomExplorationTask.chooseAction(currentState)
+                            return randomExplorationTask!!.chooseAction(currentState)
                         }
                     }
                 }
                 else
                 {
+                    tryOpenNavigationBar = false
                     val action = currentEdge!!.label.abstractAction.actionName
                     //val actionCondition = currentPath!!.edgeConditions[currentEdge!!]
                     if (action == "CallIntent")
                         return chooseActionWithName(action,currentEdge!!.label.abstractAction.extra, null, currentState) ?: ExplorationAction.pressBack()
-                    else if (action == "RotateUI")
-                    {
-                        val currentRotation = regressionTestingMF.currentRotation
-                        val targetRotation = currentEdge!!.destination!!.data.rotation
-                        val rotation = (targetRotation - currentRotation)%360
-                        return chooseActionWithName(action,rotation,null,currentState)?:ExplorationAction.pressBack()
-                    }
                     else {
                         return chooseActionWithName(action, "", null, currentState) ?: ExplorationAction.pressBack()
                     }
                 }
-                log.debug("Try all options but can not get any widget, finish task.")
-//                mainTaskFinished = true
-                return randomExplorationTask.chooseAction(currentState)
             }
         }
         if(hasAnotherOption(currentState))
@@ -246,10 +297,10 @@ open class GoToAnotherWindow protected constructor(
             chooseRandomOption(currentState)
             return chooseAction(currentState)
         }
-        return randomExplorationTask.chooseAction(currentState)
+        return randomExplorationTask!!.chooseAction(currentState)
     }
 
-
+    var scrollAttempt = 0
 
     protected fun addIncorrectPath() {
         if (currentEdge!=null)

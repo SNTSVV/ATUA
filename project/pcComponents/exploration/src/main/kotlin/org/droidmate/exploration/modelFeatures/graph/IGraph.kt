@@ -24,4 +24,9 @@ interface IGraph<S, L>{
 	fun ancestors(destination: S): List<Vertex<S>>
 
 	fun isEmpty(): Boolean
+
+	fun remove(edge: Edge<S,L>): Boolean
+
+	fun removeVertex(source: S): Boolean
+
 }

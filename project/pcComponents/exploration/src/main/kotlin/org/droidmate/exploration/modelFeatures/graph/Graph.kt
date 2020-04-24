@@ -3,6 +3,28 @@ package org.droidmate.exploration.modelFeatures.graph
 class Graph<S, L>(root: S,
 				  val stateComparison : (S, S) -> Boolean = { a, b -> a == b },
 				  val labelComparison : (L, L) -> Boolean = { a, b -> a == b }): IGraph<S, L> {
+
+    override fun remove(edge: Edge<S, L>): Boolean {
+		if (adjacencyMap.containsKey(edge.source)) {
+			adjacencyMap.run {
+				this[edge.source]!!.remove(edge)
+				if (this[edge.source]!!.isEmpty())
+					this.remove(edge.source)
+			}
+
+			return true
+		}
+		return false
+	}
+
+	override fun removeVertex(source: S): Boolean {
+		val vertex = getVertex(source)
+		if (vertex!=null) {
+			adjacencyMap.remove(vertex)
+			return true
+		}
+		return false
+	}
 	private val adjacencyMap: MutableMap<Vertex<S>, MutableList<Edge<S, L>>> = mutableMapOf()
 
 	override val root: Vertex<S> = createVertex(root)
