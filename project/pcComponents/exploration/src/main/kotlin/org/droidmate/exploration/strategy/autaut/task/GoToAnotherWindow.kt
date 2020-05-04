@@ -28,7 +28,7 @@ open class GoToAnotherWindow protected constructor(
     protected var mainTaskFinished:Boolean = false
     protected var prevState: State<*>?=null
     protected var prevAbState: AbstractState?=null
-    protected var randomExplorationTask: RandomExplorationTask? = null
+    protected var randomExplorationTask: RandomExplorationTask = RandomExplorationTask(regressionTestingMF,regressionTestingStrategy,delay,useCoordinateClicks,true,1)
 
     protected var isFillingText: Boolean = false
     protected var currentEdge: Edge<AbstractState, AbstractInteraction>?=null
@@ -130,7 +130,7 @@ open class GoToAnotherWindow protected constructor(
     }
 
     override fun initialize(currentState: State<*>) {
-        randomExplorationTask = RandomExplorationTask(regressionTestingMF,regressionTestingStrategy,delay,useCoordinateClicks,true,1)
+
         randomExplorationTask!!.fillData=true
         chooseRandomOption(currentState)
     }
@@ -149,6 +149,7 @@ open class GoToAnotherWindow protected constructor(
     }
 
     open fun isAvailable(currentState: State<*>, targetWindow: WTGNode): Boolean {
+        log.info("Checking if there is any path to $targetWindow")
         reset()
         this.targetWindow = targetWindow
         this.useInputTargetWindow = true
@@ -206,7 +207,8 @@ open class GoToAnotherWindow protected constructor(
                 log.info("Next expected node: ${nextNode.window}")
                 //log.info("Event: ${currentEdge!!.label.abstractAction.actionName} on ${currentEdge!!.label.abstractAction.widgetGroup}")
                 //Fill text input (if required)
-                if (currentPath!!.edgeConditions.containsKey(currentEdge!!) && currentEdge!!.label.abstractAction.actionName != "Swipe")
+                //TODO Need save swipe action data
+                if (currentPath!!.edgeConditions.containsKey(currentEdge!!))
                 {
                     val actionList = ArrayList<ExplorationAction>()
                     val textInputData = currentPath!!.edgeConditions[currentEdge!!]!!.filter { it.key.attributePath.isInputField() }
@@ -238,8 +240,8 @@ open class GoToAnotherWindow protected constructor(
                         val candidates = runBlocking { getCandidates(widgets) }
                         val chosenWidget = candidates[random.nextInt(candidates.size)]
                         val actionName = currentEdge!!.label.abstractAction.actionName
-                        val actionCondition = currentPath!!.edgeConditions[currentEdge!!]
-                        return chooseActionWithName(actionName, actionCondition?.get(currentEdge!!.label.abstractAction.widgetGroup!!)?:"", chosenWidget, currentState) ?: ExplorationAction.pressBack()
+                        val actionData = currentEdge!!.label.abstractAction.extra
+                        return chooseActionWithName(actionName, actionData, chosenWidget, currentState) ?: ExplorationAction.pressBack()
                     } else {
                         // process for some special case
                         // if the current state in the path is VirtualAbstractState
@@ -250,19 +252,22 @@ open class GoToAnotherWindow protected constructor(
                                 tryOpenNavigationBar = true
                                 return clickOnOpenNavigation(currentState)
                             } else {
+                                //TODO fix null pointer
                                 val scrollableWidgets = currentState.widgets.filter { it.scrollable }
-                                if (!tryScroll) {
-                                    scrollAttempt = scrollableWidgets.size
-                                    tryScroll = true
-                                }
-                                if (tryScroll && scrollAttempt > 0) {
-                                    scrollAttempt--
-                                    val candidates = runBlocking { getCandidates(scrollableWidgets) }
-                                    if (candidates.isNotEmpty()) {
-                                        return scrollableWidgets.random().availableActions(delay, useCoordinateClicks).filter {
-                                            it is Swipe
-                                                    && it.stepSize > 0
-                                        }.random()
+                                if (scrollableWidgets.isNotEmpty()) {
+                                    if (!tryScroll) {
+                                        scrollAttempt = scrollableWidgets.size
+                                        tryScroll = true
+                                    }
+
+                                    val scrollActions = scrollableWidgets.random().availableActions(delay, useCoordinateClicks).filter {
+                                        it is Swipe
+                                                && it.stepSize > 0
+                                    }
+                                    if (tryScroll && scrollAttempt > 0 && scrollActions.isNotEmpty()) {
+                                        scrollAttempt--
+                                        return scrollActions.random()
+
                                     }
                                 }
                             }

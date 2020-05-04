@@ -74,6 +74,35 @@ import java.time.format.DateTimeFormatter
 class AndroidDevice constructor(private val serialNumber: String,
                                 private val cfg: ConfigurationWrapper,
                                 private val adbWrapper: IAdbWrapper) : IAndroidDevice {
+	override suspend fun getDeviceRotation(): Int {
+		val command = "shell dumpsys input"
+		val param = command.split(' ').toTypedArray()
+		try {
+			val inputs = this.adbWrapper.executeCommand(this.serialNumber,"","Get device rotation",
+					*param)
+			val matchLineRegex = "SurfaceOrientation.*".toRegex()
+			val matchedLines = matchLineRegex.findAll(inputs)
+			val iter = matchedLines.iterator()
+			var lastMatchedLine: String?=null
+			while (iter.hasNext())
+			{
+				lastMatchedLine = iter.next().value
+			}
+			if (lastMatchedLine!=null)
+			{
+				val splitStrings = lastMatchedLine.split(' ')
+				if (splitStrings.size == 2) {
+					return splitStrings[1]!!.toInt()
+				}
+			}
+		}catch (e: ApkExplorationException) {
+			log.error("Error get current window from monitor TCP server. Proceeding with exploration ${e.message}", e)
+		} finally {
+		    return 0
+		}
+
+	}
+
 	override suspend fun executeAdbCommandWithReturn(command: String, successfulOutput: String, commandDescription: String): String {
 		return this.adbWrapper.executeCommand(this.serialNumber, successfulOutput, commandDescription, command)
 	}

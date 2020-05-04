@@ -12,8 +12,8 @@ open class BaseReducer(
 {
     override fun reduce(guiWidget: Widget, guiState: State<*>, activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath>
     , tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath {
-        val localAttributes = localReducer.reduce(guiWidget,guiState, activity)
-        val parentAttributePath = parentReduce(guiWidget, guiState, activity,tempWidgetReduceMap,tempChildWidgetAttributePaths)
+        val localAttributes = localReducer.reduce(guiWidget,guiState)
+        val parentAttributePath = parentReduce(guiWidget, guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
 
         val childAttributePaths = HashSet<AttributePath>()
 
@@ -26,7 +26,7 @@ open class BaseReducer(
         return attributePath
     }
 
-    fun parentReduce(guiWidget: Widget, guiState: State<*>,activity: String,tempWidgetReduceMap: HashMap<Widget,AttributePath>,
+    fun parentReduce(guiWidget: Widget, guiState: State<*>,activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath>,
                      tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath?{
         if (guiWidget.hasParent)
         {
@@ -40,7 +40,7 @@ open class BaseReducer(
             {
                 return tempWidgetReduceMap[parentWidget]
             }
-            val parentAttributePath: AttributePath = AbstractionFunction.INSTANCE.reduce(parentWidget,guiState,activity,tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            val parentAttributePath: AttributePath = AbstractionFunction.INSTANCE.reduce(parentWidget,guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
             //tempWidgetReduceMap.put(parentWidget,parentAttributePath)
             return parentAttributePath
         }

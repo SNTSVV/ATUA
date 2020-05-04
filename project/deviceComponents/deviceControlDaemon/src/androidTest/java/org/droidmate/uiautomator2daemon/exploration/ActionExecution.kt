@@ -416,11 +416,12 @@ private fun UiDevice.rotate(rotation: Int,automation: UiAutomation):Boolean{
 private fun UiDevice.intent(action: String, category: String, uriString: String, activityName: String, appPackageName: String, env: UiAutomationEnvironment): Boolean{
 	this.pressHome()
 	val context = env.context
-	val intent = Intent(appPackageName)
+	val intent = Intent()
 	intent.setAction(action)
 	intent.addCategory(category)
 	intent.setData(Uri.parse(uriString))
-	intent.setComponent(ComponentName(appPackageName,activityName))
+	intent.setClassName(appPackageName,activityName)
+	//intent.setComponent(ComponentName(appPackageName,activityName))
 	context.startActivity(intent)
 //	val pm = context.packageManager
 //	val handlers = pm.queryIntentActivities(intent,PackageManager.GET_RESOLVED_FILTER)

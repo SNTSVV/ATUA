@@ -215,7 +215,9 @@ public class ConfigurationBuilder : IConfigurationBuilder {
 			CommandLineOption(onlyCoverAppPackageName, description = "Only instrument statement coverage for statements belong inside the app package name scope. Libraries with other package names will be ignored. Be aware that this filtering might not be always correct."),
 			CommandLineOption(coverageDir, description = "Path to the directory that will contain the coverage data."),
 			CommandLineOption(org.droidmate.explorationModel.config.ConfigProperties.Output.debugMode, description = "enable debug output"),
-			CommandLineOption(RegressionTestingMF.Companion.RegressionStrategy.use , description = "If true, regression testing is used")
+			CommandLineOption(RegressionTestingMF.Companion.RegressionStrategy.use , description = "If true, regression testing is used"),
+			CommandLineOption(RegressionTestingMF.Companion.RegressionStrategy.budgetScale, description = "Budget scale. Increase this for longer testing time.")
+
 			).first, fs)
 
 	@Throws(ConfigurationException::class)

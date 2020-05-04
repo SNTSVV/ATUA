@@ -5,5 +5,5 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
 abstract class AbstractLocalReducer {
-    abstract fun reduce(guiWidget: Widget, guiState: State<*>, activity: String): HashMap<AttributeType, String>
+    abstract fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>
 }

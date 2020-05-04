@@ -5,7 +5,7 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
 class LocalReducerLV1: AbstractLocalReducer() {
-    override fun reduce(guiWidget: Widget, guiState: State<*>, activity: String): HashMap<AttributeType, String>  {
+    override fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>  {
         val reducedAttributes = HashMap<AttributeType, String>()
         reducedAttributes.put(AttributeType.className,guiWidget.className)
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)

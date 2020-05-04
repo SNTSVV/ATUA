@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.WidgetReducer
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
@@ -15,7 +16,7 @@ data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardi
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val selectedGuiWidgets = ArrayList<Widget>()
-        guiState.widgets.forEach {
+        Helper.getVisibleWidgets(guiState).forEach {
             val reducedAttributePath = WidgetReducer.reduce(it,guiState,abstractState.activity,tempFullAttributePaths,tempRelativeAttributePaths)
             if (reducedAttributePath.equals(attributePath)) {
                 selectedGuiWidgets.add(it)
@@ -37,12 +38,25 @@ data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardi
         return false
     }
 
+    fun getPossibleActions(): Int {
+        var totalActions = 0
+        if (this.attributePath.isScrollable()) {
+           totalActions += 4
+        }
+        if (this.attributePath.isClickable()) {
+            totalActions += 1
+        }
+        if (this.attributePath.isLongClickable()) {
+            totalActions += 1
+        }
+        return totalActions
+    }
     fun getLocalAttributes(): HashMap<AttributeType, String>{
         return attributePath.localAttributes
     }
 
     override fun hashCode(): Int {
-        return attributePath.hashCode()
+        return attributePath.hashCode()+cardinality.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {

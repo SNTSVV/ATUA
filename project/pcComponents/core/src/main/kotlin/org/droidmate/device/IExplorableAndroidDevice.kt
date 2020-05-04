@@ -65,5 +65,8 @@ interface IExplorableAndroidDevice {
 
 	@Throws(DeviceException::class)
 	suspend fun appIsRunning(appPackageName: String): Boolean
+
+	@Throws(DeviceException::class)
+	suspend fun getDeviceRotation(): Int
 }
 

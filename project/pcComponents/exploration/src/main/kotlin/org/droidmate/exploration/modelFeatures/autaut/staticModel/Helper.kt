@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
+import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
 import org.droidmate.explorationModel.interaction.State
@@ -127,7 +128,8 @@ class Helper {
                 state.widgets.filter {it.enabled &&  it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty()}
 
         fun getInputFields(state: State<*>)=
-                state.widgets.filter { it.isInputField || it.checked != null }
+                Helper.getVisibleWidgets(state).filter { it.isInputField || it.checked.isEnabled() }
+
         fun getUnmappedWidgets(visibleWidgets: List<Widget>, bestMatchedNode: WTGNode, state: State<*>): List<Widget> {
             return visibleWidgets.filter { w ->
                 bestMatchedNode.widgets.map { it.mappedRuntimeWidgets }

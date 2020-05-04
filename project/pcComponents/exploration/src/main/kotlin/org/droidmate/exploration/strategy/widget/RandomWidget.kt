@@ -227,13 +227,6 @@ open class RandomWidget constructor(
 			chooseRandomly(eContext)
 	}
 
-	protected open fun textInput(widget: Widget, eContext: ExplorationContext<*, *, *>): String{
-		if (eContext.cfg[textInput])
-		{
-			return TextInput.getSetTextInputValue(widget, eContext.getCurrentState())
-		}
-		return randomString()
-	}
 	protected open fun randomString(): String{
 		if(dictionary.isNotEmpty()) return dictionary[random.nextInt(dictionary.size-1)]
 
@@ -252,7 +245,7 @@ open class RandomWidget constructor(
 		}
 
 		val actionList = when{
-			widget.isInputField ->	listOf(widget.setText(textInput(widget,eContext),delay = delay, sendEnter = true))
+			widget.isInputField ->	listOf(widget.setText(randomString(),delay = delay, sendEnter = true))
 			randomScroll -> widget.availableActions(delay,useCoordinateClicks)
 			else -> widget.availableActions(delay,useCoordinateClicks).filterNot { it is Swipe }
 		}

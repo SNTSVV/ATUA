@@ -2,6 +2,7 @@ package org.droidmate.exploration.modelFeatures.autaut
 
 import com.natpryce.konfig.PropertyGroup
 import com.natpryce.konfig.booleanType
+import com.natpryce.konfig.doubleType
 import com.natpryce.konfig.getValue
 
 import kotlinx.coroutines.CoroutineName
@@ -47,12 +48,14 @@ import java.time.Duration
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 
 class RegressionTestingMF(private val appName: String,
                           private val resourceDir: Path,
-                          private val getCurrentActivity: suspend () -> String) : ModelFeature() {
+                          private val getCurrentActivity: suspend () -> String,
+                          private val getDeviceRotation: suspend () -> Int) : ModelFeature() {
     val textFilledValues = ArrayList<String>()
     private val targetWidgetFileName = "autaut-report.txt"
     override val coroutineContext: CoroutineContext = CoroutineName("RegressionTestingModelFeature") + Job()
@@ -69,7 +72,6 @@ class RegressionTestingMF(private val appName: String,
 
     var isRecentItemAction: Boolean = false
     var isRecentPressMenu: Boolean = false
-    val generalDictionary = ArrayList<String>()
     var inputConfiguration: InputConfiguration?=null
     var currentRotation: Rotation = Rotation.PORTRAIT
     var phase: Int = 1
@@ -87,10 +89,8 @@ class RegressionTestingMF(private val appName: String,
     private val allContextMenuItems = arrayListOf<StaticWidget>()
     private val activityTransitionWidget = mutableMapOf<String, ArrayList<StaticWidget>>() // window -> Listof<StaticWidget>
     private val activity_TargetComponent_Map = mutableMapOf<String, ArrayList<StaticEvent>>() // window -> Listof<StaticWidget>
-    val untriggeredWidgets = arrayListOf<StaticWidget>()
-    val untriggeredTargetEvents = arrayListOf<StaticEvent>()
-    val untriggeredTargetHandlers = hashSetOf<String>()
-    private val targetItemEvents = HashMap<StaticEvent, HashMap<String,Int>>()
+
+    val targetItemEvents = HashMap<StaticEvent, HashMap<String,Int>>()
     var isAlreadyRegisteringEvent = false
     private val stateActivityMapping = mutableMapOf<State<*>,String>()
 
@@ -128,7 +128,7 @@ class RegressionTestingMF(private val appName: String,
     val targetIntFilters = HashMap<IntentFilter,Int>()
 
     val staticEventWindowCorrelation = HashMap<StaticEvent, HashMap<WTGNode,Double>>()
-    val eventWindowCorrelation = HashMap<StaticEvent, HashMap<WTGNode,Double>>()
+    val untriggeredTargetHandlers = hashSetOf<String>()
 
     var stage1MethodCoverage: Double = 0.0
     var stage2MethodCoverage: Double = 0.0
@@ -185,7 +185,6 @@ class RegressionTestingMF(private val appName: String,
         this.statementMF = context.getOrCreateWatcher<StatementCoverageMF>()
         this.crashlist = context.getOrCreateWatcher<CrashListMF>()
         readAppModel()
-        addCommonWordToDicitonary()
         val textInputFile = getTextInputFile()
         if (textInputFile!=null)
         {
@@ -193,7 +192,6 @@ class RegressionTestingMF(private val appName: String,
             TextInput.inputConfiguration = inputConfiguration
 
         }
-        TextInput.generalDictionary = generalDictionary
         AbstractStateManager.instance.init(this, appName)
         appPrevState = null
 
@@ -253,7 +251,7 @@ class RegressionTestingMF(private val appName: String,
                     //update previous actions
                     lastExecutedInteraction = null
 
-                    getCurrentEventCoverage()
+                    //getCurrentEventCoverage()
                     val currentCov = statementMF!!.getCurrentCoverage()
                     if (currentCov > lastMethodCoverage)
                     {
@@ -294,7 +292,7 @@ class RegressionTestingMF(private val appName: String,
                 }
 
                 currentRotation = computeRotation(newState)
-                                                          computeAbstractState(newState, prevState, interactions, context)
+                computeAbstractState(newState, prevState, interactions, context)
                 if (appPrevState != null && interactions.isNotEmpty()) {
                     computeAbstractInteraction(interactions, prevState, newState, windowStack.peek())
                     updateAppModel(prevState, newState, interactions)
@@ -325,16 +323,26 @@ class RegressionTestingMF(private val appName: String,
     }
 
     private fun computeRotation(newState: State<*>): Rotation {
-        val root = newState.widgets.find { !it.hasParent || it.resourceId=="android.id/content"}
-        if (root == null)
+        /*val roots = newState.widgets.filter { !it.hasParent || it.resourceId=="android.id/content"}
+        if (roots.isEmpty())
             return Rotation.PORTRAIT
+        val root = roots.sortedBy { it.boundaries.height+it.boundaries.width }.last()
         val height = root.boundaries.height
         val width = root.boundaries.width
         if (height > width) {
             return Rotation.PORTRAIT
         }
         else
-            return Rotation.LANDSCAPE
+            return Rotation.LANDSCAPE*/
+        var rotation: Int = 0
+        runBlocking {
+            rotation = getDeviceRotation()
+        }
+        if (rotation == 0 || rotation == 2)
+            return Rotation.PORTRAIT
+        return Rotation.LANDSCAPE
+
+
     }
 
     val guiInteractionList = ArrayList<Interaction<Widget>>()
@@ -364,15 +372,13 @@ class RegressionTestingMF(private val appName: String,
             }
         }
         if (isRecentPressMenu) {
-            if (prevAbstractState != null) {
-                if (prevAbstractState != currentAbstractState) {
-                    if (prevAbstractState.hasOptionsMenu)
-                        currentAbstractState.hasOptionsMenu = false
-                    else
-                        currentAbstractState.hasOptionsMenu = true
-                } else {
-                    prevAbstractState.hasOptionsMenu = false
-                }
+            if (prevAbstractState != currentAbstractState) {
+                if (prevAbstractState.hasOptionsMenu)
+                    currentAbstractState.hasOptionsMenu = false
+                else
+                    currentAbstractState.hasOptionsMenu = true
+            } else {
+                prevAbstractState.hasOptionsMenu = false
             }
             isRecentPressMenu = false
         }
@@ -382,6 +388,7 @@ class RegressionTestingMF(private val appName: String,
             val allAbstractTransitions = abstractTransitionGraph.edges(prevAbstractState)
             val abstractTransitions = allAbstractTransitions.filter {
                 it.label.abstractAction.actionName == interaction.actionType
+                        && compareDataOrNot(it.label.abstractAction, interaction)
                         && it.label.prevWindow == windowStack.peek()}
             if (abstractTransitions.isNotEmpty())
             {
@@ -415,14 +422,16 @@ class RegressionTestingMF(private val appName: String,
                 //Record new AbstractInteraction
 
                 lastExecutedAction = AbstractAction(
-                            actionName = interaction.actionType
+                            actionName = interaction.actionType,
+                        extra = interaction.data
                     )
 
                 val newAbstractInteraction = AbstractInteraction(
                         abstractAction = lastExecutedAction!!,
                         interactions = ArrayList(),
                         isImplicit = false,
-                        prevWindow = windowStack.peek())
+                        prevWindow = windowStack.peek(),
+                        data = interaction.data)
                 newAbstractInteraction.interactions.add(interaction)
                 abstractTransitionGraph.add(prevAbstractState,currentAbstractState,newAbstractInteraction)
                 lastExecutedInteraction = newAbstractInteraction
@@ -435,7 +444,7 @@ class RegressionTestingMF(private val appName: String,
             assert(widgetGroup!=null, {"cannot get widgetgroup from ${interaction.targetWidget.toString()}"})
             if (widgetGroup!=null)
             {
-                widgetGroup!!.exerciseCount+=1
+                widgetGroup.exerciseCount+=1
                /* AbstractStateManager.instance.ABSTRACT_STATES.filter{ it.window == prevAbstractState.window }. filter { it.widgets.contains(widgetGroup!!) }.forEach {
                     val sameWidgetGroup = it.widgets.find { it == widgetGroup }!!
                     sameWidgetGroup.exerciseCount++
@@ -445,6 +454,7 @@ class RegressionTestingMF(private val appName: String,
                 val abstractTransitions = allAbstractTransitions.filter {
                     it.label.abstractAction.actionName == interaction.actionType
                         && it.label.abstractAction.widgetGroup?.equals(widgetGroup)?:false
+                            && compareDataOrNot(it.label.abstractAction, interaction)
                             && it.label.prevWindow == windowStack.peek()}
                 if (abstractTransitions.isNotEmpty())
                 {
@@ -476,7 +486,8 @@ class RegressionTestingMF(private val appName: String,
 
                     lastExecutedAction = AbstractAction(
                             actionName = interaction.actionType,
-                            widgetGroup = widgetGroup
+                            widgetGroup = widgetGroup,
+                            extra = interaction.data
                     )
 
 
@@ -484,7 +495,8 @@ class RegressionTestingMF(private val appName: String,
                             abstractAction = lastExecutedAction!!,
                             interactions = ArrayList(),
                             isImplicit = false,
-                            prevWindow = windowStack.peek())
+                            prevWindow = windowStack.peek(),
+                            data = interaction.data)
                     newAbstractInteraction.interactions.add(interaction)
                     abstractTransitionGraph.add(prevAbstractState,currentAbstractState,newAbstractInteraction)
                     lastExecutedInteraction = newAbstractInteraction
@@ -492,14 +504,23 @@ class RegressionTestingMF(private val appName: String,
                 }
             }
         }
-        // add implicit back event
-
+        if (lastExecutedInteraction ==null) {
+            log.info("Not processed interaction: ${interaction.toString()}")
+            return
+        }
         log.info("Computing Abstract Interaction. - DONE")
         if (interaction.targetWidget==null || interaction.actionType.isTextInsert())
             return
         log.info("Refining Abstract Interaction.")
-        AbstractStateManager.instance.refineModel(interaction, prevState)
+        AbstractStateManager.instance.refineModel(interaction, prevState,lastExecutedInteraction!!)
         log.info("Refining Abstract Interaction. - DONE")
+    }
+
+    private fun compareDataOrNot(abstractAction: AbstractAction, interaction: Interaction<Widget>): Boolean {
+        if (interaction.actionType == "CallIntent" || interaction.actionType == "Swipe") {
+            return abstractAction.extra == interaction.data
+        }
+        return true
     }
 
     private fun addImplicitAbstractInteraction(prevAbstractState: AbstractState, currentAbstractState: AbstractState, abstractInteraction: AbstractInteraction, prevprevWindow: WTGNode) {
@@ -533,7 +554,8 @@ class RegressionTestingMF(private val appName: String,
                         if (widgetAbstractEdge.isEmpty())
                         {
                             val implicitAbstractInteraction = AbstractInteraction(
-                                    abstractAction = AbstractAction(actionName = abstractInteraction.abstractAction.actionName,
+                                    abstractAction = AbstractAction(
+                                            actionName = abstractInteraction.abstractAction.actionName,
                                             widgetGroup = widgetGroup),
                                     isImplicit = true,
                                     prevWindow = prevprevWindow
@@ -635,28 +657,7 @@ class RegressionTestingMF(private val appName: String,
             unreachableTargetComponentState.add(state)
     }
 
-    fun registerTriggeredEvents( abstractAction: AbstractAction, guiState: State<*>)
-    {
-        val abstractState = getAbstractState(guiState)!!
-        val abstractInteraction = abstractTransitionGraph.edges(abstractState).find { it.label.abstractAction.equals(abstractAction) }?.label
-        if (abstractInteraction!=null)
-        {
-            val staticEvent = abstractState.staticEventMapping[abstractInteraction]!!
-            if (targetItemEvents.containsKey(staticEvent))
-            {
-                targetItemEvents[staticEvent]!!["count"] = targetItemEvents[staticEvent]!!["count"]!!+1
-                if (targetItemEvents[staticEvent]!!["count"] == targetItemEvents[staticEvent]!!["max"]!!)
-                {
-                    untriggeredTargetEvents.remove(staticEvent)
-                }
-            }
-            else
-            {
-                untriggeredTargetEvents.remove(staticEvent)
-            }
-        }
 
-    }
 
     private fun computeAbstractState(newState: State<*>, prevState: State<*>, lastInteractions: List<Interaction<*>>, explorationContext: ExplorationContext<*, *, *>) {
         log.info("Computing Abstract State.")
@@ -1005,51 +1006,11 @@ class RegressionTestingMF(private val appName: String,
 
     //endregion
 
-    private fun getCurrentEventCoverage() {
+/*    private fun getCurrentEventCoverage() {
         val triggeredEventCount = allTargetStaticEvents.size - untriggeredTargetEvents.size
         // log.debug("Current target widget coverage: ${triggeredWidgets}/${allTargetStaticWidgets.size}=${triggeredWidgets / allTargetStaticWidgets.size.toDouble()}")
         log.debug("Current target event coverage: $triggeredEventCount/${allTargetStaticEvents.size} = ${triggeredEventCount/allTargetStaticEvents.size.toDouble()}")
-    }
-
-    //region state checking
-    fun hasTargetWidget(currentState: State<*>): Boolean {
-//        val currentActivity = stateActivityMapping[currentState]
-//        assert(currentActivity != null)
-//        if (unreachableTargetComponentState.contains(currentActivity))
-//            return false
-//        if (activity_TargetComponent_Map[currentActivity]?.size?:0 > 0)
-//            return true
-        if (unreachableTargetComponentState.find { it.equals(currentState)}!=null)
-            return false
-        val wtgNode = WTGNode.getWTGNodeByState(currentState)
-        if (wtgNode!=null)
-        {
-            val events = untriggeredTargetEvents.filter {
-                wtgNode.widgets.filter{ !it.mappedRuntimeWidgets.isEmpty() }.contains(it.widget)}
-            if (events.size > 0)
-            {
-                return true
-            }
-        }
-        return false
-    }
-
-    fun hasTargetWidget(currentNode: WTGNode): Boolean{
-        currentNode.mappedStates.forEach {
-            if (hasTargetWidget(it))
-                return true
-        }
-        return false
-    }
-    val hasOptionsMenu = ArrayList<AbstractState>()
-    fun hasOptionMenuItem(currentState: State<*>): Boolean {
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
-        if (abstractState == null)
-            return false
-        if (hasOptionsMenu.contains(abstractState))
-            return true
-        return false
-    }
+    }*/
 
     fun isOptionMenuOpen(currentState: State<*>): Boolean {
         val wtgNode = WTGNode.getWTGNodeByState(currentState)
@@ -1145,9 +1106,6 @@ class RegressionTestingMF(private val appName: String,
 
     fun validateEvent(e: StaticEvent, currentState: State<*>): List<AbstractAction> {
         if (e.eventType == EventType.implicit_rotate_event && !appRotationSupport) {
-            if (untriggeredTargetEvents.contains(e)) {
-                untriggeredTargetEvents.remove(e)
-            }
             if (allTargetStaticEvents.contains(e)) {
                 allTargetStaticEvents.remove(e)
             }
@@ -1233,14 +1191,6 @@ class RegressionTestingMF(private val appName: String,
 
     }
 
-    private fun addCommonWordToDicitonary() {
-        generalDictionary.add("love")
-        generalDictionary.add("weather")
-        generalDictionary.add("school")
-        generalDictionary.add("city")
-        generalDictionary.add("theater")
-    }
-
     //region statical analysis helper
     private fun isContextMenu(source: String): Boolean {
         if (source == "android.view.ContextMenu")
@@ -1315,7 +1265,7 @@ class RegressionTestingMF(private val appName: String,
             readModifiedMethodInvocation(jObj)
             readUnreachableModfiedMethods(jObj)
             log.debug("Reading all strings")
-            readAllStrings(jObj)
+            //readAllStrings(jObj)
             readEventCorrelation(jObj)
             readMethodDependency(jObj)
             readWindowDependency(jObj)
@@ -1437,10 +1387,11 @@ class RegressionTestingMF(private val appName: String,
         StaticAnalysisJSONFileHelper.readMenuItemText(jMap,WTGOptionsMenuNode.allNodes)
     }
 
-    private fun readAllStrings(jObj: JSONObject) {
+/*    private fun readAllStrings(jObj: JSONObject) {
         var jMap = jObj.getJSONArray("allStrings")
         StaticAnalysisJSONFileHelper.readAllStrings(jMap,generalDictionary)
-    }
+    }*/
+
     private fun readUnreachableModfiedMethods(jObj: JSONObject) {
         var jMap = jObj.getJSONArray("unreachableModifiedMethods")
         StaticAnalysisJSONFileHelper.readUnreachableModifiedMethods(jsonArray = jMap, methodList = unreachableModifiedMethods)
@@ -1482,8 +1433,6 @@ class RegressionTestingMF(private val appName: String,
                 allTargetStaticEvents = allTargetStaticEvents,
                 allTargetStaticWidgets = allTargetStaticWidgets,
                 statementCoverageMF = statementMF!!)
-        untriggeredWidgets.addAll(allTargetStaticWidgets)
-        untriggeredTargetEvents.addAll(allTargetStaticEvents)
         allTargetStaticEvents.forEach {
             val sourceWindow = it.sourceWindow
             if (!allTargetWindows.contains(sourceWindow))
@@ -1619,7 +1568,7 @@ class RegressionTestingMF(private val appName: String,
         sb.appendln("CoveredModifiedMethods;${statementMF!!.executedModifiedMethodsMap.size}")
         val executedModifiedMethodStatement = statementMF!!.executedStatementsMap.filter { statementMF!!.modMethodInstrumentationMap.contains(statementMF!!.methodStatementInstrumentationMap[it.key]) }
         sb.appendln("CoveredModifiedMethodsStatements;${statementMF!!.executedModifiedMethodStatementsMap.size}")
-        sb.appendln("ListCoveredModifiedMethods")
+        sb.appendln("ListCoveredModifiedMethods;")
         if (statementMF!!.executedModifiedMethodsMap.isNotEmpty()) {
             val sortedMethods = statementMF!!.executedModifiedMethodsMap.entries
                     .sortedBy { it.value }
@@ -1630,10 +1579,12 @@ class RegressionTestingMF(private val appName: String,
                     }
 
         }
-        sb.appendln("ListUnCoveredModifiedMethods")
+        sb.appendln("EndOfList")
+        sb.appendln("ListUnCoveredModifiedMethods;")
         statementMF!!.modMethodInstrumentationMap.filterNot {statementMF!!.executedModifiedMethodsMap.containsKey(it.key) }.forEach{
             sb.appendln("${it.key};${it.value}")
         }
+        sb.appendln("EndOfList")
         sb.appendln("Phase1StatementMethodCoverage;$stage1StatementCoverage")
         sb.appendln("Phase1MethodCoverage;$stage1MethodCoverage")
         sb.appendln("Phase1ModifiedStatementCoverage;$stage1ModifiedStatementCoverage")
@@ -1650,7 +1601,7 @@ class RegressionTestingMF(private val appName: String,
         sb.appendln("GoToAnotherNode;${GoToAnotherWindow.executedCount}")
         sb.appendln("RandomExploration;${RandomExplorationTask.executedCount}")
         var totalEvents = allTargetStaticEvents.size
-        sb.appendln("TotalTargetEvents;$totalEvents")
+        /*sb.appendln("TotalTargetEvents;$totalEvents")
         sb.appendln("TriggeredEvents;")
         val triggeredEvents = allTargetStaticEvents.filter { !untriggeredTargetEvents.contains(it) }
         triggeredEvents.forEach {
@@ -1673,7 +1624,7 @@ class RegressionTestingMF(private val appName: String,
                     {
                         sb.append("Widget null:${it.eventType}\n")
                     }
-                }
+                }*/
         sb.appendln("Unreached node;")
         WTGNode.allNodes.filterNot {
             it is WTGAppStateNode || it is WTGLauncherNode
@@ -1782,21 +1733,9 @@ class RegressionTestingMF(private val appName: String,
         return emptyMap()
     }
 
-    fun computeEventWindowCorrelation() {
-        eventWindowCorrelation.clear()
-        val eventsTerms = accumulateEventsDependency()
-        val ir = InformationRetrieval<WTGNode,String>(windowTermsHashMap)
-        eventsTerms.forEach {
-            val result = ir.searchSimilarDocuments(it.value,10)
-            val correlation = HashMap<WTGNode, Double>()
-            result.forEach {
-                correlation.put(it.first,it.second)
-            }
-            eventWindowCorrelation.put(it.key,correlation)
-        }
-    }
 
-    private fun accumulateEventsDependency(): HashMap<StaticEvent, HashMap<String, Long>> {
+
+    fun accumulateEventsDependency(): HashMap<StaticEvent, HashMap<String, Long>> {
         val result = HashMap<StaticEvent, HashMap<String,Long>>()
         allTargetStaticEvents.forEach { event ->
             val eventDependency = HashMap<String,Long>()
@@ -1843,6 +1782,7 @@ class RegressionTestingMF(private val appName: String,
         val log: Logger by lazy { LoggerFactory.getLogger(RegressionTestingMF::class.java) }
         object RegressionStrategy: PropertyGroup() {
             val use by booleanType
+            val budgetScale by doubleType
         }
 
 

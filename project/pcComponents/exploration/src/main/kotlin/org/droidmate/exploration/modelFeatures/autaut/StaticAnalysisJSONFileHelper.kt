@@ -321,7 +321,12 @@ class StaticAnalysisJSONFileHelper() {
 
         //Read intent-filter
         fun readActivityIntentFilter(jsonObj: JSONObject, activityIntentFilters: HashMap<String, ArrayList<IntentFilter>>, appPackageName: String) {
-            val activityName = appPackageName + jsonObj.getString("name")
+            val intentActivity = jsonObj.getString("name")
+            val activityName = if (intentActivity.startsWith(".")) {
+                appPackageName + intentActivity
+            } else {
+                intentActivity
+            }
             if (!activityIntentFilters.containsKey(activityName)) {
                 activityIntentFilters.put(activityName, ArrayList())
             }

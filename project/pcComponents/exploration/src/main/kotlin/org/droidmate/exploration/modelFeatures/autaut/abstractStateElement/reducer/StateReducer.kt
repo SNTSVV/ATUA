@@ -16,7 +16,7 @@ class StateReducer
             val tempFullAttrPaths = HashMap<Widget,AttributePath>()
             val tempRelativeAttrPaths = HashMap<Widget,AttributePath>()
             //TODO: Save all computed attributePath to prevent from recomputing
-            guiState.widgets.forEach {
+            Helper.getVisibleWidgets(guiState).forEach {
                 val widgetAttributePath = if (tempFullAttrPaths.containsKey(it))
                 {
                     tempFullAttrPaths[it]!!

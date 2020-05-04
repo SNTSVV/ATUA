@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.LocalReducerLV0
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.LocalReducerLV1
@@ -8,8 +9,8 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
 class AbstractionFunction (val root: DecisionNode) {
-    val abandonedAttributePaths: HashSet<AttributePath> = HashSet()
-    fun reduce(guiWidget: Widget, guiState: State<*>, activity: String,tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
+    val abandonedAttributePaths: HashSet<Pair<AttributePath, AbstractInteraction>> = HashSet()
+    fun reduce(guiWidget: Widget, guiState: State<*>,activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
     , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         var currentDecisionNode: DecisionNode?=null
         var attributePath: AttributePath
@@ -18,7 +19,7 @@ class AbstractionFunction (val root: DecisionNode) {
                 currentDecisionNode = root
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity,tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         }
         while (currentDecisionNode!!.nextNode!=null
                 && currentDecisionNode.nextNode!!.attributePaths.contains(Pair(attributePath,activity)))

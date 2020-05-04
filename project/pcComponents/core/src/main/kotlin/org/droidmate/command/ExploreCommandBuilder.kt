@@ -93,7 +93,10 @@ open class ExploreCommandBuilder(
 
         conditionalEnable(cfg[ConfigProperties.Strategies.explore], cfg) { addRandomStrategy() }
 
-        conditionalEnable(cfg[RegressionTestingMF.Companion.RegressionStrategy.use]) { addRegressionTestingStrategy()}
+        conditionalEnable(cfg[RegressionTestingMF.Companion.RegressionStrategy.use]
+                && !cfg[RegressionTestingMF.Companion.RegressionStrategy.budgetScale].isNaN()) {
+            addRegressionTestingStrategy(cfg[RegressionTestingMF.Companion.RegressionStrategy.budgetScale])
+        }
 
 
         conditionalEnable(
@@ -191,8 +194,8 @@ open class ExploreCommandBuilder(
         return this
     }
 
-    fun addRegressionTestingStrategy(): ExploreCommandBuilder{
-        strategies.add(RegressionTestingStrategy(getNextSelectorPriority()))
+    fun addRegressionTestingStrategy(budgetScale: Double): ExploreCommandBuilder{
+        strategies.add(RegressionTestingStrategy(getNextSelectorPriority(),budgetScale))
 
         return this
     }

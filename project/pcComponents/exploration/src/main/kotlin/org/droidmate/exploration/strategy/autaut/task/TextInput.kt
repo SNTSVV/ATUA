@@ -7,13 +7,14 @@ import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.random.Random
 import kotlin.streams.asSequence
 
 class TextInput () {
     companion object{
         var inputConfiguration: InputConfiguration? = null
-        var generalDictionary: ArrayList<String>? = null
+        var generalDictionary: HashSet<String> = HashSet()
         val historyTextInput: ArrayList<String> = ArrayList()
         val specificTextInput: HashMap<UUID, ArrayList<String>> = HashMap()
 
@@ -64,11 +65,11 @@ class TextInput () {
                     return specificTextInput[widget.uid]!!.random()
                 return historyTextInput.random()
             }
-            if (generalDictionary !=null && generalDictionary!!.isNotEmpty())
+            if ( generalDictionary.isNotEmpty())
             {
-                return generalDictionary!![random.nextInt(generalDictionary!!.size)]
+                return generalDictionary.random()
             }
-            @Suppress("SpellCheckingInspection") val source = "abcdefghijklmnopqrstuvwxyz"
+            @Suppress("SpellCheckingInspection") val source = "abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
             return random.ints( random.nextInt(20).toLong()+3, 0, source.length)
                     .asSequence()
                     .map(source::get)
@@ -80,8 +81,11 @@ class TextInput () {
         }
 
         fun saveSpecificTextInputData(guiState: State<*>) {
-            guiState.visibleTargets.filter { it.isInputField }.forEach {
-                if (!it.text.isBlank()) {
+            guiState.widgets.forEach {
+                if (it.text.isNotBlank()) {
+                    generalDictionary.add(it.text)
+                }
+                if (it.isInputField && !it.text.isBlank()) {
                     if (!specificTextInput.containsKey(it.uid)) {
                         specificTextInput.put(it.uid, ArrayList())
                     }

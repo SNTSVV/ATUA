@@ -39,7 +39,7 @@ class AbstractStateManager () {
 
     }
 
-    fun getOrCreateNewTestState(guiState: State<*>, i_activity: String, appPackageName: String, isFromLaunch: Boolean , rotation: Rotation, refineEnabled: Boolean = true): AbstractState{
+    fun getOrCreateNewTestState(guiState: State<*>, i_activity: String, appPackageName: String, isFromLaunch: Boolean , rotation: Rotation): AbstractState{
         var activity = i_activity
         if (guiState.isHomeScreen)
         {
@@ -54,6 +54,9 @@ class AbstractStateManager () {
             else
             {
                 homeState = AbstractState(activity=i_activity,isHomeScreen = true, window = WTGLauncherNode.instance!!,isFromLaunch = isFromLaunch, rotation = Rotation.PORTRAIT)
+                if (WTGLauncherNode.instance!!.activityClass.isBlank()) {
+                    WTGLauncherNode.instance!!.activityClass = activity
+                }
                 homeState!!.guiStates.add(guiState)
                 ABSTRACT_STATES.add(homeState)
             }
@@ -61,7 +64,7 @@ class AbstractStateManager () {
         }
         else if(activity.isBlank() || !guiState.widgets.any { it.packageName == appPackageName
                         || it.packageName == "com.android.camera2"
-                } || guiState.isRequestRuntimePermissionDialogBox)
+                } || guiState.isRequestRuntimePermissionDialogBox || !WTGNode.allMeaningNodes.any { it.classType == activity })
         {
             var outOfAppState = ABSTRACT_STATES.find { it.isOutOfApplication && it.activity == activity}
             if (outOfAppState != null)
@@ -74,6 +77,9 @@ class AbstractStateManager () {
             else
             {
                 outOfAppState = AbstractState(activity=activity,isOutOfApplication = true, window = WTGOutScopeNode.getOrCreateNode(),isFromLaunch = isFromLaunch,rotation = rotation)
+                if (outOfAppState!!.window.activityClass.isBlank()) {
+                    outOfAppState!!.window.activityClass = activity
+                }
                 outOfAppState.guiStates.add(guiState)
                 ABSTRACT_STATES.add(outOfAppState)
             }
@@ -97,7 +103,7 @@ class AbstractStateManager () {
             }
             return stopState
         }
-
+        log.info("Activity: $activity")
         val isRequestRuntimeDialogBox = guiState.isRequestRuntimePermissionDialogBox
         val isOpeningKeyboard = guiState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
 /*        if (isOpeningKeyboard)
@@ -137,10 +143,13 @@ class AbstractStateManager () {
             {
                 activity = staticMapping.first.classType
             }
+            if (staticMapping.first.activityClass.isBlank()) {
+                staticMapping.first.activityClass = activity
+            }
             val ambigousWidgetGroup = staticMapping.second.filter { it.value.size > 1
                     //In certain cases, static analysis distinguishes same resourceId widgets based on unknown criteria.
                     && !havingSameResourceId(it.value)}
-            if (ambigousWidgetGroup.isEmpty() || !refineEnabled)
+            if (ambigousWidgetGroup.isEmpty())
             {
                 //create new TestState
                 val abstractState = AbstractState(activity=activity,widgets = ArrayList(guiReducedWidgetGroup),
@@ -181,6 +190,34 @@ class AbstractStateManager () {
         }while (true)
     }
 
+    fun refineAbstractState(guiState: State<*>, window: WTGNode, appPackageName: String, isFromLaunch: Boolean, rotation: Rotation): AbstractState {
+        val activity = window.activityClass
+        val isRequestRuntimeDialogBox = guiState.isRequestRuntimePermissionDialogBox
+        val isOpeningKeyboard = guiState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
+        val widget_WidgetGroupHashMap = StateReducer.reduce(guiState,activity)
+        val guiReducedWidgetGroup = widget_WidgetGroupHashMap.map { it.value }.distinct()
+        val matchingTestState = ABSTRACT_STATES.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
+                && it.activity == activity && regressionTestingMF.currentRotation == it.rotation}
+        if (matchingTestState!=null) {
+            if (!matchingTestState.guiStates.contains(guiState))
+            {
+                matchingTestState.guiStates.add(guiState)
+            }
+            return matchingTestState
+        }
+        //create new TestState
+        val staticMapping = getMatchingStaticWidgets(widget_WidgetGroupHashMap, guiState, window)
+        val abstractState = AbstractState(activity=activity,widgets = ArrayList(guiReducedWidgetGroup),
+                isRequestRuntimePermissionDialogBox = isRequestRuntimeDialogBox,
+                isOpeningKeyboard = isOpeningKeyboard,
+                staticWidgetMapping = staticMapping.second,
+                window = staticMapping.first,isFromLaunch = isFromLaunch,
+                rotation = regressionTestingMF.currentRotation)
+        ABSTRACT_STATES.add(abstractState)
+        abstractState.guiStates.add(guiState)
+        initAbstractInteractions(abstractState,null)
+        return abstractState
+    }
     private fun havingSameResourceId(staticWidgetList: ArrayList<StaticWidget>): Boolean {
         if (staticWidgetList.isEmpty())
             return false
@@ -403,9 +440,15 @@ class AbstractStateManager () {
         return Pair(first = bestMatchedNode,second =  widgetGroup_staticWidgetHashMap)
     }
 
-    fun refineModel(guiInteraction: Interaction<*>, actionGUIState: State<*>){
+    fun getMatchingStaticWidgets(widget_WidgetGroupHashMap: HashMap<Widget,WidgetGroup> , guiState: State<*>, window: WTGNode):Pair<WTGNode, HashMap<WidgetGroup, ArrayList<StaticWidget>>>
+    {
+        val widgetGroup_staticWidgetHashMap = getStaticWidgets(widget_WidgetGroupHashMap,guiState, window)
+        return Pair(first = window,second =  widgetGroup_staticWidgetHashMap)
+    }
+    fun refineModel(guiInteraction: Interaction<*>, actionGUIState: State<*>, abstractInteraction: AbstractInteraction){
         val abstractionFunction = AbstractionFunction.INSTANCE
         val actionWidget = guiInteraction.targetWidget
+
         AbstractionFunction.backup()
 
 
@@ -416,13 +459,13 @@ class AbstractStateManager () {
                 val tempFullAttributePaths= HashMap<Widget,AttributePath>()
                 val tempRelativeAttributePaths= HashMap<Widget,AttributePath>()
                 val attributePath = abstractionFunction.reduce(actionWidget, actionGUIState,actionAbstractState.activity,tempFullAttributePaths,tempRelativeAttributePaths)
-                if (AbstractionFunction.INSTANCE.abandonedAttributePaths.contains(attributePath))
+                if (AbstractionFunction.INSTANCE.abandonedAttributePaths.contains(Pair(attributePath,abstractInteraction)))
                     break
                 if (!abstractionFunction.increaseReduceLevel(attributePath,actionAbstractState.activity,false)) {
-                    if(!refineAbstractState(actionAbstractState))
+                    if(!refineAbstractionFunction(actionAbstractState))
                     {
                         AbstractionFunction.restore()
-                        AbstractionFunction.INSTANCE.abandonedAttributePaths.add(attributePath)
+                        AbstractionFunction.INSTANCE.abandonedAttributePaths.add(Pair(attributePath,abstractInteraction))
                         break
                     }
                     else
@@ -438,7 +481,7 @@ class AbstractStateManager () {
             }
             else
             {
-                if (!refineAbstractState(actionAbstractState))
+                if (!refineAbstractionFunction(actionAbstractState))
                 {
                     AbstractionFunction.restore()
                     break
@@ -453,7 +496,7 @@ class AbstractStateManager () {
 
     }
 
-    private fun refineAbstractState(actionAbstractState: AbstractState): Boolean {
+    private fun refineAbstractionFunction(actionAbstractState: AbstractState): Boolean {
         var abstractStateRefined: Boolean = false
         val abstractionFunction = AbstractionFunction.INSTANCE
         actionAbstractState.widgets.forEach {
@@ -491,7 +534,7 @@ class AbstractStateManager () {
                 allGUIStates.addAll(oldAbstractState.guiStates)
                 val newAbstractStates = ArrayList<AbstractState>()
                 oldAbstractState.guiStates.forEach {
-                    val abstractState =  getOrCreateNewTestState(it, oldAbstractState.activity, appName, oldAbstractState.isFromLaunch, oldAbstractState.rotation)
+                    val abstractState =  refineAbstractState(it, oldAbstractState.window, appName, oldAbstractState.isFromLaunch, oldAbstractState.rotation)
                     if (!newAbstractStates.contains(abstractState)) {
                         newAbstractStates.add(abstractState)
                         regressionTestingMF.abstractStateVisitCount[abstractState] = 1

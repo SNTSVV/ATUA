@@ -17,6 +17,7 @@ import org.droidmate.explorationModel.interaction.State
 
 abstract class AbstractPhaseStrategy(
         val regressionTestingStrategy: RegressionTestingStrategy,
+        val budgetScale: Double,
         val delay: Long,
         val useCoordinateClicks: Boolean
 ) {
@@ -34,8 +35,8 @@ abstract class AbstractPhaseStrategy(
         if (currentAbstractState==null)
             return transitionPaths
         val targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow }.toHashSet()
-        while (targetStates.isNotEmpty()) {
-            val targetState = targetStates.first()
+        while (targetStates.isNotEmpty() && transitionPaths.isEmpty()) {
+            val targetState = targetStates.random()
             targetStates.remove(targetState)
             val existingPaths: List<TransitionPath>?
             existingPaths = regressionTestingMF.allAvailableTransitionPaths[Pair(currentAbstractState,targetState)]
@@ -99,79 +100,49 @@ abstract class AbstractPhaseStrategy(
             val prevWindow = traversing.first
             if (includeBackEvent)
             {
-                //if backNodes is empty -> no avaible information, so try get back state from ancestors
                 val backNodes = ArrayList<AbstractState>()
-                if (backNodes.isEmpty())
-                {
-                    val backCandidates = graph.edges().filter {
-                        it.destination!=null
-                                && it.destination!!.data == source
-                                && it.source.data.window != it.destination!!.data.window
-                                && !it.label.abstractAction.actionName.isPressBack()
+                val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+                val backCandiates = graph.edges(source).filter {
+                    it.label.abstractAction.actionName.isPressBack()
+                            && it.destination!=null
+                            && backToLauncherOrNot(it,level)
+                            && it.destination!!.data.window !is WTGOutScopeNode
+                            && it.label.prevWindow != null
+                            && isTheSamePrevWindow(prevWindow, it)
+                }.groupBy { it.label.isImplicit }
+
+                if (backCandiates.containsKey(true)) {
+                    backCandiates[true]!!.forEach {
+                        if (!childParentMap.containsKey(it.destination!!.data)) {
+                            processingBackEdges.add(it)
+                        }
                     }
-                    backCandidates.forEach {
-                        val ancestor = it.source.data
-                        if (!backNodes.contains(ancestor))
-                        {
-                            backNodes.add(ancestor)
+                } else if (backCandiates.containsKey(false)){
+                    backCandiates[false]!!.forEach {
+                        if (!childParentMap.containsKey(it.destination!!.data)) {
+                            processingBackEdges.add(it)
                         }
                     }
                 }
 
-                if (backNodes.isEmpty())
-                {
-
-                    val backCandiates = graph.edges(source).filter {
-                        it.label.abstractAction.actionName.isPressBack()
-                                && it.destination!=null
-                                && it.destination!!.data.window !is WTGLauncherNode
-                                && it.destination!!.data.window !is WTGOutScopeNode
-                                && it.label.prevWindow != null
-                                && isTheSamePrevWindow(prevWindow, it)
-                    }
-                    backCandiates.forEach {
-                        val ancestor = it.destination!!.data
-                        if (!backNodes.contains(ancestor))
-                        {
-                            backNodes.add(ancestor)
+                processingBackEdges.forEach { edge ->
+                    val backEvent = edge.label
+                    val backState = edge.destination!!.data
+                    childParentMap.put(backState,Pair(source,backEvent))
+                    if (backState == finalTarget) {
+                        val fullPath = createTransitionPath(backState, root,childParentMap)
+                        allPaths.add(fullPath)
+                        regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
+                        return
+                    } else {
+                        if(source.window != backState.window) {
+                            nextLevelNodes.add(Pair(first = source.window, second = backState))
+                        } else {
+                            // keep current prevWindow
+                            nextLevelNodes.add(Pair(first = prevWindow, second = backState ))
                         }
                     }
                 }
-
-                backNodes.forEach { ancestor ->
-                    //Avoid loop
-                    if (!childParentMap.containsKey(ancestor)) {
-                        var backEdge = graph.edges(source)
-                                .find { it.label.abstractAction.actionName.isPressBack()
-                                        && it.destination?.data?.window==ancestor.window
-                                        && it.label.prevWindow != null
-                                        && isTheSamePrevWindow(prevWindow, it)}
-                        if (backEdge!=null)
-                        {
-                            val backEvent = backEdge.label
-                            childParentMap.put(ancestor,Pair(source,backEvent))
-                            if (ancestor == finalTarget) {
-                                val fullPath = createTransitionPath(ancestor, root,childParentMap)
-                                allPaths.add(fullPath)
-                                regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
-                                return
-                            } else {
-                                if(source.window != ancestor.window) {
-                                    nextLevelNodes.add(Pair(first = source.window, second = ancestor))
-                                } else {
-                                    // keep current prevWindow
-                                    nextLevelNodes.add(Pair(first = prevWindow, second = ancestor ))
-                                }
-                            }
-                        }
-//                        if (backEvent == null) {
-//                            backEvent = StaticEvent(EventType.implicit_back_event, ArrayList<String>(),
-//                                    null, source)
-//                            transitionGraph.add(source, ancestor, backEvent)
-//                        }
-                    }
-                }
-
             }
             val possibleTransitions = graph.edges(source).filter{
                 it.destination!=null
@@ -185,7 +156,7 @@ abstract class AbstractPhaseStrategy(
             val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
             possibleTransitions.filter {
                 !it.label.abstractAction.actionName.isPressBack()
-                        && includingRotateUIOrNot(it)
+                        && includingRotateUIOrNot(it) && isTheSamePrevWindow(prevWindow,it)
             }.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
                 val reliableTransition =  u.filter { !it.label.isImplicit || it.label.prevWindow == null }
                 val implicitTransitions = u.filter { it.label.isImplicit }
@@ -231,6 +202,9 @@ abstract class AbstractPhaseStrategy(
         findPathToTargetComponentByBFS(currentState, root, nextLevelNodes, finalTarget, allPaths, includeBackEvent, childParentMap, level+1)
     }
 
+    private fun backToLauncherOrNot(it: Edge<AbstractState, AbstractInteraction>, depth: Int) =
+            it.destination!!.data.window !is WTGLauncherNode || depth == 0
+
     private fun includingRotateUIOrNot(it: Edge<AbstractState, AbstractInteraction>): Boolean {
         if (regressionTestingMF.appRotationSupport)
             return true
@@ -260,5 +234,7 @@ abstract class AbstractPhaseStrategy(
         }
         return fullPath
     }
+
+    abstract fun registerTriggeredEvents(chosenAbstractAction: AbstractAction, currentState: State<*>)
 
 }

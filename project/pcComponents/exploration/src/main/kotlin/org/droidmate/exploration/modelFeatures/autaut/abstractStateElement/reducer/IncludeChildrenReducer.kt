@@ -11,14 +11,14 @@ open class IncludeChildrenReducer(
 )
     : BaseReducer(localReducer = localReducer)
 {
-    override fun reduce(guiWidget: Widget, guiState: State<*>, activity: String,tempWidgetReduceMap: HashMap<Widget,AttributePath>, tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath {
-        val localAttributes = localReducer.reduce(guiWidget,guiState, activity)
-        val parentAttributePath = parentReduce(guiWidget, guiState, activity,tempWidgetReduceMap,tempChildWidgetAttributePaths)
+    override fun reduce(guiWidget: Widget, guiState: State<*>,activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath>, tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath {
+        val localAttributes = localReducer.reduce(guiWidget,guiState)
+        val parentAttributePath = parentReduce(guiWidget, guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
 
         val childAttributePaths = HashSet<AttributePath>()
         guiWidget.childHashes.forEach { childHash ->
             val childWidget = guiState.widgets.first { it.idHash == childHash }
-            val childAttributePath = childReduce(childWidget, guiState, activity,tempChildWidgetAttributePaths)
+            val childAttributePath = childReduce(childWidget, guiState,tempChildWidgetAttributePaths)
             childAttributePaths.add(childAttributePath)
         }
         val attributePath = AttributePath(
@@ -30,8 +30,8 @@ open class IncludeChildrenReducer(
         return attributePath
     }
 
-    fun childReduce(childWidget: Widget, guiState: State<*>, activity: String, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath {
-        val localAttributes =  childrenReducer.reduce(childWidget, guiState,activity)
+    fun childReduce(childWidget: Widget, guiState: State<*>, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath {
+        val localAttributes =  childrenReducer.reduce(childWidget, guiState)
         val parentAttributePath: AttributePath? = null
         val childAttributePaths = HashSet<AttributePath>()
         childWidget.childHashes.forEach {childHash ->
@@ -43,7 +43,7 @@ open class IncludeChildrenReducer(
             }
             else
             {
-                val childAttributePath = childReduce(childWidget, guiState,activity,tempChildWidgetAttributePaths)
+                val childAttributePath = childReduce(childWidget, guiState,tempChildWidgetAttributePaths)
                 childAttributePaths.add(childAttributePath)
                 tempChildWidgetAttributePaths.put(childWidget,childAttributePath)
             }

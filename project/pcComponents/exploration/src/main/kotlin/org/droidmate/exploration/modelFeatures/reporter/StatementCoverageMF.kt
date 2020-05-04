@@ -344,12 +344,13 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     }
 
     fun isModifiedMethodStatement(statementId: String): Boolean {
-        val methodId = methodStatementInstrumentationMap[statementId]!!
+        val methodId = methodStatementInstrumentationMap[statementId]
+        if (methodId == null)
+            return false
         if (isModifiedMethod(methodId))
             return true
         return false
     }
-
     fun getMethodName(methodId: String): String{
         return methodInstrumentationMap[methodId]?:""
     }

@@ -53,6 +53,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
                                                       val apk: IApk,
                                                       readDeviceStatements: suspend ()-> List<List<String>>,
 														  getCurrentActivity: suspend ()-> String,
+														  getDeviceRotation: suspend () -> Int,
                                                       val explorationStartTime: LocalDateTime = LocalDateTime.MIN,
                                                       var explorationEndTime: LocalDateTime = LocalDateTime.MIN,
                                                       private val watcher: MutableList<ModelFeatureI> = mutableListOf(),
@@ -97,7 +98,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 			val resourceDir = Paths.get(cfg[ConfigProperties.Exploration.apksDir].path).toAbsolutePath()
 			addWatcher(StatementCoverageMF(coverageDir, readDeviceStatements, model.config.appName, resourceDir))
 			if (model.config[RegressionTestingMF.Companion.RegressionStrategy.use])
-				addWatcher(RegressionTestingMF(model.config.appName, resourceDir,getCurrentActivity))
+				addWatcher(RegressionTestingMF(model.config.appName, resourceDir,getCurrentActivity,getDeviceRotation))
 		}
 	}
 

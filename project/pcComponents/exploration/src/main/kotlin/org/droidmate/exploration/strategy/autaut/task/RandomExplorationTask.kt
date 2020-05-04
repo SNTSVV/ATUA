@@ -101,7 +101,7 @@ class RandomExplorationTask constructor(
                     return unexercisedWidgets.filter {
                         !it.value.resourceIdName.contains("cancel") }.map { it.key }
                 }*/
-                return unexercisedWidgets.map { it.key }
+                return unexercisedWidgets.map { it.key }.filter { !it.checked.isEnabled() }
             }
         }
         val visibleWidgets: List<Widget>
@@ -153,15 +153,7 @@ class RandomExplorationTask constructor(
             // Need return to portrait
             return chooseActionWithName("RotateUI","",null,currentState)!!
         }
-        if (dataFilled && !fillDataTask.isTaskEnd(currentState))
-            return fillDataTask.chooseAction(currentState)
 
-        if (!dataFilled && fillData && fillDataTask.isAvailable(currentState))
-        {
-            fillDataTask.initialize(currentState)
-            dataFilled = true
-            return fillDataTask.chooseAction(currentState)
-        }
 
         if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
                 && currentState.visibleTargets.filter { it.packageName==regressionTestingStrategy.eContext.apk.packageName}.isEmpty()) {
@@ -208,7 +200,7 @@ class RandomExplorationTask constructor(
             }
             else
             {
-                if (regressionTestingMF.hasOptionMenuItem(currentState))
+                if (currentAbstractState.hasOptionsMenu)
                     return chooseActionWithName("PressMenu", null,null,currentState)!!
             }
         }
@@ -239,6 +231,16 @@ class RandomExplorationTask constructor(
         if (currentAbstractState != null)
         {
             prevAbState = currentAbstractState
+        }
+
+        if (dataFilled && !fillDataTask.isTaskEnd(currentState))
+            return fillDataTask.chooseAction(currentState)
+
+        if (!dataFilled && fillData && fillDataTask.isAvailable(currentState))
+        {
+            fillDataTask.initialize(currentState)
+            dataFilled = true
+            return fillDataTask.chooseAction(currentState)
         }
 
         val chosenWidgets = ArrayList<Widget>()
@@ -292,27 +294,18 @@ class RandomExplorationTask constructor(
             }
         }
 
-        var actionList: List<ExplorationAction>
+        var actionList = ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks))
+        val pb = random.nextInt(100)/100.toDouble()
         if (!chosenWidget.clickable && chosenWidget.scrollable)
         {
-            actionList = chosenWidget.availableActions(delay, useCoordinateClicks).filter { it is Swipe }
+            actionList.removeIf { it !is Swipe }
         }
         else
         {
-            if (random.nextInt(100)<50 && chosenWidget.longClickable)
-            {
-                actionList = chosenWidget.availableActions(delay,useCoordinateClicks).filterNot {it is Swipe}.filter {
-                    it is LongClick || it is LongClickEvent
-                }
+            if (pb < 0.5) {
+                // Remove LongClick and Scroll
+                actionList.removeIf { it is Swipe || it is LongClick || it is LongClickEvent }
             }
-            else
-            {
-                actionList = chosenWidget.availableActions(delay,useCoordinateClicks).filterNot {it is Swipe}.filter {
-                    it is Click || it is ClickEvent
-                }
-            }
-
-
         }
         if (actionList.isNotEmpty())
         {
@@ -384,6 +377,10 @@ class RandomExplorationTask constructor(
         return chooseWidgets(currentState).random().availableActions(delay, useCoordinateClicks).random()
     }
 
+    fun getSwipeActions(widget: Widget): List<ExplorationAction> {
+      return widget.availableActions(delay, useCoordinateClicks).filter { it is Swipe }
+
+    }
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0

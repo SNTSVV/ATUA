@@ -60,11 +60,11 @@ fun UiDevice.getNonSystemRootNodes():List<AccessibilityNodeInfo> = getWindowRoot
 fun UiDevice.getWindowRootNodes(): Array<out AccessibilityNodeInfo> = getWindowRoots()
 
 fun UiDevice.longClick(x: Int, y: Int, timeout: Long)=
-	interactionController.longTapAndSync(x,y,timeout)
-//	interactionController.longTapNoSync(x,y)
+//	interactionController.longTapAndSync(x,y,timeout)
+	interactionController.longTapNoSync(x,y)
 
 fun UiDevice.click(x: Int, y: Int, timeout: Long)=
-	interactionController.clickAndSync(x,y,timeout)
-//	interactionController.clickNoSync(x,y)
+//	interactionController.clickAndSync(x,y,timeout)
+	interactionController.clickNoSync(x,y)
 
 

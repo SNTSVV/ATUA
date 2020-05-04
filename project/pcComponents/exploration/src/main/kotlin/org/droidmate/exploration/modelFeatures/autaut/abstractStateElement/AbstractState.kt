@@ -37,6 +37,10 @@ open class AbstractState (
                         it.attributePath.equals(reducedAttributePath)
                 }
         }
+
+    override fun toString(): String {
+        return "AbstractState[${this.hashCode()}]-${window}-Rotation:$rotation"
+    }
 }
 
 class VirtualAbstractState(activity: String,

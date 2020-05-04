@@ -50,6 +50,16 @@ import java.time.LocalDateTime
 
 // TODO Very confusing method chain. Simplify
 class RobustDevice : IRobustDevice {
+	override suspend fun getDeviceRotation(): Int {
+		return Utils.retryOnException(
+				{ this.device.getDeviceRotation() },
+				{},
+				deviceOperationAttempts,
+				deviceOperationDelay,
+				"device.getDeviceRotation()"
+		)
+	}
+
 	override suspend fun executeAdbCommandWithReturn(command: String, successfulOutput: String, commandDescription: String): String {
 		var result: String = ""
 		Utils.retryOnException(

@@ -207,10 +207,10 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         val screenWidth = outBoundLayout!!.visibleBounds.width
         if (random.nextBoolean()) {
             //Swipe up
-            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2))
+            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2),screenHeight/2)
         } else {
             //Swipe right
-            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2))
+            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2),screenWidth/2)
         }
     }
 

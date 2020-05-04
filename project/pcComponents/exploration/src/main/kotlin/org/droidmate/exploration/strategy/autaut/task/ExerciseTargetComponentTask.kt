@@ -88,6 +88,7 @@ class ExerciseTargetComponentTask private constructor(
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
+        log.info("Checking if current state contains target Events")
         eventList.clear()
         eventList.addAll(regressionTestingStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         if (eventList.isNotEmpty()){
@@ -240,7 +241,7 @@ class ExerciseTargetComponentTask private constructor(
             else
             {
                 regressionTestingMF.lastExecutedAction = chosenAbstractAction
-                regressionTestingMF.registerTriggeredEvents(chosenAbstractAction!!,currentState)
+                regressionTestingStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
                 regressionTestingMF.isAlreadyRegisteringEvent = true
                 return chosenAction
             }

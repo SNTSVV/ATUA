@@ -261,6 +261,7 @@ open class ExploreCommand<M,S,W>(
 			cfg,
 			app, { device.readStatements() },
 				{device.getCurrentActivity()},
+				{device.getDeviceRotation()},
 			LocalDateTime.now(),
 			watcher = watcher,
 			model = modelProvider.get()

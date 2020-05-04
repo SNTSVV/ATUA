@@ -5,6 +5,7 @@ import org.droidmate.explorationModel.interaction.State
 open class WTGNode(val classType: String,
                    val nodeId: String)
 {
+    var activityClass = ""
     val widgets = arrayListOf<StaticWidget>()
     val widgetState = HashMap<StaticWidget, Boolean>()
     val mappedStates = arrayListOf<State<*>>()

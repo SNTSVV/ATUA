@@ -18,6 +18,7 @@ import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 
 open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
+                                                               val budgetScale: Double,
                                                                dictionary: List<String> = emptyList(),
                                                                useCoordinateClicks: Boolean = true
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
@@ -65,14 +66,19 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         if (phaseStrategy.isEnd()) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
-                phaseStrategy = PhaseTwoStrategy(this, delay, useCoordinateClicks,unreachableWindow)
-                regressionWatcher.updateStage1Info(eContext)
+                if (regressionWatcher.allTargetWindows.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
+                    phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
+                    regressionWatcher.updateStage1Info(eContext)
+                } else {
+                    phaseStrategy = PhaseOneStrategy(this,budgetScale, delay, useCoordinateClicks)
+                }
             } else if (phaseStrategy is PhaseTwoStrategy) {
-                phaseStrategy = PhaseThreeStrategy(this, delay, useCoordinateClicks)
+                phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
             }
         }
-        log.debug("Current activity: ${regressionWatcher.getStateActivity(eContext.getCurrentState())}")
+        log.info("Current abstract state: ${currentAbstractState.toString()}")
+        log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.size}")
         val availableWidgets = eContext.getCurrentState().widgets
         chosenAction = phaseStrategy.nextAction(eContext)
         prevNode = regressionWatcher.getAbstractState(eContext.getCurrentState())
@@ -87,7 +93,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
         super.initialize(initialContext)
         eContext = initialContext
-        phaseStrategy = PhaseOneStrategy(this,delay, useCoordinateClicks)
+        phaseStrategy = PhaseOneStrategy(this,budgetScale,delay, useCoordinateClicks)
     }
 
 
