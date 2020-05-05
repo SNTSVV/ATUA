@@ -65,11 +65,11 @@ class TextInput () {
                     return specificTextInput[widget.uid]!!.random()
                 return historyTextInput.random()
             }
-            if ( generalDictionary.isNotEmpty())
+            if (random.nextBoolean() && generalDictionary.isNotEmpty())
             {
                 return generalDictionary.random()
             }
-            @Suppress("SpellCheckingInspection") val source = "abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
+            @Suppress("SpellCheckingInspection") val source = "1234567890abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
             return random.ints( random.nextInt(20).toLong()+3, 0, source.length)
                     .asSequence()
                     .map(source::get)

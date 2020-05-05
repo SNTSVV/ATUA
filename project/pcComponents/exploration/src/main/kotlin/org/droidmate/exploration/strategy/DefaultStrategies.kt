@@ -10,6 +10,7 @@ import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
+import kotlin.collections.HashMap
 
 @Suppress("unused")
 object DefaultStrategies: Logging {
@@ -67,7 +68,11 @@ object DefaultStrategies: Logging {
 					//delay(maxWaitTime)
 					GlobalAction(ActionType.FetchGUI) // try to refetch after waiting for some time
 				}
-				else -> explorationContext.resetApp()
+				else -> /*explorationContext.resetApp()*/ {
+					val widgets = explorationContext.getCurrentState().widgets
+					widgets.find { it.resourceId == "android:id/aerr_close" }?.click()
+							?:widgets.filter { it.canInteractWith }.random().click()
+				}
 			}
 		}
 	}
@@ -237,6 +242,36 @@ object DefaultStrategies: Logging {
 			}
 
 			return allowButton.click(ignoreClickable = true)
+		}
+	}
+
+	/**
+	 * Random click on an system dialog to unblock the state. This strategy need to be put after allowPermission
+	 */
+	fun allowUncompatibleVersion(prio: Int) = object : AExplorationStrategy(){
+		private var clickedButton = HashMap<UUID, Boolean>()
+		override fun getPriority(): Int = prio
+
+		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean =
+				eContext.getCurrentState().widgets.any { it.packageName=="android" }
+						&& getClickableButton(eContext.getCurrentState().actionableWidgets)
+						&& clickedButton.any{it.value == false}
+
+		private fun getClickableButton(actionableWidgets: List<Widget>): Boolean {
+			actionableWidgets.filter { it.clickable }.forEach { it ->
+				if (!clickedButton.containsKey(it.uid)) {
+					clickedButton.put(it.uid,false)
+				}
+			}
+			if (clickedButton.isEmpty())
+				return false
+			return true
+		}
+
+		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
+			val actionWidget = eContext.getCurrentState().actionableWidgets.filter { clickedButton.containsKey(it.uid) }.random()
+			clickedButton[actionWidget.uid] = true
+			return actionWidget.click()
 		}
 	}
 

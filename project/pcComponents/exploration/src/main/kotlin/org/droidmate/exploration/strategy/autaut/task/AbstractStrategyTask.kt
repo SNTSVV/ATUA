@@ -19,6 +19,8 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.collections.HashMap
+import kotlin.math.abs
 import kotlin.random.Random
 
 abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTestingStrategy,
@@ -219,18 +221,18 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
             return chooseActionForTextInput(chosenWidget, currentState)
         }
         if (action == "Swipe" && data is String) {
-            if (data == "SwipeUp") {
-                return chosenWidget.swipeUp()
-            }
-            if (data == "SwipeDown") {
-                return chosenWidget.swipeDown()
-            }
-            if (data == "SwipeLeft")
-                return chosenWidget.swipeLeft()
-            if (data == "SwipeRight")
-                return chosenWidget.swipeRight()
-            if (data == "") {
-                return arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
+            return when (data) {
+                "SwipeUp" -> chosenWidget.swipeUp()
+                "SwipeDown" -> chosenWidget.swipeDown()
+                "SwipeLeft" -> chosenWidget.swipeLeft()
+                "SwipeRight" -> chosenWidget.swipeRight()
+                else -> {
+                    if (data.isNotBlank()) {
+                        val swipeInfo: List<Pair<Int,Int>> = parseSwipeData(data)
+                        Swipe(swipeInfo[0],swipeInfo[1],computeStep(swipeInfo))
+                    }
+                    arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
+                }
             }
         }
         val actionList = chosenWidget.availableActions(delay, useCoordinateClicks)
@@ -252,6 +254,22 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
             else -> regressionTestingStrategy.eContext.navigateTo(chosenWidget, { chosenWidget.click() })
         }
         return hardAction
+    }
+
+    private fun computeStep(swipeInfo: List<Pair<Int, Int>>): Int {
+        val dx = abs(swipeInfo[0].first-swipeInfo[1].first)
+        val dy = abs(swipeInfo[0].second-swipeInfo[1].second)
+        return (dx+dy)/2
+    }
+
+    private fun parseSwipeData(data: String): List<Pair<Int, Int>> {
+        val splitData = data.split(" TO ")
+        if (splitData.size != 2) {
+            return emptyList()
+        }
+        val first = splitData[0].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
+        val second = splitData[1].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
+        return arrayListOf(first,second)
     }
 
     private fun chooseActionForTextInput(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
@@ -315,9 +333,32 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
     }
 
     private fun callIntent(data: Any?): CallIntent {
-        val intentFilter = data as IntentFilter
-        return regressionTestingStrategy.eContext.callIntent(intentFilter.getActions().random(),
-                intentFilter.getCategories().random(), intentFilter.getDatas().random().testData.random(), intentFilter.activity)
+        if (data is IntentFilter) {
+            val intentFilter = data as IntentFilter
+            return regressionTestingStrategy.eContext.callIntent(intentFilter.getActions().random(),
+                    intentFilter.getCategories().random(), intentFilter.getDatas().random().testData.random(), intentFilter.activity)
+
+        } else {
+            val intentData: HashMap<String,String> = parseIntentData(data as String)
+            return regressionTestingStrategy.eContext.callIntent(
+                    action = intentData["action"]?:"",
+                    category = intentData["category"]?:"",
+                    activity = intentData["activity"]?:"",
+                    uriString = intentData["uriString"]?:""
+            )
+        }
+    }
+
+    private fun parseIntentData(s: String): HashMap<String, String> {
+        val data = HashMap<String,String>()
+        val splits = s.split(';')
+        splits.forEach {
+            val parts = it.split(" = ")
+            val key = parts[0]
+            val value = parts[1]
+            data.put(key,value)
+        }
+        return data
     }
 
     private fun hasTextInput(currentState: State<*>): Boolean {

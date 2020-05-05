@@ -259,7 +259,7 @@ data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveT
 		while (count++ < 50 && windows
 				.none { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.root != null }) {
 			// wait until app/home window is available
-			delay(10)
+			delay(50)
 			windows = automation.getWindows()
 		}
 		// keyboards are always in the front

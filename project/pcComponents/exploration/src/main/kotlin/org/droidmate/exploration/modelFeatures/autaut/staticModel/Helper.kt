@@ -111,11 +111,16 @@ class Helper {
             val scores = HashMap<WTGNode,Double>()
             allPossibleNodes.forEach {
                 val totalWidgets = visibleWidgets.size
-                val score = ((matchWidgets[it]!!)*1.0-(missWidgets[it]!!)*1.0-(propertyChangedWidgets[it]!!)*0.5)/totalWidgets
-                scores.put(it,score)
+                if (totalWidgets > 0 ) {
+                    val score = ((matchWidgets[it]!!) * 1.0 - (missWidgets[it]!!) * 1.0 - (propertyChangedWidgets[it]!!) * 0.5) / totalWidgets
+                    scores.put(it, score)
+                } else {
+                    scores.put(it,0.0)
+                }
             }
             return scores
         }
+
         fun getVisibleInteractableWidgets(newState: State<*>) =
                 getVisibleWidgets(newState).filter {
                     isInteractiveWidget(it)
@@ -293,6 +298,22 @@ class Helper {
                     if (originalWidget.isInputField && originalWidget.text.isNotBlank())
                     {
                         it.textInputHistory.add(originalWidget.text)
+                    }
+
+                }
+                if (matchedStaticWidgets.isEmpty()) {
+                    if (originalWidget.resourceId.isNotBlank() || originalWidget.contentDesc.isNotBlank()) {
+                        val newWidget = StaticWidget.getOrCreateStaticWidget(
+                                widgetId = StaticWidget.getWidgetId(),
+                                resourceIdName = originalWidget.resourceId,
+                                className = originalWidget.className,
+                                wtgNode = wtgNode,
+                                resourceId = "",
+                                activity = wtgNode.activityClass
+                        )
+                        newWidget.contentDesc = originalWidget.contentDesc
+                        wtgNode.addWidget(newWidget)
+                        matchedStaticWidgets.add(newWidget)
                     }
                 }
             }

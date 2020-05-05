@@ -75,13 +75,12 @@ open class ExploreCommandBuilder(
 
         conditionalEnable(cfg[actionLimit] > 0, cfg) { terminateAfterActions(cfg) }
         conditionalEnable(cfg[timeLimit] > 0, cfg) { terminateAfterTime(cfg) }
-
         resetOnCrash()
-
         conditionalEnable(cfg[ConfigProperties.Strategies.allowRuntimeDialog]) { allowRuntimePermissions() }
         conditionalEnable(cfg[ConfigProperties.Strategies.denyRuntimeDialog]) { denyRuntimePermissions() }
         loginWithGoogle()
         pressBackOnAds()
+        dealWithAndroidDialog()
         resetOnInvalidState()
 
         conditionalEnable(cfg[resetEvery] > 0, cfg) { resetOnIntervals(cfg) }
@@ -175,6 +174,10 @@ open class ExploreCommandBuilder(
         return this
     }
 
+    fun dealWithAndroidDialog(): ExploreCommandBuilder {
+        strategies.add(DefaultStrategies.allowUncompatibleVersion(getNextSelectorPriority()))
+        return this
+    }
     fun pressBackOnAds(): ExploreCommandBuilder {
         strategies.add( DefaultStrategies.handleAdvertisment(getNextSelectorPriority()) )
         return this

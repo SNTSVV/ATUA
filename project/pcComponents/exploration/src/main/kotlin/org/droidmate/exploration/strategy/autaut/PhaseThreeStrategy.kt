@@ -241,7 +241,7 @@ class PhaseThreeStrategy(
         val goToAnotherNode = GoToAnotherWindow.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
         val randomExplorationTask = RandomExplorationTask.getInstance(regressionTestingMF, regressionTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
-        val currentAppState = regressionTestingMF!!.getAbstractState(currentState)
+        val currentAppState = regressionTestingMF!!.getAbstractState(currentState)!!
         if (budgetLeft > 0)
         {
             if (phaseState == PhaseState.P3_INITIAL)

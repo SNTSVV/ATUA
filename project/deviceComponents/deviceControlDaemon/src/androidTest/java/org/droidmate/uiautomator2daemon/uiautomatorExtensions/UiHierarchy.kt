@@ -38,14 +38,23 @@ object UiHierarchy : UiParser() {
 			//TODO check if this filters out all os windows but keeps permission request dialogues
 //			debugOut("windows to extract: ${windows.map { "${it.isExtracted()}-${it.w.pkgName}:${it.w.windowId}[${visibleOuterBounds(it.area)}]" }}")
 			Log.d(LOGTAG, "current screen contains ${windows.size} app windows $windows")
-			windows.forEach {  w: DisplayedWindow ->
-				if (w.isExtracted()){  // for now we are not interested in the Launcher elements
+			//Ignore SystemUI windows
+			//And get the top layer
+			windows.filterNot { it.w.pkgName == "com.android.systemui" }
+					/*.sortedBy { it.layer }
+					.last()*/
+					.filter { it.w.hasFocus || it.w.hasInputFocus}
+					.forEach{ w: DisplayedWindow ->
+			//windows.forEach {  w: DisplayedWindow ->
+				//Try considering Launcher elements
+				if (w.isExtracted()) {  // for now we are not interested in the Launcher elements
 					w.area = LinkedList<Rect>().apply { w.initialArea.forEach { add(it) } }
 					if(w.rootNode == null) Log.w(LOGTAG,"ERROR root should not be null (window=$w)")
 					check(w.rootNode != null) {"if extraction is enabled we have to have a rootNode"}
 					createBottomUp(w, w.rootNode!!, parentXpath = "//", nodes = nodes, img = if(validImg) img else null)
 					Log.d(LOGTAG, "${w.w.pkgName}:${w.w.windowId} ${visibleOuterBounds(w.initialArea)} " +
-							"#elems = ${nodes.size} ${w.initialArea} empty=${w.initialArea.isEmpty()}")				}
+							"#elems = ${nodes.size} ${w.initialArea} empty=${w.initialArea.isEmpty()}")
+				}
 			}
 		} catch (e: Exception) {  // the accessibilityNode service may throw this if the node is no longer up-to-date
 			Log.e("droidmate/UiDevice", "error while fetching widgets ${e.localizedMessage}\n last widget was ${nodes.lastOrNull()}",e)

@@ -238,6 +238,21 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
         }
     }
 
+    fun copyNode(source: WTGNode, dest: WTGNode) {
+        source.widgets.forEach {
+            if (!dest.widgets.contains(it)) {
+                dest.addWidget(it)
+            }
+        }
+
+        val edges = this.edges(source).toMutableList()
+        edges.forEach {
+            it.label.activity = dest.classType
+            it.label.sourceWindow = dest
+            this.add(dest, it.destination?.data, it.label)
+        }
+
+    }
     fun getUnknownNodes(activityNode: WTGActivityNode): List<WTGNode> {
         val edges = this.edges(activityNode).filter { it.destination != null && it.label.eventType!= EventType.implicit_back_event}
                 .filter { it.destination!!.data is WTGAppStateNode }.toMutableList()

@@ -64,7 +64,7 @@ fun UiDevice.longClick(x: Int, y: Int, timeout: Long)=
 	interactionController.longTapNoSync(x,y)
 
 fun UiDevice.click(x: Int, y: Int, timeout: Long)=
-//	interactionController.clickAndSync(x,y,timeout)
-	interactionController.clickNoSync(x,y)
+	interactionController.clickAndSync(x,y,timeout)
+//	interactionController.clickNoSync(x,y)
 
 

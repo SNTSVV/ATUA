@@ -122,7 +122,7 @@ class RandomExplorationTask constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
-        val currentAbstractState = regressionTestingMF.getAbstractState(currentState)
+        val currentAbstractState = regressionTestingMF.getAbstractState(currentState)!!
         if (isCameraOpening(currentState))
         {
             return dealWithCamera(currentState)

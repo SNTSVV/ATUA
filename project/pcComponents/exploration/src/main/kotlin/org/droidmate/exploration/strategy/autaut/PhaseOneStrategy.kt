@@ -205,7 +205,7 @@ class PhaseOneStrategy(
 
     override fun getCurrentTargetEvents(currentState: State<*>): List<AbstractAction> {
         val targetEvents = HashMap<StaticEvent,List<AbstractAction>>()
-        if (regressionTestingMF.getAbstractState(currentState).window != targetWindow)
+        if (regressionTestingMF.getAbstractState(currentState)!!.window != targetWindow)
             return emptyList()
         val currentWindowTargetEvents = untriggeredTargetEvents.filter { it.sourceWindow == targetWindow }
         currentWindowTargetEvents.forEach {
@@ -223,14 +223,14 @@ class PhaseOneStrategy(
     override fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction {
         var chosenAction:ExplorationAction
         val currentState = eContext.getCurrentState()
-        val currentAppState = regressionTestingMF.getAbstractState(currentState)
+        val currentAppState = regressionTestingMF.getAbstractState(currentState)!!
         if (targetWindow == null)
             selectTargetNode()
         if (unreachableWindows.contains(currentAppState.window)) {
             unreachableWindows.remove(currentAppState.window)
         }
         if (regressionTestingMF.appPrevState!=null) {
-                val prevAppState = regressionTestingMF.getAbstractState(regressionTestingMF.appPrevState!!)
+                val prevAppState = regressionTestingMF.getAbstractState(regressionTestingMF.appPrevState!!)!!
             if (currentAppState.window != prevAppState.window && currentAppState.rotation == Rotation.LANDSCAPE) {
                 // rotate to portrait
                 return ExplorationAction.rotate(-90)

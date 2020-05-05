@@ -251,7 +251,7 @@ class PhaseTwoStrategy (
         val randomExplorationTask = RandomExplorationTask.getInstance(regressionTestingMF, regressionTestingStrategy,delay, useCoordinateClicks)
         val openNavigationBarTask = OpenNavigationBarTask.getInstance(regressionTestingMF,regressionTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
-        val currentAppState = regressionTestingMF.getAbstractState(currentState)
+        val currentAppState = regressionTestingMF.getAbstractState(currentState)!!
         if (!setTestBudget && currentAppState.window == targetWindow)
         {
             budgetLeft = (currentAppState.widgets.map { it.getPossibleActions() }.sum()*budgetScale).toInt()

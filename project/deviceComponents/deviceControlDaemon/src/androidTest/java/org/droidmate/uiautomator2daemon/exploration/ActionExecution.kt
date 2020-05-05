@@ -1,7 +1,6 @@
 package org.droidmate.uiautomator2daemon.exploration
 
 import android.app.UiAutomation
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -158,7 +157,7 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 		is Swipe -> env.device.twoPointAction(start,end){
 			x0, y0, x1, y1 ->  env.device.swipe(x0, y0, x1, y1, stepSize)
 		}
-		is CallIntent -> env.device.intent(action, category, uriString,activityName, packageName,env)
+		is CallIntent -> env.device.sendIntent(action, category, uriString,activityName, packageName,env)
 		is TwoPointerGesture ->	TODO("this requires a call on UiObject, which we currently do not match to our ui-extraction")
 		is PinchIn -> TODO("this requires a call on UiObject, which we currently do not match to our ui-extraction")
 		is PinchOut -> TODO("this requires a call on UiObject, which we currently do not match to our ui-extraction")
@@ -413,12 +412,22 @@ private fun UiDevice.rotate(rotation: Int,automation: UiAutomation):Boolean{
 	return automation.setRotation(newRotation)
 }
 
-private fun UiDevice.intent(action: String, category: String, uriString: String, activityName: String, appPackageName: String, env: UiAutomationEnvironment): Boolean{
+private fun UiDevice.sendIntent(action: String, category: String, uriString: String, activityName: String, appPackageName: String, env: UiAutomationEnvironment): Boolean{
 	this.pressHome()
 	val context = env.context
 	val intent = Intent()
-	intent.setAction(action)
-	intent.addCategory(category)
+	val intentAction = if (action.isBlank())
+		Intent.ACTION_DEFAULT
+	else
+		action
+
+	val intentCategory = if (category.isBlank())
+		Intent.CATEGORY_DEFAULT
+	else
+		category
+
+	intent.setAction(intentAction)
+	intent.addCategory(intentCategory)
 	intent.setData(Uri.parse(uriString))
 	intent.setClassName(appPackageName,activityName)
 	//intent.setComponent(ComponentName(appPackageName,activityName))

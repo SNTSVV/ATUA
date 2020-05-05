@@ -1,9 +1,10 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
-class WTGOutScopeNode(nodeId: String= getNodeId()):WTGNode("",nodeId){
+class WTGOutScopeNode(nodeId: String= getNodeId(), activity: String):WTGNode(activity,nodeId){
     init {
         allNodes.add(this)
         WTGNode.allNodes.add(this)
+        this.activityClass = activity
     }
 
     override fun toString(): String {
@@ -13,12 +14,12 @@ class WTGOutScopeNode(nodeId: String= getNodeId()):WTGNode("",nodeId){
         var counter = 0
         val allNodes = ArrayList<WTGOutScopeNode>()
         fun getNodeId(): String = "OutScopeNode-${counter++}"
-        fun getOrCreateNode(nodeId: String = getNodeId()): WTGOutScopeNode{
-            val node = allNodes.find { it.nodeId == nodeId }
+        fun getOrCreateNode(activity: String): WTGOutScopeNode{
+            val node = allNodes.find { it.activityClass == activity }
             if (node != null)
                 return node!!
             else
-                return WTGOutScopeNode(nodeId = nodeId)
+                return WTGOutScopeNode(nodeId = getNodeId(), activity = activity)
         }
     }
 }

@@ -61,7 +61,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         var chosenAction: ExplorationAction = ExplorationAction.closeAndReturn()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
         if (currentAbstractState == null) {
-            return ExplorationAction.closeAndReturn()
+            return eContext.resetApp()
         }
         if (phaseStrategy.isEnd()) {
             if (phaseStrategy is PhaseOneStrategy) {

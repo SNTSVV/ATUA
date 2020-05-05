@@ -57,7 +57,7 @@ open class GoToAnotherWindow protected constructor(
         if (currentPath == null)
             return true
         //if app reached the final destination
-        val currentAppState = regressionTestingMF.getAbstractState(currentState)
+        val currentAppState = regressionTestingMF.getAbstractState(currentState)!!
         if (currentAppState == currentPath!!.getFinalDestination())
         {
             return true
@@ -132,6 +132,7 @@ open class GoToAnotherWindow protected constructor(
     override fun initialize(currentState: State<*>) {
 
         randomExplorationTask!!.fillData=true
+        randomExplorationTask!!.backAction=true
         chooseRandomOption(currentState)
     }
 
@@ -240,7 +241,7 @@ open class GoToAnotherWindow protected constructor(
                         val candidates = runBlocking { getCandidates(widgets) }
                         val chosenWidget = candidates[random.nextInt(candidates.size)]
                         val actionName = currentEdge!!.label.abstractAction.actionName
-                        val actionData = currentEdge!!.label.abstractAction.extra
+                        val actionData = currentEdge!!.label.data
                         return chooseActionWithName(actionName, actionData, chosenWidget, currentState) ?: ExplorationAction.pressBack()
                     } else {
                         // process for some special case
@@ -290,7 +291,7 @@ open class GoToAnotherWindow protected constructor(
                     val action = currentEdge!!.label.abstractAction.actionName
                     //val actionCondition = currentPath!!.edgeConditions[currentEdge!!]
                     if (action == "CallIntent")
-                        return chooseActionWithName(action,currentEdge!!.label.abstractAction.extra, null, currentState) ?: ExplorationAction.pressBack()
+                        return chooseActionWithName(action,currentEdge!!.label.data, null, currentState) ?: ExplorationAction.pressBack()
                     else {
                         return chooseActionWithName(action, "", null, currentState) ?: ExplorationAction.pressBack()
                     }

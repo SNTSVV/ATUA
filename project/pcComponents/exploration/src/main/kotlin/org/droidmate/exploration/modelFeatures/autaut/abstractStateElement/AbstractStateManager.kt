@@ -57,14 +57,12 @@ class AbstractStateManager () {
                 if (WTGLauncherNode.instance!!.activityClass.isBlank()) {
                     WTGLauncherNode.instance!!.activityClass = activity
                 }
-                homeState!!.guiStates.add(guiState)
+                homeState.guiStates.add(guiState)
                 ABSTRACT_STATES.add(homeState)
             }
             return homeState
         }
-        else if(activity.isBlank() || !guiState.widgets.any { it.packageName == appPackageName
-                        || it.packageName == "com.android.camera2"
-                } || guiState.isRequestRuntimePermissionDialogBox || !WTGNode.allMeaningNodes.any { it.classType == activity })
+        else if(activity.isBlank() || guiState.isRequestRuntimePermissionDialogBox)
         {
             var outOfAppState = ABSTRACT_STATES.find { it.isOutOfApplication && it.activity == activity}
             if (outOfAppState != null)
@@ -76,9 +74,9 @@ class AbstractStateManager () {
             }
             else
             {
-                outOfAppState = AbstractState(activity=activity,isOutOfApplication = true, window = WTGOutScopeNode.getOrCreateNode(),isFromLaunch = isFromLaunch,rotation = rotation)
-                if (outOfAppState!!.window.activityClass.isBlank()) {
-                    outOfAppState!!.window.activityClass = activity
+                outOfAppState = AbstractState(activity=activity,isOutOfApplication = true, window = WTGOutScopeNode.getOrCreateNode(activity),isFromLaunch = isFromLaunch,rotation = rotation)
+                if (outOfAppState.window.activityClass.isBlank()) {
+                    outOfAppState.window.activityClass = activity
                 }
                 outOfAppState.guiStates.add(guiState)
                 ABSTRACT_STATES.add(outOfAppState)
@@ -97,8 +95,8 @@ class AbstractStateManager () {
             }
             else
             {
-                stopState = AbstractState(activity=activity,isAppHasStoppedDialogBox = true, window = WTGOutScopeNode.getOrCreateNode(),isFromLaunch = isFromLaunch,rotation = rotation)
-                stopState!!.guiStates.add(guiState)
+                stopState = AbstractState(activity=activity,isAppHasStoppedDialogBox = true, window = WTGOutScopeNode.getOrCreateNode(activity),isFromLaunch = isFromLaunch,rotation = rotation)
+                stopState.guiStates.add(guiState)
                 ABSTRACT_STATES.add(stopState)
             }
             return stopState
@@ -139,10 +137,6 @@ class AbstractStateManager () {
                 return matchingTestState
             }
             val staticMapping = getMatchingStaticWidgets(widget_WidgetGroupHashMap, guiState, activity, isFromLaunch)
-            if (activity=="")
-            {
-                activity = staticMapping.first.classType
-            }
             if (staticMapping.first.activityClass.isBlank()) {
                 staticMapping.first.activityClass = activity
             }
@@ -157,7 +151,8 @@ class AbstractStateManager () {
                         isOpeningKeyboard = isOpeningKeyboard,
                         staticWidgetMapping = staticMapping.second,
                         window = staticMapping.first,isFromLaunch = isFromLaunch,
-                        rotation = regressionTestingMF.currentRotation)
+                        rotation = regressionTestingMF.currentRotation,
+                        isOutOfApplication = staticMapping.first is WTGOutScopeNode)
                 ABSTRACT_STATES.add(abstractState)
                 abstractState.guiStates.add(guiState)
                 initAbstractInteractions(abstractState,null)
@@ -179,7 +174,8 @@ class AbstractStateManager () {
                             isOpeningKeyboard = isOpeningKeyboard,
                             staticWidgetMapping = staticMapping.second,
                             window = staticMapping.first,isFromLaunch = isFromLaunch,
-                            rotation = regressionTestingMF.currentRotation)
+                            rotation = regressionTestingMF.currentRotation,
+                            isOutOfApplication = staticMapping.first is WTGOutScopeNode)
 
                     ABSTRACT_STATES.add(abstractState)
                     abstractState.guiStates.add(guiState)
@@ -243,7 +239,10 @@ class AbstractStateManager () {
                         actionName = staticEdge.label.convertToExplorationActionName(),
                         extra = staticEdge.label.data)
                 val abstractEdge = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find {
-                    it.label.isImplicit && it.label.abstractAction == abstractAction && it.label.prevWindow == prevWindow
+                    it.label.isImplicit
+                            && it.label.abstractAction == abstractAction
+                            && it.label.data == staticEdge.label.data
+                            && it.label.prevWindow == prevWindow
                 }
                 var abstractInteraction: AbstractInteraction
                 if (abstractEdge!=null)
@@ -254,7 +253,7 @@ class AbstractStateManager () {
                 else
                 {
                     abstractInteraction = AbstractInteraction(abstractAction = abstractAction,
-                            isImplicit = true, prevWindow = prevWindow)
+                            isImplicit = true, prevWindow = prevWindow, data = staticEdge.label.data)
                     staticEdge.label.modifiedMethods.forEach {
                         abstractInteraction.modifiedMethods.put(it.key,false)
                     }
@@ -311,6 +310,7 @@ class AbstractStateManager () {
                     val abstractEdge = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find {
                         it.label.isImplicit
                                 && it.label.abstractAction == abstractAction
+                                && it.label.data == staticEdge.label.data
                     }
                     var abstractInteraction: AbstractInteraction
                     if (abstractEdge != null) {
@@ -318,7 +318,7 @@ class AbstractStateManager () {
 
                     } else {
                         abstractInteraction = AbstractInteraction(abstractAction = abstractAction,
-                                isImplicit = true, prevWindow = prevWindow)
+                                isImplicit = true, prevWindow = prevWindow, data = staticEdge.label.data)
                         abstractState.abstractInteractions.add(abstractInteraction)
                         abstractState.staticEventMapping.put(abstractInteraction, staticEdge.label)
                     }
@@ -340,7 +340,8 @@ class AbstractStateManager () {
                     val abstractInteraction = AbstractInteraction(
                             abstractAction = edge.label.abstractAction,
                             isImplicit = true,
-                            prevWindow = prevWindow
+                            prevWindow = prevWindow,
+                            data = edge.label.data
                     )
                     regressionTestingMF.abstractTransitionGraph.add(abstractState,edge.destination?.data,abstractInteraction)
                 }
@@ -351,11 +352,10 @@ class AbstractStateManager () {
                     {
                         val abstractInteraction = AbstractInteraction(
                                 abstractAction = AbstractAction(actionName = edge.label.abstractAction.actionName,
-                                        widgetGroup = widgetGroup,
-                                        extra = edge.label.abstractAction.extra),
+                                        widgetGroup = widgetGroup),
                                 isImplicit = true,
-                                prevWindow = prevWindow
-                        )
+                                prevWindow = prevWindow,
+                                data = edge.label.data)
                         regressionTestingMF.abstractTransitionGraph.add(abstractState,edge.destination?.data,abstractInteraction)
                     }
                 }
@@ -381,42 +381,35 @@ class AbstractStateManager () {
     {
         //check if the previous state is homescreen
         val allPossibleNodes = ArrayList<WTGNode>()
-        if (isFromLaunch)
-        {
-            val launchNode = WTGLauncherNode.getOrCreateNode()
-            val activityNode = WTGActivityNode.allNodes.first { it.classType == activity }
-            allPossibleNodes.add(activityNode)
-            val fromLaunchStaticNodes = regressionTestingMF.transitionGraph.edges(launchNode).filter { it.destination!=null }.map { it.destination!!.data }.toMutableList()
-            fromLaunchStaticNodes.forEach {
-                val dialogNodes = regressionTestingMF.transitionGraph.getDialogs(it)
-                allPossibleNodes.addAll(dialogNodes)
-            }
-
+        if (activity.isBlank()) {
+            return Pair(first = WTGOutScopeNode.getOrCreateNode(activity),second = HashMap())
         }
-        else if (activity.isNotBlank())
-        {
-            //if the previous state is not homescreen
-            //Get candidate nodes
-            val activityNode = WTGActivityNode.allNodes.first { it.classType == activity }
-            val optionsMenuNode = regressionTestingMF.transitionGraph.getOptionsMenu(activityNode)
-            val contextMenuNodes = regressionTestingMF.transitionGraph.getContextMenus(activityNode)
-            val dialogNodes = regressionTestingMF.transitionGraph.getDialogs(activityNode)
-            if (optionsMenuNode != null) {
-                if (!Helper.mergeOptionsMenuWithActivity(guiState, optionsMenuNode, activityNode, regressionTestingMF.transitionGraph, regressionTestingMF)) {
-                    allPossibleNodes.add(optionsMenuNode)
-                } else {
-                    ABSTRACT_STATES.filter { it.window == optionsMenuNode }.forEach {
-                        it.window = activityNode
-                    }
+        //if the previous state is not homescreen
+        //Get candidate nodes
+        val activityNode = WTGActivityNode.allNodes.find { it.classType == activity }
+        if (activityNode == null) {
+            val newOutAppWindow = WTGOutScopeNode.getOrCreateNode(activity)
+            val virtualAbstractState = VirtualAbstractState(newOutAppWindow.classType,newOutAppWindow,false)
+            ABSTRACT_STATES.add(virtualAbstractState)
+
+            return Pair(first = newOutAppWindow,second = HashMap())
+        }
+        val optionsMenuNode = regressionTestingMF.transitionGraph.getOptionsMenu(activityNode)
+        val contextMenuNodes = regressionTestingMF.transitionGraph.getContextMenus(activityNode)
+        val dialogNodes = regressionTestingMF.transitionGraph.getDialogs(activityNode)
+        if (optionsMenuNode != null) {
+            if (!Helper.mergeOptionsMenuWithActivity(guiState, optionsMenuNode, activityNode, regressionTestingMF.transitionGraph, regressionTestingMF)) {
+                allPossibleNodes.add(optionsMenuNode)
+            } else {
+                ABSTRACT_STATES.filter { it.window == optionsMenuNode }.forEach {
+                    it.window = activityNode
                 }
             }
-            allPossibleNodes.add(activityNode)
-            allPossibleNodes.addAll(contextMenuNodes.distinct())
-            allPossibleNodes.addAll(dialogNodes.distinct())
-        } else
-        {
-
         }
+        allPossibleNodes.add(activityNode)
+        allPossibleNodes.addAll(contextMenuNodes.distinct())
+        allPossibleNodes.addAll(dialogNodes.distinct())
+
         //Find the most similar node
         var  bestMatchedNode: WTGNode
         //try to calculate the match weight of each node.
@@ -427,18 +420,47 @@ class AbstractStateManager () {
         else {
             val matchWeights = Helper.calculateMatchScoreForEachNode(guiState, allPossibleNodes, appName, regressionTestingMF)
             //sort and get the highest ranking of the match list as best matched node
-            val sortedWeight = matchWeights.toSortedMap(compareByDescending { matchWeights[it]!! })
-            val topMatchingNodes = matchWeights.filter { it.value == sortedWeight[sortedWeight.firstKey()] }
+            val sortedWeight = matchWeights.map { it.value }.sortedDescending()
+            val largestWeight = sortedWeight.first()
+            val topMatchingNodes = matchWeights.filter { it.value == largestWeight }
             if (topMatchingNodes.size == 1) {
                 bestMatchedNode = topMatchingNodes.entries.first().key
             } else {
-                val sortByPercentage = topMatchingNodes.toSortedMap(compareByDescending { matchWeights[it]!! / it.widgets.size.toDouble() })
-                bestMatchedNode = topMatchingNodes.filter { it.value == sortByPercentage[sortByPercentage.firstKey()]!! }.entries.random().key
+                if (largestWeight > 0.0) {
+                    val sortByPercentage = topMatchingNodes.toSortedMap(compareByDescending { matchWeights[it]!! / it.widgets.size.toDouble() })
+                    bestMatchedNode = topMatchingNodes.filter { it.value == sortByPercentage[sortByPercentage.firstKey()]!! }.entries.first().key
+                } else {
+                    bestMatchedNode = activityNode
+                }
             }
         }
+        val guiTreeDimension = computeGuiTreeDimension(guiState)
+        if (bestMatchedNode.dimension.isEmpty()) {
+            bestMatchedNode.dimension = guiTreeDimension
+        } else {
+            // check if guistate is not in another rotation
+            if (!(bestMatchedNode.dimension.width+bestMatchedNode.dimension.height
+                            == guiTreeDimension.width + guiTreeDimension.height)) {
+                // it can be assumed that a new dialog is popup
+                // create new WTGDialog Window
+                val newWTGDialog = WTGDialogNode.getOrCreateNode(WTGDialogNode.getNodeId(), activity)
+                newWTGDialog.activityClass = activity
+
+               // regressionTestingMF.transitionGraph.copyNode(activityNode!!,newWTGDialog)
+                val virtualAbstractState = VirtualAbstractState(newWTGDialog.classType,newWTGDialog,false)
+                ABSTRACT_STATES.add(virtualAbstractState)
+                initAbstractInteractions(virtualAbstractState)
+                bestMatchedNode = newWTGDialog
+            }
+        }
+
         val widgetGroup_staticWidgetHashMap = getStaticWidgets(widget_WidgetGroupHashMap,guiState, bestMatchedNode)
         return Pair(first = bestMatchedNode,second =  widgetGroup_staticWidgetHashMap)
     }
+
+    private fun computeGuiTreeDimension(guiState: State<*>) =
+            (guiState.widgets.find { !it.hasParent }?.boundaries
+                    ?: guiState.widgets.sortedBy { it.boundaries.width + it.boundaries.height }.last().boundaries)
 
     fun getMatchingStaticWidgets(widget_WidgetGroupHashMap: HashMap<Widget,WidgetGroup> , guiState: State<*>, window: WTGNode):Pair<WTGNode, HashMap<WidgetGroup, ArrayList<StaticWidget>>>
     {
@@ -451,7 +473,7 @@ class AbstractStateManager () {
 
         AbstractionFunction.backup()
 
-
+        var refinementGrainCount = 0
         while(!validateModel(guiInteraction, actionGUIState))
         {
             val actionAbstractState = getAbstractState(actionGUIState)!!
@@ -465,18 +487,20 @@ class AbstractStateManager () {
                     if(!refineAbstractionFunction(actionAbstractState))
                     {
                         AbstractionFunction.restore()
+                        refinementGrainCount = 0
+                        rebuildModel(actionAbstractState.window)
                         AbstractionFunction.INSTANCE.abandonedAttributePaths.add(Pair(attributePath,abstractInteraction))
                         break
                     }
                     else
                     {
+                        refinementGrainCount+=1
                         rebuildModel(actionAbstractState.window)
                     }
                 } else {
                     //rebuild all related GUI states
-
+                    refinementGrainCount+=1
                     rebuildModel(actionAbstractState.window)
-
                 }
             }
             else
@@ -484,16 +508,20 @@ class AbstractStateManager () {
                 if (!refineAbstractionFunction(actionAbstractState))
                 {
                     AbstractionFunction.restore()
+                    refinementGrainCount = 0
+                    rebuildModel(actionAbstractState.window)
                     break
                 }
                 else
                 {
+                    refinementGrainCount+=1
                     rebuildModel(actionAbstractState.window)
                 }
             }
+
         }
         //get number of Abstract Interaction
-
+        log.debug("Refinement grain increased count: $refinementGrainCount")
     }
 
     private fun refineAbstractionFunction(actionAbstractState: AbstractState): Boolean {

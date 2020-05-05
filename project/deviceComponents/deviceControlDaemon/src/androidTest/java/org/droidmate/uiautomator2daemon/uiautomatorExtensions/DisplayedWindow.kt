@@ -53,7 +53,8 @@ data class DisplayedWindow(val w: AppWindow,
 				),
 				area,
 				isKeyboard = isKeyboard,  // we cannot use type = INPUT_METHOD as this does not work on all devices e.g. Nexus 5X
-				rootNode = if (wInfo.type == AccessibilityWindowInfo.TYPE_APPLICATION || wInfo.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
+				rootNode = if (wInfo.type == AccessibilityWindowInfo.TYPE_APPLICATION || wInfo.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+						|| wInfo.type == AccessibilityWindowInfo.TYPE_SYSTEM) {
 					root
 				} else {
 					null
