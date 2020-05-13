@@ -11,7 +11,8 @@ open class WTGNode(val classType: String,
     val widgetState = HashMap<StaticWidget, Boolean>()
     val mappedStates = arrayListOf<State<*>>()
     var rotation:Int = 0
-    var dimension: Rectangle = Rectangle.empty()
+    var portraitDimension: Rectangle = Rectangle.empty()
+    var landscapeDimension: Rectangle = Rectangle.empty()
     val unexercisedWidgetCount: Int
     get() {return widgets.filter { !it.exercised && widgetState[it]?:true && it.interactive && it.mappedRuntimeWidgets.isNotEmpty()}.size}
     var hasOptionsMenu = true

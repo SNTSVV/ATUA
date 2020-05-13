@@ -27,6 +27,22 @@ open class AbstractState (
 ) {
         val unexercisedWidgetCount: Int
                 get() {return widgets.filter { it.exerciseCount==0}.size}
+        val actionCount = HashMap<AbstractAction, Int>()
+
+        init {
+            val pressBackAction = AbstractAction(
+                    actionName = AbstractActionType.PRESS_BACK.actionName
+            )
+            actionCount.put(pressBackAction,0)
+            val pressMenuAction = AbstractAction(
+                    actionName = AbstractActionType.PRESS_MENU.actionName
+            )
+            actionCount.put(pressMenuAction,0)
+            val swipeAction = AbstractAction(
+                    actionName = AbstractActionType.SWIPE.actionName
+            )
+            actionCount.put(swipeAction,0)
+        }
 
         fun getWidgetGroup(widget: Widget, guiState: State<*>): WidgetGroup?{
             val tempAttributePath = HashMap<Widget,AttributePath>()
@@ -36,6 +52,20 @@ open class AbstractState (
                         val attributePath = it.attributePath
                         it.attributePath.equals(reducedAttributePath)
                 }
+        }
+
+        fun getAvailableActions(): List<AbstractAction> {
+            val allActions = ArrayList<AbstractAction>()
+            allActions.addAll(actionCount.keys)
+            allActions.addAll(widgets.map { it.actionCount.keys }.flatten())
+            return allActions
+        }
+
+        fun getUnExercisedActions(): List<AbstractAction> {
+            val unexcerisedActions = ArrayList<AbstractAction>()
+            unexcerisedActions.addAll(actionCount.filter { it.value == 0 }.keys)
+            unexcerisedActions.addAll(widgets.map { it.actionCount.filter { it.value==0 }}.map { it.keys }.flatten())
+            return unexcerisedActions
         }
 
     override fun toString(): String {

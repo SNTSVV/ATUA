@@ -7,8 +7,10 @@ import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGActivityNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -113,8 +115,14 @@ class RandomExplorationTask constructor(
         {
             visibleWidgets = Helper.getVisibleInteractableWidgets(currentState)
         }
+
         if (visibleWidgets.isNotEmpty()) {
-            return visibleWidgets
+            if (random.nextInt(100)/100.toDouble()<0.5) {
+                return visibleWidgets
+            } else {
+                return visibleWidgets.filter { !Helper.hasParentWithType(it,currentState, "WebView") }
+            }
+
         }
         //when DM2 provides incorrect information
         return currentState.widgets.filterNot { it.isKeyboard}
@@ -173,14 +181,13 @@ class RandomExplorationTask constructor(
             }
         }
         attemptCount++
-
-        if (!regressionTestingMF.openNavigationCheck.contains(currentAbstractState)
-                && openNavigationBarTask.isAvailable(currentState)) {
-            regressionTestingMF.openNavigationCheck.add(currentAbstractState)
-            return openNavigationBarTask.chooseAction(currentState)
+        if (currentAbstractState.window is WTGActivityNode) {
+            if (!regressionTestingMF.openNavigationCheck.contains(currentAbstractState)
+                    && openNavigationBarTask.isAvailable(currentState)) {
+                regressionTestingMF.openNavigationCheck.add(currentAbstractState)
+                return openNavigationBarTask.chooseAction(currentState)
+            }
         }
-
-
         val executeSystemEvent = random.nextInt(100)/(100*1.0)
         if (executeSystemEvent < 0.05) {
 //            val systemActions = ArrayList<EventType>()
@@ -320,6 +327,7 @@ class RandomExplorationTask constructor(
         }
         else
         {
+            ExplorationTrace.widgetTargets.clear()
             return regressionTestingStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
         }
     }
@@ -360,6 +368,7 @@ class RandomExplorationTask constructor(
                     isClickedShutterButton = true
                     return clickActions.random()
                 }
+                ExplorationTrace.widgetTargets.clear()
             }
         }
         val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
@@ -369,6 +378,7 @@ class RandomExplorationTask constructor(
             if (clickActions.isNotEmpty()) {
                 return clickActions.random()
             }
+            ExplorationTrace.widgetTargets.clear()
         }
         else
         {
@@ -377,10 +387,6 @@ class RandomExplorationTask constructor(
         return chooseWidgets(currentState).random().availableActions(delay, useCoordinateClicks).random()
     }
 
-    fun getSwipeActions(widget: Widget): List<ExplorationAction> {
-      return widget.availableActions(delay, useCoordinateClicks).filter { it is Swipe }
-
-    }
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0

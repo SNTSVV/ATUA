@@ -11,7 +11,7 @@ class WTGContextMenuNode (classType: String,
         return true
     }
     override fun toString(): String {
-        return "[ContextMenu]${super.toString()}"
+        return "[Window][ContextMenu]${super.toString()}"
     }
     companion object{
         var counter = 0

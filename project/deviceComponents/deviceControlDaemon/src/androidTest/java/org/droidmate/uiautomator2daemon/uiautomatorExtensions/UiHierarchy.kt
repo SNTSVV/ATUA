@@ -30,7 +30,7 @@ object UiHierarchy : UiParser() {
 
 	private var nActions = 0
 	private var ut = 0L
-	suspend fun fetch(windows: List<DisplayedWindow>, img: Bitmap?): List<UiElementPropertiesI>? {
+	suspend fun  fetch(windows: List<DisplayedWindow>, img: Bitmap?): List<UiElementPropertiesI>? {
 		val nodes = LinkedList<UiElementProperties>()
 
 		try {
@@ -43,7 +43,7 @@ object UiHierarchy : UiParser() {
 			windows.filterNot { it.w.pkgName == "com.android.systemui" }
 					/*.sortedBy { it.layer }
 					.last()*/
-					.filter { it.w.hasFocus || it.w.hasInputFocus}
+					.filter { it.w.hasFocus || it.w.hasInputFocus || it.isKeyboard}
 					.forEach{ w: DisplayedWindow ->
 			//windows.forEach {  w: DisplayedWindow ->
 				//Try considering Launcher elements

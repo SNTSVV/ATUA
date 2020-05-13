@@ -2,6 +2,8 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 import org.droidmate.exploration.modelFeatures.graph.*
 import org.droidmate.exploration.modelFeatures.autaut.*
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.json.JSONArray
 import org.json.JSONObject
 import org.slf4j.Logger
@@ -163,7 +165,23 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
         fun getContextMenus(wtgNode: WTGNode): List<WTGContextMenuNode>{
             val edges = this.edges(wtgNode).filter { it.destination != null}
                     .filter { it.destination!!.data is WTGContextMenuNode }
-            return edges.map { it.destination!!.data as WTGContextMenuNode }.toMutableList()
+            val windows = edges.map { it.destination!!.data as WTGContextMenuNode }.toMutableList()
+            val originalContextMenus = windows.filter {it.activityClass != wtgNode.activityClass}
+            val activityContextMenus = windows.filterNot {it.activityClass != wtgNode.activityClass}
+            if (activityContextMenus.isNotEmpty()) {
+                return activityContextMenus
+            }
+            val createdContextMenus = ArrayList<WTGContextMenuNode>()
+            originalContextMenus.forEach {
+                //create new WTGContextMenus
+                val newWTGContextMenuNode = WTGContextMenuNode.getOrCreateNode(nodeId = WTGContextMenuNode.getNodeId(),classType = wtgNode.activityClass)
+                newWTGContextMenuNode.activityClass = wtgNode.activityClass
+                copyNode(it,newWTGContextMenuNode)
+                this.add(wtgNode,newWTGContextMenuNode, FakeEvent(wtgNode))
+                AbstractStateManager.instance.createVirtualAbstractState(newWTGContextMenuNode)
+                createdContextMenus.add(newWTGContextMenuNode)
+            }
+            return createdContextMenus
         }
 
         fun getDialogs(wtgNode: WTGNode): List<WTGDialogNode> {

@@ -20,3 +20,7 @@ project/deviceComponents/deviceControlDaemon/.gradle
 project/deviceComponents/deviceControlDaemon/build
 project/pcComponents/core/build
 project/pcComponents/exploration/build
+.gradle
+buildSrc
+project/deviceComponents/deviceControlDaemon/.gradle
+project/deviceComponents/deviceControlDaemon/build

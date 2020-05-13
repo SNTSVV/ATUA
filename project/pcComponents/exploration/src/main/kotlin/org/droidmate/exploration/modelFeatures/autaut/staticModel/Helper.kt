@@ -24,20 +24,31 @@ class Helper {
             var shouldMerge = false
             var containsOptionMenuWidgets = false
             var containsActivityWidgets = false
+            var optionsMenuWidgets = ArrayList<StaticWidget>()
+            var activityWidgets = ArrayList<StaticWidget>()
             newState.widgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                     containsOptionMenuWidgets = matchWidget(widget,newState,optionsMenuNode,false,regressionTestingMF)?.let{true }?:false
+                    optionsMenuWidgets.addAll(getStaticWidgets(widget,newState,optionsMenuNode,false,regressionTestingMF))
+                    if (optionsMenuWidgets.isEmpty()) {
+                        containsOptionMenuWidgets = false
+                    } else {
+                        containsOptionMenuWidgets = true
+                    }
                     if (containsOptionMenuWidgets)
                         break
-
                 }
             }
             newState.widgets.iterator().also {
                 while (it.hasNext())
                 {
                     val widget = it.next()
-                    containsActivityWidgets = matchWidget(widget,newState,activityNode,false,regressionTestingMF)?.let { true }?:false
+                    activityWidgets.addAll(getStaticWidgets(widget,newState,activityNode,false,regressionTestingMF))
+                    if (activityWidgets.isEmpty()) {
+                        containsActivityWidgets = false
+                    } else {
+                        containsActivityWidgets = true
+                    }
                     if (containsActivityWidgets)
                         break
                 }
@@ -79,44 +90,32 @@ class Helper {
                 while (it.hasNext()) {
                     val widget = it.next()
                     allPossibleNodes.forEach {
-                        val matchingWidget = matchWidget(widget,newState,it,false,regressionTestingMF)
-                        if (matchingWidget!= null)
+                        val matchingWidget = getStaticWidgets(widget,newState,it,false,regressionTestingMF)
+                        if (matchingWidget.isNotEmpty())
                         {
                             if (matchWidgets.contains(it)) {
-                                matchWidgets[it] = matchWidgets[it]!! + 1
+                                matchWidgets[it] = matchWidgets[it]!! + matchingWidget.size
                             } else {
-                                matchWidgets[it] = 1
-                            }
-                            //TODO Fix
-                            if (it is WTGAppStateNode && matchingWidget!!.appStateTextProperty[it]!=widget.text)
-                            {
-                                if (propertyChangedWidgets.contains(it)) {
-                                    propertyChangedWidgets[it] = propertyChangedWidgets[it]!! + 1
-                                } else {
-                                    propertyChangedWidgets[it] = 1
-                                }
+                                matchWidgets[it] = matchingWidget.size
                             }
                         }
-                        else
+/*                        else
                         {
                             if (missWidgets.contains(it)) {
                                 missWidgets[it] = missWidgets[it]!! + 1
                             } else {
                                 missWidgets[it] = 1
                             }
-                        }
+                        }*/
                     }
                 }
             }
             val scores = HashMap<WTGNode,Double>()
             allPossibleNodes.forEach {
                 val totalWidgets = visibleWidgets.size
-                if (totalWidgets > 0 ) {
-                    val score = ((matchWidgets[it]!!) * 1.0 - (missWidgets[it]!!) * 1.0 - (propertyChangedWidgets[it]!!) * 0.5) / totalWidgets
-                    scores.put(it, score)
-                } else {
-                    scores.put(it,0.0)
-                }
+                val score = ((matchWidgets[it]!!) * 1.0 - (missWidgets[it]!!) * 1.0 - (propertyChangedWidgets[it]!!) * 0.5) / totalWidgets
+                scores.put(it, score)
+
             }
             return scores
         }
@@ -131,6 +130,10 @@ class Helper {
 
         fun getVisibleWidgets(state: State<*>) =
                 state.widgets.filter {it.enabled &&  it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty()}
+
+        fun getVisibleWidgetsForAbstraction(state: State<*>) =
+                state.widgets.filter {it.enabled &&  it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty()
+                        && !hasParentWithType(it,state,"WebView")}
 
         fun getInputFields(state: State<*>)=
                 Helper.getVisibleWidgets(state).filter { it.isInputField || it.checked.isEnabled() }
@@ -262,7 +265,7 @@ class Helper {
             return matchedStaticWidget
         }
 
-         fun getStaticWidgets(originalWidget: Widget, widgetGroup: WidgetGroup, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
+         fun getStaticWidgets(originalWidget: Widget, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
                               regressionTestingMF: RegressionTestingMF): List<StaticWidget> {
             var matchedStaticWidgets: ArrayList<StaticWidget> = ArrayList()
             val appName = regressionTestingMF.getAppName()
@@ -271,7 +274,11 @@ class Helper {
                 val unqualifiedResourceId = getUnqualifiedResourceId(widget)
 
                 matchedStaticWidgets.addAll(wtgNode.widgets.filter {
-                    it.resourceIdName == unqualifiedResourceId
+                    if (widget.resourceId == "android:id/title") {
+                        it.resourceIdName == unqualifiedResourceId && it.text == widget.text
+                    } else {
+                        it.resourceIdName == unqualifiedResourceId
+                    }
                 })
             }
             if (matchedStaticWidgets.isEmpty() && widget.contentDesc.isNotBlank())
@@ -302,16 +309,23 @@ class Helper {
 
                 }
                 if (matchedStaticWidgets.isEmpty()) {
-                    if (originalWidget.resourceId.isNotBlank() || originalWidget.contentDesc.isNotBlank()) {
+                    if (originalWidget.resourceId == "android:id/content") {
+                        return matchedStaticWidgets
+                    }
+                    if (originalWidget.resourceId.isNotBlank()
+                            || originalWidget.contentDesc.isNotBlank()) {
                         val newWidget = StaticWidget.getOrCreateStaticWidget(
                                 widgetId = StaticWidget.getWidgetId(),
-                                resourceIdName = originalWidget.resourceId,
+                                resourceIdName = getUnqualifiedResourceId(originalWidget.resourceId),
                                 className = originalWidget.className,
                                 wtgNode = wtgNode,
                                 resourceId = "",
                                 activity = wtgNode.activityClass
                         )
                         newWidget.contentDesc = originalWidget.contentDesc
+                        if (originalWidget.resourceId == "android:id/title") {
+                            newWidget.text = originalWidget.text
+                        }
                         wtgNode.addWidget(newWidget)
                         matchedStaticWidgets.add(newWidget)
                     }

@@ -14,13 +14,14 @@ import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.task.*
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 
 open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
-                                                               val budgetScale: Double,
+                                                               val budgetScale: Double = 1.0,
                                                                dictionary: List<String> = emptyList(),
-                                                               useCoordinateClicks: Boolean = true
+                                                               useCoordinateClicks: Boolean = false
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
@@ -59,6 +60,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
 
     internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
         var chosenAction: ExplorationAction = ExplorationAction.closeAndReturn()
+        ExplorationTrace.widgetTargets.clear()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
         if (currentAbstractState == null) {
             return eContext.resetApp()
@@ -93,6 +95,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
         super.initialize(initialContext)
         eContext = initialContext
+        delay = 500
         phaseStrategy = PhaseOneStrategy(this,budgetScale,delay, useCoordinateClicks)
     }
 

@@ -19,6 +19,9 @@ import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import presto.android.gui.clients.regression.informationRetrieval.InformationRetrieval
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.random.Random
 
 class PhaseThreeStrategy(
@@ -36,7 +39,7 @@ class PhaseThreeStrategy(
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         val abstractInteraction = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find { it.label.abstractAction.equals(abstractAction) }?.label
-        if (abstractInteraction!=null)
+        if (abstractInteraction!=null && abstractState.staticEventMapping.containsKey(abstractInteraction))
         {
             val staticEvent = abstractState.staticEventMapping[abstractInteraction]!!
             if (targetEvent == staticEvent)
@@ -150,7 +153,7 @@ class PhaseThreeStrategy(
                 childParentMap.put(currentAbState,null)
                 findPathToTargetComponentByBFS(currentState = currentState
                         , root = currentAbState
-                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.peek(), currentAbState))
+                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                         ,finalTarget = it
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
@@ -207,7 +210,7 @@ class PhaseThreeStrategy(
             childParentMap.put(currentAbState,null)
             findPathToTargetComponentByBFS(currentState = currentState
                     , root = currentAbState
-                    ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.peek(), currentAbState))
+                    ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                     ,finalTarget = targetAbState
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
@@ -289,13 +292,6 @@ class PhaseThreeStrategy(
                         phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
                         remainPhaseStateCount = 0
                         strategyTask = exerciseTargetComponentTask.also { it.initialize(currentState) }
-                        return
-                    }
-                    if (goToTargetNodeTask.isAvailable(currentState)) {
-                        log.info("Task chosen: Go to target window: $targetWindow .")
-                        phaseState = PhaseState.P3_GO_TO_TARGET_NODE
-                        remainPhaseStateCount = 0
-                        strategyTask = goToTargetNodeTask.also { it.initialize(currentState) }
                         return
                     }
                     setRandomExplorationInTargetWindow(randomExplorationTask, currentState)

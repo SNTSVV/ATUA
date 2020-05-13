@@ -36,6 +36,7 @@ open class StaticEvent (
             EventType.implicit_home_event -> "MinimizeMaximize"
             EventType.scroll -> "Swipe"
             EventType.swipe -> "Swipe"
+            EventType.closeKeyboard -> "CloseKeyboard"
             else -> eventType.name
         }
     }
@@ -79,6 +80,7 @@ open class StaticEvent (
                 "RotateUI" -> EventType.implicit_rotate_event
                 "CallIntent" -> EventType.callIntent
                 "LaunchApp" -> EventType.implicit_launch_event
+                "CloseKeyboard" -> EventType.closeKeyboard
                 else -> EventType.fake_action
             }
         }
@@ -86,4 +88,5 @@ open class StaticEvent (
 }
 
 class LaunchAppEvent(launcher: WTGNode): StaticEvent(EventType.implicit_launch_event, arrayListOf(),null,"",sourceWindow = launcher)
+class FakeEvent(sourceWindow: WTGNode): StaticEvent(EventType.fake_action, arrayListOf(), null,sourceWindow.activityClass,sourceWindow)
 

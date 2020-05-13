@@ -21,7 +21,7 @@ project.ext {
 	androidBuildToolsVersion = "29.0.2" // this is hardcoded in buildSrc/build.kt as well
 	androidMinSdkVersion = 23
 	androidTargetSdkVersion = 28
-	androidCompileSdkVersion = 28
+	androidCompileSdkVersion = 29
 
 	// ExplorationModel
 	dmExplorationModel = "org.droidmate:explorationModel:1.4.1-RC1"

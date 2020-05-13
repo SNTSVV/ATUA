@@ -75,6 +75,7 @@ class AndroidDevice constructor(private val serialNumber: String,
                                 private val cfg: ConfigurationWrapper,
                                 private val adbWrapper: IAdbWrapper) : IAndroidDevice {
 	override suspend fun getDeviceRotation(): Int {
+		var rotation = 0
 		val command = "shell dumpsys input"
 		val param = command.split(' ').toTypedArray()
 		try {
@@ -92,13 +93,13 @@ class AndroidDevice constructor(private val serialNumber: String,
 			{
 				val splitStrings = lastMatchedLine.split(' ')
 				if (splitStrings.size == 2) {
-					return splitStrings[1]!!.toInt()
+					rotation = splitStrings[1].toInt()
 				}
 			}
 		}catch (e: ApkExplorationException) {
 			log.error("Error get current window from monitor TCP server. Proceeding with exploration ${e.message}", e)
 		} finally {
-		    return 0
+		    return rotation
 		}
 
 	}

@@ -1,16 +1,20 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
+import org.droidmate.deviceInterface.exploration.Rectangle
+import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.AbstractionFunction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.StateReducer
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.strategy.autaut.task.TextInput
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.LoggerFactory
+import kotlin.math.acos
 
 class AbstractStateManager () {
     val ABSTRACT_STATES: ArrayList<AbstractState> = ArrayList()
@@ -28,7 +32,7 @@ class AbstractStateManager () {
         regressionTestingMF.abstractTransitionGraph = AbstractTransitionGraph()
 
         WTGNode.allNodes.forEach {
-            val virtualAbstractState = VirtualAbstractState(it.classType,it,it is WTGLauncherNode)
+            val virtualAbstractState = VirtualAbstractState(it.activityClass,it,it is WTGLauncherNode)
             ABSTRACT_STATES.add(virtualAbstractState)
            // regressionTestingMF.abstractStateVisitCount[virtualAbstractState] = 0
         }
@@ -39,6 +43,11 @@ class AbstractStateManager () {
 
     }
 
+    fun createVirtualAbstractState (window: WTGNode) {
+        val virtualAbstractState = VirtualAbstractState(window.activityClass, window, false)
+        ABSTRACT_STATES.add(virtualAbstractState)
+        initAbstractInteractions(virtualAbstractState)
+    }
     fun getOrCreateNewTestState(guiState: State<*>, i_activity: String, appPackageName: String, isFromLaunch: Boolean , rotation: Rotation): AbstractState{
         var activity = i_activity
         if (guiState.isHomeScreen)
@@ -127,7 +136,7 @@ class AbstractStateManager () {
             val widget_WidgetGroupHashMap = StateReducer.reduce(guiState,activity)
             TextInput.saveSpecificTextInputData(guiState)
             val guiReducedWidgetGroup = widget_WidgetGroupHashMap.map { it.value }.distinct()
-            val matchingTestState = ABSTRACT_STATES.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
+            val matchingTestState = ABSTRACT_STATES.filterNot {it is VirtualAbstractState}.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
                     && it.activity == activity && regressionTestingMF.currentRotation == it.rotation}
             if (matchingTestState!=null) {
                 if (!matchingTestState.guiStates.contains(guiState))
@@ -136,7 +145,7 @@ class AbstractStateManager () {
                 }
                 return matchingTestState
             }
-            val staticMapping = getMatchingStaticWidgets(widget_WidgetGroupHashMap, guiState, activity, isFromLaunch)
+            val staticMapping = getMatchingStaticWidgets(widget_WidgetGroupHashMap, guiState, activity, rotation)
             if (staticMapping.first.activityClass.isBlank()) {
                 staticMapping.first.activityClass = activity
             }
@@ -153,6 +162,9 @@ class AbstractStateManager () {
                         window = staticMapping.first,isFromLaunch = isFromLaunch,
                         rotation = regressionTestingMF.currentRotation,
                         isOutOfApplication = staticMapping.first is WTGOutScopeNode)
+                if (abstractState.window is WTGDialogNode || abstractState.window is WTGOptionsMenuNode || abstractState.window is WTGContextMenuNode) {
+                    abstractState.hasOptionsMenu = false
+                }
                 ABSTRACT_STATES.add(abstractState)
                 abstractState.guiStates.add(guiState)
                 initAbstractInteractions(abstractState,null)
@@ -186,13 +198,13 @@ class AbstractStateManager () {
         }while (true)
     }
 
-    fun refineAbstractState(guiState: State<*>, window: WTGNode, appPackageName: String, isFromLaunch: Boolean, rotation: Rotation): AbstractState {
+    fun refineAbstractState(abstractStates: List<AbstractState>,guiState: State<*>, window: WTGNode, appPackageName: String, isFromLaunch: Boolean, rotation: Rotation): AbstractState {
         val activity = window.activityClass
         val isRequestRuntimeDialogBox = guiState.isRequestRuntimePermissionDialogBox
         val isOpeningKeyboard = guiState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
         val widget_WidgetGroupHashMap = StateReducer.reduce(guiState,activity)
         val guiReducedWidgetGroup = widget_WidgetGroupHashMap.map { it.value }.distinct()
-        val matchingTestState = ABSTRACT_STATES.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
+        val matchingTestState = abstractStates.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
                 && it.activity == activity && regressionTestingMF.currentRotation == it.rotation}
         if (matchingTestState!=null) {
             if (!matchingTestState.guiStates.contains(guiState))
@@ -328,7 +340,11 @@ class AbstractStateManager () {
             }
         }
         //create implicit widget interactions from VirtualAbstractState
-        val virtualAbstractState = ABSTRACT_STATES.filter { it is VirtualAbstractState && it.window == abstractState.window }.first()
+        val virtualAbstractStates = ABSTRACT_STATES.filter { it is VirtualAbstractState && it.window == abstractState.window }
+        if (virtualAbstractStates.isEmpty()) {
+            return
+        }
+        val virtualAbstractState = virtualAbstractStates.first()
         regressionTestingMF.abstractTransitionGraph.edges(virtualAbstractState).forEach { edge->
             val existingEdge = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find {
                 it.label.abstractAction == edge.label.abstractAction
@@ -377,9 +393,10 @@ class AbstractStateManager () {
         return false
     }
 
-    fun getMatchingStaticWidgets(widget_WidgetGroupHashMap: HashMap<Widget,WidgetGroup> , guiState: State<*>, activity: String, isFromLaunch: Boolean):Pair<WTGNode, HashMap<WidgetGroup, ArrayList<StaticWidget>>>
+    fun getMatchingStaticWidgets(widget_WidgetGroupHashMap: HashMap<Widget,WidgetGroup> , guiState: State<*>, activity: String, rotation: Rotation):Pair<WTGNode, HashMap<WidgetGroup, ArrayList<StaticWidget>>>
     {
         //check if the previous state is homescreen
+        val guiTreeDimension = computeGuiTreeDimension(guiState)
         val allPossibleNodes = ArrayList<WTGNode>()
         if (activity.isBlank()) {
             return Pair(first = WTGOutScopeNode.getOrCreateNode(activity),second = HashMap())
@@ -396,7 +413,12 @@ class AbstractStateManager () {
         }
         val optionsMenuNode = regressionTestingMF.transitionGraph.getOptionsMenu(activityNode)
         val contextMenuNodes = regressionTestingMF.transitionGraph.getContextMenus(activityNode)
-        val dialogNodes = regressionTestingMF.transitionGraph.getDialogs(activityNode)
+        val dialogNodes = ArrayList(regressionTestingMF.transitionGraph.getDialogs(activityNode))
+        WTGDialogNode.allNodes.filter { it.activityClass == activity }.forEach {
+            if (!dialogNodes.contains(it)) {
+                dialogNodes.add(it)
+            }
+        }
         if (optionsMenuNode != null) {
             if (!Helper.mergeOptionsMenuWithActivity(guiState, optionsMenuNode, activityNode, regressionTestingMF.transitionGraph, regressionTestingMF)) {
                 allPossibleNodes.add(optionsMenuNode)
@@ -406,7 +428,14 @@ class AbstractStateManager () {
                 }
             }
         }
-        allPossibleNodes.add(activityNode)
+
+        if (isDimensionEmpty(activityNode, rotation
+                )) {
+            allPossibleNodes.add(activityNode)
+        } else if (isSameDimension(activityNode,guiTreeDimension,rotation)) {
+            allPossibleNodes.add(activityNode)
+        }
+
         allPossibleNodes.addAll(contextMenuNodes.distinct())
         allPossibleNodes.addAll(dialogNodes.distinct())
 
@@ -417,7 +446,7 @@ class AbstractStateManager () {
         if (allPossibleNodes.size == 1) {
             bestMatchedNode = allPossibleNodes.first()
         }
-        else {
+        else if (allPossibleNodes.size > 1){
             val matchWeights = Helper.calculateMatchScoreForEachNode(guiState, allPossibleNodes, appName, regressionTestingMF)
             //sort and get the highest ranking of the match list as best matched node
             val sortedWeight = matchWeights.map { it.value }.sortedDescending()
@@ -426,36 +455,73 @@ class AbstractStateManager () {
             if (topMatchingNodes.size == 1) {
                 bestMatchedNode = topMatchingNodes.entries.first().key
             } else {
-                if (largestWeight > 0.0) {
-                    val sortByPercentage = topMatchingNodes.toSortedMap(compareByDescending { matchWeights[it]!! / it.widgets.size.toDouble() })
-                    bestMatchedNode = topMatchingNodes.filter { it.value == sortByPercentage[sortByPercentage.firstKey()]!! }.entries.first().key
-                } else {
-                    bestMatchedNode = activityNode
-                }
+                val sortByPercentage = topMatchingNodes.toSortedMap(compareByDescending { matchWeights[it]!! / it.widgets.size.toDouble() })
+                bestMatchedNode = topMatchingNodes.filter { it.value == sortByPercentage[sortByPercentage.firstKey()]!! }.entries.first().key
             }
-        }
-        val guiTreeDimension = computeGuiTreeDimension(guiState)
-        if (bestMatchedNode.dimension.isEmpty()) {
-            bestMatchedNode.dimension = guiTreeDimension
         } else {
-            // check if guistate is not in another rotation
-            if (!(bestMatchedNode.dimension.width+bestMatchedNode.dimension.height
-                            == guiTreeDimension.width + guiTreeDimension.height)) {
+            val newWTGDialog = createNewDialog(activity, activityNode, rotation, guiTreeDimension)
+            bestMatchedNode = newWTGDialog
+        }
+
+        if (isDimensionEmpty(bestMatchedNode,rotation)) {
+            if (bestMatchedNode is WTGOptionsMenuNode) {
+                setDimension(bestMatchedNode,rotation, guiTreeDimension)
+            }
+            else if (bestMatchedNode !is WTGActivityNode && guiTreeDimension.leftX > 0) {
+                setDimension(bestMatchedNode,rotation, guiTreeDimension)
+            } else if (bestMatchedNode is WTGActivityNode && guiTreeDimension.leftX==0) {
+                setDimension(bestMatchedNode, rotation, guiTreeDimension)
+            } else {
                 // it can be assumed that a new dialog is popup
                 // create new WTGDialog Window
-                val newWTGDialog = WTGDialogNode.getOrCreateNode(WTGDialogNode.getNodeId(), activity)
-                newWTGDialog.activityClass = activity
-
-               // regressionTestingMF.transitionGraph.copyNode(activityNode!!,newWTGDialog)
-                val virtualAbstractState = VirtualAbstractState(newWTGDialog.classType,newWTGDialog,false)
-                ABSTRACT_STATES.add(virtualAbstractState)
-                initAbstractInteractions(virtualAbstractState)
+                val newWTGDialog = createNewDialog(activity, activityNode, rotation, guiTreeDimension)
                 bestMatchedNode = newWTGDialog
+            }
+        } else {
+            // check if guistate is not in another rotation
+            if (!isSameDimension(bestMatchedNode,guiTreeDimension,rotation)) {
+                // it can be assumed that a new dialog is popup
+                // create new WTGDialog Window
+              val newWTGDialog = createNewDialog(activity, activityNode, rotation, guiTreeDimension)
+                bestMatchedNode = newWTGDialog
+
             }
         }
 
         val widgetGroup_staticWidgetHashMap = getStaticWidgets(widget_WidgetGroupHashMap,guiState, bestMatchedNode)
         return Pair(first = bestMatchedNode,second =  widgetGroup_staticWidgetHashMap)
+    }
+
+    private fun createNewDialog(activity: String, activityNode: WTGActivityNode, rotation: Rotation, guiTreeDimension: Rectangle): WTGDialogNode {
+        val newWTGDialog = WTGDialogNode.getOrCreateNode(WTGDialogNode.getNodeId(), activity)
+        newWTGDialog.activityClass = activity
+        regressionTestingMF.transitionGraph.add(activityNode, newWTGDialog, FakeEvent(activityNode))
+        setDimension(newWTGDialog, rotation, guiTreeDimension)
+        // regressionTestingMF.transitionGraph.copyNode(activityNode!!,newWTGDialog)
+        createVirtualAbstractState(newWTGDialog)
+        return newWTGDialog
+    }
+
+    private fun setDimension(bestMatchedNode: WTGNode, rotation: Rotation, guiTreeDimension: Rectangle) {
+        if (rotation == Rotation.PORTRAIT) {
+            bestMatchedNode.portraitDimension = guiTreeDimension
+            return
+        }
+        bestMatchedNode.landscapeDimension = guiTreeDimension
+    }
+
+    private fun isSameDimension(window: WTGNode, guiTreeDimension: Rectangle, rotation: Rotation): Boolean {
+        if (rotation == Rotation.PORTRAIT) {
+            return window.portraitDimension == guiTreeDimension
+        }
+        return window.landscapeDimension == guiTreeDimension
+    }
+
+    private fun isDimensionEmpty(window: WTGNode, rotation: Rotation): Boolean {
+        if (rotation == Rotation.PORTRAIT) {
+            return window.portraitDimension.isEmpty()
+        }
+        return window.landscapeDimension.isEmpty()
     }
 
     private fun computeGuiTreeDimension(guiState: State<*>) =
@@ -546,7 +612,7 @@ class AbstractStateManager () {
                     && it.destination?.data !is VirtualAbstractState && it.label.interactions.contains(guiInteraction)}
 
         val distinctAbstractInteractions = abstractInteractions.distinctBy { it.destination?.data?.window }
-            if (distinctAbstractInteractions.size > 1)
+        if (distinctAbstractInteractions.size > 1)
                 return false
         return true
     }
@@ -557,12 +623,13 @@ class AbstractStateManager () {
         try {
             val oldAbstractStates = ABSTRACT_STATES.filter { it.window == staticNode && it !is VirtualAbstractState }
             val allGUIStates = ArrayList<State<*>>()
+            val possibleAbstractStates = ABSTRACT_STATES
             val old_newAbstractStates = HashMap<AbstractState, ArrayList<AbstractState>>()
             oldAbstractStates.forEach { oldAbstractState ->
                 allGUIStates.addAll(oldAbstractState.guiStates)
                 val newAbstractStates = ArrayList<AbstractState>()
                 oldAbstractState.guiStates.forEach {
-                    val abstractState =  refineAbstractState(it, oldAbstractState.window, appName, oldAbstractState.isFromLaunch, oldAbstractState.rotation)
+                    val abstractState =  refineAbstractState(possibleAbstractStates,it, oldAbstractState.window, appName, oldAbstractState.isFromLaunch, oldAbstractState.rotation)
                     if (!newAbstractStates.contains(abstractState)) {
                         newAbstractStates.add(abstractState)
                         regressionTestingMF.abstractStateVisitCount[abstractState] = 1
@@ -575,20 +642,41 @@ class AbstractStateManager () {
                     ABSTRACT_STATES.remove(oldAbstractState)
             }
 
-            val processedGUIInteractions = ArrayList<Interaction<Widget>>()
+            val processedGUIInteractions = ArrayList<Edge<State<Widget>,Interaction<Widget>>>()
             old_newAbstractStates.entries.forEach {
                 val oldAbstractState = it.key
                 val newAbstractStates = it.value
                 val oldAbstractEdges = regressionTestingMF.abstractTransitionGraph.edges(oldAbstractState)
-                oldAbstractEdges.forEach { oldAbstractEdge ->
+                val implicitAbstractEdges = oldAbstractEdges.filter { it.label.isImplicit }
+                val explicitAbstractEdges = oldAbstractEdges.filter { !it.label.isImplicit }
+                implicitAbstractEdges.filter { it.label.abstractAction.actionName.isPressBack() }.forEach {
+                    if (old_newAbstractStates.containsKey(it.source.data)) {
+                        val newSourceAbstractStates = old_newAbstractStates[it.source.data]!!
+                        val newDestAbstractStates = if (it.destination!!.data.window == staticNode
+                                && old_newAbstractStates.containsKey(it.destination!!.data)) {
+                            old_newAbstractStates[it.destination?.data]!!
+                        } else {
+                            arrayListOf(it.destination!!.data)
+                        }
+                        if (newSourceAbstractStates.isNotEmpty() && newDestAbstractStates.isNotEmpty()) {
+                            newSourceAbstractStates.forEach { source ->
+                                newDestAbstractStates.forEach { dest ->
+                                    regressionTestingMF.abstractTransitionGraph.add(source, dest, it.label)
+                                }
+                            }
+
+                        }
+                    }
+                }
+                explicitAbstractEdges.forEach { oldAbstractEdge ->
                     val guiEdges = regressionTestingMF.stateGraph!!.edges().filter { guiEdge ->
                         oldAbstractEdge.label.interactions.contains(guiEdge.label)
                     }
                     guiEdges.forEach { guiEdge ->
-                        if (processedGUIInteractions.contains(guiEdge.label)) {
+                        if (processedGUIInteractions.contains(guiEdge)) {
                             log.debug("Processed interaction in refining model")
                         } else {
-                            processedGUIInteractions.add(guiEdge.label)
+                            processedGUIInteractions.add(guiEdge)
                             val sourceAbstractState = newAbstractStates.find { it.guiStates.contains(guiEdge.source.data) }
                             val destinationAbstractState = newAbstractStates.find { it.guiStates.contains(guiEdge.destination?.data) }
                                     ?: oldAbstractEdge.destination!!.data
@@ -598,22 +686,26 @@ class AbstractStateManager () {
                                     //Reuse Abstract action
                                     val abstractAction = oldAbstractEdge.label.abstractAction
                                     //check if the interaction was created
-                                    val abstractEdge = regressionTestingMF.abstractTransitionGraph.edges(sourceAbstractState, destinationAbstractState).find { it.label.abstractAction == abstractAction }
+                                    val abstractEdge = regressionTestingMF.abstractTransitionGraph.edges(sourceAbstractState, destinationAbstractState)
+                                            .find { it.label.abstractAction == abstractAction }
                                     if (abstractEdge == null) {
                                         //Create explicit edge for linked abstractState
                                         val abstractInteraction = AbstractInteraction(
                                                 abstractAction = abstractAction,
                                                 isImplicit = false,
-                                                prevWindow = oldAbstractEdge.label.prevWindow
+                                                prevWindow = oldAbstractEdge.label.prevWindow,
+                                                data = oldAbstractEdge.label.data
                                         )
                                         sourceAbstractState.abstractInteractions.add(abstractInteraction)
                                         abstractInteraction.interactions.add(guiEdge.label)
                                         regressionTestingMF.abstractTransitionGraph.add(sourceAbstractState, destinationAbstractState, abstractInteraction)
+
                                         //Create implicit edges for other abstractState
                                         val implicitAbstractInteraction = AbstractInteraction(
                                                 abstractAction = abstractAction,
                                                 isImplicit = true,
-                                                prevWindow = oldAbstractEdge.label.prevWindow
+                                                prevWindow = oldAbstractEdge.label.prevWindow,
+                                                data = oldAbstractEdge.label.data
                                         )
                                         val otherAbstractStates = newAbstractStates.filterNot { it == sourceAbstractState }
                                         otherAbstractStates.forEach {
@@ -641,7 +733,8 @@ class AbstractStateManager () {
                                             val abstractInteraction = AbstractInteraction(
                                                     abstractAction = abstractAction,
                                                     isImplicit = false,
-                                                    prevWindow = null
+                                                    prevWindow = oldAbstractEdge.label.prevWindow,
+                                                    data = oldAbstractEdge.label.data
 
                                             )
                                             sourceAbstractState.abstractInteractions.add(abstractInteraction)
@@ -695,7 +788,7 @@ class AbstractStateManager () {
         val mappedStaticWidgets = ArrayList<StaticWidget>()
         unmappedWidgets.groupBy { widget_WidgetGroupHashMap[it] }.filter{it.key!=null} .forEach {
             it.value.forEach {w->
-                val staticWidgets = Helper.getStaticWidgets(w, it.key!!, guiState,staticNode,true, regressionTestingMF)
+                val staticWidgets = Helper.getStaticWidgets(w, guiState,staticNode,true, regressionTestingMF)
                 //if a widgetGroup has more
                 if (staticWidgets.isNotEmpty())
                 {

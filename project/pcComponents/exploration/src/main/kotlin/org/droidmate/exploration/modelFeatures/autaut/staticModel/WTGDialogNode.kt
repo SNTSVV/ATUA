@@ -11,12 +11,12 @@ class WTGDialogNode(classType: String,
         return true
     }
     override fun toString(): String {
-        return "[AppState][Initial]${super.toString()}"
+        return "[Window][Dialog]${super.toString()}"
     }
     companion object{
         var counter = 0
         val allNodes = ArrayList<WTGDialogNode>()
-        fun getNodeId(): String = "DialogNode-${counter++}"
+        fun getNodeId(): String = "Dialog-${counter++}"
         fun getOrCreateNode(nodeId: String, classType: String): WTGDialogNode{
             val node = allNodes.find { it.nodeId == nodeId }
             if (node != null)

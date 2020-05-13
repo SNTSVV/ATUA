@@ -207,7 +207,7 @@ class ExerciseTargetComponentTask private constructor(
         eventList.remove(chosenAbstractAction!!)
         if (chosenAbstractAction!=null)
         {
-            //log.info("Exercise Event: ${chosenAbstractAction!!.actionName}-Widget:${chosenAbstractAction!!.widgetGroup}")
+            log.info("Exercise Event: ${chosenAbstractAction!!.actionName}")
             var chosenWidget: Widget? = null
             if (chosenAbstractAction!!.widgetGroup!=null)
             {
@@ -218,7 +218,7 @@ class ExerciseTargetComponentTask private constructor(
                     log.debug("No widget found")
                     return randomExplorationTask.chooseAction(currentState)
                 }
-                log.debug("Choose Action for Widget: $chosenWidget")
+                log.info("Choose Action for Widget: $chosenWidget")
             }
             val recommendedAction = chosenAbstractAction!!.actionName
             log.debug("Target action: $recommendedAction")

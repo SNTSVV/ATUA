@@ -14,6 +14,9 @@ import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
 import org.droidmate.explorationModel.interaction.State
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 abstract class AbstractPhaseStrategy(
         val regressionTestingStrategy: RegressionTestingStrategy,
@@ -55,7 +58,7 @@ abstract class AbstractPhaseStrategy(
                     childParentMap.put(currentAbstractState, null)
                     findPathToTargetComponentByBFS(currentState = currentState
                             , root = currentAbstractState
-                            , traversingNodes = listOf(Pair(first = regressionTestingMF.windowStack.peek(),second = currentAbstractState))
+                            , traversingNodes = listOf(Pair(first = regressionTestingMF.windowStack.clone() as Stack<WTGNode>,second = currentAbstractState))
                             , finalTarget = targetState
                             , allPaths = transitionPaths
                             , includeBackEvent = true
@@ -87,28 +90,36 @@ abstract class AbstractPhaseStrategy(
     }
     abstract fun isEnd(): Boolean
 
-    fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<WTGNode, AbstractState>>, finalTarget: AbstractState
+    fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<WTGNode>, AbstractState>>, finalTarget: AbstractState
                                        , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean
-                                       , childParentMap: HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?>, level: Int) {
+                                       , childParentMap: HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?> ,level: Int) {
         if (traversingNodes.isEmpty())
             return
         val graph = regressionTestingMF.abstractTransitionGraph
-        val nextLevelNodes = ArrayList<Pair<WTGNode,AbstractState>>()
+        val nextLevelNodes = ArrayList<Pair<Stack<WTGNode>,AbstractState>>()
         for (traversing in traversingNodes)
         {
+
             val source = traversing.second
-            val prevWindow = traversing.first
+            val windowStack = traversing.first
+            if (source.window == windowStack.peek()) {
+                windowStack.pop()
+            } else {
+                windowStack.push(source.window)
+            }
             if (includeBackEvent)
             {
                 val backNodes = ArrayList<AbstractState>()
                 val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
-                val backCandiates = graph.edges(source).filter {
+                val backEdges = graph.edges(source).filter {
                     it.label.abstractAction.actionName.isPressBack()
-                            && it.destination!=null
-                            && backToLauncherOrNot(it,level)
+                            && it.destination != null}
+
+                val backCandiates = backEdges.filter {
+                            backToLauncherOrNot(it,level)
                             && it.destination!!.data.window !is WTGOutScopeNode
                             && it.label.prevWindow != null
-                            && isTheSamePrevWindow(prevWindow, it)
+                            && isTheSamePrevWindow(windowStack.peek(), it)
                 }.groupBy { it.label.isImplicit }
 
                 if (backCandiates.containsKey(true)) {
@@ -136,10 +147,11 @@ abstract class AbstractPhaseStrategy(
                         return
                     } else {
                         if(source.window != backState.window) {
-                            nextLevelNodes.add(Pair(first = source.window, second = backState))
+                            //
+                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>, second = backState))
                         } else {
                             // keep current prevWindow
-                            nextLevelNodes.add(Pair(first = prevWindow, second = backState ))
+                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>, second = backState ))
                         }
                     }
                 }
@@ -151,12 +163,12 @@ abstract class AbstractPhaseStrategy(
                         && it.destination!!.data.window !is WTGFakeNode
                         && it.destination!!.data.window !is WTGOpeningKeyboardNode
                         && !it.label.abstractAction.actionName.equals("MinimizeMaximize")
-                        && isTheSamePrevWindow(prevWindow,it)
+                        && isTheSamePrevWindow(windowStack.peek(),it)
             }
             val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
             possibleTransitions.filter {
                 !it.label.abstractAction.actionName.isPressBack()
-                        && includingRotateUIOrNot(it) && isTheSamePrevWindow(prevWindow,it)
+                        && includingRotateUIOrNot(it) && isTheSamePrevWindow(windowStack.peek(),it)
             }.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
                 val reliableTransition =  u.filter { !it.label.isImplicit || it.label.prevWindow == null }
                 val implicitTransitions = u.filter { it.label.isImplicit }
@@ -188,10 +200,10 @@ abstract class AbstractPhaseStrategy(
                             return
                         }
                         if (source.window != nextNode.window) {
-                            nextLevelNodes.add(Pair(first = source.window,second=nextNode))
+                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>,second=nextNode))
                         } else {
                             // keep current prevWindow
-                            nextLevelNodes.add(Pair(first = prevWindow,second=nextNode))
+                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>,second=nextNode))
                         }
 
                     }
@@ -203,7 +215,7 @@ abstract class AbstractPhaseStrategy(
     }
 
     private fun backToLauncherOrNot(it: Edge<AbstractState, AbstractInteraction>, depth: Int) =
-            it.destination!!.data.window !is WTGLauncherNode || depth == 0
+            it.destination!!.data.window !is WTGLauncherNode
 
     private fun includingRotateUIOrNot(it: Edge<AbstractState, AbstractInteraction>): Boolean {
         if (regressionTestingMF.appRotationSupport)

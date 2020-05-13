@@ -413,7 +413,6 @@ private fun UiDevice.rotate(rotation: Int,automation: UiAutomation):Boolean{
 }
 
 private fun UiDevice.sendIntent(action: String, category: String, uriString: String, activityName: String, appPackageName: String, env: UiAutomationEnvironment): Boolean{
-	this.pressHome()
 	val context = env.context
 	val intent = Intent()
 	val intentAction = if (action.isBlank())
@@ -425,11 +424,12 @@ private fun UiDevice.sendIntent(action: String, category: String, uriString: Str
 		Intent.CATEGORY_DEFAULT
 	else
 		category
-
 	intent.setAction(intentAction)
 	intent.addCategory(intentCategory)
 	intent.setData(Uri.parse(uriString))
 	intent.setClassName(appPackageName,activityName)
+	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+	intent.addFlags(Intent.FLAG_FROM_BACKGROUND)
 	//intent.setComponent(ComponentName(appPackageName,activityName))
 	context.startActivity(intent)
 //	val pm = context.packageManager

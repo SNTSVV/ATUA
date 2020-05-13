@@ -18,6 +18,9 @@ import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.random.Random
 
 class PhaseTwoStrategy (
@@ -102,7 +105,7 @@ class PhaseTwoStrategy (
             computeAppStatesScore()
             selectTargetStaticNode()
         }
-
+        log.info("Target window: $targetWindow")
         chooseTask(eContext, currentState)
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
@@ -127,7 +130,7 @@ class PhaseTwoStrategy (
             childParentMap.put(currentAbState,null)
             findPathToTargetComponentByBFS(currentState = currentState
                     , root = currentAbState
-                    ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.peek(), currentAbState))
+                    ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                     ,finalTarget = targetAbstractState
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
@@ -160,7 +163,7 @@ class PhaseTwoStrategy (
                 childParentMap.put(currentAbState,null)
                 findPathToTargetComponentByBFS(currentState = currentState
                         , root = currentAbState
-                        ,traversingNodes = listOf(Pair(prevAbstractState!!.window, currentAbState))
+                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                         ,finalTarget = targetAbstractState
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
@@ -198,7 +201,7 @@ class PhaseTwoStrategy (
                 childParentMap.put(currentAbState,null)
                 findPathToTargetComponentByBFS(currentState = currentState
                         , root = currentAbState
-                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.peek(), currentAbState))
+                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                         ,finalTarget = it
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
@@ -208,7 +211,6 @@ class PhaseTwoStrategy (
 
         }
         return transitionPaths
-
     }
 
     override fun getCurrentTargetEvents(currentState: State<*>):  List<AbstractAction> {

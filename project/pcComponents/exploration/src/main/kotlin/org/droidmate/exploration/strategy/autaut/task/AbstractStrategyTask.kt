@@ -13,6 +13,7 @@ import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
 import org.droidmate.explorationModel.interaction.State
@@ -209,10 +210,10 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         val screenWidth = outBoundLayout!!.visibleBounds.width
         if (random.nextBoolean()) {
             //Swipe up
-            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2),screenHeight/2)
+            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2))
         } else {
             //Swipe right
-            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2),screenWidth/2)
+            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2))
         }
     }
 
@@ -221,7 +222,8 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
             return chooseActionForTextInput(chosenWidget, currentState)
         }
         if (action == "Swipe" && data is String) {
-            return when (data) {
+            val swipeAction =
+             when (data) {
                 "SwipeUp" -> chosenWidget.swipeUp()
                 "SwipeDown" -> chosenWidget.swipeDown()
                 "SwipeLeft" -> chosenWidget.swipeLeft()
@@ -229,11 +231,15 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 else -> {
                     if (data.isNotBlank()) {
                         val swipeInfo: List<Pair<Int,Int>> = parseSwipeData(data)
-                        Swipe(swipeInfo[0],swipeInfo[1],computeStep(swipeInfo))
+                        Swipe(swipeInfo[0],swipeInfo[1],25,true)
+                    } else {
+                        arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
                     }
-                    arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
                 }
             }
+            ExplorationTrace.widgetTargets.clear()
+            ExplorationTrace.widgetTargets.add(chosenWidget)
+            return swipeAction
         }
         val actionList = chosenWidget.availableActions(delay, useCoordinateClicks)
         val widgetActions = actionList.filter {
@@ -248,10 +254,11 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
 
             return widgetActions.random()
         }
+        ExplorationTrace.widgetTargets.clear()
         val hardAction = when (action) {
-            "Click" -> regressionTestingStrategy.eContext.navigateTo(chosenWidget, { chosenWidget.click() })
-            "LongClick" -> regressionTestingStrategy.eContext.navigateTo(chosenWidget, { chosenWidget.longClick() })
-            else -> regressionTestingStrategy.eContext.navigateTo(chosenWidget, { chosenWidget.click() })
+            "Click" -> chosenWidget.clickEvent(delay=delay, ignoreClickable = true)
+            "LongClick" -> chosenWidget.longClickEvent(delay=delay, ignoreVisibility = true)
+            else -> chosenWidget.click(ignoreClickable = true)
         }
         return hardAction
     }
@@ -324,10 +331,10 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         val randomWidget = childWidgets[random.nextInt(childWidgets.size)]
         LoggerFactory.getLogger("AbstractStrategyTask").info("Item widget: $randomWidget")
         val hardAction = when (action) {
-            "ItemClick" -> regressionTestingStrategy.eContext.navigateTo(randomWidget, { randomWidget.click() })
-            "ItemLongClick" -> regressionTestingStrategy.eContext.navigateTo(randomWidget, { randomWidget.longClick() })
-            "ItemSelected" -> regressionTestingStrategy.eContext.navigateTo(randomWidget, { randomWidget.click() })
-            else -> regressionTestingStrategy.eContext.navigateTo(randomWidget, { randomWidget.click() })
+            "ItemClick" -> randomWidget.clickEvent(delay=delay, ignoreClickable = true)
+            "ItemLongClick" -> randomWidget.longClickEvent(delay=delay, ignoreVisibility = true)
+            "ItemSelected" -> randomWidget.clickEvent(delay=delay, ignoreClickable = true)
+            else -> randomWidget.clickEvent(delay=delay, ignoreClickable = true)
         }
         return hardAction
     }

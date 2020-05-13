@@ -11,14 +11,46 @@ import kotlin.collections.HashMap
 data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality) {
     var exerciseCount: Int = 0
     var guiWidgets = HashSet<Widget>()
+    val actionCount = HashMap<AbstractAction, Int>()
+
+    init {
+        if (attributePath.isClickable()) {
+            val abstractAction = AbstractAction(
+                    actionName = "Click",
+                    widgetGroup = this
+            )
+            actionCount.put(abstractAction, 0)
+        }
+        if (attributePath.isLongClickable()) {
+            val abstractAction = AbstractAction(
+                    actionName = "LongClick",
+                    widgetGroup = this
+            )
+            actionCount.put(abstractAction, 0)
+        }
+        if (attributePath.isScrollable()) {
+            val abstractAction = AbstractAction(
+                    actionName = "Swipe",
+                    widgetGroup = this
+            )
+            actionCount.put(abstractAction, 0)
+        }
+        if (attributePath.isInputField()) {
+            val abstractAction = AbstractAction(
+                    actionName = "TextInput",
+                    widgetGroup = this
+            )
+            actionCount.put(abstractAction, 0)
+        }
+    }
+
     fun getGUIWidgets ( guiState: State<*>): List<Widget>{
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val selectedGuiWidgets = ArrayList<Widget>()
         Helper.getVisibleWidgets(guiState).forEach {
-            val reducedAttributePath = WidgetReducer.reduce(it,guiState,abstractState.activity,tempFullAttributePaths,tempRelativeAttributePaths)
-            if (reducedAttributePath.equals(attributePath)) {
+            if (isAbstractRepresentationOf(it,guiState)) {
                 selectedGuiWidgets.add(it)
             }
         }
@@ -51,6 +83,7 @@ data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardi
         }
         return totalActions
     }
+
     fun getLocalAttributes(): HashMap<AttributeType, String>{
         return attributePath.localAttributes
     }

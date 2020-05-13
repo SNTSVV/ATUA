@@ -12,6 +12,7 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -270,8 +271,11 @@ open class GoToAnotherWindow protected constructor(
                                         return scrollActions.random()
 
                                     }
+                                    ExplorationTrace.widgetTargets.clear()
                                 }
                             }
+                        } else {
+                            //TODO find widgetGroup 's visible scrollable parent and try scroll until find the widget
                         }
                         addIncorrectPath()
                         if (hasAnotherOption(currentState)) {
