@@ -309,7 +309,9 @@ class RegressionTestingMF(private val appName: String,
                         }
                     } else {
                         if (currentAbstractState.window != prevAbstractState.window) {
-                            windowStack.push(prevAbstractState.window)
+                            if (prevAbstractState.window !is WTGDialogNode) {
+                                windowStack.push(prevAbstractState.window)
+                            }
                         } else if (currentAbstractState.isOpeningKeyboard) {
                             windowStack.push(currentAbstractState.window)
                         }
@@ -394,7 +396,7 @@ class RegressionTestingMF(private val appName: String,
         {
             val allAbstractTransitions = abstractTransitionGraph.edges(prevAbstractState)
             val abstractTransitions = allAbstractTransitions.filter {
-                it.label.abstractAction.actionName == interaction.actionType
+                it.label.abstractAction.actionName == actionType
                         && compareDataOrNot(it.label, interaction)
                         && it.label.prevWindow == windowStack.peek()}
             if (abstractTransitions.isNotEmpty())
@@ -421,17 +423,14 @@ class RegressionTestingMF(private val appName: String,
                     abstractTransitionGraph.add(prevAbstractState,currentAbstractState,lastExecutedInteraction!!)
                     addImplicitAbstractInteraction(prevAbstractState,currentAbstractState,lastExecutedInteraction!!,windowStack.peek())
                 }
+                lastExecutedAction=lastExecutedInteraction!!.abstractAction
             }
             else
             {
                 //No recored abstract interaction before
                 //Or the abstractInteraction is implicit
                 //Record new AbstractInteraction
-
-                lastExecutedAction = AbstractAction(
-                            actionName = interaction.actionType,
-                            extra = interaction.data
-                    )
+                lastExecutedAction = getOrCreateAbstractAction(actionType,interaction.data,prevAbstractState,null)
 
                 val newAbstractInteraction = AbstractInteraction(
                         abstractAction = lastExecutedAction!!,
@@ -452,15 +451,11 @@ class RegressionTestingMF(private val appName: String,
             if (widgetGroup!=null)
             {
                 widgetGroup.exerciseCount+=1
-                AbstractStateManager.instance.ABSTRACT_STATES.filter{ it.window == prevAbstractState.window }. filter { it.widgets.contains(widgetGroup!!) }.forEach {
-                    val sameWidgetGroup = it.widgets.find { it == widgetGroup }!!
-                    sameWidgetGroup.exerciseCount++
-                }
 
                 val allAbstractTransitions = abstractTransitionGraph.edges(prevAbstractState)
                 val abstractTransitions = allAbstractTransitions.filter {
-                    it.label.abstractAction.actionName == interaction.actionType
-                        && it.label.abstractAction.widgetGroup?.equals(widgetGroup)?:false
+                    it.label.abstractAction.actionName == actionType
+                        && it.label.abstractAction.widgetGroup == widgetGroup
                             && compareDataOrNot(it.label, interaction)
                             && it.label.prevWindow == windowStack.peek()}
                 if (abstractTransitions.isNotEmpty())
@@ -484,6 +479,7 @@ class RegressionTestingMF(private val appName: String,
                         abstractTransitionGraph.add(prevAbstractState,currentAbstractState,lastExecutedInteraction!!)
                         addImplicitAbstractInteraction(prevAbstractState,currentAbstractState,lastExecutedInteraction!!,windowStack.peek())
                     }
+                    lastExecutedAction = lastExecutedInteraction!!.abstractAction
                 }
                 else
                 {
@@ -491,12 +487,7 @@ class RegressionTestingMF(private val appName: String,
                     //Or the abstractInteraction is implicit
                     //Record new AbstractInteraction
 
-                    lastExecutedAction = AbstractAction(
-                            actionName = interaction.actionType,
-                            widgetGroup = widgetGroup,
-                            extra = interaction.data
-                    )
-
+                    lastExecutedAction = getOrCreateAbstractAction(actionType,interaction.data, prevAbstractState, widgetGroup)
 
                     val newAbstractInteraction = AbstractInteraction(
                             abstractAction = lastExecutedAction!!,
@@ -504,7 +495,9 @@ class RegressionTestingMF(private val appName: String,
                             isImplicit = false,
                             prevWindow = windowStack.peek(),
                             data = interaction.data)
+
                     newAbstractInteraction.interactions.add(interaction)
+
                     abstractTransitionGraph.add(prevAbstractState,currentAbstractState,newAbstractInteraction)
                     lastExecutedInteraction = newAbstractInteraction
                     addImplicitAbstractInteraction(prevAbstractState,currentAbstractState,lastExecutedInteraction!!,windowStack.peek())
@@ -515,18 +508,62 @@ class RegressionTestingMF(private val appName: String,
             log.info("Not processed interaction: ${interaction.toString()}")
             return
         }
+
         log.info("Computing Abstract Interaction. - DONE")
-        if (interaction.targetWidget==null || interaction.actionType.isTextInsert())
-            return
+        prevAbstractState.increaseActionCount(lastExecutedAction!!)
         log.info("Refining Abstract Interaction.")
         AbstractStateManager.instance.refineModel(interaction, prevState,lastExecutedInteraction!!)
         log.info("Refining Abstract Interaction. - DONE")
     }
 
+    private fun getOrCreateAbstractAction(actionType: String, interactionData: String, abstractState: AbstractState, widgetGroup: WidgetGroup?): AbstractAction {
+        val abstractAction: AbstractAction
+        val availableAction = if (!actionType.isTextInsert()) {
+            abstractState.getAvailableActions().find {
+                it.actionName == actionType
+                        && it.widgetGroup == widgetGroup
+                        && ((it.extra == null) || (it.extra == interactionData))
+            }
+        } else {
+            abstractState.getAvailableActions().find {
+                it.actionName == actionType
+                        && it.widgetGroup == widgetGroup
+            }
+        }
+
+        if (availableAction == null) {
+            if (!actionType.isTextInsert()) {
+                abstractAction = AbstractAction(
+                        actionName = actionType,
+                        widgetGroup = widgetGroup,
+                        extra = interactionData
+                )
+                if (abstractAction.widgetGroup==null) {
+                    abstractState.actionCount.put(abstractAction,0)
+                } else {
+                    abstractAction.widgetGroup.actionCount.put(abstractAction,0)
+                }
+            } else {
+                abstractAction = AbstractAction(
+                        actionName = actionType,
+                        widgetGroup = widgetGroup
+                )
+            }
+        } else {
+            abstractAction = availableAction
+            if (!actionType.isTextInsert() && abstractAction.extra == null) {
+                abstractAction.extra = interactionData
+            }
+
+        }
+
+        return abstractAction
+    }
+
     private fun normalizeActionType(actionType: String): String {
         return when (actionType) {
             "ClickEvent" -> "Click"
-            "LongClickEvent" -> "Click"
+            "LongClickEvent" -> "LongClick"
             else -> actionType
         }
     }
@@ -540,8 +577,71 @@ class RegressionTestingMF(private val appName: String,
 
     private fun addImplicitAbstractInteraction(prevAbstractState: AbstractState, currentAbstractState: AbstractState, abstractInteraction: AbstractInteraction, prevprevWindow: WTGNode) {
         log.debug("Add implicit abstract interaction")
+        //add to virtualAbstractState
+        val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.filter { it is VirtualAbstractState && it.window == prevAbstractState.window }.firstOrNull()
+        if (virtualAbstractState!=null) {
+            val abstractEdge = abstractTransitionGraph.edges(virtualAbstractState).filter { it.label.abstractAction == abstractInteraction.abstractAction
+                    && it.label.prevWindow == prevprevWindow}
+            if (abstractEdge.isEmpty())
+            {
+                if (abstractInteraction.abstractAction.widgetGroup==null)
+                {
+                    //find existing interaction again
+                    val existingEdge = abstractTransitionGraph.edges(virtualAbstractState).filter {
+                        it.label.abstractAction == abstractInteraction.abstractAction
+                                && it.label.prevWindow == prevprevWindow
+                                && it.label.data == abstractInteraction.data}
+                    val implicitAbstractInteraction = if (existingEdge.isNotEmpty()) {
+                        existingEdge.first().label
+                    } else {
+                        AbstractInteraction(
+                                abstractAction = abstractInteraction.abstractAction,
+                                isImplicit = true,
+                                data = abstractInteraction.data,
+                                prevWindow = prevprevWindow
+                        )
+                    }
+                    abstractTransitionGraph.add(virtualAbstractState,currentAbstractState,implicitAbstractInteraction)
+
+                }
+                else
+                {
+                    val targetWidgetGroup = abstractInteraction.abstractAction.widgetGroup!!
+                    //find Widgetgroup
+                    var widgetGroup = virtualAbstractState.widgets.find { it.equals(targetWidgetGroup) }
+                    if (widgetGroup == null) {
+                        val newWidgetGroup = WidgetGroup (attributePath = targetWidgetGroup.attributePath,cardinality = targetWidgetGroup.cardinality )
+                        virtualAbstractState.widgets.add(newWidgetGroup)
+                        widgetGroup = newWidgetGroup
+                    }
+                    widgetGroup.exerciseCount += 1
+                    //find existing interaction again
+                    val existingEdge = abstractTransitionGraph.edges(virtualAbstractState).filter {
+                        it.label.abstractAction == abstractInteraction.abstractAction
+                                && it.label.prevWindow == prevprevWindow }
+
+                    val implicitAbstractInteraction = if (existingEdge.isNotEmpty()) {
+                        existingEdge.first().label
+                    } else {
+                        AbstractInteraction(
+                                abstractAction = AbstractAction(
+                                        actionName = abstractInteraction.abstractAction.actionName,
+                                        widgetGroup = widgetGroup,
+                                        extra = abstractInteraction.abstractAction.extra
+                                        ),
+                                isImplicit = true,
+                                data = abstractInteraction.data,
+                                prevWindow = prevprevWindow
+                        )
+                    }
+                    abstractTransitionGraph.add(virtualAbstractState,currentAbstractState,implicitAbstractInteraction)
+
+
+                }
+            }
+        }
         var addedCount = 0
-        val otherSameStaticNodeAbStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == prevAbstractState.window
+        val otherSameStaticNodeAbStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it !is VirtualAbstractState && it.window == prevAbstractState.window
                 && it != prevAbstractState && it.isOpeningKeyboard == prevAbstractState.isOpeningKeyboard}
         var processedStateCount = 0
         otherSameStaticNodeAbStates.forEach {
@@ -550,41 +650,54 @@ class RegressionTestingMF(private val appName: String,
                     && it.label.prevWindow == prevprevWindow}
             if (abstractEdge.isEmpty())
             {
-                if (abstractInteraction.abstractAction.widgetGroup==null || it is VirtualAbstractState)
+                if (abstractInteraction.abstractAction.widgetGroup==null)
                 {
-                    val implicitAbstractInteraction = AbstractInteraction(
-                            abstractAction = abstractInteraction.abstractAction,
-                            isImplicit = true,
-                            prevWindow = prevprevWindow
-                    )
+                    //find existing interaction again
+                    val existingEdge = abstractTransitionGraph.edges(it).filter {
+                        it.label.abstractAction == abstractInteraction.abstractAction
+                                && it.label.prevWindow == prevprevWindow
+                                && it.label.data == abstractInteraction.data}
+                    val implicitAbstractInteraction = if (existingEdge.isNotEmpty()) {
+                        existingEdge.first().label
+                    } else {
+                        AbstractInteraction(
+                                abstractAction = abstractInteraction.abstractAction,
+                                isImplicit = true,
+                                data = abstractInteraction.data,
+                                prevWindow = prevprevWindow
+                        )
+                    }
                     abstractTransitionGraph.add(it,currentAbstractState,implicitAbstractInteraction)
+                    it.increaseActionCount(abstractInteraction.abstractAction)
                     addedCount+=1
                 }
                 else
                 {
                     //find Widgetgroup
-                    val widgetGroup = it.widgets.find { it.attributePath.equals(abstractInteraction.abstractAction.widgetGroup.attributePath) }
+                    val widgetGroup = it.widgets.find { it.equals(abstractInteraction.abstractAction.widgetGroup) }
                     if (widgetGroup!=null)
                     {
                         //find existing interaction again
-                        val widgetAbstractEdge = abstractTransitionGraph.edges(it).filter {
-                            it.label.abstractAction.actionName == abstractInteraction.abstractAction.actionName
-                                    && it.label.prevWindow == prevprevWindow
-                                    && it.label.abstractAction.widgetGroup == widgetGroup}
-                        if (widgetAbstractEdge.isEmpty())
-                        {
-                            val implicitAbstractInteraction = AbstractInteraction(
+                        val existingEdge = abstractTransitionGraph.edges(it).filter {
+                            it.label.abstractAction == abstractInteraction.abstractAction
+                                    && it.label.prevWindow == prevprevWindow }
+                        val implicitAbstractInteraction = if (existingEdge.isNotEmpty()) {
+                            existingEdge.first().label
+                        } else {
+                            AbstractInteraction(
                                     abstractAction = AbstractAction(
                                             actionName = abstractInteraction.abstractAction.actionName,
-                                            widgetGroup = widgetGroup),
+                                            widgetGroup = widgetGroup,
+                                            extra = abstractInteraction.abstractAction.extra
+                                    ),
                                     isImplicit = true,
+                                    data = abstractInteraction.data,
                                     prevWindow = prevprevWindow
                             )
-                            abstractTransitionGraph.add(it,currentAbstractState,implicitAbstractInteraction)
-                            addedCount+=1
                         }
-                    } else {
-                        //TODO create new WidgetGroup
+                        it.increaseActionCount(abstractInteraction.abstractAction)
+                        abstractTransitionGraph.add(it,currentAbstractState,implicitAbstractInteraction)
+                        addedCount+=1
                     }
                 }
             }
@@ -605,7 +718,8 @@ class RegressionTestingMF(private val appName: String,
         val abstractAction = AbstractAction(actionName = ActionType.PressBack.name,
                 widgetGroup = null)
         val processingAbstractStates = ArrayList<AbstractState>()
-        val similarCurrentAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == currentAbstractState.window
+        processingAbstractStates.add(currentAbstractState)
+       /* val similarCurrentAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == currentAbstractState.window
                 && it.isOpeningKeyboard == currentAbstractState.isOpeningKeyboard}
         // if current abstract state have a pressback to a different window, don't add implicit back event
         similarCurrentAbstractStates.forEach { abstractState ->
@@ -618,7 +732,7 @@ class RegressionTestingMF(private val appName: String,
                 processingAbstractStates.add(abstractState)
             }
 
-        }
+        }*/
 
         val backAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.filter {
             it.window == implicitBackWindow

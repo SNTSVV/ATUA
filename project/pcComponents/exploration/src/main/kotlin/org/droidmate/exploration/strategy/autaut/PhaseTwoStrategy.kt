@@ -335,6 +335,10 @@ class PhaseTwoStrategy (
                     setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                     return
                 }
+                if (currentAppState.getUnExercisedActions().isNotEmpty()) {
+                    setRandomExploration(randomExplorationTask, currentState)
+                    return
+                }
                 if (goToTargetNodeTask.isAvailable(currentState,targetWindow!!))
                 {
                     log.info("Task chosen: Go to target node .")
@@ -371,7 +375,7 @@ class PhaseTwoStrategy (
                 }
                 if (!strategyTask!!.isTaskEnd(currentState)) {
                     //Keep current task
-                    log.info("Continue go to target window")
+                    log.info("Continue doing random exploration")
                     return
                 }
                 setFullyRandomExploration(randomExplorationTask, currentState)

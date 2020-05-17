@@ -26,7 +26,7 @@ open class StaticEvent (
             EventType.item_click -> "ItemClick"
             EventType.item_long_click -> "ItemLongClick"
             EventType.item_selected -> "ItemSelected"
-            EventType.enter_text -> "TextInput"
+            EventType.enter_text -> "TextInsert"
             EventType.editor_action -> "EditorAction"
             EventType.implicit_menu -> "PressMenu"
             EventType.implicit_rotate_event -> "RotateUI"

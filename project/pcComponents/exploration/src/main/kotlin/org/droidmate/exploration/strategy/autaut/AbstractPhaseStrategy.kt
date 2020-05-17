@@ -49,8 +49,9 @@ abstract class AbstractPhaseStrategy(
             }
             else {
                 //check if there is any edge from App State to that node
+                //TODO check for abstract state
                 val feasibleEdges = regressionTestingMF.abstractTransitionGraph.edges().filter {e ->
-                    e.destination?.data!!.window == targetWindow
+                    e.destination?.data!! == targetState
                 }
                 if (feasibleEdges.isNotEmpty())
                 {
@@ -102,12 +103,8 @@ abstract class AbstractPhaseStrategy(
 
             val source = traversing.second
             val windowStack = traversing.first
-            if (source.window == windowStack.peek()) {
-                windowStack.pop()
-            } else {
-                windowStack.push(source.window)
-            }
-            if (includeBackEvent)
+
+            if (includeBackEvent && windowStack.isNotEmpty())
             {
                 val backNodes = ArrayList<AbstractState>()
                 val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
@@ -146,13 +143,8 @@ abstract class AbstractPhaseStrategy(
                         regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
                         return
                     } else {
-                        if(source.window != backState.window) {
-                            //
-                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>, second = backState))
-                        } else {
-                            // keep current prevWindow
-                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>, second = backState ))
-                        }
+                        val nextWindowStack = createWindowStackForNext(windowStack, source, backState)
+                        nextLevelNodes.add(Pair(first = nextWindowStack , second = backState ))
                     }
                 }
             }
@@ -162,15 +154,14 @@ abstract class AbstractPhaseStrategy(
                         && it.destination!!.data.window !is WTGOutScopeNode
                         && it.destination!!.data.window !is WTGFakeNode
                         && it.destination!!.data.window !is WTGOpeningKeyboardNode
-                        && !it.label.abstractAction.actionName.equals("MinimizeMaximize")
+                        && !(it.label.abstractAction.actionName.equals("MinimizeMaximize") || it.label.abstractAction.actionName.isPressBack())
+                        && includingRotateUIOrNot(it)
                         && isTheSamePrevWindow(windowStack.peek(),it)
+
             }
             val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
-            possibleTransitions.filter {
-                !it.label.abstractAction.actionName.isPressBack()
-                        && includingRotateUIOrNot(it) && isTheSamePrevWindow(windowStack.peek(),it)
-            }.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
-                val reliableTransition =  u.filter { !it.label.isImplicit || it.label.prevWindow == null }
+            possibleTransitions.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
+                val reliableTransition =  u.filter { !it.label.isImplicit}
                 val implicitTransitions = u.filter { it.label.isImplicit }
                 if (reliableTransition.isEmpty())
                 {
@@ -199,12 +190,8 @@ abstract class AbstractPhaseStrategy(
                             regressionTestingMF.registerTransitionPath(root,finalTarget,fullGraph)
                             return
                         }
-                        if (source.window != nextNode.window) {
-                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>,second=nextNode))
-                        } else {
-                            // keep current prevWindow
-                            nextLevelNodes.add(Pair(first = windowStack.clone() as Stack<WTGNode>,second=nextNode))
-                        }
+                        val nextWindowStack = createWindowStackForNext(windowStack, source, nextNode)
+                        nextLevelNodes.add(Pair(first = nextWindowStack,second=nextNode))
 
                     }
                 }
@@ -212,6 +199,26 @@ abstract class AbstractPhaseStrategy(
         }
 
         findPathToTargetComponentByBFS(currentState, root, nextLevelNodes, finalTarget, allPaths, includeBackEvent, childParentMap, level+1)
+    }
+
+    private fun createWindowStackForNext(windowStack: Stack<WTGNode>, prevState: AbstractState, nextState: AbstractState): Stack<WTGNode> {
+        val nextWindowStack = windowStack.clone() as Stack<WTGNode>
+        if (nextWindowStack.contains(nextState.window) && nextWindowStack.size > 1) {
+            // Return to the prev window
+            // Pop the window
+            while (nextWindowStack.pop() != nextState.window) {
+
+            }
+        } else {
+            if (nextState.window != prevState.window) {
+                if (prevState.window !is WTGDialogNode) {
+                    nextWindowStack.push(prevState.window)
+                }
+            } else if (nextState.isOpeningKeyboard) {
+                nextWindowStack.push(nextState.window)
+            }
+        }
+        return nextWindowStack
     }
 
     private fun backToLauncherOrNot(it: Edge<AbstractState, AbstractInteraction>, depth: Int) =

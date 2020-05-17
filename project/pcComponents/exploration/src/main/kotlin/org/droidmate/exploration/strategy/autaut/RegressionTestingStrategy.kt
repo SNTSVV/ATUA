@@ -71,8 +71,6 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
                 if (regressionWatcher.allTargetWindows.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
-                } else {
-                    phaseStrategy = PhaseOneStrategy(this,budgetScale, delay, useCoordinateClicks)
                 }
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)

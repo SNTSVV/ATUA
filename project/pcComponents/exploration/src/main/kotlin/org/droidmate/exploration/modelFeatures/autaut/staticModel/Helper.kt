@@ -113,7 +113,8 @@ class Helper {
             val scores = HashMap<WTGNode,Double>()
             allPossibleNodes.forEach {
                 val totalWidgets = visibleWidgets.size
-                val score = ((matchWidgets[it]!!) * 1.0 - (missWidgets[it]!!) * 1.0 - (propertyChangedWidgets[it]!!) * 0.5) / totalWidgets
+
+                val score = matchWidgets[it]!!*1.0/ totalWidgets
                 scores.put(it, score)
 
             }

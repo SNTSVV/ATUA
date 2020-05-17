@@ -66,19 +66,26 @@ open class GoToAnotherWindow protected constructor(
         //if currentNode is expectedNextNode
         if (expectedNextAbState!=null) {
             if (!isReachExpectedNode(currentState)) {
-                log.debug("Fail to reach expected node")
-                addIncorrectPath()
                 // Try another path if current state is not target node
                 if (currentAppState.window != targetWindow) {
-                    if (isAvailable(currentState)) {
-                        initialize(currentState)
-                        return false
-                    }
+                    log.debug("Fail to reach expected node")
+                    addIncorrectPath()
+                }
+                if (isAvailable(currentState)) {
+                    initialize(currentState)
+                    return false
                 }
                 return true
             }
             else
             {
+
+                if (expectedNextAbState == currentPath!!.getFinalDestination()) {
+                    return true
+                }
+                if (hasAnotherOption(currentState)) {
+                    return true
+                }
                 return false
             }
         }else
@@ -92,9 +99,6 @@ open class GoToAnotherWindow protected constructor(
         val currentAbState = regressionTestingMF.getAbstractState(currentState)
         if (expectedNextAbState!!.window != currentAbState!!.window)
             return false
-        if (expectedNextAbState is VirtualAbstractState) {
-            return true
-        }
         if (expectedNextAbState == currentAbState)
         {
             return true
@@ -104,18 +108,17 @@ open class GoToAnotherWindow protected constructor(
             //if next action is feasible
             val nextEdge = currentPath!!.edges(expectedNextAbState!!).firstOrNull()
             if (nextEdge == null)
-                return false
+                return true
             val nextEvent = nextEdge.label
             if (nextEvent.abstractAction.widgetGroup == null) {
                 if (expectedNextAbState!!.isOpeningKeyboard == currentAbState.isOpeningKeyboard)
                     return true
                 return false
             }
-              
             val widget = nextEvent.abstractAction.widgetGroup
             if (regressionTestingMF.getRuntimeWidgets(widget, nextEdge.source.data, currentState).isNotEmpty())
                 return true
-            return false
+            return true
         }
 
 
@@ -243,6 +246,7 @@ open class GoToAnotherWindow protected constructor(
                         val chosenWidget = candidates[random.nextInt(candidates.size)]
                         val actionName = currentEdge!!.label.abstractAction.actionName
                         val actionData = currentEdge!!.label.data
+                        log.info("Widget: $chosenWidget")
                         return chooseActionWithName(actionName, actionData, chosenWidget, currentState) ?: ExplorationAction.pressBack()
                     } else {
                         // process for some special case
@@ -285,6 +289,7 @@ open class GoToAnotherWindow protected constructor(
                         else
                         {
                             log.debug("Try all options but can not get any widget, finish task.")
+                            mainTaskFinished = true
                             return randomExplorationTask!!.chooseAction(currentState)
                         }
                     }

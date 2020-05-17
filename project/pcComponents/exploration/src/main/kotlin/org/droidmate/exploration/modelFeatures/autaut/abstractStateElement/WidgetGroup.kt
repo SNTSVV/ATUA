@@ -8,7 +8,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality) {
+class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality) {
     var exerciseCount: Int = 0
     var guiWidgets = HashSet<Widget>()
     val actionCount = HashMap<AbstractAction, Int>()
@@ -16,28 +16,28 @@ data class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardi
     init {
         if (attributePath.isClickable()) {
             val abstractAction = AbstractAction(
-                    actionName = "Click",
+                    actionName = AbstractActionType.CLICK.actionName,
                     widgetGroup = this
             )
             actionCount.put(abstractAction, 0)
         }
         if (attributePath.isLongClickable()) {
             val abstractAction = AbstractAction(
-                    actionName = "LongClick",
+                    actionName = AbstractActionType.LONGCLICK.actionName,
                     widgetGroup = this
             )
             actionCount.put(abstractAction, 0)
         }
         if (attributePath.isScrollable()) {
             val abstractAction = AbstractAction(
-                    actionName = "Swipe",
+                    actionName = AbstractActionType.SWIPE.actionName,
                     widgetGroup = this
             )
             actionCount.put(abstractAction, 0)
         }
         if (attributePath.isInputField()) {
             val abstractAction = AbstractAction(
-                    actionName = "TextInput",
+                    actionName = AbstractActionType.TEXT_INSERT.actionName,
                     widgetGroup = this
             )
             actionCount.put(abstractAction, 0)

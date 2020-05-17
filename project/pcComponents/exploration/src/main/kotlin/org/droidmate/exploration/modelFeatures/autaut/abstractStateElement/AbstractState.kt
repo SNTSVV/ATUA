@@ -42,6 +42,20 @@ open class AbstractState (
                     actionName = AbstractActionType.SWIPE.actionName
             )
             actionCount.put(swipeAction,0)
+            val rotationAction = AbstractAction(
+                    actionName = AbstractActionType.ROTATE_UI.actionName
+            )
+            actionCount.put(rotationAction,0)
+            val minmaxAction = AbstractAction(
+                    actionName = AbstractActionType.MINIMIZE_MAXIMIZE.actionName
+            )
+            actionCount.put(minmaxAction,0)
+            if (isOpeningKeyboard) {
+                val closeKeyboardAction = AbstractAction(
+                        actionName = AbstractActionType.CLOSE_KEYBOARD.actionName
+                )
+                actionCount.put(closeKeyboardAction, 0)
+            }
         }
 
         fun getWidgetGroup(widget: Widget, guiState: State<*>): WidgetGroup?{
@@ -68,8 +82,39 @@ open class AbstractState (
             return unexcerisedActions
         }
 
+
     override fun toString(): String {
         return "AbstractState[${this.hashCode()}]-${window}-Rotation:$rotation"
+    }
+
+    fun increaseActionCount(action: AbstractAction) {
+        if (action.widgetGroup==null) {
+            if (actionCount.containsKey(action)) {
+                actionCount[action] = actionCount[action]!! + 1
+            } else {
+                actionCount[action] = 1
+            }
+            val nonDataAction = AbstractAction(
+                    actionName = action.actionName
+            )
+            if (actionCount.containsKey(nonDataAction) && nonDataAction != action) {
+                actionCount.remove(nonDataAction)
+            }
+        } else if (widgets.contains(action.widgetGroup)){
+            val widgetGroup = widgets.find { it.equals(action.widgetGroup) }!!
+            if (widgetGroup.actionCount.containsKey(action)) {
+                widgetGroup.actionCount[action] = widgetGroup.actionCount[action]!! + 1
+            } else {
+                widgetGroup.actionCount[action] = 1
+            }
+            val nonDataAction = AbstractAction(
+                    actionName = action.actionName,
+                    widgetGroup = widgetGroup
+            )
+            if (widgetGroup.actionCount.containsKey(nonDataAction) && nonDataAction != action) {
+                widgetGroup.actionCount.remove(nonDataAction)
+            }
+        }
     }
 }
 

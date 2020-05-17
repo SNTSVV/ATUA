@@ -58,7 +58,9 @@ class RandomExplorationTask constructor(
     }
 
     fun setMaximumAttempt( currentState: State<*>, attempt: Int){
-        maximumAttempt = min(currentState.actionableWidgets.size,attempt)
+        val inputFieldCount = currentState.widgets.filter { it.isInputField }.size
+        val actionBasedAttemp = (regressionTestingMF.getAbstractState(currentState)?.getUnExercisedActions()?.size?:1)+inputFieldCount
+        maximumAttempt = min(actionBasedAttemp,attempt+inputFieldCount)
     }
 
     fun setMaximumAttempt( attempt: Int){
@@ -170,7 +172,9 @@ class RandomExplorationTask constructor(
             {
                 if (random.nextBoolean()) {
                     dataFilled = false
-                    return searchButtons.random().click()
+                    val randomButton = searchButtons.random()
+                    log.info("Widget: $random")
+                    return randomButton.click()
                 } else {
                     return GlobalAction(actionType = ActionType.CloseKeyboard)
                 }
@@ -188,6 +192,63 @@ class RandomExplorationTask constructor(
                 return openNavigationBarTask.chooseAction(currentState)
             }
         }
+        if (dataFilled && !fillDataTask.isTaskEnd(currentState))
+            return fillDataTask.chooseAction(currentState)
+
+        if (!dataFilled && fillData && fillDataTask.isAvailable(currentState))
+        {
+            fillDataTask.initialize(currentState)
+            dataFilled = true
+            return fillDataTask.chooseAction(currentState)
+        }
+
+        val unexercisedActions = currentAbstractState.getUnExercisedActions()
+        if (unexercisedActions.isNotEmpty()) {
+            val randomAction = if (unexercisedActions.filter { it.widgetGroup!=null }.isNotEmpty()) {
+                unexercisedActions.filter { it.widgetGroup!=null }.random()
+            } else {
+                unexercisedActions.random()
+            }
+            var chosenWidget: Widget? = null
+            var isValidAction = true
+            if (randomAction.widgetGroup!=null)
+            {
+                val candidates = randomAction.widgetGroup.getGUIWidgets(currentState)
+                chosenWidget = candidates.firstOrNull()
+                if (chosenWidget==null)
+                {
+                    log.debug("No widget found")
+                    // remove action
+                    randomAction.widgetGroup.actionCount.remove(randomAction)
+                    isValidAction = false
+                } else {
+                    log.info(" widget: $chosenWidget")
+
+                }
+            }
+            if (isValidAction) {
+                val actionType = randomAction.actionName
+                log.debug("Action: $actionType")
+                val chosenAction = when (actionType)
+                {
+                    "CallIntent" -> chooseActionWithName(actionType,randomAction.extra, null, currentState)
+                    "RotateUI" -> chooseActionWithName(actionType,90,null,currentState)
+                    else -> chooseActionWithName(actionType, "", chosenWidget, currentState)
+                }
+                if (chosenAction != null)
+                {
+                    return chosenAction
+                } else
+                {
+                    // this action should be removed from this abstract state
+                    if (randomAction.widgetGroup==null) {
+                        currentAbstractState.actionCount.remove(randomAction)
+                    } else {
+                        randomAction.widgetGroup.actionCount.remove(randomAction)
+                    }
+                }
+            }
+        }
         val executeSystemEvent = random.nextInt(100)/(100*1.0)
         if (executeSystemEvent < 0.05) {
 //            val systemActions = ArrayList<EventType>()
@@ -202,8 +263,7 @@ class RandomExplorationTask constructor(
         {
             if (haveOpenNavigationBar(currentState))
             {
-                val openNavigationWidget = currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") }!!
-                return chooseActionWithName("Click",null,openNavigationWidget,currentState)!!
+                return clickOnOpenNavigation(currentState)
             }
             else
             {
@@ -240,15 +300,7 @@ class RandomExplorationTask constructor(
             prevAbState = currentAbstractState
         }
 
-        if (dataFilled && !fillDataTask.isTaskEnd(currentState))
-            return fillDataTask.chooseAction(currentState)
 
-        if (!dataFilled && fillData && fillDataTask.isAvailable(currentState))
-        {
-            fillDataTask.initialize(currentState)
-            dataFilled = true
-            return fillDataTask.chooseAction(currentState)
-        }
 
         val chosenWidgets = ArrayList<Widget>()
 //        if (random.nextInt(100)/100.toDouble()< SWIPE_PROB )
@@ -277,7 +329,7 @@ class RandomExplorationTask constructor(
             }
 //        val candidates = runBlocking { getCandidates(chosenWidgets)}
         val chosenWidget = chosenWidgets.random()
-        log.debug("Choose Action for Widget: $chosenWidget")
+        log.info("Widget: $chosenWidget")
         if (chosenWidget.className.contains("ListView") ||
                 chosenWidget.className.contains("RecyclerView")
                 || chosenWidget.className.contains("Gallery"))
@@ -357,12 +409,15 @@ class RandomExplorationTask constructor(
     var isClickedShutterButton = false
     internal fun dealWithCamera(currentState: State<*>): ExplorationAction {
         val gotItButton = currentState.widgets.find { it.text.toLowerCase().equals("got it") }
-        if (gotItButton != null)
+        if (gotItButton != null) {
+            log.info("Widget: $gotItButton")
             return gotItButton.click()
+        }
         if (!isClickedShutterButton){
             val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
             if (shutterbutton!=null)
             {
+                log.info("Widget: $shutterbutton")
                 val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
                 if (clickActions.isNotEmpty()) {
                     isClickedShutterButton = true
@@ -374,17 +429,14 @@ class RandomExplorationTask constructor(
         val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
         if (doneButton!=null)
         {
+            log.info("Widget: $doneButton")
             val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
             if (clickActions.isNotEmpty()) {
                 return clickActions.random()
             }
             ExplorationTrace.widgetTargets.clear()
         }
-        else
-        {
-            return ExplorationAction.pressBack()
-        }
-        return chooseWidgets(currentState).random().availableActions(delay, useCoordinateClicks).random()
+        return ExplorationAction.pressBack()
     }
 
     companion object {

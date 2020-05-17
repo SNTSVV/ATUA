@@ -18,6 +18,7 @@ import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.HashMap
@@ -218,7 +219,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
     }
 
     private fun chooseActionForNonItemEvent(action: String, chosenWidget: Widget, currentState: State<*>, data: Any?): ExplorationAction? {
-        if (action == "TextInput" && chosenWidget.isInputField) {
+        if (action == "TextInsert" && chosenWidget.isInputField) {
             return chooseActionForTextInput(chosenWidget, currentState)
         }
         if (action == "Swipe" && data is String) {
@@ -316,7 +317,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 actionableWidgets.random()
             else
                 randomWidgets.random()
-            LoggerFactory.getLogger("AbstractStrategyTask").info("Item widget: $randomWidget")
+            log.info("Item widget: $randomWidget")
             val chosenAction = randomWidget.availableActions(delay, useCoordinateClicks).find {
                 when (action) {
                     "ItemClick" -> it.name == ClickEvent.name || it.name == Click.name
@@ -329,7 +330,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         }
 
         val randomWidget = childWidgets[random.nextInt(childWidgets.size)]
-        LoggerFactory.getLogger("AbstractStrategyTask").info("Item widget: $randomWidget")
+        log.info("Item widget: $randomWidget")
         val hardAction = when (action) {
             "ItemClick" -> randomWidget.clickEvent(delay=delay, ignoreClickable = true)
             "ItemLongClick" -> randomWidget.longClickEvent(delay=delay, ignoreVisibility = true)
@@ -416,6 +417,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
     internal fun pressMenuOrClickMoreOption(currentState: State<*>): ExplorationAction {
         val moreOptionWidget = regressionTestingMF.getToolBarMoreOptions(currentState)
         if (moreOptionWidget != null) {
+            log.info("Widget: $moreOptionWidget")
             return moreOptionWidget.click()
 
         } else {
@@ -430,6 +432,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
 
      fun clickOnOpenNavigation(currentState: State<*>): ExplorationAction {
         val openNavigationWidget = currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") }!!
+         log.info("Widget: $openNavigationWidget")
         return chooseActionWithName("Click", null, openNavigationWidget, currentState)!!
     }
 
@@ -438,5 +441,8 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
     }
     /** filters out all crashing marked widgets from the actionable widgets of the current state **/
     suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { regressionTestingStrategy.eContext.crashlist.isBlacklistedInState(it.uid,regressionTestingStrategy.eContext.getCurrentState().uid) }
+    companion object {
+        private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
+    }
 
 }

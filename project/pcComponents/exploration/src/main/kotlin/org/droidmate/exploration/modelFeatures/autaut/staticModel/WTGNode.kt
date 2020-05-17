@@ -13,6 +13,8 @@ open class WTGNode(val classType: String,
     var rotation:Int = 0
     var portraitDimension: Rectangle = Rectangle.empty()
     var landscapeDimension: Rectangle = Rectangle.empty()
+    var portraitKeyboardDimension: Rectangle = Rectangle.empty()
+    var landscapeKeyboardDimension: Rectangle = Rectangle.empty()
     val unexercisedWidgetCount: Int
     get() {return widgets.filter { !it.exercised && widgetState[it]?:true && it.interactive && it.mappedRuntimeWidgets.isNotEmpty()}.size}
     var hasOptionsMenu = true
