@@ -182,11 +182,11 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
 
                 }
                 "CallIntent" -> callIntent(data)
-                "Swipe" -> doSwipe(currentState)
+                "Swipe" -> doSwipe(currentState,data as String)
                 else -> ExplorationAction.pressBack()
             }
         }
-        val chosenWidget: Widget = widget!!
+        val chosenWidget: Widget = widget
         val isItemEvent = when (action) {
             "ItemClick", "ItemLongClick", "ItemSelected" -> true
             else -> false
@@ -199,23 +199,43 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         }
     }
 
-    private fun doSwipe(currentState: State<*>): ExplorationAction? {
-        var outBoundLayout = currentState.widgets.find { it.resourceId == "android.id/content"}
+    private fun doSwipe(currentState: State<*>, data: String): ExplorationAction? {
+        var outBoundLayout = currentState.widgets.find { it.resourceId == "android.id/content" }
         if (outBoundLayout == null) {
-            outBoundLayout = currentState.widgets.find { !it.hasParent}
+            outBoundLayout = currentState.widgets.find { !it.hasParent }
         }
         if (outBoundLayout == null) {
             return ExplorationAction.pressBack()
         }
-        val screenHeight = outBoundLayout!!.visibleBounds.height
-        val screenWidth = outBoundLayout!!.visibleBounds.width
-        if (random.nextBoolean()) {
-            //Swipe up
-            return ExplorationAction.swipe(Pair(screenWidth/2,screenHeight-50), Pair(screenWidth/2,screenHeight/2))
-        } else {
-            //Swipe right
-            return ExplorationAction.swipe(Pair(50,screenHeight/2), Pair(screenWidth/2,screenHeight/2))
+        val screenHeight = outBoundLayout.visibleBounds.height
+        val screenWidth = outBoundLayout.visibleBounds.width
+        val swipeAction = when (data) {
+            "SwipeUp" -> {
+                val startY = outBoundLayout.visibleBounds.bottomY
+                ExplorationAction.swipe(Pair(screenWidth / 2, startY ), Pair(screenWidth / 2, startY - screenHeight / 2))
+            }
+            "SwipeDown" -> {
+                val startY = outBoundLayout.visibleBounds.topY
+                ExplorationAction.swipe(Pair(screenWidth / 2, startY), Pair(screenWidth / 2, startY + screenHeight / 2))
+            }
+            "SwipeLeft" -> {
+                val startX = outBoundLayout.visibleBounds.rightX
+                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX - screenWidth / 2, screenHeight / 2))}
+            "SwipeRight" -> {
+                val startX = outBoundLayout.visibleBounds.leftX
+                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX + screenWidth / 2, screenHeight / 2))}
+            else -> {
+                if (random.nextBoolean()) {
+                    //Swipe up
+                    return ExplorationAction.swipe(Pair(screenWidth / 2, outBoundLayout.visibleBounds.bottomY), Pair(screenWidth / 2, screenHeight / 2))
+                } else {
+                    //Swipe right
+                    return ExplorationAction.swipe(Pair(outBoundLayout.visibleBounds.leftX, screenHeight / 2), Pair(screenWidth / 2, screenHeight / 2))
+                }
+
+            }
         }
+        return swipeAction
     }
 
     private fun chooseActionForNonItemEvent(action: String, chosenWidget: Widget, currentState: State<*>, data: Any?): ExplorationAction? {
@@ -231,7 +251,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 "SwipeRight" -> chosenWidget.swipeRight()
                 else -> {
                     if (data.isNotBlank()) {
-                        val swipeInfo: List<Pair<Int,Int>> = parseSwipeData(data)
+                        val swipeInfo: List<Pair<Int,Int>> = Helper.parseSwipeData(data)
                         Swipe(swipeInfo[0],swipeInfo[1],25,true)
                     } else {
                         arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
@@ -264,21 +284,9 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         return hardAction
     }
 
-    private fun computeStep(swipeInfo: List<Pair<Int, Int>>): Int {
-        val dx = abs(swipeInfo[0].first-swipeInfo[1].first)
-        val dy = abs(swipeInfo[0].second-swipeInfo[1].second)
-        return (dx+dy)/2
-    }
 
-    private fun parseSwipeData(data: String): List<Pair<Int, Int>> {
-        val splitData = data.split(" TO ")
-        if (splitData.size != 2) {
-            return emptyList()
-        }
-        val first = splitData[0].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
-        val second = splitData[1].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
-        return arrayListOf(first,second)
-    }
+
+
 
     private fun chooseActionForTextInput(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
         val inputValue = TextInput.getSetTextInputValue(chosenWidget, currentState)

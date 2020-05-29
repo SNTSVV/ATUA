@@ -30,6 +30,7 @@ import org.droidmate.device.IAndroidDevice
 import org.droidmate.device.android_sdk.IApk
 import org.droidmate.deviceInterface.exploration.DeviceResponse
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.Rectangle
 import java.nio.file.Path
 import java.time.LocalDateTime
 
@@ -45,6 +46,10 @@ class AndroidDeviceSimulator/*(timeGenerator: ITimeGenerator,
                              private val exceptionSpecs: List<IExceptionSpec> = ArrayList(),
                              unreliableSimulation: Boolean = false)*/ // TODO Fix tests
 	: IAndroidDevice {
+	override suspend fun getDeviceScreenSize(): Rectangle {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
 	override suspend fun getDeviceRotation(): Int {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}

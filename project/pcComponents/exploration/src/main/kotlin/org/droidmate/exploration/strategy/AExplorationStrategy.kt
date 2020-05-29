@@ -26,8 +26,10 @@
 package org.droidmate.exploration.strategy
 
 import kotlinx.coroutines.runBlocking
+import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.explorationModel.interaction.ActionResult
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.launchApp
 import org.droidmate.exploration.strategy.manual.getLogger
@@ -54,7 +56,11 @@ abstract class AExplorationStrategy: IActionSelector {
 	override suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> nextAction(
 		eContext: ExplorationContext<M, S, W>
 	): ExplorationAction =
-		if(eContext.isEmpty()) eContext.launchApp() else computeNextAction(eContext)
+		if(eContext.isEmpty()) {
+			GlobalAction(ActionType.FetchGUI)
+		}
+			//eContext.launchApp()
+		else computeNextAction(eContext)
 
 	protected open suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> computeNextAction(
 		eContext: ExplorationContext<M, S, W>

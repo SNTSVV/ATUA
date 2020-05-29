@@ -66,6 +66,7 @@ class AbstractionFunction (val root: DecisionNode) {
             INSTANCE = AbstractionFunction(root)
         }
         private var backupAbstractionFunction: AbstractionFunction? = null
+
         fun backup(){
             val root = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV1() ))
             val lv2Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV2()))

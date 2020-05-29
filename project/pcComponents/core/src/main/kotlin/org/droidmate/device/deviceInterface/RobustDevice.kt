@@ -41,6 +41,7 @@ import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.DeviceResponse
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.GlobalAction
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.actions.click
 import org.droidmate.logging.Markers
 import org.droidmate.misc.Utils
@@ -50,6 +51,16 @@ import java.time.LocalDateTime
 
 // TODO Very confusing method chain. Simplify
 class RobustDevice : IRobustDevice {
+	override suspend fun getDeviceScreenSize(): Rectangle {
+		return Utils.retryOnException(
+				{ this.device.getDeviceScreenSize() },
+				{},
+				deviceOperationAttempts,
+				deviceOperationDelay,
+				"device.getDeviceScreenSize()"
+		)
+	}
+
 	override suspend fun getDeviceRotation(): Int {
 		return Utils.retryOnException(
 				{ this.device.getDeviceRotation() },

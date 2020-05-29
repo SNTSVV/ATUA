@@ -29,6 +29,7 @@ import org.droidmate.device.error.DeviceException
 import org.droidmate.deviceInterface.exploration.DeviceResponse
 import org.droidmate.deviceInterface.communication.TimeFormattedLogMessageI
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.Rectangle
 
 import java.time.LocalDateTime
 
@@ -68,5 +69,9 @@ interface IExplorableAndroidDevice {
 
 	@Throws(DeviceException::class)
 	suspend fun getDeviceRotation(): Int
+
+	@Throws(DeviceException::class)
+	suspend fun getDeviceScreenSize(): Rectangle
+
 }
 

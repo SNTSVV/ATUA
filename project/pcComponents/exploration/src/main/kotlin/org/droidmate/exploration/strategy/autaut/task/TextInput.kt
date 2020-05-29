@@ -69,6 +69,9 @@ class TextInput () {
             {
                 return generalDictionary.random()
             }
+            if (random.nextBoolean() && widget.text.isNotBlank()){
+                return ""
+            }
             @Suppress("SpellCheckingInspection") val source = "1234567890abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
             return random.ints( random.nextInt(20).toLong()+3, 0, source.length)
                     .asSequence()

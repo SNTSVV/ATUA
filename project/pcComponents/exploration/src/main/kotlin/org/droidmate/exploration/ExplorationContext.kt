@@ -54,6 +54,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
                                                       readDeviceStatements: suspend ()-> List<List<String>>,
 														  getCurrentActivity: suspend ()-> String,
 														  getDeviceRotation: suspend () -> Int,
+														  getDeviceScreenSurface: suspend () -> Rectangle,
                                                       val explorationStartTime: LocalDateTime = LocalDateTime.MIN,
                                                       var explorationEndTime: LocalDateTime = LocalDateTime.MIN,
                                                       private val watcher: MutableList<ModelFeatureI> = mutableListOf(),
@@ -97,8 +98,11 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 			//val resourceDir = Paths.get(cfg[ConfigProperties.Output.outputDir].path).toAbsolutePath().resolve(EnvironmentConstants.dir_name_temp_extracted_resources).toAbsolutePath()
 			val resourceDir = Paths.get(cfg[ConfigProperties.Exploration.apksDir].path).toAbsolutePath()
 			addWatcher(StatementCoverageMF(coverageDir, readDeviceStatements, model.config.appName, resourceDir))
-			if (model.config[RegressionTestingMF.Companion.RegressionStrategy.use])
-				addWatcher(RegressionTestingMF(model.config.appName, resourceDir,getCurrentActivity,getDeviceRotation))
+			if (model.config[RegressionTestingMF.Companion.RegressionStrategy.use]) {
+				val manualInput = model.config[RegressionTestingMF.Companion.RegressionStrategy.manualInput]
+				val manualIntent = model.config[RegressionTestingMF.Companion.RegressionStrategy.manualIntent]
+				addWatcher(RegressionTestingMF(model.config.appName, resourceDir, manualInput, manualIntent, getCurrentActivity, getDeviceRotation, getDeviceScreenSurface))
+			}
 		}
 	}
 
@@ -189,7 +193,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 		//FIXBUG daemonUI could not extract correct information of widgets
 	fun explorationCanMoveOn() = isEmpty() || // we are starting the app -> no terminate yet
 			getCurrentState().isRequestRuntimePermissionDialogBox ||  // FIXME what if we currently have isHomeScreen?
-			(!getCurrentState().isHomeScreen && belongsToApp(getCurrentState()))
+				(!getCurrentState().isHomeScreen && belongsToApp(getCurrentState()) && getCurrentState().actionableWidgets.isNotEmpty())
 
 
 	suspend fun assertLastGuiSnapshotIsHomeOrResultIsFailure() {

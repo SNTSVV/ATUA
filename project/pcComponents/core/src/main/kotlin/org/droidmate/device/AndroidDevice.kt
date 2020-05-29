@@ -50,6 +50,7 @@ import org.droidmate.deviceInterface.DeviceConstants.uia2Daemon_testPackageName
 import org.droidmate.deviceInterface.communication.*
 import org.droidmate.deviceInterface.exploration.DeviceResponse
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.enableCoverage
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -74,6 +75,52 @@ import java.time.format.DateTimeFormatter
 class AndroidDevice constructor(private val serialNumber: String,
                                 private val cfg: ConfigurationWrapper,
                                 private val adbWrapper: IAdbWrapper) : IAndroidDevice {
+
+	override suspend fun getDeviceScreenSize(): Rectangle {
+		var screenSurface: Rectangle = Rectangle.empty()
+		val command = "shell dumpsys input"
+		val param = command.split(' ').toTypedArray()
+		try {
+			val inputs = this.adbWrapper.executeCommand(this.serialNumber,"","Get device screen surface",
+					*param)
+			var width: Int = 0
+			var height: Int = 0
+			var i = 0
+			while (i<2) {
+				val matchLineRegex = if (i==0) {
+					"SurfaceWidth.*".toRegex()
+				} else {
+					"SurfaceHeight.*".toRegex()
+				}
+				val matchedLines = matchLineRegex.findAll(inputs)
+				val iter = matchedLines.iterator()
+				var lastMatchedLine: String? = null
+				while (iter.hasNext()) {
+					lastMatchedLine = iter.next().value
+				}
+				if (lastMatchedLine != null) {
+					val splitStrings = lastMatchedLine.split(' ')
+					if (splitStrings.size == 2) {
+						val sizeString = splitStrings[1]
+						if (i==0) {
+							width = sizeString.substringBefore("px").toInt()
+						} else {
+							height = sizeString.substringBefore("px").toInt()
+						}
+					}
+				}
+				i++
+			}
+			if (width != 0 && height!=0) {
+				screenSurface = Rectangle(0,0,width,height)
+			}
+		}catch (e: ApkExplorationException) {
+			log.error("Error get current window from monitor TCP server. Proceeding with exploration ${e.message}", e)
+		} finally {
+			return screenSurface
+		}
+	}
+
 	override suspend fun getDeviceRotation(): Int {
 		var rotation = 0
 		val command = "shell dumpsys input"

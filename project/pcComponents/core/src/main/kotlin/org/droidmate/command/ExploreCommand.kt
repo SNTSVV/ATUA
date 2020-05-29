@@ -262,6 +262,7 @@ open class ExploreCommand<M,S,W>(
 			app, { device.readStatements() },
 				{device.getCurrentActivity()},
 				{device.getDeviceRotation()},
+				{device.getDeviceScreenSize()},
 			LocalDateTime.now(),
 			watcher = watcher,
 			model = modelProvider.get()

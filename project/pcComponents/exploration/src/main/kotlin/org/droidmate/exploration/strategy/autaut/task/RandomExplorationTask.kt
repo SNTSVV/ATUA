@@ -119,12 +119,7 @@ class RandomExplorationTask constructor(
         }
 
         if (visibleWidgets.isNotEmpty()) {
-            if (random.nextInt(100)/100.toDouble()<0.5) {
-                return visibleWidgets
-            } else {
-                return visibleWidgets.filter { !Helper.hasParentWithType(it,currentState, "WebView") }
-            }
-
+            return visibleWidgets
         }
         //when DM2 provides incorrect information
         return currentState.widgets.filterNot { it.isKeyboard}
@@ -202,10 +197,16 @@ class RandomExplorationTask constructor(
             return fillDataTask.chooseAction(currentState)
         }
 
-        val unexercisedActions = currentAbstractState.getUnExercisedActions()
+        val unexercisedActions = currentAbstractState.getUnExercisedActions().filter { !it.actionName.isTextInsert() }
         if (unexercisedActions.isNotEmpty()) {
-            val randomAction = if (unexercisedActions.filter { it.widgetGroup!=null }.isNotEmpty()) {
-                unexercisedActions.filter { it.widgetGroup!=null }.random()
+            val randomAction = if (unexercisedActions.any { it.widgetGroup!=null}) {
+                // Swipe on widget should be executed by last
+                val widgetActions = unexercisedActions.filter { it.widgetGroup!=null}
+                if (widgetActions.any { it.actionName != "Swipe" }) {
+                    widgetActions.filterNot {it.actionName == "Swipe" }.random()
+                } else {
+                    widgetActions.random()
+                }
             } else {
                 unexercisedActions.random()
             }
@@ -214,7 +215,10 @@ class RandomExplorationTask constructor(
             if (randomAction.widgetGroup!=null)
             {
                 val candidates = randomAction.widgetGroup.getGUIWidgets(currentState)
-                chosenWidget = candidates.firstOrNull()
+                chosenWidget = if (candidates.isEmpty())
+                    null
+                else
+                    candidates.random()
                 if (chosenWidget==null)
                 {
                     log.debug("No widget found")
@@ -233,7 +237,7 @@ class RandomExplorationTask constructor(
                 {
                     "CallIntent" -> chooseActionWithName(actionType,randomAction.extra, null, currentState)
                     "RotateUI" -> chooseActionWithName(actionType,90,null,currentState)
-                    else -> chooseActionWithName(actionType, "", chosenWidget, currentState)
+                    else -> chooseActionWithName(actionType, randomAction.extra?:"", chosenWidget, currentState)
                 }
                 if (chosenAction != null)
                 {
@@ -327,8 +331,12 @@ class RandomExplorationTask constructor(
             return ExplorationAction.pressBack().also {
                 log.info("Empty widgets --> PressBack")
             }
-//        val candidates = runBlocking { getCandidates(chosenWidgets)}
-        val chosenWidget = chosenWidgets.random()
+        val candidates = runBlocking { getCandidates(chosenWidgets)}
+
+        val chosenWidget = if (candidates.isEmpty())
+                chosenWidgets.random()
+        else
+            candidates.random()
         log.info("Widget: $chosenWidget")
         if (chosenWidget.className.contains("ListView") ||
                 chosenWidget.className.contains("RecyclerView")

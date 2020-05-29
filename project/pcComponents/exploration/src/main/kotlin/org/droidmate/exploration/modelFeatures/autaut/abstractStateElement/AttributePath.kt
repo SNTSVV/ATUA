@@ -23,6 +23,36 @@ data class AttributePath (
 
         return hashValue
     }
+    fun getClassName(): String {
+        if (localAttributes.containsKey(AttributeType.className))
+        {
+            return localAttributes[AttributeType.className]!!
+        }
+        return ""
+    }
+    fun getResourceId(): String {
+        if (localAttributes.containsKey(AttributeType.resourceId))
+        {
+            return localAttributes[AttributeType.resourceId]!!
+        }
+        return ""
+    }
+
+    fun getContentDesc(): String {
+        if (localAttributes.containsKey(AttributeType.contentDesc))
+        {
+            return localAttributes[AttributeType.contentDesc]!!
+        }
+        return ""
+    }
+
+    fun getText(): String {
+        if (localAttributes.containsKey(AttributeType.text))
+        {
+            return localAttributes[AttributeType.text]!!
+        }
+        return ""
+    }
 
     fun isClickable(): Boolean{
         if (localAttributes.containsKey(AttributeType.clickable))

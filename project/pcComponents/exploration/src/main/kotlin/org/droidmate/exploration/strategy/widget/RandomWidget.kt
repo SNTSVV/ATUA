@@ -42,6 +42,8 @@ import org.droidmate.explorationModel.emptyId
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.configuration.ConfigProperties.Strategies.textInput
+import org.droidmate.deviceInterface.exploration.ActionType
+import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.exploration.strategy.autaut.task.TextInput
 import java.util.Random
 import kotlin.streams.asSequence
@@ -265,8 +267,10 @@ open class RandomWidget constructor(
 	override suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> computeNextAction(
 		eContext: ExplorationContext<M,S,W>
 	): ExplorationAction {
-		if (eContext.isEmpty())
-			return eContext.launchApp() // very first action -> start the app via reset
+		if (eContext.isEmpty()) {
+			return GlobalAction(ActionType.FetchGUI)
+		}
+			//return eContext.launchApp() // very first action -> start the app via reset
 		// Repeat previous action is last action was to click on a runtime permission dialog
 		if (mustRepeatLastAction(eContext))
 			return repeatLastAction()

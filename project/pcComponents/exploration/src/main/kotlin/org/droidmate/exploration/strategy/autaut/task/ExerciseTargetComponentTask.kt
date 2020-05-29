@@ -226,7 +226,7 @@ class ExerciseTargetComponentTask private constructor(
             {
                 "CallIntent" -> chooseActionWithName(recommendedAction,chosenAbstractAction!!.extra, null, currentState)
                 "RotateUI" -> chooseActionWithName(recommendedAction,90,null,currentState)
-                else -> chooseActionWithName(recommendedAction, "", chosenWidget, currentState)
+                else -> chooseActionWithName(recommendedAction, chosenAbstractAction!!.extra?:"", chosenWidget, currentState)
             }
             if (chosenAction == null)
             {

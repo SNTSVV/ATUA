@@ -33,17 +33,17 @@ class PhaseThreeStrategy(
         regressionTestingStrategy = regressionTestingStrategy,
         budgetScale = budgetScale,
         delay = delay,
-        useCoordinateClicks = useCoordinateClicks
+        useCoordinateClicks = useCoordinateClicks,
+        useVirtualAbstractState = false
 ) {
 
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
-        val abstractInteraction = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find { it.label.abstractAction.equals(abstractAction) }?.label
-        if (abstractInteraction!=null && abstractState.staticEventMapping.containsKey(abstractInteraction))
-        {
-            val staticEvent = abstractState.staticEventMapping[abstractInteraction]!!
-            if (targetEvent == staticEvent)
-            {
+        val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
+
+        val staticEvents = abstractInteractions.filter { abstractState.staticEventMapping[it] != null }.map { abstractState.staticEventMapping[it]!! }.flatten().distinct()
+        staticEvents.forEach {
+            if (it == targetEvent) {
                 selectRelatedWindow()
             }
         }
@@ -158,7 +158,7 @@ class PhaseThreeStrategy(
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
                         ,childParentMap = HashMap()
-                        ,level = 0)
+                        ,level = 0,useVirtualAbstractState = useVirtualAbstractState)
             }
         }
         return transitionPaths
@@ -173,7 +173,7 @@ class PhaseThreeStrategy(
         if (!appStateProbability.containsKey(targetWindow))
             return emptyList()
         val targetNodesProbability = appStateProbability[targetWindow]!!.filter {
-            it.first.staticEventMapping.filter { it.value == targetEvent }.isEmpty()
+            it.first.staticEventMapping.filter { it.value.contains(targetEvent) }.isEmpty()
         }
         var distributionPoint: Double = 0.0
         targetNodesProbability.forEach {
@@ -215,7 +215,7 @@ class PhaseThreeStrategy(
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
                     ,childParentMap = HashMap()
-                    ,level = 0)
+                    ,level = 0,useVirtualAbstractState = useVirtualAbstractState)
         }
         return transitionPaths
     }

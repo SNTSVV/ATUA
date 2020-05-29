@@ -29,7 +29,8 @@ class PhaseOneStrategy(
         regressionTestingStrategy = regressionTestingStrategy,
         budgetScale = budgetScale,
         delay = delay,
-        useCoordinateClicks = useCoordinateClicks
+        useCoordinateClicks = useCoordinateClicks,
+        useVirtualAbstractState = true
 ) {
     val untriggeredWidgets = arrayListOf<StaticWidget>()
     val untriggeredTargetEvents = arrayListOf<StaticEvent>()
@@ -58,22 +59,19 @@ class PhaseOneStrategy(
     override fun registerTriggeredEvents( abstractAction: AbstractAction, guiState: State<*>)
     {
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
-        val abstractInteraction = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find { it.label.abstractAction.equals(abstractAction) }?.label
-        if (abstractInteraction!=null)
-        {
-            val staticEvent = abstractState.staticEventMapping[abstractInteraction]
-            if (staticEvent != null) {
-                if (regressionTestingMF!!.targetItemEvents.containsKey(staticEvent)) {
-                    regressionTestingMF!!.targetItemEvents[staticEvent]!!["count"] = regressionTestingMF!!.targetItemEvents[staticEvent]!!["count"]!! + 1
-                    if (regressionTestingMF!!.targetItemEvents[staticEvent]!!["count"] == regressionTestingMF!!.targetItemEvents[staticEvent]!!["max"]!!) {
-                        untriggeredTargetEvents.remove(staticEvent)
-                    }
-                } else {
-                    untriggeredTargetEvents.remove(staticEvent)
+        val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
+
+        val staticEvents = abstractInteractions.filter { abstractState.staticEventMapping[it] != null }.map { abstractState.staticEventMapping[it]!! }.flatten().distinct()
+        staticEvents.forEach {
+            if (regressionTestingMF!!.targetItemEvents.containsKey(it)) {
+                regressionTestingMF!!.targetItemEvents[it]!!["count"] = regressionTestingMF!!.targetItemEvents[it]!!["count"]!! + 1
+                if (regressionTestingMF!!.targetItemEvents[it]!!["count"] == regressionTestingMF!!.targetItemEvents[it]!!["max"]!!) {
+                    untriggeredTargetEvents.remove(it)
                 }
+            } else {
+                untriggeredTargetEvents.remove(it)
             }
         }
-
     }
 
     override fun isEnd(): Boolean {
@@ -126,12 +124,14 @@ class PhaseOneStrategy(
         /*val candiateWindows = WTGNode.allMeaningNodes.filter { window -> runtimeAbstractStates.find { it.window == window } != null}
         val candidateVisitedFoundNodes = regressionTestingMF.windowVisitCount
                 .filter { candiateWindows.contains(it.key) } as HashMap*/
-        val abstratStateCandidates = runtimeAbstractStates.filter { it.window != currentAbstractState.window }
+        val abstratStateCandidates = runtimeAbstractStates
 
         val stateByActionCount = HashMap<AbstractState,Int>()
         abstratStateCandidates.forEach {
             stateByActionCount.put(it,it.getUnExercisedActions().size)
         }
+
+        var actionLimit = 2
         /*if (candidateVisitedFoundNodes.isEmpty())
             return transitionPaths*/
         //val activityVisitCount = HashMap(this.activityVisitCount)
@@ -164,7 +164,8 @@ class PhaseOneStrategy(
                             ,allPaths = transitionPaths
                             ,includeBackEvent = true
                             ,childParentMap = HashMap()
-                            ,level = 0)
+                            ,level = 0,
+                            useVirtualAbstractState = useVirtualAbstractState)
                 }
                 stateByActionCount.remove(it)
             }
@@ -206,7 +207,8 @@ class PhaseOneStrategy(
                             , allPaths = transitionPaths
                             , includeBackEvent = true
                             , childParentMap = childParentMap
-                            , level = 0)
+                            , level = 0,
+                            useVirtualAbstractState = useVirtualAbstractState)
                 }
             }
         }
@@ -248,12 +250,13 @@ class PhaseOneStrategy(
             }
 
         }
-        val budget = Helper.getVisibleInteractableWidgets(currentState).filter { !Helper.hasParentWithType(it,currentState,"WebView") } .map { it.availableActions(delay, useCoordinateClicks) }.flatten().size*budgetScale
+
         ExplorationTrace.widgetTargets.clear()
         if (!windowRandomExplorationBudget.containsKey(currentAppState.window)) {
             if (currentAppState.isOpeningKeyboard) {
                 return GlobalAction(actionType = ActionType.PressBack)
             }
+            val budget = Helper.getVisibleInteractableWidgets(currentState).filter { !Helper.hasParentWithType(it,currentState,"WebView") }.size*budgetScale
             windowRandomExplorationBudget.put(currentAppState.window, budget.toInt())
             windowRandomExplorationBudgetLeft.put(currentAppState.window, 0)
         }
@@ -452,7 +455,7 @@ class PhaseOneStrategy(
                     it.initialize(currentState)
                 }
                 log.info("Go to target window by visiting another window: ${targetWindow.toString()}")
-                phaseState = PhaseState.P1_RANDOM_EXPLORATION
+                phaseState = PhaseState.P1_GO_TO_TARGET_NODE
                 return
             }
             if (hasBudgetLeft(currentAppState.window)) {
@@ -512,7 +515,7 @@ class PhaseOneStrategy(
                     it.initialize(currentState)
                 }
                 log.info("Go to target window by visiting another window: ${targetWindow.toString()}")
-                phaseState = PhaseState.P1_RANDOM_EXPLORATION
+                phaseState = PhaseState.P1_GO_TO_TARGET_NODE
                 return
             }
             if (hasBudgetLeft(currentAppState.window)) {
@@ -534,6 +537,10 @@ class PhaseOneStrategy(
                     log.info("This window has target events.")
                     log.info("Exercise target component task chosen")
                     phaseState = PhaseState.P1_EXERCISE_TARGET_NODE
+                    return
+                }
+                if (!strategyTask!!.isTaskEnd(currentState)) {
+                    log.info("Continue random in target window")
                     return
                 }
                 if (hasBudgetLeft(currentAppState.window)) {
@@ -572,7 +579,7 @@ class PhaseOneStrategy(
                     it.initialize(currentState)
                 }
                 log.info("Go to target window by visiting another window: ${targetWindow.toString()}")
-                phaseState = PhaseState.P1_RANDOM_EXPLORATION
+                phaseState = PhaseState.P1_GO_TO_TARGET_NODE
                 return
             }
             setFullyRandomExploration(randomExplorationTask, currentState,currentAppState)
@@ -665,6 +672,7 @@ class PhaseOneStrategy(
     private fun setRandomExploration(randomExplorationTask: RandomExplorationTask, currentState: State<*>, currentAbstractState: AbstractState) {
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
+            it.setMaximumAttempt(25)
         }
         log.info("Cannot find path the target node.")
         log.info("Random exploration")
@@ -689,7 +697,6 @@ class PhaseOneStrategy(
             it.initialize(currentState)
             it.lockTargetWindow(targetWindow!!)
             it.setMaximumAttempt(currentState,25)
-            it.backAction = false
         }
         log.info("This window is a target window but cannot find any target event")
         log.info("Random exploration in current window")
@@ -708,7 +715,7 @@ class PhaseOneStrategy(
             val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(it).filter { edge ->
                 it.staticEventMapping.contains(edge.label)}.map { it.label }
             val staticEvents = it.staticEventMapping.filter { abstractInteractions.contains(it.key) }.map { it.value }
-            if (staticEvents.find { untriggeredTargetEvents.contains(it) }!=null)
+            if (staticEvents.find { untriggeredTargetEvents.intersect(it).isNotEmpty() }!=null)
             {
                 candidates.add(it)
             }

@@ -33,17 +33,17 @@ class PhaseTwoStrategy (
     regressionTestingStrategy = regressionTestingStrategy,
         budgetScale = budgetScale,
     delay = delay,
-    useCoordinateClicks = useCoordinateClicks
+    useCoordinateClicks = useCoordinateClicks,
+        useVirtualAbstractState = false
 ) {
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
-        val abstractInteraction = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find { it.label.abstractAction.equals(abstractAction) }?.label
-        if (abstractInteraction!=null)
-        {
-            val staticEvent = abstractState.staticEventMapping[abstractInteraction]
-            if (staticEvent != null) {
-                if (phase2TargetEvents.containsKey(staticEvent))
-                    phase2TargetEvents[staticEvent] = phase2TargetEvents[staticEvent]!! + 1
+        val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
+
+        val staticEvents = abstractInteractions.filter { abstractState.staticEventMapping[it] != null }.map { abstractState.staticEventMapping[it]!! }.flatten().distinct()
+        staticEvents.forEach {
+            if (phase2TargetEvents.containsKey(it)) {
+                phase2TargetEvents[it] = phase2TargetEvents[it]!! + 1
             }
         }
     }
@@ -135,7 +135,8 @@ class PhaseTwoStrategy (
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
                     ,childParentMap = HashMap()
-                    ,level = 0)
+                    ,level = 0,
+                    useVirtualAbstractState = useVirtualAbstractState)
             return transitionPaths
         }
         val targetAppStatesDistribution = HashMap<AbstractState,Pair<Double, Double>>()
@@ -168,7 +169,8 @@ class PhaseTwoStrategy (
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
                         ,childParentMap = HashMap()
-                        ,level = 0)
+                        ,level = 0,
+                        useVirtualAbstractState = useVirtualAbstractState)
             }
         }
         return transitionPaths
@@ -206,7 +208,8 @@ class PhaseTwoStrategy (
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
                         ,childParentMap = HashMap()
-                        ,level = 0)
+                        ,level = 0,
+                        useVirtualAbstractState = useVirtualAbstractState)
             }
 
         }
@@ -220,9 +223,9 @@ class PhaseTwoStrategy (
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow)
         {
-            val availableEvent = abstractState.staticEventMapping.map { it.value }
+            val availableEvents = abstractState.staticEventMapping.map { it.value }.flatten()
             val events = HashMap(phase2TargetEvents.filter {
-                availableEvent.contains(it.key)
+                availableEvents.contains(it.key)
             })
             if (events.isNotEmpty())
             {
@@ -244,6 +247,7 @@ class PhaseTwoStrategy (
         }
         return targetEvents.map { it.value }.flatMap { it }
     }
+
     private fun chooseTask(eContext: ExplorationContext<*, *, *>, currentState: State<*>) {
         log.debug("Choosing Task")
         //       val fillDataTask = FillTextInputTask.getInstance(regressionTestingMF,this,delay, useCoordinateClicks)
@@ -293,7 +297,7 @@ class PhaseTwoStrategy (
                     return
                 }
                 if (currentAppState.window == targetWindow) {
-                    if (exerciseTargetComponentTask.isAvailable(currentState) && strategyTask !is ExerciseTargetComponentTask) {
+                    if (exerciseTargetComponentTask.isAvailable(currentState)) {
                         log.info("Task chosen: Exercise Target Node .")
                         phaseState = PhaseState.P2_EXERCISE_TARGET_NODE
                         remainPhaseStateCount = 0
@@ -404,6 +408,7 @@ class PhaseTwoStrategy (
     private fun setRandomExploration(randomExplorationTask: RandomExplorationTask, currentState: State<*>) {
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
+            it.setMaximumAttempt(25)
         }
         log.info("Cannot find path the target node.")
         log.info("Random exploration")
@@ -414,8 +419,7 @@ class PhaseTwoStrategy (
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
             it.lockTargetWindow(targetWindow!!)
-            it.setMaximumAttempt(currentState,25)
-            it.backAction = false
+            it.setMaximumAttempt(25)
         }
         log.info("This window is a target window but cannot find any target event")
         log.info("Random exploration in current window")

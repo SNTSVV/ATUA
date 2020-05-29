@@ -24,3 +24,11 @@ project/pcComponents/exploration/build
 buildSrc
 project/deviceComponents/deviceControlDaemon/.gradle
 project/deviceComponents/deviceControlDaemon/build
+.gradle
+buildSrc
+project/deviceComponents/deviceControlDaemon/.gradle
+project/pcComponents/core/build
+project/pcComponents/core/out
+project/pcComponents/exploration/build
+project/pcComponents/exploration/out
+.DS_Store

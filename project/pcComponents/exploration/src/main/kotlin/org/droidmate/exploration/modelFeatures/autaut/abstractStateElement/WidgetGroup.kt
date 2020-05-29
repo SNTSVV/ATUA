@@ -29,11 +29,31 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
             actionCount.put(abstractAction, 0)
         }
         if (attributePath.isScrollable()) {
-            val abstractAction = AbstractAction(
+            val abstractActionSwipeUp = AbstractAction(
                     actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this
+                    widgetGroup = this,
+                    extra = "SwipeUp"
             )
-            actionCount.put(abstractAction, 0)
+            val abstractActionSwipeDown = AbstractAction(
+                    actionName = AbstractActionType.SWIPE.actionName,
+                    widgetGroup = this,
+                    extra = "SwipeDown"
+            )
+            val abstractActionSwipeLeft = AbstractAction(
+                    actionName = AbstractActionType.SWIPE.actionName,
+                    widgetGroup = this,
+                    extra = "SwipeLeft"
+            )
+            val abstractActionSwipeRight = AbstractAction(
+                    actionName = AbstractActionType.SWIPE.actionName,
+                    widgetGroup = this,
+                    extra = "SwipeRight"
+            )
+            actionCount.put(abstractActionSwipeUp, 0)
+            actionCount.put(abstractActionSwipeDown, 0)
+            actionCount.put(abstractActionSwipeLeft, 0)
+            actionCount.put(abstractActionSwipeRight, 0)
+
         }
         if (attributePath.isInputField()) {
             val abstractAction = AbstractAction(
@@ -96,6 +116,17 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         if (other !is WidgetGroup)
             return false
         return this.hashCode()==other.hashCode()
+    }
+
+    override fun toString(): String {
+        return "WidgetGroup[${attributePath.getClassName()}]" +
+                "[${attributePath.getResourceId()}]" +
+                "[${attributePath.getContentDesc()}]" +
+                "[${attributePath.getText()}]" +
+                "[clickable=${attributePath.isClickable()}]" +
+                "[longClickable=${attributePath.isLongClickable()}]" +
+                "[scrollable=${attributePath.isScrollable()}]" +
+                "[checkable=${attributePath.isCheckable()}]"
     }
 
 }

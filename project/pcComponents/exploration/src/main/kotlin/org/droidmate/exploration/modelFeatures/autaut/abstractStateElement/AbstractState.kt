@@ -14,7 +14,7 @@ open class AbstractState (
         var window: WTGNode,
         val staticWidgetMapping: HashMap<WidgetGroup, ArrayList<StaticWidget>> = HashMap(),
         val abstractInteractions: ArrayList<AbstractInteraction> = ArrayList(),
-        val staticEventMapping: HashMap<AbstractInteraction, StaticEvent> = HashMap(),
+        val staticEventMapping: HashMap<AbstractInteraction, ArrayList<StaticEvent>> = HashMap(),
         var isFromLaunch: Boolean,
         val isHomeScreen: Boolean = false,
         val isOpeningKeyboard: Boolean = false,
@@ -34,22 +34,46 @@ open class AbstractState (
                     actionName = AbstractActionType.PRESS_BACK.actionName
             )
             actionCount.put(pressBackAction,0)
-            val pressMenuAction = AbstractAction(
-                    actionName = AbstractActionType.PRESS_MENU.actionName
-            )
-            actionCount.put(pressMenuAction,0)
-            val swipeAction = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName
-            )
-            actionCount.put(swipeAction,0)
-            val rotationAction = AbstractAction(
-                    actionName = AbstractActionType.ROTATE_UI.actionName
-            )
-            actionCount.put(rotationAction,0)
-            val minmaxAction = AbstractAction(
-                    actionName = AbstractActionType.MINIMIZE_MAXIMIZE.actionName
-            )
-            actionCount.put(minmaxAction,0)
+            if (window !is WTGOptionsMenuNode) {
+                val pressMenuAction = AbstractAction(
+                        actionName = AbstractActionType.PRESS_MENU.actionName
+                )
+                actionCount.put(pressMenuAction, 0)
+            }
+            if (window is WTGActivityNode) {
+                val swipeUpAction = AbstractAction(
+                        actionName = AbstractActionType.SWIPE.actionName,
+                        extra = "SwipeUp"
+                )
+                val swipeDownAction = AbstractAction(
+                        actionName = AbstractActionType.SWIPE.actionName,
+                        extra = "SwipeDown"
+                )
+                val swipeLeftAction = AbstractAction(
+                        actionName = AbstractActionType.SWIPE.actionName,
+                        extra = "SwipeLeft"
+                )
+                val swipeRightAction = AbstractAction(
+                        actionName = AbstractActionType.SWIPE.actionName,
+                        extra = "SwipeRight"
+                )
+
+                actionCount.put(swipeUpAction, 0)
+                actionCount.put(swipeDownAction, 0)
+                actionCount.put(swipeLeftAction, 0)
+                actionCount.put(swipeRightAction, 0)
+
+                val minmaxAction = AbstractAction(
+                        actionName = AbstractActionType.MINIMIZE_MAXIMIZE.actionName
+                )
+                actionCount.put(minmaxAction,0)
+            }
+            if (window is WTGActivityNode || rotation == Rotation.LANDSCAPE) {
+                val rotationAction = AbstractAction(
+                        actionName = AbstractActionType.ROTATE_UI.actionName
+                )
+                actionCount.put(rotationAction, 0)
+            }
             if (isOpeningKeyboard) {
                 val closeKeyboardAction = AbstractAction(
                         actionName = AbstractActionType.CLOSE_KEYBOARD.actionName
@@ -58,12 +82,19 @@ open class AbstractState (
             }
         }
 
+        fun addWidgetGroup (widgetGroup: WidgetGroup) {
+            if (widgets.contains(widgetGroup)) {
+                return
+            }
+            widgets.add(widgetGroup)
+
+        }
+
         fun getWidgetGroup(widget: Widget, guiState: State<*>): WidgetGroup?{
             val tempAttributePath = HashMap<Widget,AttributePath>()
             val tempChildWidgetAttributePaths = HashMap<Widget,AttributePath>()
             return widgets.find {
                        val reducedAttributePath = AbstractionFunction.INSTANCE.reduce(widget,guiState,activity,tempAttributePath,tempChildWidgetAttributePaths)
-                        val attributePath = it.attributePath
                         it.attributePath.equals(reducedAttributePath)
                 }
         }
@@ -77,7 +108,7 @@ open class AbstractState (
 
         fun getUnExercisedActions(): List<AbstractAction> {
             val unexcerisedActions = ArrayList<AbstractAction>()
-            unexcerisedActions.addAll(actionCount.filter { it.value == 0 }.keys)
+            unexcerisedActions.addAll(actionCount.filter { it.value == 0 && it.key.actionName!="fake_action" }.keys)
             unexcerisedActions.addAll(widgets.map { it.actionCount.filter { it.value==0 }}.map { it.keys }.flatten())
             return unexcerisedActions
         }
@@ -100,6 +131,38 @@ open class AbstractState (
             if (actionCount.containsKey(nonDataAction) && nonDataAction != action) {
                 actionCount.remove(nonDataAction)
             }
+            if (action.actionName == "Swipe") {
+                val swipeData = Helper.parseSwipeData(action.extra as String)
+                val begin = swipeData[0]!!
+                val end = swipeData[1]!!
+                val swipeAction = if (begin.first == end.first) {
+                    if (begin.second < end.second) {
+                        //swipe down
+                       AbstractAction(
+                                actionName = action.actionName,
+                                extra = "SwipeDown"
+                        )
+                    } else {
+                        //swipe up
+                        AbstractAction(
+                                actionName = action.actionName,
+                                extra = "SwipeUp"
+                        )
+                    }
+                } else if (begin.first < end.first) {
+                    //siwpe right
+                     AbstractAction(
+                            actionName = action.actionName,
+                            extra = "SwipeRight")
+                } else {
+                    AbstractAction(
+                            actionName = action.actionName,
+                            extra = "SwipeLeft")
+                }
+                if (actionCount.containsKey(swipeAction) ) {
+                    actionCount.remove(swipeAction)
+                }
+            }
         } else if (widgets.contains(action.widgetGroup)){
             val widgetGroup = widgets.find { it.equals(action.widgetGroup) }!!
             if (widgetGroup.actionCount.containsKey(action)) {
@@ -113,6 +176,42 @@ open class AbstractState (
             )
             if (widgetGroup.actionCount.containsKey(nonDataAction) && nonDataAction != action) {
                 widgetGroup.actionCount.remove(nonDataAction)
+            }
+            if (action.actionName == "Swipe") {
+                val swipeData = Helper.parseSwipeData(action.extra as String)
+                val begin = swipeData[0]!!
+                val end = swipeData[1]!!
+                val swipeAction = if (begin.first == end.first) {
+                    if (begin.second < end.second) {
+                        //swipe down
+                        AbstractAction(
+                                actionName = action.actionName,
+                                widgetGroup = widgetGroup,
+                                extra = "SwipeDown"
+                        )
+                    } else {
+                        //swipe up
+                        AbstractAction(
+                                actionName = action.actionName,
+                                widgetGroup = widgetGroup,
+                                extra = "SwipeUp"
+                        )
+                    }
+                } else if (begin.first < end.first) {
+                    //siwpe right
+                    AbstractAction(
+                            actionName = action.actionName,
+                            widgetGroup = widgetGroup,
+                            extra = "SwipeRight")
+                } else {
+                    AbstractAction(
+                            actionName = action.actionName,
+                            widgetGroup = widgetGroup,
+                            extra = "SwipeLeft")
+                }
+                if (widgetGroup.actionCount.containsKey(swipeAction) ) {
+                    widgetGroup.actionCount.remove(swipeAction)
+                }
             }
         }
     }

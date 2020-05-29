@@ -141,11 +141,12 @@ object DefaultStrategies: Logging {
 		override fun getPriority(): Int = prio
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean {
-			return !eContext.explorationCanMoveOn().also {
+			val hasNext = !eContext.explorationCanMoveOn().also {
 				if(!it)
 					cnt = 0  // reset the counter if we can proceed
 				terminate = false
 			}
+			return hasNext
 		}
 
 		suspend fun waitForLaunch(eContext: ExplorationContext<*,*,*>): ExplorationAction{

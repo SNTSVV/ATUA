@@ -10,6 +10,8 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractTransitionGraph
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.exploration.strategy.autaut.task.RandomExplorationTask
@@ -21,6 +23,7 @@ import kotlin.collections.HashMap
 abstract class AbstractPhaseStrategy(
         val regressionTestingStrategy: RegressionTestingStrategy,
         val budgetScale: Double,
+        val useVirtualAbstractState: Boolean,
         val delay: Long,
         val useCoordinateClicks: Boolean
 ) {
@@ -32,6 +35,7 @@ abstract class AbstractPhaseStrategy(
 
     abstract fun getPathsToOtherWindows(currentState: State<*>): List<TransitionPath>
     abstract fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath>
+
     open fun getPathsToWindow(currentState: State<*>, targetWindow: WTGNode): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
@@ -64,7 +68,8 @@ abstract class AbstractPhaseStrategy(
                             , allPaths = transitionPaths
                             , includeBackEvent = true
                             , childParentMap = childParentMap
-                            , level = 0)
+                            , level = 0
+                    , useVirtualAbstractState = useVirtualAbstractState)
                 }
             }
         }
@@ -93,7 +98,7 @@ abstract class AbstractPhaseStrategy(
 
     fun findPathToTargetComponentByBFS(currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<WTGNode>, AbstractState>>, finalTarget: AbstractState
                                        , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean
-                                       , childParentMap: HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?> ,level: Int) {
+                                       , childParentMap: HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?> ,level: Int, useVirtualAbstractState: Boolean) {
         if (traversingNodes.isEmpty())
             return
         val graph = regressionTestingMF.abstractTransitionGraph
@@ -102,103 +107,117 @@ abstract class AbstractPhaseStrategy(
         {
 
             val source = traversing.second
+            if (source is VirtualAbstractState && !useVirtualAbstractState) {
+                continue
+            }
             val windowStack = traversing.first
-
-            if (includeBackEvent && windowStack.isNotEmpty())
+            if (windowStack.isEmpty())
+                continue
+            getNextTraversingNodes(includeBackEvent, windowStack, graph, source, level, childParentMap, finalTarget, root, allPaths, nextLevelNodes)
+        }
+        if (nextLevelNodes.isEmpty() && !useVirtualAbstractState) {
+            for (traversing in traversingNodes)
             {
-                val backNodes = ArrayList<AbstractState>()
-                val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
-                val backEdges = graph.edges(source).filter {
-                    it.label.abstractAction.actionName.isPressBack()
-                            && it.destination != null}
-
-                val backCandiates = backEdges.filter {
-                            backToLauncherOrNot(it,level)
-                            && it.destination!!.data.window !is WTGOutScopeNode
-                            && it.label.prevWindow != null
-                            && isTheSamePrevWindow(windowStack.peek(), it)
-                }.groupBy { it.label.isImplicit }
-
-                if (backCandiates.containsKey(true)) {
-                    backCandiates[true]!!.forEach {
-                        if (!childParentMap.containsKey(it.destination!!.data)) {
-                            processingBackEdges.add(it)
-                        }
-                    }
-                } else if (backCandiates.containsKey(false)){
-                    backCandiates[false]!!.forEach {
-                        if (!childParentMap.containsKey(it.destination!!.data)) {
-                            processingBackEdges.add(it)
-                        }
-                    }
-                }
-
-                processingBackEdges.forEach { edge ->
-                    val backEvent = edge.label
-                    val backState = edge.destination!!.data
-                    childParentMap.put(backState,Pair(source,backEvent))
-                    if (backState == finalTarget) {
-                        val fullPath = createTransitionPath(backState, root,childParentMap)
-                        allPaths.add(fullPath)
-                        regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
-                        return
-                    } else {
-                        val nextWindowStack = createWindowStackForNext(windowStack, source, backState)
-                        nextLevelNodes.add(Pair(first = nextWindowStack , second = backState ))
-                    }
-                }
+                val source = traversing.second
+                val windowStack = traversing.first
+                if (windowStack.isEmpty())
+                    continue
+                getNextTraversingNodes(includeBackEvent, windowStack, graph, source, level, childParentMap, finalTarget, root, allPaths, nextLevelNodes)
             }
-            val possibleTransitions = graph.edges(source).filter{
-                it.destination!=null
-                        && it.source != it.destination
+
+        }
+        findPathToTargetComponentByBFS(currentState, root, nextLevelNodes, finalTarget, allPaths, includeBackEvent, childParentMap, level+1,useVirtualAbstractState)
+    }
+
+    private fun getNextTraversingNodes(includeBackEvent: Boolean, windowStack: Stack<WTGNode>, graph: AbstractTransitionGraph, source: AbstractState, level: Int, childParentMap: HashMap<AbstractState, Pair<AbstractState, AbstractInteraction>?>, finalTarget: AbstractState, root: AbstractState, allPaths: ArrayList<TransitionPath>, nextLevelNodes: ArrayList<Pair<Stack<WTGNode>, AbstractState>>) {
+        if (includeBackEvent && windowStack.isNotEmpty()) {
+            val backNodes = ArrayList<AbstractState>()
+            val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+            val backEdges = graph.edges(source).filter {
+                it.label.abstractAction.actionName.isPressBack()
+                        && it.destination != null
+            }
+
+            val backCandiates = backEdges.filter {
+                backToLauncherOrNot(it, level)
                         && it.destination!!.data.window !is WTGOutScopeNode
-                        && it.destination!!.data.window !is WTGFakeNode
-                        && it.destination!!.data.window !is WTGOpeningKeyboardNode
-                        && !(it.label.abstractAction.actionName.equals("MinimizeMaximize") || it.label.abstractAction.actionName.isPressBack())
-                        && includingRotateUIOrNot(it)
-                        && isTheSamePrevWindow(windowStack.peek(),it)
+                        && it.label.prevWindow != null
+                        && isTheSamePrevWindow(windowStack.peek(), it)
+            }.groupBy { it.label.isImplicit }
 
-            }
-            val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
-            possibleTransitions.groupBy({it.label.abstractAction},{it}).forEach { _, u ->
-                val reliableTransition =  u.filter { !it.label.isImplicit}
-                val implicitTransitions = u.filter { it.label.isImplicit }
-                if (reliableTransition.isEmpty())
-                {
-                    processedTransition.addAll(implicitTransitions)
-                }
-                processedTransition.addAll(reliableTransition)
-
-            }
-            // if (proc)
-            processedTransition.forEach {
-                val nextNode = it.destination!!.data
-                //Avoid loop
-                if (!childParentMap.containsKey(nextNode))
-                {
-                    val event = it.label
-                    var isDisableEdge: Boolean = false
-                    //It is the init node and the disableEdges contains it
-                    //isDisableEdge = checkIsDisableEdge(nextNode, event, source)
-                    if (!isDisableEdge)
-                    {
-                        childParentMap.put(nextNode,Pair(source,event))
-                        if (nextNode == finalTarget)
-                        {
-                            val fullGraph = createTransitionPath(finalTarget,root,childParentMap)
-                            allPaths.add(fullGraph)
-                            regressionTestingMF.registerTransitionPath(root,finalTarget,fullGraph)
-                            return
-                        }
-                        val nextWindowStack = createWindowStackForNext(windowStack, source, nextNode)
-                        nextLevelNodes.add(Pair(first = nextWindowStack,second=nextNode))
-
+            if (backCandiates.containsKey(true)) {
+                backCandiates[true]!!.forEach {
+                    if (!childParentMap.containsKey(it.destination!!.data)) {
+                        processingBackEdges.add(it)
                     }
+                }
+            } else if (backCandiates.containsKey(false)) {
+                backCandiates[false]!!.forEach {
+                    if (!childParentMap.containsKey(it.destination!!.data)) {
+                        processingBackEdges.add(it)
+                    }
+                }
+            }
+
+            processingBackEdges.forEach { edge ->
+                val backEvent = edge.label
+                val backState = edge.destination!!.data
+                childParentMap.put(backState, Pair(source, backEvent))
+                if (backState == finalTarget) {
+                    val fullPath = createTransitionPath(backState, root, childParentMap)
+                    allPaths.add(fullPath)
+                    regressionTestingMF.registerTransitionPath(root, finalTarget, fullPath)
+                    return
+                } else {
+                    val nextWindowStack = createWindowStackForNext(windowStack, source, backState)
+                    nextLevelNodes.add(Pair(first = nextWindowStack, second = backState))
                 }
             }
         }
+        val possibleTransitions = graph.edges(source).filter {
+            it.destination != null
+                    && it.source != it.destination
+                    && it.destination!!.data.window !is WTGOutScopeNode
+                    && it.destination!!.data.window !is WTGFakeNode
+                    && it.destination!!.data.window !is WTGOpeningKeyboardNode
+                    && !(it.label.abstractAction.actionName.equals("MinimizeMaximize") || it.label.abstractAction.actionName.isPressBack())
+                    && includingRotateUIOrNot(it)
+                    && isTheSamePrevWindow(windowStack.peek(), it)
 
-        findPathToTargetComponentByBFS(currentState, root, nextLevelNodes, finalTarget, allPaths, includeBackEvent, childParentMap, level+1)
+        }
+        val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+        possibleTransitions.groupBy({ it.label.abstractAction }, { it }).forEach { _, u ->
+            val reliableTransition = u.filter { !it.label.isImplicit }
+            val implicitTransitions = u.filter { it.label.isImplicit }
+            if (reliableTransition.isEmpty()) {
+                processedTransition.addAll(implicitTransitions)
+            }
+            processedTransition.addAll(reliableTransition)
+
+        }
+        // if (proc)
+        processedTransition.forEach {
+            val nextNode = it.destination!!.data
+            //Avoid loop
+            if (!childParentMap.containsKey(nextNode)) {
+                val event = it.label
+                var isDisableEdge: Boolean = false
+                //It is the init node and the disableEdges contains it
+                //isDisableEdge = checkIsDisableEdge(nextNode, event, source)
+                if (!isDisableEdge) {
+                    childParentMap.put(nextNode, Pair(source, event))
+                    if (nextNode == finalTarget) {
+                        val fullGraph = createTransitionPath(finalTarget, root, childParentMap)
+                        allPaths.add(fullGraph)
+                        regressionTestingMF.registerTransitionPath(root, finalTarget, fullGraph)
+                        return
+                    }
+                    val nextWindowStack = createWindowStackForNext(windowStack, source, nextNode)
+                    nextLevelNodes.add(Pair(first = nextWindowStack, second = nextNode))
+
+                }
+            }
+        }
     }
 
     private fun createWindowStackForNext(windowStack: Stack<WTGNode>, prevState: AbstractState, nextState: AbstractState): Stack<WTGNode> {

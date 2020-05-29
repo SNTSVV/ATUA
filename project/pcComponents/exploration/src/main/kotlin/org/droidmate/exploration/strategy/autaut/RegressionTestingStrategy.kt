@@ -63,6 +63,9 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         ExplorationTrace.widgetTargets.clear()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
         if (currentAbstractState == null) {
+            if (eContext.isEmpty()) {
+                return GlobalAction(ActionType.FetchGUI)
+            }
             return eContext.resetApp()
         }
         if (phaseStrategy.isEnd()) {
@@ -84,11 +87,6 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         prevNode = regressionWatcher.getAbstractState(eContext.getCurrentState())
         return chosenAction
     }
-
-
-
-
-
 
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
         super.initialize(initialContext)
