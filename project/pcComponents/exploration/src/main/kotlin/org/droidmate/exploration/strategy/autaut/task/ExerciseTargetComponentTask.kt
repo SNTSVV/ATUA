@@ -7,6 +7,7 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -200,8 +201,11 @@ class ExerciseTargetComponentTask private constructor(
             prevAbstractState = currentAbstractState
         }
         //TODO check eventList is not empty
-        if (eventList.isEmpty())
+        if (eventList.isEmpty()) {
+            log.debug("No more target event. Random exploration.")
             return randomExplorationTask.chooseAction(currentState)
+        }
+
         chosenAbstractAction = eventList.random()
 
         eventList.remove(chosenAbstractAction!!)
@@ -215,8 +219,8 @@ class ExerciseTargetComponentTask private constructor(
                 chosenWidget = candidates.firstOrNull()
                 if (chosenWidget==null)
                 {
-                    log.debug("No widget found")
-                    return randomExplorationTask.chooseAction(currentState)
+                    log.debug("No widget found. Choose another event.")
+                    return chooseAction(currentState)
                 }
                 log.info("Choose Action for Widget: $chosenWidget")
             }
