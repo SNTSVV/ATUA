@@ -85,8 +85,7 @@ open class GoToAnotherWindow protected constructor(
                 }
                 return false
             }
-        }else
-        {
+        } else {
             //something wrong, should end task
             return true
         }
@@ -131,7 +130,6 @@ open class GoToAnotherWindow protected constructor(
     }
 
     override fun initialize(currentState: State<*>) {
-
         randomExplorationTask!!.fillData=true
         randomExplorationTask!!.backAction=true
         chooseRandomOption(currentState)

@@ -1443,7 +1443,7 @@ class RegressionTestingMF(private val appName: String,
             readModifiedMethodTopCallers(jObj)
             readModifiedMethodInvocation(jObj)
             readUnreachableModfiedMethods(jObj)
-            log.debug("Reading all strings")
+            //log.debug("Reading all strings")
             //readAllStrings(jObj)
             readEventCorrelation(jObj)
             readMethodDependency(jObj)

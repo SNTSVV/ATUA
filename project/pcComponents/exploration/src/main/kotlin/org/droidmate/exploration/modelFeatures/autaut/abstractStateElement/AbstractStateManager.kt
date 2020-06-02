@@ -136,7 +136,9 @@ class AbstractStateManager () {
             TextInput.saveSpecificTextInputData(guiState)
             val guiReducedWidgetGroup = widget_WidgetGroupHashMap.map { it.value }.distinct()
             val matchingTestState = ABSTRACT_STATES.filterNot {it is VirtualAbstractState}.find { hasSameWidgetGroups(guiReducedWidgetGroup.toSet() ,it.widgets.toSet())
-                    && it.activity == activity && regressionTestingMF.currentRotation == it.rotation}
+                    && it.activity == activity
+                    && rotation == it.rotation
+                    && it.isOpeningKeyboard == isOpeningKeyboard }
             if (matchingTestState!=null) {
                 if (!matchingTestState.guiStates.contains(guiState))
                 {
@@ -368,41 +370,62 @@ class AbstractStateManager () {
             return
         }
         val virtualAbstractState = virtualAbstractStates.first()
+
         regressionTestingMF.abstractTransitionGraph.edges(virtualAbstractState).forEach { edge->
-            val existingEdge = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find {
-                it.label.abstractAction == edge.label.abstractAction
-                        && it.destination?.data == edge.destination?.data
+            // initAbstractActionCount
+            var existingAction = abstractState.getAvailableActions().find {
+                it == edge.label.abstractAction
             }
-            if (existingEdge == null)
-            {
-                if (edge.label.abstractAction.widgetGroup==null)
-                {
-                    val abstractInteraction = AbstractInteraction(
-                            abstractAction = edge.label.abstractAction,
-                            isImplicit = true,
-                            prevWindow = prevWindow,
-                            data = edge.label.data
-                    )
-                    regressionTestingMF.abstractTransitionGraph.add(abstractState,edge.destination?.data,abstractInteraction)
-                    abstractState.actionCount[abstractInteraction.abstractAction] = virtualAbstractState.actionCount[edge.label.abstractAction]?:0
+           if (existingAction == null) {
+               if (abstractState.getAvailableActions().any {
+                           it.actionName == edge.label.abstractAction.actionName
+                                   && it.widgetGroup == edge.label.abstractAction.widgetGroup
+                       }) {
+                   // create new abstractAction
+                   val abstractAction = AbstractAction(actionName = edge.label.abstractAction.actionName,
+                           widgetGroup = edge.label.abstractAction.widgetGroup,
+                           extra = edge.label.abstractAction.extra)
+                   existingAction = abstractAction
+               }
+           }
+            if (existingAction != null) {
+                abstractState.increaseActionCount(existingAction)
+                if (existingAction.widgetGroup == null) {
+                    abstractState.actionCount[existingAction] = virtualAbstractState.actionCount[edge.label.abstractAction]
+                            ?: 0
+                } else {
+                    existingAction!!.widgetGroup!!.actionCount[existingAction] = edge.label.abstractAction.widgetGroup!!.actionCount[edge.label.abstractAction]
+                            ?: 0
                 }
-                else
-                {
-                    val widgetGroup = abstractState.widgets.find { it == edge.label.abstractAction.widgetGroup }
-                    if (widgetGroup!=null)
-                    {
+                val existingEdge = regressionTestingMF.abstractTransitionGraph.edges(abstractState).find {
+                    it.label.abstractAction == edge.label.abstractAction
+                            && it.destination?.data == edge.destination?.data
+                }
+                if (existingEdge == null) {
+                    if (edge.label.abstractAction.widgetGroup == null) {
                         val abstractInteraction = AbstractInteraction(
-                                abstractAction = AbstractAction(actionName = edge.label.abstractAction.actionName,
-                                        widgetGroup = widgetGroup),
+                                abstractAction = existingAction,
                                 isImplicit = true,
                                 prevWindow = prevWindow,
-                                data = edge.label.data)
-                        regressionTestingMF.abstractTransitionGraph.add(abstractState,edge.destination?.data,abstractInteraction)
-                        widgetGroup.actionCount[abstractInteraction.abstractAction] = edge.label.abstractAction.widgetGroup!!.actionCount[edge.label.abstractAction]?:0
+                                data = edge.label.data
+                        )
+                        regressionTestingMF.abstractTransitionGraph.add(abstractState, edge.destination?.data, abstractInteraction)
+
+                    } else {
+                        val widgetGroup = abstractState.widgets.find { it == edge.label.abstractAction.widgetGroup }
+                        if (widgetGroup != null) {
+                            val abstractInteraction = AbstractInteraction(
+                                    abstractAction = existingAction,
+                                    isImplicit = true,
+                                    prevWindow = prevWindow,
+                                    data = edge.label.data)
+                            regressionTestingMF.abstractTransitionGraph.add(abstractState, edge.destination?.data, abstractInteraction)
+                            widgetGroup.actionCount[abstractInteraction.abstractAction] = edge.label.abstractAction.widgetGroup!!.actionCount[edge.label.abstractAction]
+                                    ?: 0
+                        }
                     }
                 }
             }
-
         }
     }
 

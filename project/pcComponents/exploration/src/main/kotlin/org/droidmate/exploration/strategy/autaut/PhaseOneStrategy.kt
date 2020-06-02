@@ -254,7 +254,8 @@ class PhaseOneStrategy(
         ExplorationTrace.widgetTargets.clear()
         if (!windowRandomExplorationBudget.containsKey(currentAppState.window)) {
             if (currentAppState.isOpeningKeyboard) {
-                return GlobalAction(actionType = ActionType.PressBack)
+                log.info("New window but keyboard is open. Close keyboard")
+                return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
             val budget = Helper.getVisibleInteractableWidgets(currentState).filter { !Helper.hasParentWithType(it,currentState,"WebView") }.size*budgetScale
             windowRandomExplorationBudget.put(currentAppState.window, budget.toInt())

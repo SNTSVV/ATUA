@@ -32,3 +32,5 @@ project/pcComponents/core/out
 project/pcComponents/exploration/build
 project/pcComponents/exploration/out
 .DS_Store
+project/pcComponents/core/build
+*.lock
