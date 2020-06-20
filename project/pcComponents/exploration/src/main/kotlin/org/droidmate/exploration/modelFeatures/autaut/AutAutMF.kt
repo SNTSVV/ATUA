@@ -49,13 +49,13 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.coroutines.CoroutineContext
 
-class RegressionTestingMF(private val appName: String,
-                          private val resourceDir: Path,
-                          private val manualInput: Boolean,
-                          private val manualIntent: Boolean,
-                          private val getCurrentActivity: suspend () -> String,
-                          private val getDeviceRotation: suspend () -> Int,
-                          private val getDeviceScreenSurface: suspend () -> Rectangle) : ModelFeature() {
+class AutAutMF(private val appName: String,
+               private val resourceDir: Path,
+               private val manualInput: Boolean,
+               private val manualIntent: Boolean,
+               private val getCurrentActivity: suspend () -> String,
+               private val getDeviceRotation: suspend () -> Int,
+               private val getDeviceScreenSurface: suspend () -> Rectangle) : ModelFeature() {
 
     var portraitScreenSurface = Rectangle.empty()
     var portraitVisibleScreenSurface = Rectangle.empty()
@@ -964,7 +964,15 @@ class RegressionTestingMF(private val appName: String,
             {
                 createStaticEventFromAbstractInteraction(prevAbstractState,newAbstractState,abstractInteraction)
             }
+            val event = prevAbstractState.staticEventMapping[abstractInteraction]
+            if (event != null && !allTargetStaticEvents.intersect(event).isNotEmpty()) {
+                allTargetStaticEvents.addAll(event)
+            }
+            if (!allTargetWindows.contains(prevAbstractState.window)) {
+                allTargetWindows.add(prevAbstractState.window)
+            }
         }
+
         return true
     }
 
@@ -1046,7 +1054,7 @@ class RegressionTestingMF(private val appName: String,
             return
         val edgeStatementCoverage = abstractTransitionGraph.statementCoverageInfo[edge]!!
         val edgeMethodCoverage = abstractTransitionGraph.methodCoverageInfo[edge]!!
-        val event = sourceAbsState.staticEventMapping[abstractInteraction]
+
         statementMF!!.mutex.withLock {
             val recentExecutedStatementSize = statementMF!!.recentExecutedStatements.size
             statementMF!!.recentExecutedStatements.forEach {
@@ -1080,9 +1088,7 @@ class RegressionTestingMF(private val appName: String,
                 } else {
                     if (statementMF!!.isModifiedMethod(it)) {
                         abstractInteraction.modifiedMethods.put(it, true)
-                        if (event != null && !allTargetStaticEvents.intersect(event).isNotEmpty()) {
-                            allTargetStaticEvents.addAll(event)
-                        }
+
 //                        log.info("New modified method covered:")
 //                        log.info(statementMF!!.getMethodName(it))
                     }
@@ -1540,7 +1546,7 @@ class RegressionTestingMF(private val appName: String,
 
     private fun getIntentModelFile(): Path? {
         if (!Files.exists(resourceDir)) {
-            RegressionTestingMF.log.warn("Provided Dir does not exist: $resourceDir.")
+            AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
             return null
 
         } else {
@@ -1548,7 +1554,7 @@ class RegressionTestingMF(private val appName: String,
             if (intentModelFile != null)
                 return intentModelFile
             else {
-                RegressionTestingMF.log.warn("Provided directory ($resourceDir) does not contain " +
+                AutAutMF.log.warn("Provided directory ($resourceDir) does not contain " +
                         "the corresponding intent model file.")
                 return null
             }
@@ -1669,7 +1675,7 @@ class RegressionTestingMF(private val appName: String,
 
     fun getAppModelFile(): Path? {
         if (!Files.exists(resourceDir)) {
-            RegressionTestingMF.log.warn("Provided Dir does not exist: $resourceDir.")
+            AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
             return null
 
         } else {
@@ -1677,7 +1683,7 @@ class RegressionTestingMF(private val appName: String,
             if (instrumentationFile != null)
                 return instrumentationFile
             else {
-                RegressionTestingMF.log.warn("Provided directory ($resourceDir) does not contain " +
+                AutAutMF.log.warn("Provided directory ($resourceDir) does not contain " +
                         "the corresponding instrumentation file.")
                 return null
             }
@@ -1696,7 +1702,7 @@ class RegressionTestingMF(private val appName: String,
 
     private fun getTextInputFile(): Path?{
         if (!Files.exists(resourceDir)) {
-            RegressionTestingMF.log.warn("Provided Dir does not exist: $resourceDir.")
+            AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
             return null
 
         } else {
@@ -1704,7 +1710,7 @@ class RegressionTestingMF(private val appName: String,
             if (textInputFile != null)
                 return textInputFile
             else {
-                RegressionTestingMF.log.warn("Provided directory ($resourceDir) does not contain " +
+                AutAutMF.log.warn("Provided directory ($resourceDir) does not contain " +
                         "the corresponding text input file.")
                 return null
             }
@@ -1850,12 +1856,12 @@ class RegressionTestingMF(private val appName: String,
 
 
         val outputFile = context.model.config.baseDir.resolve(targetWidgetFileName)
-        RegressionTestingMF.log.info("Prepare writing triggered widgets report file: " +
+        AutAutMF.log.info("Prepare writing triggered widgets report file: " +
                 "\n- File name: ${outputFile.fileName}" +
                 "\n- Absolute path: ${outputFile.toAbsolutePath().fileName}")
 
         Files.write(outputFile, sb.lines())
-        RegressionTestingMF.log.info("Finished writing report in ${outputFile.fileName}")
+        AutAutMF.log.info("Finished writing report in ${outputFile.fileName}")
     }
 
     //Widget override
@@ -1962,7 +1968,7 @@ class RegressionTestingMF(private val appName: String,
     companion object {
 
         @JvmStatic
-        val log: Logger by lazy { LoggerFactory.getLogger(RegressionTestingMF::class.java) }
+        val log: Logger by lazy { LoggerFactory.getLogger(AutAutMF::class.java) }
         object RegressionStrategy: PropertyGroup() {
             val use by booleanType
             val budgetScale by doubleType

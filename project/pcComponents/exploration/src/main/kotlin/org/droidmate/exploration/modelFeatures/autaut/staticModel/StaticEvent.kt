@@ -38,6 +38,7 @@ open class StaticEvent (
             EventType.scroll -> "Swipe"
             EventType.swipe -> "Swipe"
             EventType.closeKeyboard -> "CloseKeyboard"
+            EventType.implicit_launch_event -> "LaunchApp"
             else -> if (widget != null) {
                 "Click"
             } else {

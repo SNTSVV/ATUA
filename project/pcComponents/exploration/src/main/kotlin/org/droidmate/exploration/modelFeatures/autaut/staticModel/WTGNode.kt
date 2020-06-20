@@ -11,6 +11,7 @@ open class WTGNode(val classType: String,
     val widgetState = HashMap<StaticWidget, Boolean>()
     val mappedStates = arrayListOf<State<*>>()
     var rotation:Int = 0
+    var rotationSupport: Boolean = true
     var portraitDimension: Rectangle = Rectangle.empty()
     var landscapeDimension: Rectangle = Rectangle.empty()
     var portraitKeyboardDimension: Rectangle = Rectangle.empty()

@@ -2,7 +2,7 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.deviceInterface.exploration.isEnabled
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -11,17 +11,17 @@ import kotlin.math.abs
 class Helper {
     companion object {
         fun mergeOptionsMenusWithActivities(optionsMenuNodes: ArrayList<WTGNode>, newState: State<*>, activityNodes: ArrayList<WTGNode>,
-                                            transitionGraph: TransitionGraph, regressionTestingMF: RegressionTestingMF) {
+                                            transitionGraph: TransitionGraph, autAutMF: AutAutMF) {
             var shouldMerge = false
             //FIXTHIS
             optionsMenuNodes.forEach { n ->
                 val activityNode = activityNodes.find { transitionGraph.getOptionsMenu(it)?.equals(n) ?: false }
-                mergeOptionsMenuWithActivity(newState, n, activityNode!!, transitionGraph, regressionTestingMF)
+                mergeOptionsMenuWithActivity(newState, n, activityNode!!, transitionGraph, autAutMF)
             }
 
         }
 
-        fun mergeOptionsMenuWithActivity(newState: State<*>, optionsMenuNode: WTGNode, activityNode: WTGNode, transitionGraph: TransitionGraph, regressionTestingMF: RegressionTestingMF): Boolean {
+        fun mergeOptionsMenuWithActivity(newState: State<*>, optionsMenuNode: WTGNode, activityNode: WTGNode, transitionGraph: TransitionGraph, autAutMF: AutAutMF): Boolean {
 
             var shouldMerge = false
             var containsOptionMenuWidgets = false
@@ -31,7 +31,7 @@ class Helper {
             newState.widgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    optionsMenuWidgets.addAll(getStaticWidgets(widget, newState, optionsMenuNode, false, regressionTestingMF))
+                    optionsMenuWidgets.addAll(getStaticWidgets(widget, newState, optionsMenuNode, false, autAutMF))
                     if (optionsMenuWidgets.isEmpty()) {
                         containsOptionMenuWidgets = false
                     } else {
@@ -44,7 +44,7 @@ class Helper {
             newState.widgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    activityWidgets.addAll(getStaticWidgets(widget, newState, activityNode, false, regressionTestingMF))
+                    activityWidgets.addAll(getStaticWidgets(widget, newState, activityNode, false, autAutMF))
                     if (activityWidgets.isEmpty()) {
                         containsActivityWidgets = false
                     } else {
@@ -58,7 +58,7 @@ class Helper {
                 shouldMerge = true
             }
             if (shouldMerge) {
-                RegressionTestingMF.log.info("Merge $optionsMenuNode to $activityNode")
+                AutAutMF.log.info("Merge $optionsMenuNode to $activityNode")
                 transitionGraph.mergeNode(optionsMenuNode, activityNode)
                 /*transitionGraph.removeVertex(optionsMenuNode)
                 regressionTestingMF.staticEventWindowCorrelation.filter { it.value.containsKey(optionsMenuNode) }.forEach { event, correlation ->
@@ -72,7 +72,7 @@ class Helper {
         }
 
         fun calculateMatchScoreForEachNode(newState: State<*>, allPossibleNodes: List<WTGNode>, appName: String,
-                                           regressionTestingMF: RegressionTestingMF): HashMap<WTGNode, Double> {
+                                           autAutMF: AutAutMF): HashMap<WTGNode, Double> {
             val matchWidgets = HashMap<WTGNode, Int>()
             val missWidgets = HashMap<WTGNode, Int>()
             val propertyChangedWidgets = HashMap<WTGNode, Int>()
@@ -90,7 +90,7 @@ class Helper {
                 while (it.hasNext()) {
                     val widget = it.next()
                     allPossibleNodes.forEach {
-                        val matchingWidget = getStaticWidgets(widget, newState, it, false, regressionTestingMF)
+                        val matchingWidget = getStaticWidgets(widget, newState, it, false, autAutMF)
                         if (matchingWidget.isNotEmpty()) {
                             if (matchWidgets.contains(it)) {
                                 matchWidgets[it] = matchWidgets[it]!! + matchingWidget.size
@@ -155,9 +155,9 @@ class Helper {
         }
 
         fun matchWidget(originalWidget: Widget, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
-                        regressionTestingMF: RegressionTestingMF): StaticWidget? {
+                        autAutMF: AutAutMF): StaticWidget? {
             var matchedStaticWidget: StaticWidget? = null
-            val appName = regressionTestingMF.getAppName()
+            val appName = autAutMF.getAppName()
             var widget = originalWidget
             if (widget.resourceId.isBlank() && !widget.className.contains("Button") && widget.contentDesc.isBlank()
                     && widget.text.isBlank() && !hasParentWithType(widget, state, "ListView")) {
@@ -217,7 +217,7 @@ class Helper {
                     //addRuntimeWigetInfo(matchedStaticWidget, originalWidget, state)
                     matchedStaticWidget.xpath = originalWidget.xpath
                     matchedStaticWidget.isInputField = originalWidget.isInputField
-                    updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, false, regressionTestingMF)
+                    updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, false, autAutMF)
                     if (originalWidget.isInputField && originalWidget.text.isNotBlank()) {
                         matchedStaticWidget.textInputHistory.add(originalWidget.text)
                     }
@@ -244,7 +244,7 @@ class Helper {
                         //add mappedRuntime
                         staticWidget.mappedRuntimeWidgets.add(Pair(state, originalWidget))
                         //addRuntimeWigetInfo(staticWidget, originalWidget, state)
-                        updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, true, regressionTestingMF)
+                        updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, true, autAutMF)
                     }
 
                 }
@@ -253,9 +253,9 @@ class Helper {
         }
 
         fun getStaticWidgets(originalWidget: Widget, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
-                             regressionTestingMF: RegressionTestingMF): List<StaticWidget> {
+                             autAutMF: AutAutMF): List<StaticWidget> {
             var matchedStaticWidgets: ArrayList<StaticWidget> = ArrayList()
-            val appName = regressionTestingMF.getAppName()
+            val appName = autAutMF.getAppName()
             var widget = originalWidget
             if (widget.resourceId.isNotBlank()) {
                 val unqualifiedResourceId = getUnqualifiedResourceId(widget)
@@ -317,7 +317,7 @@ class Helper {
         }
 
         fun updateInteractiveWidget(widget: Widget, state: State<*>, staticWidget: StaticWidget, wtgNode: WTGNode
-                                    , isNewCreatedWidget: Boolean, regressionTestingMF: RegressionTestingMF) {
+                                    , isNewCreatedWidget: Boolean, autAutMF: AutAutMF) {
             val isInteractive: Boolean
             if (!isInteractiveWidget(widget)) {
                 if (widget.className == "android.widget.ImageView" && hasParentWithType(widget, state, "Gallery")) {
@@ -393,7 +393,7 @@ class Helper {
 
         internal var changeRatioCriteria: Double = 0.05
         fun checkShouldCreateNewNode(newState: State<*>, bestMatchedNode: WTGNode, currentRotation: Int, appName: String,
-                                     regressionTestingMF: RegressionTestingMF): Boolean {
+                                     autAutMF: AutAutMF): Boolean {
             if (bestMatchedNode.rotation != currentRotation)
                 return true
             var newWidgets = ArrayList<Widget>()
@@ -414,7 +414,7 @@ class Helper {
             val unmappedWidgets = visibleWidgets.filter { !mappedWidgets.containsKey(it) }
             unmappedWidgets.forEach {
                 var matchedStaticWidget: StaticWidget?
-                matchedStaticWidget = matchWidget(it, newState, bestMatchedNode, false, regressionTestingMF)
+                matchedStaticWidget = matchWidget(it, newState, bestMatchedNode, false, autAutMF)
                 if (matchedStaticWidget != null) {
                     //new widget found
                     matchedWidgets[matchedStaticWidget] = true
@@ -447,41 +447,41 @@ class Helper {
         }
 
         fun transferStaticWidgetsAndEvents(sourceNode: WTGNode, newNode: WTGNode, newState: State<*>, appName: String
-                                           , regressionTestingMF: RegressionTestingMF) {
-            regressionTestingMF.transitionGraph.edges(sourceNode).filter { it.label.widget == null }.forEach {
+                                           , autAutMF: AutAutMF) {
+            autAutMF.transitionGraph.edges(sourceNode).filter { it.label.widget == null }.forEach {
                 if (it.destination?.data == sourceNode)
-                    regressionTestingMF.transitionGraph.add(newNode, newNode, it.label)
+                    autAutMF.transitionGraph.add(newNode, newNode, it.label)
                 else
-                    regressionTestingMF.transitionGraph.add(newNode, it.destination?.data, it.label)
+                    autAutMF.transitionGraph.add(newNode, it.destination?.data, it.label)
             }
             //Copy mapped widget
             val visibleWidgets = getVisibleWidgets(newState)
             val mappedWidgets = getMappedGUIWidgets(visibleWidgets, sourceNode)
             mappedWidgets.forEach { w, sw ->
                 if (!sw.possibleTexts.contains(w.text) && sw.possibleTexts.isNotEmpty() && !w.isInputField) // it should be an similar widget
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, regressionTestingMF.transitionGraph)
+                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.transitionGraph)
                 else
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, regressionTestingMF.transitionGraph)
+                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.transitionGraph)
             }
 
             //process unmappedWidget
             val unmappedWidgets = visibleWidgets.filter { !mappedWidgets.containsKey(it) }
             unmappedWidgets.forEach {
-                var matchedStaticWidget: StaticWidget? = matchWidget(it, newState, sourceNode, false, regressionTestingMF)
+                var matchedStaticWidget: StaticWidget? = matchWidget(it, newState, sourceNode, false, autAutMF)
 
                 if (matchedStaticWidget != null) {
                     if (matchedStaticWidget.mappedRuntimeWidgets.isEmpty()) {
                         //move if this static widget never mapped before
                         //change owner wtgNode
-                        copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, regressionTestingMF.transitionGraph)
+                        copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
                         //update event
 
                     } else {
                         //copy else
                         if (!matchedStaticWidget.possibleTexts.contains(it.text))
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, regressionTestingMF.transitionGraph)
+                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
                         else
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, regressionTestingMF.transitionGraph)
+                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
                     }
                 }
             }

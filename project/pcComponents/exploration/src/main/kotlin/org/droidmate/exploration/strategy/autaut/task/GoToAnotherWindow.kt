@@ -3,11 +3,10 @@ package org.droidmate.exploration.strategy.autaut.task
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.availableActions
-import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory
 import kotlin.collections.ArrayList
 
 open class GoToAnotherWindow protected constructor(
-         regressionWatcher: RegressionTestingMF,
+        regressionWatcher: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks) {
 
@@ -68,10 +67,12 @@ open class GoToAnotherWindow protected constructor(
         if (expectedNextAbState!=null) {
             if (!isReachExpectedNode(currentState)) {
                 // Try another path if current state is not target node
-                if (currentAppState.window != targetWindow && regressionTestingMF.prevAbstractStateRefinement == 0) {
+                /*if (currentAppState.window != targetWindow && regressionTestingMF.prevAbstractStateRefinement == 0) {
                     log.debug("Fail to reach expected node")
                     addIncorrectPath()
-                }
+                }*/
+                log.debug("Fail to reach expected node")
+                addIncorrectPath()
                 if (isAvailable(currentState)) {
                     initialize(currentState)
                     return false
@@ -163,9 +164,9 @@ open class GoToAnotherWindow protected constructor(
     open protected fun initPossiblePaths(currentState: State<*>) {
         possiblePaths.clear()
         if (useInputTargetWindow && targetWindow!=null) {
-            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
         } else {
-            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
         }
     }
 
@@ -334,7 +335,7 @@ open class GoToAnotherWindow protected constructor(
 
         var instance: GoToAnotherWindow? = null
         var executedCount:Int = 0
-        fun getInstance(regressionWatcher: RegressionTestingMF,
+        fun getInstance(regressionWatcher: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): GoToAnotherWindow {
             if (instance == null) {

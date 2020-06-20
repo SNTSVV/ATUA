@@ -2,7 +2,7 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 class ReplayInteractionTask constructor(
-        regressionTestingMF: RegressionTestingMF,
+        regressionTestingMF: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
-       delay: Long,
+        delay: Long,
         useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy,regressionTestingMF, delay, useCoordinateClicks){
 
     var currentInteraction: Interaction<*>? = null
@@ -79,8 +79,8 @@ class ReplayInteractionTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass) }
 
         var instance: ReplayInteractionTask? = null
-        fun getInstance(regressionTestingMF: RegressionTestingMF,
-                regressionTestingStrategy: RegressionTestingStrategy,
+        fun getInstance(regressionTestingMF: AutAutMF,
+                        regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): ReplayInteractionTask {
             if (instance == null) {

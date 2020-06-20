@@ -531,7 +531,7 @@ class StaticAnalysisJSONFileHelper() {
             return windowHandlers
         }
 
-        fun readActivityAlias(jsonObj: JSONObject, regressionTestingMF: RegressionTestingMF): HashMap<String, String> {
+        fun readActivityAlias(jsonObj: JSONObject, regressionTestingMF: AutAutMF): HashMap<String, String> {
             val activityAlias = HashMap<String, String>()
             jsonObj.keys().asSequence().forEach { alias ->
                 val activity = jsonObj.get(alias).toString()

@@ -10,7 +10,7 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.task.*
@@ -25,8 +25,8 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
-    protected val regressionWatcher: RegressionTestingMF
-        get() = (eContext.findWatcher { it is RegressionTestingMF } as RegressionTestingMF)
+    protected val regressionWatcher: AutAutMF
+        get() = (eContext.findWatcher { it is AutAutMF } as AutAutMF)
 
     protected val statementWatcher: StatementCoverageMF
     get() = (eContext.findWatcher { it is StatementCoverageMF } as StatementCoverageMF)
@@ -74,10 +74,14 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
                 if (regressionWatcher.allTargetWindows.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
+                    return eContext.resetApp()
                 }
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
+                return eContext.resetApp()
+            } else if (phaseStrategy is PhaseThreeStrategy) {
+                return ExplorationAction.terminateApp()
             }
         }
         log.info("Current abstract state: ${currentAbstractState.toString()}")

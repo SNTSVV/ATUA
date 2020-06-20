@@ -35,7 +35,7 @@ import kotlinx.coroutines.sync.withLock
 import org.droidmate.coverage.INSTRUMENTATION_FILE_SUFFIX
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.ModelFeature
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -386,7 +386,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
     override suspend fun onAppExplorationFinished(context: ExplorationContext<*, *, *>) {
         this.join()
-        regressionTestingMF = context.findWatcher { it is RegressionTestingMF } as RegressionTestingMF?
+        regressionTestingMF = context.findWatcher { it is AutAutMF } as AutAutMF?
         produceStatementCoverageOutput(context)
         produceMethodCoverageOutput(context)
         produceModMethodCoverageOutput(context)
@@ -445,7 +445,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         Files.write(outputFile, sb.lines())
         log.info("Finished writing coverage in ${outputFile.fileName}")
     }
-    private var regressionTestingMF: RegressionTestingMF?=null
+    private var regressionTestingMF: AutAutMF?=null
     fun produceModMethodCoverageOutput(context: ExplorationContext<*,*,*>){
         val sb = StringBuilder()
         sb.appendln(statement_header)

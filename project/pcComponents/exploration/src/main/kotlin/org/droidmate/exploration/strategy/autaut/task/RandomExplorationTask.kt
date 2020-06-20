@@ -3,7 +3,7 @@ package org.droidmate.exploration.strategy.autaut.task
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 import kotlin.math.min
 
 class RandomExplorationTask constructor(
-        regressionTestingMF: RegressionTestingMF,
+        regressionTestingMF: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean,
         private var randomScroll: Boolean,
@@ -37,7 +37,7 @@ class RandomExplorationTask constructor(
     private var dataFilled = false
     private var initialExerciseCount = -1
     private var currentExerciseCount = -1
-
+    var reset = false
     var backAction = true
     var isFullyExploration: Boolean = false
 
@@ -45,7 +45,7 @@ class RandomExplorationTask constructor(
 
     fun lockTargetWindow (window: WTGNode) {
         lockedWindow = window
-        goToTargetWindowTask =  GoToTargetWindowTask(regressionTestingMF,regressionTestingStrategy,delay,useCoordinateClicks)
+        goToTargetWindowTask =  GoToTargetWindowTask(regressionTestingMF,autautStrategy,delay,useCoordinateClicks)
     }
     override fun isTaskEnd(currentState: State<*>): Boolean {
         if (attemptCount >= maximumAttempt)
@@ -127,6 +127,10 @@ class RandomExplorationTask constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
+        if (reset){
+            reset = false
+            return autautStrategy.eContext.resetApp()
+        }
         val currentAbstractState = regressionTestingMF.getAbstractState(currentState)!!
         if (isCameraOpening(currentState))
         {
@@ -161,7 +165,7 @@ class RandomExplorationTask constructor(
 
 
         if (currentState.visibleTargets.filter { it.isKeyboard }.isNotEmpty()
-                && currentState.visibleTargets.filter { it.packageName==regressionTestingStrategy.eContext.apk.packageName}.isEmpty()) {
+                && currentState.visibleTargets.filter { it.packageName==autautStrategy.eContext.apk.packageName}.isEmpty()) {
             val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
             if (searchButtons.isNotEmpty())
             {
@@ -197,7 +201,11 @@ class RandomExplorationTask constructor(
             return fillDataTask.chooseAction(currentState)
         }
 
-        val unexercisedActions = currentAbstractState.getUnExercisedActions().filter { !it.actionName.isTextInsert() }
+        val unexercisedActions = currentAbstractState.getUnExercisedActions().filter { !it.actionName.isTextInsert()
+                && (
+                (it.widgetGroup==null)
+                        || (it.widgetGroup != null && !it.widgetGroup.attributePath.isCheckable())
+                )}
         if (unexercisedActions.isNotEmpty()) {
             val randomAction = if (unexercisedActions.any { it.widgetGroup!=null}) {
                 // Swipe on widget should be executed by last
@@ -388,7 +396,7 @@ class RandomExplorationTask constructor(
         else
         {
             ExplorationTrace.widgetTargets.clear()
-            return regressionTestingStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
+            return autautStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
         }
     }
 
@@ -451,8 +459,8 @@ class RandomExplorationTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: RandomExplorationTask? = null
-        fun getInstance(regressionTestingMF: RegressionTestingMF,
-                regressionTestingStrategy: RegressionTestingStrategy,
+        fun getInstance(regressionTestingMF: AutAutMF,
+                        regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean,
                         randomScroll: Boolean = true,

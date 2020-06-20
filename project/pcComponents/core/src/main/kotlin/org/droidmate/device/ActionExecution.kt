@@ -31,8 +31,8 @@ private suspend fun performAction(action: ExplorationAction, app: IApk, device: 
 	when {
 		action.name == ActionType.Terminate.name -> terminate(app, device)
 		action is LaunchApp || (action is ActionQueue && action.actions.any { it is LaunchApp }) -> {
-			//resetApp(app, device)
-			device.forceStop(app)
+			resetApp(app, device)
+			//device.forceStop(app)
 			defaultExecution(action, device)
 		}
 		else -> debugT("perform $action on average ${performT / max(performN, 1)} ms", {

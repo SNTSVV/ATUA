@@ -3,8 +3,9 @@ package org.droidmate.exploration.strategy.autaut
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.closeAndReturn
+import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
@@ -50,6 +51,9 @@ class PhaseThreeStrategy(
     }
 
     override fun isEnd(): Boolean {
+        if (regressionTestingMF.lastModifiedMethodCoverage == 1.0) {
+            return true
+        }
         return false
     }
 
@@ -90,7 +94,7 @@ class PhaseThreeStrategy(
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
         if (regressionTestingMF == null)
         {
-            regressionTestingMF = eContext.findWatcher { it is RegressionTestingMF } as RegressionTestingMF
+            regressionTestingMF = eContext.findWatcher { it is AutAutMF } as AutAutMF
         }
         var chosenAction:ExplorationAction
 
@@ -105,13 +109,15 @@ class PhaseThreeStrategy(
             WTGNode.allMeaningNodes.random()
         }
         chooseTask(eContext, currentState)
+        budgetLeft--
+        if (budgetLeft == (TEST_BUDGET*budgetScale).toInt()-1)
+            return eContext.resetApp()
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
         } else {
             log.debug("No task seleted. It might be a bug.")
             chosenAction = ExplorationAction.closeAndReturn()
         }
-        budgetLeft--
         return chosenAction
     }
 

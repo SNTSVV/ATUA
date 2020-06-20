@@ -1,7 +1,7 @@
 package org.droidmate.exploration.strategy
 
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
@@ -32,7 +32,7 @@ object DefaultSelector {
 		override fun getPriority(): Int = prio
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean {
-			eContext.findWatcher { it is RegressionTestingMF }?.join()
+			eContext.findWatcher { it is AutAutMF }?.join()
 			return false
 		}
 	}

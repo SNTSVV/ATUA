@@ -4,10 +4,9 @@ import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -17,10 +16,9 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.random.Random
 
 class ExerciseTargetComponentTask private constructor(
-         regressionWatcher: RegressionTestingMF,
+        regressionWatcher: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean)
     : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
@@ -60,7 +58,7 @@ class ExerciseTargetComponentTask private constructor(
         mainTaskFinished = false
         currentAbstractState = regressionTestingMF.getAbstractState(currentState)
         initializeExtraTasks(currentState)
-        eventList.addAll(regressionTestingStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
     }
 
     private fun initializeExtraTasks(currentState: State<*>) {
@@ -91,7 +89,7 @@ class ExerciseTargetComponentTask private constructor(
     override fun isAvailable(currentState: State<*>): Boolean {
         log.info("Checking if current state contains target Events")
         eventList.clear()
-        eventList.addAll(regressionTestingStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         if (eventList.isNotEmpty()){
             log.info("Current node has ${eventList.size} target event(s).")
             return true
@@ -245,7 +243,7 @@ class ExerciseTargetComponentTask private constructor(
             else
             {
                 regressionTestingMF.lastExecutedAction = chosenAbstractAction
-                regressionTestingStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
+                autautStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
                 regressionTestingMF.isAlreadyRegisteringEvent = true
                 return chosenAction
             }
@@ -259,9 +257,9 @@ class ExerciseTargetComponentTask private constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         private var instance: ExerciseTargetComponentTask? = null
         var executedCount:Int = 0
-        fun getInstance(regressionWatcher: RegressionTestingMF,
+        fun getInstance(regressionWatcher: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
-                       delay: Long, useCoordinateClicks: Boolean): ExerciseTargetComponentTask {
+                        delay: Long, useCoordinateClicks: Boolean): ExerciseTargetComponentTask {
             if (instance == null)
             {
                 instance = ExerciseTargetComponentTask(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks)

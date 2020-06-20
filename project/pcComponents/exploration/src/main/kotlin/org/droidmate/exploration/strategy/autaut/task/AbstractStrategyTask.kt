@@ -7,8 +7,7 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.ActionCounterMF
 import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
@@ -22,28 +21,27 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.HashMap
-import kotlin.math.abs
 import kotlin.random.Random
 
-abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTestingStrategy,
-                                          val regressionTestingMF: RegressionTestingMF,
-                                          val delay: Long,
-                                          val useCoordinateClicks: Boolean){
+abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrategy,
+                                     val regressionTestingMF: AutAutMF,
+                                     val delay: Long,
+                                     val useCoordinateClicks: Boolean){
 
 
     protected var random = java.util.Random(Random.nextLong())
         private set
 
-    protected var counter: ActionCounterMF = regressionTestingStrategy.getActionCounter()
-    protected var blackList: BlackListMF = regressionTestingStrategy.getBlacklist()
+    protected var counter: ActionCounterMF = autautStrategy.getActionCounter()
+    protected var blackList: BlackListMF = autautStrategy.getBlacklist()
 
     protected suspend fun getCandidates(widgets: List<Widget>): List<Widget> {
         return widgets
                 .let { filteredCandidates ->
                     // for each widget in this state the number of interactions
-                    counter.numExplored(regressionTestingStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    counter.numExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
                             .groupBy { it.key.packageName }.flatMap { (pkgName, countEntry) ->
-                                if (pkgName != regressionTestingStrategy.eContext.apk.packageName) {
+                                if (pkgName != autautStrategy.eContext.apk.packageName) {
                                     val pkgActions = counter.pkgCount(pkgName)
                                     countEntry.map { Pair(it.key, pkgActions) }
                                 } else
@@ -183,6 +181,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
                 }
                 "CallIntent" -> callIntent(data)
                 "Swipe" -> doSwipe(currentState,data as String)
+                "LaunchApp" -> autautStrategy.eContext.launchApp()
                 else -> ExplorationAction.pressBack()
             }
         }
@@ -351,12 +350,12 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
     private fun callIntent(data: Any?): CallIntent {
         if (data is IntentFilter) {
             val intentFilter = data as IntentFilter
-            return regressionTestingStrategy.eContext.callIntent(intentFilter.getActions().random(),
+            return autautStrategy.eContext.callIntent(intentFilter.getActions().random(),
                     intentFilter.getCategories().random(), intentFilter.getDatas().random().testData.random(), intentFilter.activity)
 
         } else {
             val intentData: HashMap<String,String> = parseIntentData(data as String)
-            return regressionTestingStrategy.eContext.callIntent(
+            return autautStrategy.eContext.callIntent(
                     action = intentData["action"]?:"",
                     category = intentData["category"]?:"",
                     activity = intentData["activity"]?:"",
@@ -448,7 +447,7 @@ abstract class AbstractStrategyTask (val regressionTestingStrategy: RegressionTe
         return currentState.widgets.any{it.packageName == "com.android.camera2"}
     }
     /** filters out all crashing marked widgets from the actionable widgets of the current state **/
-    suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { regressionTestingStrategy.eContext.crashlist.isBlacklistedInState(it.uid,regressionTestingStrategy.eContext.getCurrentState().uid) }
+    suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { autautStrategy.eContext.crashlist.isBlacklistedInState(it.uid,autautStrategy.eContext.getCurrentState().uid) }
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
     }

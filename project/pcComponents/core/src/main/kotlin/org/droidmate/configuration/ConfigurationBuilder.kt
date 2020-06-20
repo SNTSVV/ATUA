@@ -95,7 +95,7 @@ import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.socketTime
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.startTimeout
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.waitForInteractableTimeout
 import org.droidmate.configuration.ConfigProperties.UiAutomatorServer.waitForIdleTimeout
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.coverageDir
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.enableCoverage
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.onlyCoverAppPackageName
@@ -215,8 +215,8 @@ public class ConfigurationBuilder : IConfigurationBuilder {
 			CommandLineOption(onlyCoverAppPackageName, description = "Only instrument statement coverage for statements belong inside the app package name scope. Libraries with other package names will be ignored. Be aware that this filtering might not be always correct."),
 			CommandLineOption(coverageDir, description = "Path to the directory that will contain the coverage data."),
 			CommandLineOption(org.droidmate.explorationModel.config.ConfigProperties.Output.debugMode, description = "enable debug output"),
-			CommandLineOption(RegressionTestingMF.Companion.RegressionStrategy.use , description = "If true, regression testing is used"),
-			CommandLineOption(RegressionTestingMF.Companion.RegressionStrategy.budgetScale, description = "Budget scale. Increase this for longer testing time.")
+			CommandLineOption(AutAutMF.Companion.RegressionStrategy.use , description = "If true, regression testing is used"),
+			CommandLineOption(AutAutMF.Companion.RegressionStrategy.budgetScale, description = "Budget scale. Increase this for longer testing time.")
 
 			).first, fs)
 

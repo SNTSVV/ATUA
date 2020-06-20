@@ -2,7 +2,7 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -10,7 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class OpenNavigationBarTask constructor(
-        regressionTestingMF: RegressionTestingMF,
+        regressionTestingMF: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
 
@@ -42,7 +42,7 @@ class OpenNavigationBarTask constructor(
         val chosenWidget = chooseWidgets(currentState).firstOrNull()
         if (chosenWidget == null)
             return ExplorationAction.pressBack()
-        return regressionTestingStrategy.eContext.navigateTo(chosenWidget,{chosenWidget.click()})
+        return autautStrategy.eContext.navigateTo(chosenWidget,{chosenWidget.click()})
                 .also { executedCount++ }?:ExplorationAction.pressBack()
     }
 
@@ -62,8 +62,8 @@ class OpenNavigationBarTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass) }
         var executedCount:Int = 0
         var instance: OpenNavigationBarTask? = null
-        fun getInstance(regressionTestingMF: RegressionTestingMF,
-                regressionTestingStrategy: RegressionTestingStrategy,
+        fun getInstance(regressionTestingMF: AutAutMF,
+                        regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): OpenNavigationBarTask {
             if (instance == null) {
                 instance = OpenNavigationBarTask(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)

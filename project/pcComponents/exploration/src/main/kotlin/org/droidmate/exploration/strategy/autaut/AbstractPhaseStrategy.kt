@@ -5,7 +5,7 @@ import org.droidmate.deviceInterface.exploration.isPressBack
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
@@ -28,7 +28,7 @@ abstract class AbstractPhaseStrategy(
         val useCoordinateClicks: Boolean
 ) {
     lateinit var phaseState: PhaseState
-    lateinit var regressionTestingMF: RegressionTestingMF
+    lateinit var regressionTestingMF: AutAutMF
 
     var strategyTask: AbstractStrategyTask? = null
     abstract fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction

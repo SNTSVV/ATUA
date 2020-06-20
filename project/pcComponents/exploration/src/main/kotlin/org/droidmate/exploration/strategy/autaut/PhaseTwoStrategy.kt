@@ -5,7 +5,7 @@ import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
@@ -51,6 +51,8 @@ class PhaseTwoStrategy (
     override fun isEnd(): Boolean {
         if (attempt < 0)
             return true
+        if (regressionTestingMF.lastModifiedMethodCoverage == 1.0)
+            return true
         return false
     }
 
@@ -89,7 +91,7 @@ class PhaseTwoStrategy (
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
         if (regressionTestingMF == null)
         {
-            regressionTestingMF = eContext.findWatcher { it is RegressionTestingMF } as RegressionTestingMF
+            regressionTestingMF = eContext.findWatcher { it is AutAutMF } as AutAutMF
         }
         var chosenAction:ExplorationAction
 

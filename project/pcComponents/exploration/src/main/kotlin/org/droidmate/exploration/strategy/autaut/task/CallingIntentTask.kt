@@ -3,14 +3,14 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.callIntent
 import org.droidmate.exploration.actions.closeAndReturn
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 
-class CallingIntentTask(regressionTestingMF: RegressionTestingMF,
+class CallingIntentTask(regressionTestingMF: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean):AbstractStrategyTask(regressionTestingMF = regressionTestingMF,
-                        regressionTestingStrategy = regressionTestingStrategy,
+                        autautStrategy = regressionTestingStrategy,
                         delay = delay,useCoordinateClicks = useCoordinateClicks) {
     val targetIntentTestInstances = ArrayList<IntentTestInstance>()
     override fun isAvailable(currentState: State<*>): Boolean {
@@ -24,7 +24,7 @@ class CallingIntentTask(regressionTestingMF: RegressionTestingMF,
             return ExplorationAction.closeAndReturn()
         val intentFilter = targetIntentTestInstances.random()
         targetIntentTestInstances.remove(intentFilter)
-        return regressionTestingStrategy.eContext.callIntent(
+        return autautStrategy.eContext.callIntent(
                 action = intentFilter.action,
                 category = intentFilter.category,
                 activity = intentFilter.activity,

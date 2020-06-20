@@ -6,7 +6,7 @@ import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.textInput.DataField
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
@@ -17,7 +17,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class FillTextInputTask private constructor(
-        regressionWatcher: RegressionTestingMF,
+        regressionWatcher: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
 
@@ -161,7 +161,7 @@ class FillTextInputTask private constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: FillTextInputTask? = null
-        fun getInstance(regressionWatcher: RegressionTestingMF,
+        fun getInstance(regressionWatcher: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): FillTextInputTask {

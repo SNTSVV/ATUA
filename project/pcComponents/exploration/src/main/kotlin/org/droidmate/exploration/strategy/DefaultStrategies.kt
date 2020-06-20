@@ -259,6 +259,15 @@ object DefaultStrategies: Logging {
 						&& clickedButton.any{it.value == false}
 
 		private fun getClickableButton(actionableWidgets: List<Widget>): Boolean {
+			val invalideWidgets = ArrayList<UUID>()
+			clickedButton.forEach {
+				if (actionableWidgets.find { w -> w.uid == it.key } == null) {
+					invalideWidgets.add(it.key)
+				}
+			}
+			invalideWidgets.forEach {
+				clickedButton.remove(it)
+			}
 			actionableWidgets.filter { it.clickable }.forEach { it ->
 				if (!clickedButton.containsKey(it.uid)) {
 					clickedButton.put(it.uid,false)
@@ -270,7 +279,8 @@ object DefaultStrategies: Logging {
 		}
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
-			val actionWidget = eContext.getCurrentState().actionableWidgets.filter { clickedButton.containsKey(it.uid) }.random()
+			val actionWidgets = eContext.getCurrentState().actionableWidgets.filter { clickedButton.containsKey(it.uid) && clickedButton[it.uid] == false}
+			val actionWidget = actionWidgets.random()
 			clickedButton[actionWidget.uid] = true
 			return actionWidget.click()
 		}

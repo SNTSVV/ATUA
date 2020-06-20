@@ -1,16 +1,15 @@
 package org.droidmate.exploration.strategy.autaut.task
 
-import org.droidmate.exploration.modelFeatures.autaut.RegressionTestingMF
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GoToTargetWindowTask (
-         regressionWatcher: RegressionTestingMF,
+        regressionWatcher: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
-       delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
+        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
 
 
     override fun chooseRandomOption(currentState: State<*>) {
@@ -30,9 +29,9 @@ class GoToTargetWindowTask (
     }
     override fun initPossiblePaths(currentState: State<*>) {
         if (useInputTargetWindow && targetWindow!=null) {
-            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
         } else {
-            possiblePaths.addAll(regressionTestingStrategy.phaseStrategy.getPathsToTargetWindows(currentState))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState))
         }
     }
 
@@ -41,7 +40,7 @@ class GoToTargetWindowTask (
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: GoToTargetWindowTask? = null
-        fun getInstance(regressionWatcher: RegressionTestingMF,
+        fun getInstance(regressionWatcher: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): GoToTargetWindowTask {
