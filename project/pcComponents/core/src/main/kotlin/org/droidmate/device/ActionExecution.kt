@@ -30,11 +30,27 @@ private var performN: Int = 0
 private suspend fun performAction(action: ExplorationAction, app: IApk, device: IRobustDevice){
 	when {
 		action.name == ActionType.Terminate.name -> terminate(app, device)
-		action is LaunchApp || (action is ActionQueue && action.actions.any { it is LaunchApp }) -> {
+		action is ResetApp-> {
+			device.enableData()
 			resetApp(app, device)
-			//device.forceStop(app)
+			defaultExecution(action,device)
+		}
+		action.name == ActionType.EnableData.name -> {
+			device.enableData()
+			defaultExecution(action,device)
+		}
+		action.name == ActionType.DisableData.name -> {
+			device.disableData()
+			defaultExecution(action,device)
+		}
+		action is LaunchApp || (action is ActionQueue && action.actions.any { it is LaunchApp }) -> {
+			//resetApp(app, device)
+			device.forceStop(app)
 			defaultExecution(action, device)
 		}
+
+
+
 		else -> debugT("perform $action on average ${performT / max(performN, 1)} ms", {
 			if(action is ActionQueue) check(action.actions.isNotEmpty()) {"ERROR your strategy should never decide for EMPTY ActionQueue"}
 			defaultExecution(action, device)
@@ -92,12 +108,13 @@ private suspend fun defaultExecution(action: ExplorationAction, device: IRobustD
 		log.warn("2.1. Failed to perform $action, retry once")
 		device.restartUiaDaemon(e is TcpServerUnreachableException)
 		delay(1000)
-	//	if(!isSecondTry) defaultExecution(action, device, isSecondTry = true)
+		/*if(!isSecondTry)
+			defaultExecution(action, device, isSecondTry = true)*/
 	}
 }
 
 private suspend fun resetApp(app: IApk, device: IRobustDevice){
-	log.debug("LaunchApp action was issued. This will kill the current app process if it is active and re-launch it.")
+	log.debug("ResetApp action was issued. This will kill the current app process if it is active and re-launch it.")
 	log.debug("Try to terminate app process.")
 	device.clearPackage(app.packageName)
 	log.debug("Ensure home screen is displayed.")

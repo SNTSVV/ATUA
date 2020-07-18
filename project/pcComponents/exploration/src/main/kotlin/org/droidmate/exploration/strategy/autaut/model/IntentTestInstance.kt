@@ -1,4 +1,4 @@
-package org.droidmate.exploration.strategy.autaut.task
+package org.droidmate.exploration.strategy.autaut.model
 
 data class IntentTestInstance (
         val activity: String,

@@ -29,9 +29,10 @@ fun ExplorationContext<*,*,*>.pressMenu(): ExplorationAction = GlobalAction(Acti
 fun ExplorationAction.Companion.minimizeMaximize() = GlobalAction(ActionType.MinimizeMaximize)
 fun ExplorationAction.Companion.pressBack() =	GlobalAction(ActionType.PressBack)
 fun ExplorationAction.Companion.pressMenu() =	GlobalAction(ActionType.PressMenu)
+fun ExplorationAction.Companion.pressEnter() = GlobalAction(ActionType.PressEnter)
 fun ExplorationAction.Companion.closeAndReturn() =
 	ActionQueue(listOf(GlobalAction(ActionType.CloseKeyboard),GlobalAction(ActionType.PressBack)),100)
-
+fun ExplorationAction.Companion.disableWifi() = GlobalAction(ActionType.DisableWifi)
 
 /**
  * Sets the device rotation. (rotating the device changes its rotation state).
@@ -68,11 +69,13 @@ fun ExplorationAction.Companion.queue(actions: List<ExplorationAction>, delay:Lo
 //TODO enableWifi takes ~11s therefore we may consider to only do it once on exploration start instead
 fun ExplorationContext<*,*,*>.launchApp(): ExplorationAction = ExplorationAction.launchApp(apk.packageName, cfg[ConfigProperties.Exploration.launchActivityDelay])
 fun ExplorationAction.Companion.launchApp(packageName: String, launchDelay: Long) = queue(listOf(LaunchApp(packageName, launchDelay),
-	GlobalAction(ActionType.EnableWifi),
+	GlobalAction(ActionType.EnableData),
 	GlobalAction(ActionType.CloseKeyboard)))
 
-fun ExplorationContext<*,*,*>.resetApp(): ExplorationAction = ExplorationAction.resetApp(apk.packageName, cfg[ConfigProperties.Exploration.launchActivityDelay])
-fun ExplorationAction.Companion.resetApp(packageName: String, launchDelay: Long) = LaunchApp(packageName, launchDelay)
+fun ExplorationContext<*,*,*>.resetApp(): ExplorationAction =  ExplorationAction.resetApp(apk.packageName,cfg[ConfigProperties.Exploration.launchActivityDelay])
+//fun ExplorationAction.Companion.resetApp(packageName: String, launchDelay: Long) = LaunchApp(packageName, launchDelay)
+fun ExplorationAction.Companion.resetApp(packageName: String, launchDelay: Long) = ResetApp(packageName, launchDelay)
+
 
 @Deprecated("interface improvement", replaceWith = ReplaceWith("ExplorationAction.terminateApp()"))
 fun terminateApp(): ExplorationAction = GlobalAction(ActionType.Terminate)

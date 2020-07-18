@@ -45,7 +45,10 @@ class AbstractionFunction (val root: DecisionNode) {
             return true
         }
         else {
-
+            if (attributePath.parentAttributePath!=null) {
+                //increaseReduceLevel for parent
+                return increaseReduceLevel(attributePath.parentAttributePath,activity,level2Maximum)
+            }
             return false
         }
     }

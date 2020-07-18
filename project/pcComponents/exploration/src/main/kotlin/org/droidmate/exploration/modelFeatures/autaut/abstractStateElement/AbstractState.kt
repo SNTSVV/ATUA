@@ -14,31 +14,36 @@ open class AbstractState (
         var window: WTGNode,
         val staticWidgetMapping: HashMap<WidgetGroup, ArrayList<StaticWidget>> = HashMap(),
         val abstractInteractions: ArrayList<AbstractInteraction> = ArrayList(),
-        val staticEventMapping: HashMap<AbstractInteraction, ArrayList<StaticEvent>> = HashMap(),
-        var isFromLaunch: Boolean,
+        val staticEventMapping: HashMap<AbstractAction, ArrayList<StaticEvent>> = HashMap(),
         val isHomeScreen: Boolean = false,
         val isOpeningKeyboard: Boolean = false,
         val isRequestRuntimePermissionDialogBox: Boolean = false,
         val isAppHasStoppedDialogBox: Boolean = false,
         val isOutOfApplication: Boolean = false,
         var hasOptionsMenu: Boolean = true,
-        var rotation: Rotation
-
+        var rotation: Rotation,
+        var internet: InternetStatus
 ) {
         val unexercisedWidgetCount: Int
                 get() {return widgets.filter { it.exerciseCount==0}.size}
         val actionCount = HashMap<AbstractAction, Int>()
+        val targetActions = HashSet<AbstractAction> ()
 
         init {
             val pressBackAction = AbstractAction(
                     actionName = AbstractActionType.PRESS_BACK.actionName
             )
             actionCount.put(pressBackAction,0)
-            if (window !is WTGOptionsMenuNode) {
+            if (window !is WTGOptionsMenuNode && window !is WTGDialogNode ) {
                 val pressMenuAction = AbstractAction(
                         actionName = AbstractActionType.PRESS_MENU.actionName
                 )
                 actionCount.put(pressMenuAction, 0)
+                val minmaxAction = AbstractAction(
+                        actionName = AbstractActionType.MINIMIZE_MAXIMIZE.actionName
+                )
+                actionCount.put(minmaxAction,0)
+
             }
             if (window is WTGActivityNode) {
                 val swipeUpAction = AbstractAction(
@@ -63,10 +68,7 @@ open class AbstractState (
                 actionCount.put(swipeLeftAction, 0)
                 actionCount.put(swipeRightAction, 0)
 
-                val minmaxAction = AbstractAction(
-                        actionName = AbstractActionType.MINIMIZE_MAXIMIZE.actionName
-                )
-                actionCount.put(minmaxAction,0)
+
             }
             if (window is WTGActivityNode || rotation == Rotation.LANDSCAPE) {
                 val rotationAction = AbstractAction(
@@ -90,6 +92,17 @@ open class AbstractState (
 
         }
 
+        fun addAction(action: AbstractAction) {
+            if (action.widgetGroup == null) {
+                if (!actionCount.containsKey(action)) {
+                    actionCount[action] = 0
+                }
+                return
+            }
+            if (!action.widgetGroup.actionCount.containsKey(action)) {
+                action.widgetGroup.actionCount[action] = 0
+            }
+        }
         fun getWidgetGroup(widget: Widget, guiState: State<*>): WidgetGroup?{
             val tempAttributePath = HashMap<Widget,AttributePath>()
             val tempChildWidgetAttributePaths = HashMap<Widget,AttributePath>()
@@ -107,17 +120,39 @@ open class AbstractState (
         }
 
         fun getUnExercisedActions(): List<AbstractAction> {
-            val unexcerisedActions = ArrayList<AbstractAction>()
-            unexcerisedActions.addAll(actionCount.filter { it.value == 0 && it.key.actionName!="fake_action" }.keys)
-            unexcerisedActions.addAll(widgets.map { it.actionCount.filter { it.value==0 }}.map { it.keys }.flatten())
-            return unexcerisedActions
+            val unexcerisedActions = HashSet<AbstractAction>()
+            unexcerisedActions.addAll(actionCount.filter { it.value == 0
+                    && it.key.actionName!="fake_action"
+                    && it.key.actionName!="LaunchApp"
+                    && it.key.actionName!="ResetApp"}.keys)
+            unexcerisedActions.addAll(widgets.map { w -> w.actionCount.filter { it.value==0
+                    || (it.value < 3 && w.cardinality == Cardinality.MANY)
+                    || (it.value < 3 && it.key.actionName == "ItemClick")
+                    || (it.value < 10 && it.key.widgetGroup!!.attributePath.getClassName()=="android.webkit.WebView")
+            }}.map { it.keys }.flatten())
+  /*          if (this.window.activityClass == "org.wikipedia.main.MainActivity") {
+                unexcerisedActions.addAll(widgets.map {
+                    w -> w.actionCount.filter {
+                    it.value < 4 && it.key.actionName == "Swipe" && it.key.extra == "SwipeUp"}}.map { it.keys }.flatten())
+                }*/
+            return unexcerisedActions.toList()
         }
 
 
     override fun toString(): String {
         return "AbstractState[${this.hashCode()}]-${window}-Rotation:$rotation"
     }
-
+    fun setActionCount(action: AbstractAction, count: Int) {
+        if (action.widgetGroup == null) {
+            if (actionCount.containsKey(action)) {
+                actionCount[action] = count
+            }
+            return
+        }
+        if (action.widgetGroup.actionCount.containsKey(action)) {
+            action.widgetGroup.actionCount[action] = count
+        }
+    }
     fun increaseActionCount(action: AbstractAction) {
         if (action.widgetGroup==null) {
             if (actionCount.containsKey(action)) {
@@ -129,39 +164,7 @@ open class AbstractState (
                     actionName = action.actionName
             )
             if (actionCount.containsKey(nonDataAction) && nonDataAction != action) {
-                actionCount.remove(nonDataAction)
-            }
-            if (action.actionName == "Swipe") {
-                val swipeData = Helper.parseSwipeData(action.extra as String)
-                val begin = swipeData[0]!!
-                val end = swipeData[1]!!
-                val swipeAction = if (begin.first == end.first) {
-                    if (begin.second < end.second) {
-                        //swipe down
-                       AbstractAction(
-                                actionName = action.actionName,
-                                extra = "SwipeDown"
-                        )
-                    } else {
-                        //swipe up
-                        AbstractAction(
-                                actionName = action.actionName,
-                                extra = "SwipeUp"
-                        )
-                    }
-                } else if (begin.first < end.first) {
-                    //siwpe right
-                     AbstractAction(
-                            actionName = action.actionName,
-                            extra = "SwipeRight")
-                } else {
-                    AbstractAction(
-                            actionName = action.actionName,
-                            extra = "SwipeLeft")
-                }
-                if (actionCount.containsKey(swipeAction) ) {
-                    actionCount.remove(swipeAction)
-                }
+                actionCount[nonDataAction] = actionCount[nonDataAction]!! + 1
             }
         } else if (widgets.contains(action.widgetGroup)){
             val widgetGroup = widgets.find { it.equals(action.widgetGroup) }!!
@@ -175,46 +178,22 @@ open class AbstractState (
                     widgetGroup = widgetGroup
             )
             if (widgetGroup.actionCount.containsKey(nonDataAction) && nonDataAction != action) {
-                widgetGroup.actionCount.remove(nonDataAction)
-            }
-            if (action.actionName == "Swipe") {
-                val swipeData = Helper.parseSwipeData(action.extra as String)
-                val begin = swipeData[0]!!
-                val end = swipeData[1]!!
-                val swipeAction = if (begin.first == end.first) {
-                    if (begin.second < end.second) {
-                        //swipe down
-                        AbstractAction(
-                                actionName = action.actionName,
-                                widgetGroup = widgetGroup,
-                                extra = "SwipeDown"
-                        )
-                    } else {
-                        //swipe up
-                        AbstractAction(
-                                actionName = action.actionName,
-                                widgetGroup = widgetGroup,
-                                extra = "SwipeUp"
-                        )
-                    }
-                } else if (begin.first < end.first) {
-                    //siwpe right
-                    AbstractAction(
-                            actionName = action.actionName,
-                            widgetGroup = widgetGroup,
-                            extra = "SwipeRight")
-                } else {
-                    AbstractAction(
-                            actionName = action.actionName,
-                            widgetGroup = widgetGroup,
-                            extra = "SwipeLeft")
-                }
-                if (widgetGroup.actionCount.containsKey(swipeAction) ) {
-                    widgetGroup.actionCount.remove(swipeAction)
-                }
+                widgetGroup.actionCount[nonDataAction] = widgetGroup.actionCount[nonDataAction]!! + 1
             }
         }
     }
+    fun getActionCount(action: AbstractAction): Int {
+        if (action.widgetGroup == null) {
+            return actionCount[action]?:0
+        }
+        return action.widgetGroup.actionCount[action]?:0
+    }
+}
+
+enum class InternetStatus {
+    Enable,
+    Disable,
+    Undefined
 }
 
 class VirtualAbstractState(activity: String,
@@ -222,8 +201,9 @@ class VirtualAbstractState(activity: String,
                            isHomeScreen: Boolean=false): AbstractState(
         activity = activity,
         window = staticNode,
-        isFromLaunch = false,
-        rotation = Rotation.PORTRAIT
+        rotation = Rotation.PORTRAIT,
+        internet = InternetStatus.Undefined,
+        isHomeScreen = isHomeScreen
         )
 
-class AppResetAbstractState():AbstractState(activity = "", window = WTGLauncherNode.getOrCreateNode(),isFromLaunch = false,rotation = Rotation.PORTRAIT)
+class AppResetAbstractState():AbstractState(activity = "", window = WTGLauncherNode.getOrCreateNode(),rotation = Rotation.PORTRAIT,internet = InternetStatus.Undefined)

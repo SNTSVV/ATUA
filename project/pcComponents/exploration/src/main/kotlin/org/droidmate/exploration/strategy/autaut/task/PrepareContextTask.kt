@@ -3,20 +3,20 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.isClick
 import org.droidmate.exploration.actions.click
-import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.textInput.DataField
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.DataField
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class FillTextInputTask private constructor(
+class PrepareContextTask private constructor(
         regressionWatcher: AutAutMF,
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
@@ -58,7 +58,10 @@ class FillTextInputTask private constructor(
                 fillActions[widget] = widget.click()
             } else {
                 val inputValue = TextInput.getSetTextInputValue(widget,currentState)
-                val inputAction = widget.setText(inputValue,sendEnter = false ,enableValidation = false)
+                val inputAction = if (allInputWidgets.size == 1)
+                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
+                else
+                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                 fillActions[widget] = inputAction
             }
         }
@@ -72,7 +75,7 @@ class FillTextInputTask private constructor(
         }
         else
         {
-            return ExplorationAction.closeAndReturn()
+            return ExplorationAction.pressBack()
         }
     }
 
@@ -114,15 +117,9 @@ class FillTextInputTask private constructor(
         // we group widgets by its resourceId to easily deal with radio button
         val allInputWidgets = Helper.getInputFields(currentState).groupBy { it.resourceId }
         allInputWidgets.forEach { resourceId, widgets ->
-            val processingWidgets = if (widgets.size > 1 && widgets.any { it.isInputField }) {
-                   // process all text input field
-                widgets.toMutableList()
-            } else {
-                // process randomly one of them
-                arrayListOf(widgets.random())
-            }
+            val processingWidgets = widgets.toMutableList()
             processingWidgets.forEach {
-                if (!it.isPassword) {
+                if (!it.isPassword && it.isInputField) {
                     if (TextInput.historyTextInput.contains(it.text)) {
                         if (random.nextInt(100) < 25)
                             inputFillDecision.put(it, false)
@@ -160,13 +157,13 @@ class FillTextInputTask private constructor(
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
-        var instance: FillTextInputTask? = null
+        var instance: PrepareContextTask? = null
         fun getInstance(regressionWatcher: AutAutMF,
                         regressionTestingStrategy: RegressionTestingStrategy,
                         delay: Long,
-                        useCoordinateClicks: Boolean): FillTextInputTask {
+                        useCoordinateClicks: Boolean): PrepareContextTask {
             if (instance == null) {
-                instance = FillTextInputTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = PrepareContextTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

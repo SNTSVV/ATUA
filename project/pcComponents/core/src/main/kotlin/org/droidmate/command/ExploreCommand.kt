@@ -282,8 +282,13 @@ open class ExploreCommand<M,S,W>(
 			// Execute the exploration loop proper, starting with the values of initial reset action and its result.
 			while (isFirst || !action.isTerminate()) {
 				try {
-					// decide for an action
-					action = strategyScheduler.nextAction(explorationContext) // check if we need to initialize timeProvider.getNow() here
+					if (isFirst) {
+						action = GlobalAction(ActionType.FetchGUI)
+					} else {
+						// decide for an action
+						action = strategyScheduler.nextAction(explorationContext) // check if we need to initialize timeProvider.getNow() here
+					}
+
 					// execute action
 					result = action.execute(app, device)
 

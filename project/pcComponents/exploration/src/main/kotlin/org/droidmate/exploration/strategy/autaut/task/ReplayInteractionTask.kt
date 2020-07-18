@@ -63,7 +63,7 @@ class ReplayInteractionTask constructor(
         {
             return ExplorationAction.pressBack()
         }
-        return chooseActionWithName(currentInteraction!!.actionType,currentInteraction!!.data, chosenWidget, currentState)?:ExplorationAction.pressBack()
+        return chooseActionWithName(currentInteraction!!.actionType,currentInteraction!!.data, chosenWidget, currentState,null)?:ExplorationAction.pressBack()
     }
 
     override fun reset() {

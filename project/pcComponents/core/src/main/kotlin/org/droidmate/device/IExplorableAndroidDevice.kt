@@ -73,5 +73,10 @@ interface IExplorableAndroidDevice {
 	@Throws(DeviceException::class)
 	suspend fun getDeviceScreenSize(): Rectangle
 
+	@Throws(DeviceException::class)
+	suspend fun disableData()
+
+	@Throws(DeviceException::class)
+	suspend fun enableData()
 }
 

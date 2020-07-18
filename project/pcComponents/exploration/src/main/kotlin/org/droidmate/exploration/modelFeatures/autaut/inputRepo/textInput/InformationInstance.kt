@@ -1,7 +1,7 @@
-package org.droidmate.exploration.modelFeatures.autaut.textInput
+package org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput
 
 open class InformationInstance (val data: HashMap<DataField,String> = HashMap(),
-                           val informationType: InformationType){
+                                val informationType: InformationType){
     open fun getValue(dataField: DataField): String{
         if (data.containsKey(dataField))
         {
@@ -14,8 +14,8 @@ open class InformationInstance (val data: HashMap<DataField,String> = HashMap(),
     }
 }
 
-class GeneratedInformationInstance ( data: HashMap<DataField, String> = HashMap(),
-                          informationType: InformationType): InformationInstance(data, informationType){
+class GeneratedInformationInstance (data: HashMap<DataField, String> = HashMap(),
+                                    informationType: InformationType): InformationInstance(data, informationType){
     override fun getValue(dataField: DataField): String {
         return super.getValue(dataField)
     }

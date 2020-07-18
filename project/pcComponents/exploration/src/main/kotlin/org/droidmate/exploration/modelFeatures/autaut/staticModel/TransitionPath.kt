@@ -16,6 +16,10 @@ class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractStat
                                       })): IGraph<AbstractState, AbstractInteraction> by graph {
 
     val edgeConditions: HashMap<Edge<*,*>,HashMap<WidgetGroup,String>> = HashMap()
+
+    override fun toString(): String {
+        return graph.toString()
+    }
     fun getFinalDestination(): AbstractState{
         var traverseNode:Vertex<AbstractState>? = root
 //        var prevNode: Vertex<WTGNode> = root

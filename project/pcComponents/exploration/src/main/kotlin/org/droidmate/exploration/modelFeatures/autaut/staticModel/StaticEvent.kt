@@ -39,6 +39,7 @@ open class StaticEvent (
             EventType.swipe -> "Swipe"
             EventType.closeKeyboard -> "CloseKeyboard"
             EventType.implicit_launch_event -> "LaunchApp"
+            EventType.resetApp -> "ResetApp"
             else -> if (widget != null) {
                 "Click"
             } else {
@@ -67,6 +68,8 @@ open class StaticEvent (
                     || action == EventType.implicit_on_activity_newIntent.name
                     || action == EventType.implicit_power_event.name
                     || action == EventType.implicit_lifecycle_event.name
+                    || action == EventType.implicit_rotate_event.name
+                    || action == EventType.implicit_back_event.name
                     || action == EventType.press_key.name
                     || action == EventType.dialog_press_key.name
                     || action == EventType.dialog_dismiss.name
@@ -87,6 +90,7 @@ open class StaticEvent (
                 "CallIntent" -> EventType.callIntent
                 "LaunchApp" -> EventType.implicit_launch_event
                 "CloseKeyboard" -> EventType.closeKeyboard
+                "ResetApp" -> EventType.resetApp
                 else -> EventType.fake_action
             }
         }

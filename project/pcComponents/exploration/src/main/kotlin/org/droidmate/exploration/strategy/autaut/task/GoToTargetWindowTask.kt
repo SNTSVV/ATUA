@@ -11,28 +11,8 @@ class GoToTargetWindowTask (
         regressionTestingStrategy: RegressionTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
 
-
-    override fun chooseRandomOption(currentState: State<*>) {
-        log.debug("Change options")
-        currentPath = possiblePaths.random()
-        possiblePaths.remove(currentPath!!)
-        expectedNextAbState=currentPath!!.root.data
-        log.debug("Try to reach ${currentPath!!.getFinalDestination()}")
-        currentEdge = null
-        mainTaskFinished = false
-        isFillingText = false
-
-    }
-
     override fun increaseExecutedCount() {
         executedCount++
-    }
-    override fun initPossiblePaths(currentState: State<*>) {
-        if (useInputTargetWindow && targetWindow!=null) {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,targetWindow!!))
-        } else {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState))
-        }
     }
 
 

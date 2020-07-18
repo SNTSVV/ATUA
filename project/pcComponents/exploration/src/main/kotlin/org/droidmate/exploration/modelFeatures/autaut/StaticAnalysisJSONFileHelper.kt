@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut
 
-import org.droidmate.exploration.modelFeatures.autaut.intent.IntentData
-import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentData
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.json.JSONArray
@@ -79,11 +79,11 @@ class StaticAnalysisJSONFileHelper() {
         }
 
         fun readWindowWidgets(jsonObj: JSONObject,
-                              transitionGraph: TransitionGraph) {
+                              wtg: WindowTransitionGraph) {
             jsonObj.keys().asSequence().forEach { key ->
                 val windowJson = key as String
                 val windowInfo = windowParser(windowJson)
-                val wtgNode = transitionGraph.getOrCreateWTGNode(windowInfo)
+                val wtgNode = wtg.getOrCreateWTGNode(windowInfo)
                 val widgetListJson = jsonObj[key] as JSONObject
                 widgetListJson.keys().asSequence().forEach {
                     val widgetInfoJson = widgetListJson[it].toString()
@@ -102,13 +102,13 @@ class StaticAnalysisJSONFileHelper() {
         }
 
         fun readAllWidgetEvents(jsonObj: JSONObject
-                                , transitionGraph: TransitionGraph
+                                , wtg: WindowTransitionGraph
                                 , allEventHandlers: HashSet<String>
-        , statementCoverageMF: StatementCoverageMF) {
+                                , statementCoverageMF: StatementCoverageMF) {
             jsonObj.keys().asSequence().forEach { key ->
                 val windowJson = key as String
                 val windowInfo = windowParser(windowJson)
-                val wtgNode = transitionGraph.getOrCreateWTGNode(windowInfo)
+                val wtgNode = wtg.getOrCreateWTGNode(windowInfo)
                 val widgetListJson = jsonObj[key] as JSONObject
                 widgetListJson.keys().asSequence().forEach {
                     val widgetInfoJson = it
@@ -161,7 +161,7 @@ class StaticAnalysisJSONFileHelper() {
         }
 
         fun readModifiedMethodInvocation(jsonObj: JSONObject,
-                                         transitionGraph: TransitionGraph,
+                                         wtg: WindowTransitionGraph,
                                          allTargetStaticWidgets: HashSet<StaticWidget>,
                                          allTargetStaticEvents: HashSet<StaticEvent>,
                                          statementCoverageMF: StatementCoverageMF
@@ -170,7 +170,7 @@ class StaticAnalysisJSONFileHelper() {
                 val source = key as String
                 val sourceInfo = windowParser(source)
                 //val sourceId = sourceInfo["id"]!!
-                val sourceNode = transitionGraph.getOrCreateWTGNode(sourceInfo)
+                val sourceNode = wtg.getOrCreateWTGNode(sourceInfo)
                 val methodInvocations = jsonObj[key] as JSONObject
                 methodInvocations.keys().asSequence().forEach { w ->
                     val widgetInvocation_json = methodInvocations[w] as JSONArray
@@ -221,10 +221,10 @@ class StaticAnalysisJSONFileHelper() {
                                         activity = sourceNode.classType,
                                         sourceWindow = sourceNode,
                                         allTargetStaticEvents = allTargetStaticEvents)
-                                if (transitionGraph.edges(sourceNode).find { it.label == event } == null) {
+                                if (wtg.edges(sourceNode).find { it.label == event } == null) {
                                     //this event has not appeared in graph
                                     //let's create new edge
-                                    transitionGraph.add(sourceNode, sourceNode, event)
+                                    wtg.add(sourceNode, sourceNode, event)
                                 }
                                 //addWidgetToActivtity_TargetWidget_Map(source, event)
                                 val event_methods = Pair<StaticEvent, ArrayList<String>>(event, ArrayList())
@@ -417,13 +417,13 @@ class StaticAnalysisJSONFileHelper() {
             return testData
         }
 
-        fun readEventWindowCorrelation(jsonObj: JSONObject, transitionGraph: TransitionGraph): HashMap<StaticEvent, HashMap<WTGNode, Double>> {
+        fun readEventWindowCorrelation(jsonObj: JSONObject, wtg: WindowTransitionGraph): HashMap<StaticEvent, HashMap<WTGNode, Double>> {
             val result: HashMap<StaticEvent, HashMap<WTGNode, Double>> = HashMap()
             jsonObj.keys().asSequence().forEach { key ->
                 val source = key as String
                 val sourceInfo = windowParser(source)
                 //val sourceId = sourceInfo["id"]!!
-                val sourceNode = transitionGraph.getOrCreateWTGNode(sourceInfo)
+                val sourceNode = wtg.getOrCreateWTGNode(sourceInfo)
                 val eventCorrelations = jsonObj[key] as JSONArray
                 eventCorrelations.forEach { item ->
                     val jsonEventCorrelation = item as JSONObject
@@ -448,7 +448,7 @@ class StaticAnalysisJSONFileHelper() {
                                 staticWidget = null
                             }
                         }
-                        var event: StaticEvent? = StaticEvent.allStaticEvents.filter { e -> transitionGraph.edges(sourceNode).any { it.label == e } }.find { it.widget == staticWidget && it.eventType.name == eventType }
+                        var event: StaticEvent? = StaticEvent.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == staticWidget && it.eventType.name == eventType }
                         if (event == null) {
                             event = StaticEvent(
                                     eventType = EventType.valueOf(eventType),
@@ -465,7 +465,7 @@ class StaticAnalysisJSONFileHelper() {
                             val score = (jsonItem["second"] as String).toDouble()
                             val jsonWindow = jsonItem["first"] as String
                             val windowInfo = windowParser(jsonWindow)
-                            val window = transitionGraph.getOrCreateWTGNode(windowInfo)
+                            val window = wtg.getOrCreateWTGNode(windowInfo)
                             correlation.put(window, score)
                         }
                         if (correlation.isNotEmpty())
@@ -493,11 +493,11 @@ class StaticAnalysisJSONFileHelper() {
             return methodTerms
         }
 
-        fun readWindowTerms(jsonObj: JSONObject, transitionGraph: TransitionGraph):Map<WTGNode, HashMap<String, Long>>{
+        fun readWindowTerms(jsonObj: JSONObject, wtg: WindowTransitionGraph):Map<WTGNode, HashMap<String, Long>>{
             val windowTerms = HashMap<WTGNode, HashMap<String,Long>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
-                val window = transitionGraph.getOrCreateWTGNode(windowInfo)
+                val window = wtg.getOrCreateWTGNode(windowInfo)
                 if (window != null)
                 {
                     val terms = HashMap<String, Long>()
@@ -512,11 +512,11 @@ class StaticAnalysisJSONFileHelper() {
             return windowTerms
         }
 
-        fun readWindowHandlers(jsonObj: JSONObject, transitionGraph: TransitionGraph, statementCoverageMF: StatementCoverageMF): Map<WTGNode, Set<String>> {
+        fun readWindowHandlers(jsonObj: JSONObject, wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF): Map<WTGNode, Set<String>> {
             val windowHandlers = HashMap<WTGNode, HashSet<String>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
-                val window = transitionGraph.getOrCreateWTGNode(windowInfo)
+                val window = wtg.getOrCreateWTGNode(windowInfo)
                 if (window != null)
                 {
                     val handlers = HashSet<String>()

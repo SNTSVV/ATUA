@@ -8,11 +8,18 @@ import android.media.AudioManager
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.support.test.uiautomator.*
+import android.provider.Settings
+import android.support.test.uiautomator.By
+import android.support.test.uiautomator.UiDevice
+import android.support.test.uiautomator.Until
+import android.support.test.uiautomator.click
 import android.util.Log
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.droidmate.deviceInterface.DeviceConstants
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.uiautomator2daemon.uiautomatorExtensions.*
@@ -23,6 +30,7 @@ import java.io.FileOutputStream
 import kotlin.math.max
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
+
 
 var idleTimeout: Long = 100
 var interactiveTimeout: Long = 1000
@@ -106,11 +114,36 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 				ActionType.PressBack -> env.device.pressBack()
 				ActionType.PressHome -> env.device.pressHome()
 				ActionType.PressMenu -> env.device.pressMenu()
-				ActionType.EnableWifi -> {
+				ActionType.EnableWifi, ActionType.EnableData -> {
 					val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
 					wfm.setWifiEnabled(true).also {
 						if (!it) Log.w(logTag, "Failed to ensure WiFi is enabled!")
 					}
+				}
+				ActionType.DisableWifi, ActionType.DisableData -> {
+					val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+					wfm.setWifiEnabled(false).also {
+						if (!it) Log.w(logTag, "Failed to ensure WiFi is disable!")
+					}
+				}
+				ActionType.EnableAirplane -> {
+					// read the airplane mode setting
+					val isEnabled: Boolean = Settings.System.getInt(
+							env.context.getContentResolver(),
+							Settings.System.AIRPLANE_MODE_ON, 0) === 1
+
+					// toggle airplane mode
+					// toggle airplane mode
+					Settings.System.putInt(
+							env.context.getContentResolver(),
+							Settings.System.AIRPLANE_MODE_ON, if (isEnabled) 0 else 1)
+
+					// Post an intent to reload
+					// Post an intent to reload
+					val intent = Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED)
+					intent.putExtra("state", !isEnabled)
+					env.context.sendBroadcast(intent)
+					true
 				}
 				ActionType.MinimizeMaximize -> {
 					env.device.minimizeMaximize()
@@ -152,6 +185,14 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 		is RotateUI -> env.device.rotate(rotation, env.automation)
 		is LaunchApp -> {
 			env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
+			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
+		}
+		is ResetApp -> {
+            val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            wfm.setWifiEnabled(true).also {
+                if (!it) Log.w(logTag, "Failed to ensure WiFi is enabled!")
+            }
+            env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
 		}
 		is Swipe -> env.device.twoPointAction(start,end){

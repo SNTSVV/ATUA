@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.autaut.textInput
+package org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -7,7 +7,7 @@ import java.nio.file.Path
 
 class InputConfigurationFileHelper {
     companion object{
-        fun readInputConfigurationFile(filePath: Path):InputConfiguration {
+        fun readInputConfigurationFile(filePath: Path): InputConfiguration {
             val domainInputConfiguration = InputConfiguration()
             if (Files.exists(filePath))
             {
@@ -22,7 +22,7 @@ class InputConfigurationFileHelper {
             jMap.keys().asSequence().forEach {
                 val name = it.toString()
                 val inputInformationJson = jMap.getJSONObject(it)
-                val informationType:InformationType = InformationType(name = name)
+                val informationType: InformationType = InformationType(name = name)
                 inputConfiguration.informationTypes.add(informationType)
                 val dataFieldJson = inputInformationJson.getJSONObject("DataFields")
                 val dataFields: ArrayList<DataField> = readDataFields(dataFieldJson, informationType)
@@ -39,7 +39,7 @@ class InputConfigurationFileHelper {
             val data = ArrayList<InformationInstance>()
             dataJson.forEach {
                 val instanceJson = it as JSONObject
-                val instance: InformationInstance = readInformationInstance (instanceJson,informationType)
+                val instance: InformationInstance = readInformationInstance(instanceJson, informationType)
                 data.add(instance)
             }
             return data

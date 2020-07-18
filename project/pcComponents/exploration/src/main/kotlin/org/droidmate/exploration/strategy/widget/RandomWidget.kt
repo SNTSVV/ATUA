@@ -41,10 +41,8 @@ import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.emptyId
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
-import org.droidmate.configuration.ConfigProperties.Strategies.textInput
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.GlobalAction
-import org.droidmate.exploration.strategy.autaut.task.TextInput
 import java.util.Random
 import kotlin.streams.asSequence
 
@@ -211,7 +209,7 @@ open class RandomWidget constructor(
 		// no valid candidates -> go back to previous state
 		return if (candidates.isEmpty()) {
 			println("RANDOM: Back, reason - nothing (non-blacklisted) interactable to click")
-			ExplorationAction.closeAndReturn()
+			ExplorationAction.pressBack()
 		}
 		else candidates.chooseRandomly(eContext)
 	}

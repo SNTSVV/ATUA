@@ -11,6 +11,7 @@ import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.task.*
@@ -21,7 +22,7 @@ import org.droidmate.explorationModel.interaction.State
 open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
                                                                val budgetScale: Double = 1.0,
                                                                dictionary: List<String> = emptyList(),
-                                                               useCoordinateClicks: Boolean = false
+                                                               useCoordinateClicks: Boolean = true
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
@@ -59,7 +60,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     var currentPhase: Int = 1
 
     internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
-        var chosenAction: ExplorationAction = ExplorationAction.closeAndReturn()
+        var chosenAction: ExplorationAction
         ExplorationTrace.widgetTargets.clear()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
         if (currentAbstractState == null) {
@@ -68,6 +69,12 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
             }
             return eContext.resetApp()
         }
+        if ((AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]!!.contains(currentAbstractState)
+                || AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]!!.contains(currentAbstractState))
+                && currentAbstractState.rotation == Rotation.LANDSCAPE) {
+            return ExplorationAction.rotate(-90)
+        }
+
         if (phaseStrategy.isEnd()) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
@@ -95,12 +102,11 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
         super.initialize(initialContext)
         eContext = initialContext
-        delay = 500
         phaseStrategy = PhaseOneStrategy(this,budgetScale,delay, useCoordinateClicks)
     }
 
 
-        override fun hashCode(): Int {
+    override fun hashCode(): Int {
         return this.javaClass.hashCode()
     }
 

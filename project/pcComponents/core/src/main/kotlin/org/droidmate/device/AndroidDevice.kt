@@ -76,6 +76,7 @@ class AndroidDevice constructor(private val serialNumber: String,
                                 private val cfg: ConfigurationWrapper,
                                 private val adbWrapper: IAdbWrapper) : IAndroidDevice {
 
+
 	override suspend fun getDeviceScreenSize(): Rectangle {
 		var screenSurface: Rectangle = Rectangle.empty()
 		val command = "shell dumpsys input"
@@ -563,6 +564,21 @@ class AndroidDevice constructor(private val serialNumber: String,
 		val packages = uiadPackageList.trim().replace("package:", "").replace("\r", "|").replace("\n", "|").split("\\|")
 		return packages.any { it == packageName }
 	}
-
+	override suspend fun disableData() {
+		/*this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","settings","put","global","airplaane_mode_on","0")
+		this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","am","broadcast","-a","android.intent.action.AIRPLANE_MODE")*/
+		this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","svc","data","disable")
+	}
+	override suspend fun enableData() {
+		/*this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","settings","put","global","airplaane_mode_on","0")
+		this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","am","broadcast","-a","android.intent.action.AIRPLANE_MODE")*/
+		this.adbWrapper.executeCommand(this.serialNumber,"","Enable airplane mode",
+				"shell","svc","data","enable")
+	}
 	override fun toString(): String = "{device $serialNumber}"
 }

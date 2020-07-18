@@ -23,14 +23,18 @@ class ExerciseTargetComponentTask private constructor(
         delay: Long, useCoordinateClicks: Boolean)
     : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
 
+    private var recentChangedSystemConfiguration: Boolean = false
+    var environmentChange: Boolean = false
     val eventList:  ArrayList<AbstractAction> = ArrayList()
     var chosenAbstractAction: AbstractAction? = null
     var currentAbstractState: AbstractState? = null
-    var fillData = true
-    var recentFillData = false
+    var fillingData = false
+    var dataFilled = false
+    var randomReFillingData = false
     private var prevAbstractState: AbstractState?=null
-    var tryRandom = false
-    private val fillDataTask = FillTextInputTask.getInstance(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
+    var originalEventList: ArrayList<AbstractAction> = ArrayList()
+    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
+
     override fun chooseRandomOption(currentState: State<*>) {
         log.debug("Do nothing")
     }
@@ -39,7 +43,7 @@ class ExerciseTargetComponentTask private constructor(
         return false
     }
     override fun isTaskEnd(currentState: State<*>): Boolean {
-        if (recentFillData && eventList.isNotEmpty()) {
+        if (eventList.isNotEmpty()) {
             return false
         }
         if (isCameraOpening(currentState)) {
@@ -54,11 +58,12 @@ class ExerciseTargetComponentTask private constructor(
     private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,regressionTestingStrategy,delay, useCoordinateClicks)
     override fun initialize(currentState: State<*>) {
         reset()
-        randomExplorationTask.fillData=false
+        randomExplorationTask.fillingData=false
         mainTaskFinished = false
         currentAbstractState = regressionTestingMF.getAbstractState(currentState)
         initializeExtraTasks(currentState)
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        originalEventList.addAll(eventList)
     }
 
     private fun initializeExtraTasks(currentState: State<*>) {
@@ -80,16 +85,22 @@ class ExerciseTargetComponentTask private constructor(
     override fun reset() {
         extraTasks.clear()
         eventList.clear()
+        originalEventList.clear()
         currentExtraTask = null
         mainTaskFinished = false
         prevAbstractState = null
-        recentFillData = false
+        dataFilled = false
+        fillingData = false
+        randomReFillingData = false
+        recentChangedSystemConfiguration = false
+        environmentChange = false
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
+        reset()
         log.info("Checking if current state contains target Events")
-        eventList.clear()
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        originalEventList.addAll(eventList)
         if (eventList.isNotEmpty()){
             log.info("Current node has ${eventList.size} target event(s).")
             return true
@@ -182,21 +193,55 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
+        val currentAbstractState = regressionTestingMF.getAbstractState(currentState)!!
+        if (currentAbstractState != null) {
+            prevAbstractState = currentAbstractState
+        }
         if (isCameraOpening(currentState)) {
             randomExplorationTask.chooseAction(currentState)
         }
+        if (!fillingData && random.nextBoolean()) {
+            //reset input
+            fillingData = false
+            dataFilled = false
+            recentChangedSystemConfiguration = false
+        }
         randomExplorationTask.isClickedShutterButton = false
-        if (recentFillData && !fillDataTask.isTaskEnd(currentState))
+        if (!recentChangedSystemConfiguration && environmentChange) {
+            recentChangedSystemConfiguration = true
+            if (regressionTestingMF.havingInternetConfiguration(currentAbstractState.window)) {
+                if (random.nextInt(4)<3)
+                    return GlobalAction(ActionType.EnableData).also {
+                        regressionTestingMF.internetStatus = true
+                    }
+                else
+                    return GlobalAction(ActionType.DisableData).also {
+                        regressionTestingMF.internetStatus = false
+                    }
+            } else {
+                return GlobalAction(ActionType.EnableData).also {
+                    regressionTestingMF.internetStatus = false
+                }
+            }
+        }
+        if (fillingData && !fillDataTask.isTaskEnd(currentState))
             return fillDataTask.chooseAction(currentState)
-        if (!recentFillData && fillDataTask.isAvailable(currentState))
+        if (fillingData) {
+            fillingData = false
+            dataFilled = true
+        }
+        if (!dataFilled && fillDataTask.isAvailable(currentState))
         {
             fillDataTask.initialize(currentState)
-            recentFillData = true
+            fillingData = true
             return fillDataTask.chooseAction(currentState)
         }
-        val currentAbstractState = regressionTestingMF.getAbstractState(currentState)
-        if (currentAbstractState != null) {
-            prevAbstractState = currentAbstractState
+        if (randomReFillingData
+                && originalEventList.size > eventList.size
+                && fillDataTask.isAvailable(currentState)) {
+            fillDataTask.initialize(currentState)
+            fillingData = true
+            return fillDataTask.chooseAction(currentState)
         }
         //TODO check eventList is not empty
         if (eventList.isEmpty()) {
@@ -226,9 +271,9 @@ class ExerciseTargetComponentTask private constructor(
             log.debug("Target action: $recommendedAction")
             val chosenAction = when (chosenAbstractAction!!.actionName)
             {
-                "CallIntent" -> chooseActionWithName(recommendedAction,chosenAbstractAction!!.extra, null, currentState)
-                "RotateUI" -> chooseActionWithName(recommendedAction,90,null,currentState)
-                else -> chooseActionWithName(recommendedAction, chosenAbstractAction!!.extra?:"", chosenWidget, currentState)
+                "CallIntent" -> chooseActionWithName(recommendedAction,chosenAbstractAction!!.extra, null, currentState,chosenAbstractAction)
+                "RotateUI" -> chooseActionWithName(recommendedAction,90,null,currentState,chosenAbstractAction)
+                else -> chooseActionWithName(recommendedAction, chosenAbstractAction!!.extra?:"", chosenWidget, currentState,chosenAbstractAction)
             }
             if (chosenAction == null)
             {

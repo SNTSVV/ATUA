@@ -7,6 +7,7 @@ import org.droidmate.explorationModel.ExplorationTrace.Companion.widgetTargets
 import org.droidmate.explorationModel.firstCenter
 import org.droidmate.explorationModel.firstOrEmpty
 import org.droidmate.explorationModel.interaction.Widget
+import kotlin.random.Random
 
 /**
  * These are the new interface functions to interact with any widget.
@@ -73,11 +74,10 @@ fun Widget.setText(newContent: String, ignoreVisibility: Boolean = false,
 
 fun Widget.dragTo(x: Int, y: Int, stepSize: Int): ExplorationAction = TODO()
 //FIXME the center points may be overlayed by other elements, swiping the corners would be safer
-fun Widget.swipeUp(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY + this.visibleBounds.height), Pair(this.visibleBounds.center.first, this.visibleBounds.topY), stepSize, true)
+fun Widget.swipeUp(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, Random.nextInt(this.visibleBounds.topY+ this.visibleBounds.height/2,this.visibleBounds.topY + this.visibleBounds.height) ) , Pair(this.visibleBounds.center.first, this.visibleBounds.topY), stepSize, true)
 fun Widget.swipeDown(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY), Pair(this.visibleBounds.center.first, this.visibleBounds.topY + this.visibleBounds.height), stepSize, true)
 fun Widget.swipeLeft(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX + this.visibleBounds.width, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX, this.visibleBounds.center.second), stepSize, true)
 fun Widget.swipeRight(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX + this.visibleBounds.width, this.visibleBounds.center.second), stepSize, true)
-
 
 /**
  * Used by RobustDevice which does not currently create [Widget] objects.

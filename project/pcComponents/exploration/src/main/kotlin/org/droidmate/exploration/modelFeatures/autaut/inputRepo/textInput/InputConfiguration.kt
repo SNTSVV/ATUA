@@ -1,9 +1,7 @@
-package org.droidmate.exploration.modelFeatures.autaut.textInput
+package org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput
 
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
-import javax.sound.sampled.Line
-import kotlin.random.Random
 
 class InputConfiguration {
     val informationTypes = ArrayList<InformationType>()
@@ -12,22 +10,21 @@ class InputConfiguration {
     fun initializeGeneralInformationType(){
         val dateInformationType = InformationType(name = "Date")
 
-        val dayDataField = DataField(name = "Day",informationType = dateInformationType)
+        val dayDataField = DataField(name = "Day", informationType = dateInformationType)
         dayDataField.resourceIdPatterns.add("day")
 
-        val monthDataField = DataField(name="Month", informationType = dateInformationType)
+        val monthDataField = DataField(name = "Month", informationType = dateInformationType)
         monthDataField.resourceIdPatterns.add("month")
 
         val yearDataField = DataField("Year", informationType = dateInformationType)
         yearDataField.resourceIdPatterns.add("year")
-
-
     }
 
     fun resetCurrentDataInputs()
     {
         currentDataInputs.clear()
     }
+
     fun getInputDataField(inputWidget: Widget, state: State<*>): String {
         val inputWidgetResourceId = getInputWidgetResourceId(inputWidget,state )
         val dataField = informationTypes.flatMap { it.dataFields }.find {

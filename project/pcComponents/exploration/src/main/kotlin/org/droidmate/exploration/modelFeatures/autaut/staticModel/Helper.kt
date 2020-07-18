@@ -3,7 +3,6 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import kotlin.math.abs
@@ -11,17 +10,17 @@ import kotlin.math.abs
 class Helper {
     companion object {
         fun mergeOptionsMenusWithActivities(optionsMenuNodes: ArrayList<WTGNode>, newState: State<*>, activityNodes: ArrayList<WTGNode>,
-                                            transitionGraph: TransitionGraph, autAutMF: AutAutMF) {
+                                            wtg: WindowTransitionGraph, autAutMF: AutAutMF) {
             var shouldMerge = false
             //FIXTHIS
             optionsMenuNodes.forEach { n ->
-                val activityNode = activityNodes.find { transitionGraph.getOptionsMenu(it)?.equals(n) ?: false }
-                mergeOptionsMenuWithActivity(newState, n, activityNode!!, transitionGraph, autAutMF)
+                val activityNode = activityNodes.find { wtg.getOptionsMenu(it)?.equals(n) ?: false }
+                mergeOptionsMenuWithActivity(newState, n, activityNode!!, wtg, autAutMF)
             }
 
         }
 
-        fun mergeOptionsMenuWithActivity(newState: State<*>, optionsMenuNode: WTGNode, activityNode: WTGNode, transitionGraph: TransitionGraph, autAutMF: AutAutMF): Boolean {
+        fun mergeOptionsMenuWithActivity(newState: State<*>, optionsMenuNode: WTGNode, activityNode: WTGNode, wtg: WindowTransitionGraph, autAutMF: AutAutMF): Boolean {
 
             var shouldMerge = false
             var containsOptionMenuWidgets = false
@@ -59,7 +58,7 @@ class Helper {
             }
             if (shouldMerge) {
                 AutAutMF.log.info("Merge $optionsMenuNode to $activityNode")
-                transitionGraph.mergeNode(optionsMenuNode, activityNode)
+                wtg.mergeNode(optionsMenuNode, activityNode)
                 /*transitionGraph.removeVertex(optionsMenuNode)
                 regressionTestingMF.staticEventWindowCorrelation.filter { it.value.containsKey(optionsMenuNode) }.forEach { event, correlation ->
                     correlation.remove(optionsMenuNode)
@@ -125,7 +124,7 @@ class Helper {
 
         fun getVisibleInteractableWidgets(newState: State<*>) =
                 getVisibleWidgets(newState).filter {
-                    isInteractiveWidget(it)
+                    isInteractiveWidget(it) && !hasParentWithType(it,newState,"WebView")
                 }
 
         fun getVisibleWidgets(state: State<*>) =
@@ -133,7 +132,7 @@ class Helper {
 
         fun getVisibleWidgetsForAbstraction(state: State<*>) =
                 state.widgets.filter {
-                    it.enabled && it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty() && it.isInteractive
+                    it.enabled && it.isVisible && it.visibleAreas.isNotEmpty()
                             && !hasParentWithType(it, state, "WebView")
                 }
 
@@ -357,34 +356,34 @@ class Helper {
         }
 
         fun copyStaticWidgetAndItsEvents(staticWidget: StaticWidget, newNode: WTGNode, sourceNode: WTGNode
-                                         , transitionGraph: TransitionGraph) {
+                                         , wtg: WindowTransitionGraph) {
             if (!newNode.widgets.contains(staticWidget))
                 newNode.widgets.add(staticWidget)
-            val relatedEdges = transitionGraph.edges(sourceNode).filter {
+            val relatedEdges = wtg.edges(sourceNode).filter {
                 it.label.widget == staticWidget
             }
             relatedEdges.forEach {
                 val relatedEvent = it.label
                 if (it.destination?.data == sourceNode)
-                    transitionGraph.add(newNode, newNode, relatedEvent)
+                    wtg.add(newNode, newNode, relatedEvent)
                 else
-                    transitionGraph.add(newNode, it.destination?.data, relatedEvent)
+                    wtg.add(newNode, it.destination?.data, relatedEvent)
             }
         }
 
         private fun moveStaticWidgetAndItsEvents(staticWidget: StaticWidget, newNode: WTGNode, sourceNode: WTGNode
-                                                 , transitionGraph: TransitionGraph) {
+                                                 , wtg: WindowTransitionGraph) {
             if (!newNode.widgets.contains(staticWidget))
                 newNode.widgets.add(staticWidget)
             sourceNode.widgets.remove(staticWidget)
-            val relatedEdges = transitionGraph.edges(sourceNode).filter {
+            val relatedEdges = wtg.edges(sourceNode).filter {
                 it.label.widget == staticWidget
             }
             relatedEdges.forEach {
-                transitionGraph.add(newNode, it.destination?.data, it.label)
-                transitionGraph.update(sourceNode, it.destination?.data, WTGFakeNode(), it.label, it.label).also {
-                    if (it != null && transitionGraph.edgeProved.containsKey(it))
-                        transitionGraph.edgeProved.remove(it)
+                wtg.add(newNode, it.destination?.data, it.label)
+                wtg.update(sourceNode, it.destination?.data, WTGFakeNode(), it.label, it.label).also {
+                    if (it != null && wtg.edgeProved.containsKey(it))
+                        wtg.edgeProved.remove(it)
 
                 }
             }
@@ -448,20 +447,20 @@ class Helper {
 
         fun transferStaticWidgetsAndEvents(sourceNode: WTGNode, newNode: WTGNode, newState: State<*>, appName: String
                                            , autAutMF: AutAutMF) {
-            autAutMF.transitionGraph.edges(sourceNode).filter { it.label.widget == null }.forEach {
+            autAutMF.wtg.edges(sourceNode).filter { it.label.widget == null }.forEach {
                 if (it.destination?.data == sourceNode)
-                    autAutMF.transitionGraph.add(newNode, newNode, it.label)
+                    autAutMF.wtg.add(newNode, newNode, it.label)
                 else
-                    autAutMF.transitionGraph.add(newNode, it.destination?.data, it.label)
+                    autAutMF.wtg.add(newNode, it.destination?.data, it.label)
             }
             //Copy mapped widget
             val visibleWidgets = getVisibleWidgets(newState)
             val mappedWidgets = getMappedGUIWidgets(visibleWidgets, sourceNode)
             mappedWidgets.forEach { w, sw ->
                 if (!sw.possibleTexts.contains(w.text) && sw.possibleTexts.isNotEmpty() && !w.isInputField) // it should be an similar widget
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.transitionGraph)
+                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.wtg)
                 else
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.transitionGraph)
+                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.wtg)
             }
 
             //process unmappedWidget
@@ -473,15 +472,15 @@ class Helper {
                     if (matchedStaticWidget.mappedRuntimeWidgets.isEmpty()) {
                         //move if this static widget never mapped before
                         //change owner wtgNode
-                        copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
+                        copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
                         //update event
 
                     } else {
                         //copy else
                         if (!matchedStaticWidget.possibleTexts.contains(it.text))
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
+                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
                         else
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.transitionGraph)
+                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
                     }
                 }
             }

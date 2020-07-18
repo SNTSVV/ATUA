@@ -9,9 +9,12 @@ import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
-import org.droidmate.exploration.modelFeatures.autaut.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
@@ -20,6 +23,7 @@ import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.random.Random
 
@@ -160,11 +164,13 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
 
     abstract fun isTaskEnd(currentState: State<*>): Boolean
 
-    internal fun chooseActionWithName(action: String, data: Any?, widget: Widget?, currentState: State<*>): ExplorationAction? {
+    internal fun chooseActionWithName(action: String, data: Any?, widget: Widget?, currentState: State<*>, abstractAction: AbstractAction?): ExplorationAction? {
         //special operating for list view
         if (widget == null)
         {
             return when (action){
+                "EnableData" -> GlobalAction(ActionType.EnableData)
+                "DisableData" -> GlobalAction(ActionType.DisableData)
                 "PressMenu" -> pressMenuOrClickMoreOption(currentState)
                 "PressBack" -> ExplorationAction.pressBack()
                 "PressHome" -> ExplorationAction.minimizeMaximize()
@@ -182,6 +188,8 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
                 "CallIntent" -> callIntent(data)
                 "Swipe" -> doSwipe(currentState,data as String)
                 "LaunchApp" -> autautStrategy.eContext.launchApp()
+                "ResetApp" -> autautStrategy.eContext.resetApp()
+                "RandomKeyboard" -> doRandomKeyboard(currentState)
                 else -> ExplorationAction.pressBack()
             }
         }
@@ -192,10 +200,21 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
         }
 
         if (isItemEvent) {
-            return chooseActionForItemEvent(chosenWidget, currentState, action)
+            return chooseActionForItemEvent(chosenWidget, currentState, action,abstractAction)
         } else {
-            return chooseActionForNonItemEvent(action, chosenWidget, currentState, data)
+            return chooseActionForNonItemEvent(action, chosenWidget, currentState, data,abstractAction)
         }
+    }
+
+    private fun doRandomKeyboard(currentState: State<*>): ExplorationAction? {
+        var childWidgets = currentState.widgets.filter { it.isKeyboard }
+        val allAvailableActions = childWidgets.map { it.click()}
+        val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
+        for (i in 0..20) {
+            actionList.add(allAvailableActions.random())
+        }
+        actionList.add(ExplorationAction.pressEnter())
+        return ActionQueue(actionList,50)
     }
 
     private fun doSwipe(currentState: State<*>, data: String): ExplorationAction? {
@@ -206,30 +225,43 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
         if (outBoundLayout == null) {
             return ExplorationAction.pressBack()
         }
-        val screenHeight = outBoundLayout.visibleBounds.height
-        val screenWidth = outBoundLayout.visibleBounds.width
+        val screenHeight =
+                if (outBoundLayout.visibleBounds.height == 0)
+                    outBoundLayout.boundaries.height
+        else
+                    outBoundLayout.visibleBounds.height
+        val screenWidth =  if (outBoundLayout.visibleBounds.width == 0)
+            outBoundLayout.boundaries.width
+        else
+            outBoundLayout.visibleBounds.width
         val swipeAction = when (data) {
             "SwipeUp" -> {
                 val startY = outBoundLayout.visibleBounds.bottomY
-                ExplorationAction.swipe(Pair(screenWidth / 2, startY ), Pair(screenWidth / 2, startY - screenHeight / 2))
+                ExplorationAction.swipe(Pair(screenWidth / 2, startY ), Pair(screenWidth / 2, startY - screenHeight))
             }
             "SwipeDown" -> {
                 val startY = outBoundLayout.visibleBounds.topY
-                ExplorationAction.swipe(Pair(screenWidth / 2, startY), Pair(screenWidth / 2, startY + screenHeight / 2))
+                ExplorationAction.swipe(Pair(screenWidth / 2, startY), Pair(screenWidth / 2, startY + screenHeight))
             }
             "SwipeLeft" -> {
                 val startX = outBoundLayout.visibleBounds.rightX
-                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX - screenWidth / 2, screenHeight / 2))}
+                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX - screenWidth, screenHeight / 2))}
             "SwipeRight" -> {
                 val startX = outBoundLayout.visibleBounds.leftX
-                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX + screenWidth / 2, screenHeight / 2))}
+                ExplorationAction.swipe(Pair(startX, screenHeight / 2), Pair(startX + screenWidth, screenHeight / 2))}
             else -> {
+                if (data.isNotBlank()) {
+                    val swipeData = Helper.parseSwipeData(data)
+                    if (swipeData.size == 2) {
+                        return ExplorationAction.swipe(swipeData[0], swipeData[1],25)
+                    }
+                }
                 if (random.nextBoolean()) {
                     //Swipe up
-                    return ExplorationAction.swipe(Pair(screenWidth / 2, outBoundLayout.visibleBounds.bottomY), Pair(screenWidth / 2, screenHeight / 2))
+                    return ExplorationAction.swipe(Pair(screenWidth / 2, outBoundLayout.visibleBounds.bottomY), Pair(screenWidth / 2, outBoundLayout.visibleBounds.bottomY - screenHeight))
                 } else {
                     //Swipe right
-                    return ExplorationAction.swipe(Pair(outBoundLayout.visibleBounds.leftX, screenHeight / 2), Pair(screenWidth / 2, screenHeight / 2))
+                    return ExplorationAction.swipe(Pair(outBoundLayout.visibleBounds.leftX, screenHeight / 2), Pair(outBoundLayout.visibleBounds.leftX + screenWidth, screenHeight / 2))
                 }
 
             }
@@ -237,10 +269,11 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
         return swipeAction
     }
 
-    private fun chooseActionForNonItemEvent(action: String, chosenWidget: Widget, currentState: State<*>, data: Any?): ExplorationAction? {
+    private fun chooseActionForNonItemEvent(action: String, chosenWidget: Widget, currentState: State<*>, data: Any?, abstractAction: AbstractAction?): ExplorationAction? {
         if (action == "TextInsert" && chosenWidget.isInputField) {
             return chooseActionForTextInput(chosenWidget, currentState)
         }
+        val currentAbstractState = regressionTestingMF.getAbstractState(currentState)!!
         if (action == "Swipe" && data is String) {
             val swipeAction =
              when (data) {
@@ -248,6 +281,10 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
                 "SwipeDown" -> chosenWidget.swipeDown()
                 "SwipeLeft" -> chosenWidget.swipeLeft()
                 "SwipeRight" -> chosenWidget.swipeRight()
+                 "SwipeTillEnd" -> doDeepSwipeUp(chosenWidget,currentState).also {
+                     if (abstractAction!=null)
+                        currentAbstractState.increaseActionCount(abstractAction)
+                 }
                 else -> {
                     if (data.isNotBlank()) {
                         val swipeInfo: List<Pair<Int,Int>> = Helper.parseSwipeData(data)
@@ -260,6 +297,44 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
             ExplorationTrace.widgetTargets.clear()
             ExplorationTrace.widgetTargets.add(chosenWidget)
             return swipeAction
+        }
+        if (chosenWidget.className == "android.webkit.WebView") {
+            var childWidgets = getChildWidgets(currentState, chosenWidget)
+            val allAvailableActions = childWidgets.plus(chosenWidget).map { it.availableActions(delay, true)}.flatten()
+
+            val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
+//            val swipeActions = allAvailableActions.filter { it is Swipe }
+//            for (i in 0..10) {
+//                actionList.add(swipeActions.random())
+//            }
+            if (action == "Click" && allAvailableActions.any{ it is ClickEvent || it is Click}) {
+                val clickActions = allAvailableActions.filter { it is ClickEvent || it is Click }
+                for (i in 0..20) {
+                    actionList.add(clickActions.random())
+                }
+            }
+            else if (action == "LongClick" && allAvailableActions.any{ it is LongClick || it is LongClickEvent}) {
+                val longClickActions = allAvailableActions.filter { it is LongClickEvent || it is LongClick }
+                for (i in 0..20) {
+                    actionList.add(longClickActions.random())
+                }
+            } else if (allAvailableActions.isNotEmpty()) {
+                for (i in 0..20) {
+                    actionList.add(allAvailableActions.random())
+                }
+            } else {
+                if (abstractAction!=null) {
+                    abstractAction.widgetGroup!!.actionCount.remove(abstractAction)
+                }
+                val allAvailableActions = currentState.visibleTargets.map { it.availableActions(delay,true) }.flatten()
+                for (i in 0..5) {
+                    actionList.add(allAvailableActions.random())
+                }
+            }
+            if (abstractAction!=null){
+                currentAbstractState.increaseActionCount(abstractAction)
+            }
+            return ActionQueue(actionList,50)
         }
         val actionList = chosenWidget.availableActions(delay, useCoordinateClicks)
         val widgetActions = actionList.filter {
@@ -283,8 +358,29 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
         return hardAction
     }
 
+    private fun doDeepSwipeUp(chosenWidget: Widget,currentState: State<*>): ExplorationAction? {
+        val actionList = ArrayList<ExplorationAction>()
+        if (chosenWidget.className == "android.webkit.WebView") {
+            var childWidgets = getChildWidgets(currentState, chosenWidget)
+            val swipeActions = childWidgets.filter { it.scrollable }.map { it.swipeUp(stepSize = 1) }
+            if (swipeActions.isNotEmpty()) {
+                for (i in 0..25) {
+                    actionList.add(swipeActions.random())
+                }
+            } else {
+                val randomForcedSwipeActions = childWidgets.map { it.swipeUp() }
+                for (i in 0..25) {
+                    actionList.add(randomForcedSwipeActions.random())
+                }
+            }
 
-
+        } else {
+            for (i in 0..25) {
+                actionList.add(chosenWidget.swipeUp())
+            }
+        }
+        return ActionQueue(actionList,0)
+    }
 
 
     private fun chooseActionForTextInput(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
@@ -293,20 +389,24 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
         return explorationAction
     }
 
-    private fun chooseActionForItemEvent(chosenWidget: Widget, currentState: State<*>, action: String): ExplorationAction? {
+    private fun chooseActionForItemEvent(chosenWidget: Widget, currentState: State<*>, action: String, abstractAction: AbstractAction?): ExplorationAction? {
         if (chosenWidget.childHashes.size == 0)
             return null
         regressionTestingMF.isRecentItemAction = true
-        var childWidgets = Helper.getAllInteractiveChild(currentState.widgets, chosenWidget)
-        if (childWidgets.isEmpty()) {
-            childWidgets = Helper.getAllInteractiveChild2(currentState.widgets, chosenWidget)
-        }
-        if (childWidgets.isEmpty()) {
-            childWidgets = Helper.getAllChild(currentState.widgets, chosenWidget)
-        }
+        var childWidgets = getChildWidgets(currentState, chosenWidget)
         if (childWidgets.isEmpty()) {
             return null
         }
+        if (chosenWidget.className == "android.webkit.WebView") {
+           val allAvailableActions = childWidgets.map { it.availableActions(delay, true) }.flatten()
+           val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
+            for (i in 0..10) {
+               actionList.add(allAvailableActions.random())
+           }
+            return ActionQueue(actionList,50)
+        }
+        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        abstractState.increaseActionCount(abstractAction!!);
         val actionableWidgets = childWidgets.filter {
             when (action) {
                 "ItemClick" -> it.clickable
@@ -345,6 +445,17 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
             else -> randomWidget.clickEvent(delay=delay, ignoreClickable = true)
         }
         return hardAction
+    }
+
+    private fun getChildWidgets(currentState: State<*>, chosenWidget: Widget): List<Widget> {
+        var childWidgets = Helper.getAllInteractiveChild(currentState.widgets, chosenWidget)
+        if (childWidgets.isEmpty()) {
+            childWidgets = Helper.getAllInteractiveChild2(currentState.widgets, chosenWidget)
+        }
+        if (childWidgets.isEmpty()) {
+            childWidgets = Helper.getAllChild(currentState.widgets, chosenWidget)
+        }
+        return childWidgets
     }
 
     private fun callIntent(data: Any?): CallIntent {
@@ -422,6 +533,7 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
     }
 
     internal fun pressMenuOrClickMoreOption(currentState: State<*>): ExplorationAction {
+        return ExplorationAction.pressMenu()
         val moreOptionWidget = regressionTestingMF.getToolBarMoreOptions(currentState)
         if (moreOptionWidget != null) {
             log.info("Widget: $moreOptionWidget")
@@ -440,7 +552,7 @@ abstract class AbstractStrategyTask (val autautStrategy: RegressionTestingStrate
      fun clickOnOpenNavigation(currentState: State<*>): ExplorationAction {
         val openNavigationWidget = currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") }!!
          log.info("Widget: $openNavigationWidget")
-        return chooseActionWithName("Click", null, openNavigationWidget, currentState)!!
+        return chooseActionWithName("Click", null, openNavigationWidget, currentState,null)!!
     }
 
     fun isCameraOpening(currentState: State<*>): Boolean {

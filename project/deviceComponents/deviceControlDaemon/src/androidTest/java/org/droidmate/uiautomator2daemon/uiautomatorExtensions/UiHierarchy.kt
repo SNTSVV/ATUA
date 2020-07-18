@@ -54,7 +54,9 @@ object UiHierarchy : UiParser() {
 					createBottomUp(w, w.rootNode!!, parentXpath = "//", nodes = nodes, img = if(validImg) img else null)
 					Log.d(LOGTAG, "${w.w.pkgName}:${w.w.windowId} ${visibleOuterBounds(w.initialArea)} " +
 							"#elems = ${nodes.size} ${w.initialArea} empty=${w.initialArea.isEmpty()}")
-				}
+				} else {
+                    Log.d(LOGTAG, "${w.w.pkgName}:${w.w.windowId} is not extracted")
+                }
 			}
 		} catch (e: Exception) {  // the accessibilityNode service may throw this if the node is no longer up-to-date
 			Log.e("droidmate/UiDevice", "error while fetching widgets ${e.localizedMessage}\n last widget was ${nodes.lastOrNull()}",e)

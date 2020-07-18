@@ -10,10 +10,13 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
 import org.droidmate.exploration.modelFeatures.autaut.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticEvent
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.TransitionPath
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGLauncherNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGOutScopeNode
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
@@ -40,12 +43,14 @@ class PhaseThreeStrategy(
 
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
-        val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
+        //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
-        val staticEvents = abstractInteractions.filter { abstractState.staticEventMapping[it] != null }.map { abstractState.staticEventMapping[it]!! }.flatten().distinct()
-        staticEvents.forEach {
-            if (it == targetEvent) {
-                selectRelatedWindow()
+        val staticEvents = abstractState.staticEventMapping[abstractAction]
+        if (staticEvents!=null) {
+            staticEvents.forEach {
+                if (it == targetEvent) {
+                    selectRelatedWindow()
+                }
             }
         }
     }
@@ -77,7 +82,7 @@ class PhaseThreeStrategy(
     val windowsProbability = HashMap<WTGNode, Double> ()
 
     var budgetLeft: Int = 0
-
+    var needResetApp = false
     init {
         phaseState = PhaseState.P3_INITIAL
         regressionTestingMF = regressionTestingStrategy.eContext.getOrCreateWatcher()
@@ -109,14 +114,17 @@ class PhaseThreeStrategy(
             WTGNode.allMeaningNodes.random()
         }
         chooseTask(eContext, currentState)
-        budgetLeft--
-        if (budgetLeft == (TEST_BUDGET*budgetScale).toInt()-1)
+        if (needResetApp) {
+            needResetApp = false
             return eContext.resetApp()
+        }
+        budgetLeft--
+
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
         } else {
             log.debug("No task seleted. It might be a bug.")
-            chosenAction = ExplorationAction.closeAndReturn()
+            chosenAction = eContext.resetApp()
         }
         return chosenAction
     }
@@ -129,7 +137,10 @@ class PhaseThreeStrategy(
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(regressionTestingMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
-        val candiateNodes = ArrayList(WTGNode.allMeaningNodes.filterNot { it != currentAbState.window || it.classType == targetWindow!!.classType})
+        val candiateNodes = ArrayList(WTGNode.allMeaningNodes.filterNot { it == currentAbState.window
+                || it == targetWindow
+                || it is WTGLauncherNode
+                || it is WTGOutScopeNode})
         //choose random activity
         if (candiateNodes.isEmpty())
             return transitionPaths
@@ -155,7 +166,7 @@ class PhaseThreeStrategy(
             else
             {
                 val destination = it
-                val childParentMap = HashMap<AbstractState,Pair<AbstractState, StaticEvent>?>()
+                val childParentMap = HashMap<AbstractState, Triple<AbstractState, AbstractInteraction,HashMap<WidgetGroup,String>>?>()
                 childParentMap.put(currentAbState,null)
                 findPathToTargetComponentByBFS(currentState = currentState
                         , root = currentAbState
@@ -212,7 +223,7 @@ class PhaseThreeStrategy(
         }
         else
         {
-            val childParentMap = HashMap<AbstractState,Pair<AbstractState, AbstractInteraction>?>()
+            val childParentMap = HashMap<AbstractState, Triple<AbstractState, AbstractInteraction,HashMap<WidgetGroup,String>>?>()
             childParentMap.put(currentAbState,null)
             findPathToTargetComponentByBFS(currentState = currentState
                     , root = currentAbState
@@ -260,11 +271,8 @@ class PhaseThreeStrategy(
                     setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                     return
                 }
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow = relatedWindow!!)) {
-                    log.info("Task chosen: Go to related window: $relatedWindow")
-                    phaseState = PhaseState.P3_GO_TO_RELATED_NODE
-                    remainPhaseStateCount = 0
-                    strategyTask = goToTargetNodeTask.also { it.initialize(currentState) }
+                if (goToAnotherNode.isAvailable(currentState, destWindow = relatedWindow!!)) {
+                    setGoToRelatedWindow(goToAnotherNode, currentState)
                     return
                 }
                 setFullyRandomExploration(randomExplorationTask, currentState)
@@ -280,11 +288,11 @@ class PhaseThreeStrategy(
                     setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                     return
                 }
-                // change target event
-                phaseState = PhaseState.P3_INITIAL
-                selectTargetStaticEvent()
-                chooseTask(eContext, currentState)
-                return
+                if (goToAnotherNode.isAvailable(currentState, destWindow = relatedWindow!!)) {
+                    setGoToRelatedWindow(goToAnotherNode, currentState)
+                    return
+                }
+                setFullyRandomExploration(randomExplorationTask, currentState)
             }
             if (phaseState == PhaseState.P3_EXPLORATION_IN_RELATED_WINDOW)
             {
@@ -294,20 +302,14 @@ class PhaseThreeStrategy(
                 }
                 if (currentAppState.window == targetWindow) {
                     if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                        log.info("Task chosen: Exercise Target Node .")
-                        phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
-                        remainPhaseStateCount = 0
-                        strategyTask = exerciseTargetComponentTask.also { it.initialize(currentState) }
+                        setExerciseTarget(exerciseTargetComponentTask, currentState)
                         return
                     }
                     setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                     return
                 }
                 if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!)) {
-                    log.info("Task chosen: Go to target window: $targetWindow .")
-                    phaseState = PhaseState.P3_GO_TO_TARGET_NODE
-                    remainPhaseStateCount = 0
-                    strategyTask = goToTargetNodeTask.also { it.initialize(currentState) }
+                    setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
                 setFullyRandomExploration(randomExplorationTask, currentState)
@@ -316,10 +318,7 @@ class PhaseThreeStrategy(
             if (phaseState == PhaseState.P3_GO_TO_TARGET_NODE) {
                 if (currentAppState.window == targetWindow) {
                     if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                        log.info("Task chosen: Exercise Target Node .")
-                        phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
-                        remainPhaseStateCount = 0
-                        strategyTask = exerciseTargetComponentTask.also { it.initialize(currentState) }
+                        setExerciseTarget(exerciseTargetComponentTask, currentState)
                         return
                     }
                     if (!strategyTask!!.isTaskEnd(currentState)) {
@@ -333,6 +332,10 @@ class PhaseThreeStrategy(
                     log.info("Continue ${strategyTask!!.javaClass.name}")
                     return
                 }
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!)) {
+                    setGoToTarget(goToTargetNodeTask, currentState)
+                    return
+                }
                 setFullyRandomExploration(randomExplorationTask, currentState)
                 return
             }
@@ -344,10 +347,7 @@ class PhaseThreeStrategy(
                 }
                 if (currentAppState.window == targetWindow) {
                     if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                        log.info("Task chosen: Exercise Target Node .")
-                        phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
-                        remainPhaseStateCount = 0
-                        strategyTask = exerciseTargetComponentTask.also { it.initialize(currentState) }
+                        setExerciseTarget(exerciseTargetComponentTask, currentState)
                         return
                     }
                 }
@@ -356,32 +356,85 @@ class PhaseThreeStrategy(
                 chooseTask(eContext,currentState)
                 return
             }
+            if (phaseState == PhaseState.P3_RANDOM_EXPLORATION) {
+                if (currentAppState.window == relatedWindow) {
+                    setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
+                    return
+                }
+                if (goToAnotherNode.isAvailable(currentState, destWindow = relatedWindow!!)) {
+                    setGoToRelatedWindow(goToAnotherNode, currentState)
+                    return
+                }
+                if (currentAppState.window == targetWindow) {
+                    if (exerciseTargetComponentTask.isAvailable(currentState)) {
+                        setExerciseTarget(exerciseTargetComponentTask, currentState)
+                        return
+                    }
+                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+                    return
+                }
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!)) {
+                    setGoToTarget(goToTargetNodeTask, currentState)
+                    return
+                }
+                if (!strategyTask!!.isTaskEnd(currentState)) {
+                    log.info("Continue ${strategyTask!!.javaClass.name}")
+                    return
+                }
+                phaseState = PhaseState.P3_INITIAL
+                selectTargetStaticEvent()
+                needResetApp = true
+                return
+            }
             log.info("undefined PhaseState.")
             setRandomExploration(randomExplorationTask, currentState)
         }
         if (windowBudgetLeft > 0) {
             selectTargetStaticEvent()
             phaseState = PhaseState.P3_INITIAL
+            chooseTask(eContext, currentState)
         }
         else {
             selectTargetWindow()
+            needResetApp = true
             selectTargetStaticEvent()
             phaseState = PhaseState.P3_INITIAL
+            return
         }
-        phaseState = PhaseState.P3_INITIAL
-        chooseTask(eContext, currentState)
-        return
+    }
+
+    private fun setGoToRelatedWindow(goToAnotherNode: GoToAnotherWindow, currentState: State<*>) {
+        log.info("Task chosen: Go to related window: $relatedWindow")
+        phaseState = PhaseState.P3_GO_TO_RELATED_NODE
+        remainPhaseStateCount = 0
+        strategyTask = goToAnotherNode.also { it.initialize(currentState) }
+    }
+
+    private fun setGoToTarget(goToTargetNodeTask: GoToTargetWindowTask, currentState: State<*>) {
+        log.info("Task chosen: Go to target window: $targetWindow .")
+        phaseState = PhaseState.P3_GO_TO_TARGET_NODE
+        remainPhaseStateCount = 0
+        strategyTask = goToTargetNodeTask.also { it.initialize(currentState) }
+    }
+
+    private fun setExerciseTarget(exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>) {
+        log.info("Task chosen: Exercise Target Node .")
+        phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
+        remainPhaseStateCount = 0
+        strategyTask = exerciseTargetComponentTask.also { it.initialize(currentState)
+        it.environmentChange = true}
     }
 
     private fun setFullyRandomExploration(randomExplorationTask: RandomExplorationTask, currentState: State<*>) {
         log.info("Cannot go to target Window. Random Exploration with 10 actions")
-        phaseState = PhaseState.P3_EXPLORATION_IN_RELATED_WINDOW
+        phaseState = PhaseState.P3_RANDOM_EXPLORATION
         remainPhaseStateCount = 0
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
             it.isFullyExploration = true
             it.backAction = true
             it.setMaximumAttempt(10)
+            it.environmentChange = true
         }
     }
 
@@ -392,6 +445,7 @@ class PhaseThreeStrategy(
             it.lockTargetWindow(targetWindow!!)
             it.setMaximumAttempt(currentState,25)
             it.backAction = false
+            it.environmentChange = true
         }
         log.info("This window is a target window but cannot find any target event")
         log.info("Random exploration in current window")
@@ -402,6 +456,7 @@ class PhaseThreeStrategy(
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
             it.lockTargetWindow(relatedWindow!!)
+            it.environmentChange = true
         }
         log.info("In related window $relatedWindow.")
         log.info("Random exploration in current window")
@@ -661,7 +716,7 @@ class PhaseThreeStrategy(
             weight+=1
             windowScores.put(n, weight)
             staticNodeTotalScore+=weight
-            regressionTestingMF.transitionGraph.edges(n).map { it.label }.distinct().filter{ regressionTestingMF.allTargetStaticEvents.contains(it) }.forEach {
+            regressionTestingMF.wtg.edges(n).map { it.label }.distinct().filter{ regressionTestingMF.allTargetStaticEvents.contains(it) }.forEach {
                 allTargetEvents.put(it,0)
             }
         }

@@ -2,9 +2,10 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.callIntent
-import org.droidmate.exploration.actions.closeAndReturn
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.model.IntentTestInstance
 import org.droidmate.explorationModel.interaction.State
 
 class CallingIntentTask(regressionTestingMF: AutAutMF,
@@ -21,7 +22,7 @@ class CallingIntentTask(regressionTestingMF: AutAutMF,
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         if (targetIntentTestInstances.isEmpty())
-            return ExplorationAction.closeAndReturn()
+            return ExplorationAction.pressBack()
         val intentFilter = targetIntentTestInstances.random()
         targetIntentTestInstances.remove(intentFilter)
         return autautStrategy.eContext.callIntent(
@@ -47,7 +48,7 @@ class CallingIntentTask(regressionTestingMF: AutAutMF,
                     datas.forEach {data->
                         val testData = data.testData.random()
                         targetIntentTestInstances.add(IntentTestInstance(action = action,
-                                category = category, data = testData, activity = it.activity ))
+                                category = category, data = testData, activity = it.activity))
                     }
                 }
             }

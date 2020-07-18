@@ -1,7 +1,5 @@
-package org.droidmate.exploration.strategy.autaut.task
+package org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput
 
-import org.droidmate.exploration.modelFeatures.autaut.textInput.DataField
-import org.droidmate.exploration.modelFeatures.autaut.textInput.InputConfiguration
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
@@ -41,7 +39,7 @@ class TextInput () {
 
         fun resetInputData()
         {
-            if (inputConfiguration!=null)
+            if (inputConfiguration !=null)
             {
                 inputConfiguration!!.resetCurrentDataInputs()
             }

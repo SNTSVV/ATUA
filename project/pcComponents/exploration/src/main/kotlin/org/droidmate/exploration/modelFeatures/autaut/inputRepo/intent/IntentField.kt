@@ -1,4 +1,4 @@
-package org.droidmate.exploration.modelFeatures.autaut.intent
+package org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent
 
 /*
  * IntentField.java - part of the GATOR project

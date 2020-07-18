@@ -51,6 +51,26 @@ import java.time.LocalDateTime
 
 // TODO Very confusing method chain. Simplify
 class RobustDevice : IRobustDevice {
+	override suspend fun enableData() {
+		return Utils.retryOnException(
+				{ this.device.enableData() },
+				{},
+				deviceOperationAttempts,
+				deviceOperationDelay,
+				"device.enableData()"
+		)
+	}
+
+	override suspend fun disableData() {
+		return Utils.retryOnException(
+				{ this.device.disableData() },
+				{},
+				deviceOperationAttempts,
+				deviceOperationDelay,
+				"device.disableData()"
+		)
+	}
+
 	override suspend fun getDeviceScreenSize(): Rectangle {
 		return Utils.retryOnException(
 				{ this.device.getDeviceScreenSize() },

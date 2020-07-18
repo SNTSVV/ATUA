@@ -48,7 +48,9 @@ enum class EventType {
 
     //intent
     callIntent,
+
     closeKeyboard,
+    resetApp,
     EXPLICIT_IMPLICIT_SEPARATOR,
 
     // View

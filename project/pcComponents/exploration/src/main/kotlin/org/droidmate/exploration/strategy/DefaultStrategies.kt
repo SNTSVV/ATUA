@@ -187,7 +187,7 @@ object DefaultStrategies: Logging {
 					else
 					{
 						log.debug("Cannot explore. Last action was back. Returning 'Reset'")
-						eContext.resetApp()
+						eContext.launchApp()
 					}
 
 				}
@@ -214,7 +214,7 @@ object DefaultStrategies: Logging {
 				}
 				// by default, if it cannot explore, presses back
 				else -> {
-					ExplorationAction.closeAndReturn()
+					ExplorationAction.pressBack()
 				}
 			}
 		}

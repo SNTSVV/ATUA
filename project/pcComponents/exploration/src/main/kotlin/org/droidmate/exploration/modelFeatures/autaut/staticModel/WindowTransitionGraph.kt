@@ -3,7 +3,6 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 import org.droidmate.exploration.modelFeatures.graph.*
 import org.droidmate.exploration.modelFeatures.autaut.*
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.json.JSONArray
 import org.json.JSONObject
 import org.slf4j.Logger
@@ -12,7 +11,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
+class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                               Graph(WTGNode("Root", 0.toString()),
                                       stateComparison = { a, b -> a == b },
                                       labelComparison = { a, b ->
@@ -194,15 +193,15 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
         return pressBackEvents
     }
 
-    fun containsGraph(childGraph: TransitionGraph): Boolean {
-        val childGraphRoot = childGraph.getNextRoot()
+    fun containsGraph(childWTG: WindowTransitionGraph): Boolean {
+        val childGraphRoot = childWTG.getNextRoot()
         if (childGraphRoot == null)
             return false
         var node: WTGNode? = childGraphRoot
         val stack: Stack<Edge<WTGNode, StaticEvent>> = Stack()
         val traversedEdge = arrayListOf<Edge<WTGNode, StaticEvent>>()
         while (node != null) {
-            val edges = childGraph.edges(node)
+            val edges = childWTG.edges(node)
             val newEdges = edges.filter { !traversedEdge.contains(it) }
             if (newEdges.isEmpty()) {
                 //return before
@@ -242,7 +241,7 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
         this.getVertices().forEach { v ->
             val outEdges = this.edges(v)
             outEdges.filter { it.destination != null && it.destination!!.data == source }.forEach { e ->
-                update(v.data, e.destination?.data, dest, e.label, e.label)
+                add(v.data, dest, e.label)
             }
         }
     }
@@ -281,7 +280,7 @@ class TransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
     companion object {
 
         @JvmStatic
-        private val log: Logger by lazy { LoggerFactory.getLogger(TransitionGraph::class.java) }
+        private val log: Logger by lazy { LoggerFactory.getLogger(WindowTransitionGraph::class.java) }
 
 
     }
