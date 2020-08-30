@@ -3,7 +3,7 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 open class StaticEvent (
             val eventType: EventType,
-            val eventHandlers: ArrayList<String>,
+            val eventHandlers: HashSet<String>,
             val widget: StaticWidget?,
             var activity: String,
              var sourceWindow: WTGNode
@@ -94,9 +94,25 @@ open class StaticEvent (
                 else -> EventType.fake_action
             }
         }
+
+        fun getOrCreateEvent(eventHandlers: Set<String>,
+                             eventTypeString: String,
+                             widget: StaticWidget?,
+                             activity: String,
+                             sourceWindow: WTGNode): StaticEvent {
+            var event = StaticEvent.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.activity == activity }
+            //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
+            if (event != null) {
+                return event
+            }
+            event = StaticEvent(eventHandlers = HashSet(eventHandlers)
+                    , eventType = EventType.valueOf(eventTypeString)
+                    , widget = widget, activity = activity, sourceWindow = sourceWindow)
+            return event
+        }
     }
 }
 
-class LaunchAppEvent(launcher: WTGNode): StaticEvent(EventType.implicit_launch_event, arrayListOf(),null,"",sourceWindow = launcher)
-class FakeEvent(sourceWindow: WTGNode): StaticEvent(EventType.fake_action, arrayListOf(), null,sourceWindow.activityClass,sourceWindow)
+class LaunchAppEvent(launcher: WTGNode): StaticEvent(EventType.implicit_launch_event, HashSet(),null,"",sourceWindow = launcher)
+class FakeEvent(sourceWindow: WTGNode): StaticEvent(EventType.fake_action, HashSet(), null,sourceWindow.activityClass,sourceWindow)
 

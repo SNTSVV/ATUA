@@ -91,7 +91,7 @@ class Helper {
                     allPossibleNodes.forEach {
                         val matchingWidget = getStaticWidgets(widget, newState, it, false, autAutMF)
                         if (matchingWidget.isNotEmpty()) {
-                            if (matchWidgets.contains(it)) {
+                            if (matchWidgets.containsKey(it)) {
                                 matchWidgets[it] = matchWidgets[it]!! + matchingWidget.size
                             } else {
                                 matchWidgets[it] = matchingWidget.size
@@ -111,7 +111,7 @@ class Helper {
             val scores = HashMap<WTGNode, Double>()
             allPossibleNodes.forEach {
                 val totalWidgets = visibleWidgets.size
-                val score = if (matchWidgets[it]!! > 0) {
+                val score = if (matchWidgets[it]!! > 0 || it.widgets.size == 0) {
                     (matchWidgets[it]!! * 1.0 - missWidgets[it]!! * 1.0) / totalWidgets
                 } else {
                     Double.NEGATIVE_INFINITY
@@ -124,7 +124,7 @@ class Helper {
 
         fun getVisibleInteractableWidgets(newState: State<*>) =
                 getVisibleWidgets(newState).filter {
-                    isInteractiveWidget(it) && !hasParentWithType(it,newState,"WebView")
+                    isInteractiveWidget(it)
                 }
 
         fun getVisibleWidgets(state: State<*>) =
@@ -275,6 +275,13 @@ class Helper {
             if (matchedStaticWidgets.isEmpty() && !widget.isInputField && widget.text.isNotBlank()) {
                 matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
                     w.possibleTexts.contains(widget.text)
+                })
+            }
+            if (matchedStaticWidgets.isEmpty()
+                    && (widget.className == "android.widget.RelativeLayout" || widget.className == "android.widget.LinearLayout"))
+            {
+                matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
+                    w.className.contains(widget.className) && w.resourceId.isBlank() && w.resourceIdName.isBlank()
                 })
             }
             if (matchedStaticWidgets.isEmpty() &&
@@ -545,12 +552,69 @@ class Helper {
             return unqualifiedResourceId
         }
 
+        fun haveClickableChild(allWidgets: List<Widget>, parent: Widget): Boolean {
+            val allChildren = ArrayList<Widget>()
+            parent.childHashes.forEach {
+                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it }
+                if (childWidget != null) {
+                    allChildren.add(childWidget)
+                    if (childWidget.clickable) {
+                        return true
+                    }
+                }
+            }
+            allChildren.forEach {
+                if (haveClickableChild(allWidgets,it)) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun haveLongClickableChild(allWidgets: List<Widget>, parent: Widget): Boolean {
+            val allChildren = ArrayList<Widget>()
+            parent.childHashes.forEach {
+                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it }
+                if (childWidget != null) {
+                    allChildren.add(childWidget)
+                    if (childWidget.longClickable) {
+                        return true
+                    }
+                }
+            }
+            allChildren.forEach {
+                if (haveClickableChild(allWidgets,it)) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun haveScrollableChild(allWidgets: List<Widget>, parent: Widget): Boolean {
+            val allChildren = ArrayList<Widget>()
+            parent.childHashes.forEach {
+                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it }
+                if (childWidget != null) {
+                    allChildren.add(childWidget)
+                    if (childWidget.scrollable) {
+                        return true
+                    }
+                }
+            }
+            allChildren.forEach {
+                if (haveClickableChild(allWidgets,it)) {
+                    return true
+                }
+            }
+            return false
+        }
+
         fun getAllInteractiveChild(allWidgets: List<Widget>, parent: Widget): List<Widget> {
             val interactiveWidgets = arrayListOf<Widget>()
             parent.childHashes.forEach {
                 val childWidget = allWidgets.firstOrNull { w -> w.idHash == it }
                 if (childWidget != null) {
-                    if (Helper.isInteractiveWidget(childWidget)) {
+                    if (isInteractiveWidget(childWidget)) {
                         interactiveWidgets.add(childWidget)
                     }
                     interactiveWidgets.addAll(getAllInteractiveChild(allWidgets, childWidget))

@@ -1,15 +1,15 @@
 package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GoToRelatedWindowTask protected constructor(
         regressionWatcher: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
+        autAutTestingStrategy: AutAutTestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks) {
 
     override fun chooseRandomOption(currentState: State<*>) {
         log.debug("Change options")
@@ -33,11 +33,11 @@ class GoToRelatedWindowTask protected constructor(
         var executedCount:Int = 0
         var instance: GoToRelatedWindowTask? = null
         fun getInstance(regressionWatcher: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): GoToRelatedWindowTask {
             if (instance == null) {
-                instance = GoToRelatedWindowTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = GoToRelatedWindowTask(regressionWatcher, autAutTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

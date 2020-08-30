@@ -7,6 +7,7 @@ import org.droidmate.exploration.modelFeatures.graph.Vertex
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
+import org.droidmate.explorationModel.interaction.Widget
 
 class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractState, AbstractInteraction> =
                               Graph(root,
@@ -15,8 +16,8 @@ class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractStat
                                           a==b
                                       })): IGraph<AbstractState, AbstractInteraction> by graph {
 
-    val edgeConditions: HashMap<Edge<*,*>,HashMap<WidgetGroup,String>> = HashMap()
-
+    // val edgeConditions: HashMap<Edge<*,*>,HashMap<WidgetGroup,String>> = HashMap()
+    val edgeConditions: HashMap<Edge<*,*>,HashMap<Widget,String>> = HashMap()
     override fun toString(): String {
         return graph.toString()
     }

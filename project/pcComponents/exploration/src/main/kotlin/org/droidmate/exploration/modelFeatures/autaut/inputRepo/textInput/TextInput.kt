@@ -28,11 +28,11 @@ class TextInput () {
             return null
         }
 
-        fun getSetTextInputValue(widget: Widget, state: State<*>): String {
+        fun getSetTextInputValue(widget: Widget, state: State<*>, randomInput: Boolean): String {
             val inputValue = when (widget.inputType) {
                 2 -> randomInt()
-                1 -> inputString(widget, state)
-                else -> inputString(widget, state)
+                1 -> inputString(widget, state,randomInput)
+                else -> inputString(widget, state,randomInput)
             }
             return inputValue
         }
@@ -45,16 +45,16 @@ class TextInput () {
             }
         }
 
-        protected open fun inputString(widget: Widget, state: State<*>): String{
+        protected open fun inputString(widget: Widget, state: State<*>, randomInput: Boolean): String{
             var inputCandidates = ""
-            if(inputConfiguration !=null)
+            if(inputConfiguration !=null )
             {
-                inputCandidates = inputConfiguration!!.getInputDataField(widget,state)
-                if (inputCandidates.isNotBlank())
-                {
-                    return inputCandidates
+                if ((randomInput && random.nextBoolean()) || !randomInput) {
+                    inputCandidates = inputConfiguration!!.getInputDataField(widget, state)
+                    if (inputCandidates.isNotBlank()) {
+                        return inputCandidates
+                    }
                 }
-
             }
             val reuseString = random.nextBoolean()
             if (reuseString && historyTextInput.isNotEmpty())

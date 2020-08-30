@@ -74,8 +74,8 @@ open class StaticWidget constructor(val widgetId: String,//sootandroid id
     companion object{
         val allStaticWidgets= ArrayList<StaticWidget>()
         fun getOrCreateStaticWidget(widgetId: String,
-                                    resourceIdName: String,
-                                    resourceId: String,
+                                    resourceIdName: String = "",
+                                    resourceId: String = "",
                                     className: String,
                                     activity: String,
                                     wtgNode: WTGNode): StaticWidget {

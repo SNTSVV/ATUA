@@ -16,7 +16,13 @@ class StateReducer
             val tempFullAttrPaths = HashMap<Widget,AttributePath>()
             val tempRelativeAttrPaths = HashMap<Widget,AttributePath>()
             //TODO: Save all computed attributePath to prevent from recomputing
-            Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
+            val toReduceWidgets = if (activity.startsWith("com.oath.mobile.platform.phoenix.core.")) {
+                Helper.getVisibleWidgets(guiState)
+            } else {
+                Helper.getVisibleWidgetsForAbstraction(guiState)
+            }
+            //val toReduceWidgets = Helper.getVisibleWidgetsForAbstraction(guiState)
+            toReduceWidgets.forEach {
                 val widgetAttributePath = if (tempFullAttrPaths.containsKey(it))
                 {
                     tempFullAttrPaths[it]!!
@@ -44,7 +50,7 @@ class StateReducer
                     1 -> Cardinality.ONE
                     else -> Cardinality.MANY
                 }
-                val widgetGroup =  WidgetGroup(a,cardinality)
+                val widgetGroup =  WidgetGroup(a,cardinality,c)
                 widgetReduceMap.filter { it.value == a }.forEach { w,_ ->
                     widgetList.put(w,widgetGroup)
                 }

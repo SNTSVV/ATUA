@@ -2,6 +2,8 @@ package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.redu
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer.AbstractLocalReducer
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
+import org.droidmate.exploration.strategy.autaut.task.GoToAnotherWindow
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 

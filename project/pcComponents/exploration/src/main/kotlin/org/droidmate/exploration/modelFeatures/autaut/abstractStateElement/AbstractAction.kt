@@ -7,6 +7,29 @@ data class AbstractAction (
     val widgetGroup: WidgetGroup?=null,
     var extra: Any?=null
     ) {
+    fun isItemAction(): Boolean {
+        return when(actionName) {
+            "ItemClick","ItemLongClick","ItemSelected" -> true
+            else -> false
+        }
+    }
+    fun isLaunchOrReset(): Boolean {
+        return actionName == "LaunchApp" || actionName == "ResetApp"
+    }
+
+    fun isCheckableOrTextInput(): Boolean {
+        if (widgetGroup == null)
+            return false
+        if (widgetGroup.attributePath.isInputField() || widgetGroup.attributePath.isCheckable()) {
+            return true
+        }
+        return false
+    }
+
+    fun isActionQueue(): Boolean {
+        return actionName == "ActionQueue"
+    }
+
     companion object {
         fun computeAbstractActionExtraData(actionType: String, interactionData: String): Any? {
             if (actionType != AbstractActionType.SWIPE.actionName) {

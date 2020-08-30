@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 

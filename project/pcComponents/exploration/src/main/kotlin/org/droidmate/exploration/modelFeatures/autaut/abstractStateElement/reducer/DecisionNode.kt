@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
 import java.util.*
 
 class DecisionNode (
@@ -8,5 +9,12 @@ class DecisionNode (
         val reducer: AbstractReducer,
         var nextNode: DecisionNode?=null
 ) {
-
+    fun containAttributePath(attributePath: AttributePath, activity: String): Boolean {
+        attributePaths.filter { it.second == activity }.map { it.first }. forEach {
+            if (it.contains(attributePath)) {
+                return true
+            }
+        }
+        return false
+    }
 }

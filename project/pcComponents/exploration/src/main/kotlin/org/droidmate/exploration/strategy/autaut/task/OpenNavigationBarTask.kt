@@ -3,7 +3,7 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory
 
 class OpenNavigationBarTask constructor(
         regressionTestingMF: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
+        autAutTestingStrategy: AutAutTestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         return true
@@ -63,10 +63,10 @@ class OpenNavigationBarTask constructor(
         var executedCount:Int = 0
         var instance: OpenNavigationBarTask? = null
         fun getInstance(regressionTestingMF: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): OpenNavigationBarTask {
             if (instance == null) {
-                instance = OpenNavigationBarTask(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
+                instance = OpenNavigationBarTask(regressionTestingMF,autAutTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

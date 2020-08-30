@@ -82,6 +82,17 @@ open class AbstractState (
                 )
                 actionCount.put(closeKeyboardAction, 0)
             }
+            if (!AbstractStateManager.instance.widgetGroupFrequency.containsKey(window)) {
+                AbstractStateManager.instance.widgetGroupFrequency.put(window, HashMap())
+            }
+            val widgetGroupFrequency = AbstractStateManager.instance.widgetGroupFrequency[window]!!
+            widgets.forEach {
+                if (!widgetGroupFrequency.containsKey(it)) {
+                    widgetGroupFrequency.put(it,1)
+                } else {
+                    widgetGroupFrequency[it] =  widgetGroupFrequency[it]!!+1
+                }
+            }
         }
 
         fun addWidgetGroup (widgetGroup: WidgetGroup) {
@@ -107,7 +118,7 @@ open class AbstractState (
             val tempAttributePath = HashMap<Widget,AttributePath>()
             val tempChildWidgetAttributePaths = HashMap<Widget,AttributePath>()
             return widgets.find {
-                       val reducedAttributePath = AbstractionFunction.INSTANCE.reduce(widget,guiState,activity,tempAttributePath,tempChildWidgetAttributePaths)
+                       val reducedAttributePath = AbstractionFunction.INSTANCE.reduce(widget,guiState,window.activityClass,tempAttributePath,tempChildWidgetAttributePaths)
                         it.attributePath.equals(reducedAttributePath)
                 }
         }
@@ -119,17 +130,42 @@ open class AbstractState (
             return allActions
         }
 
-        fun getUnExercisedActions(): List<AbstractAction> {
+        fun getUnExercisedActions(currentState: State<*>?): List<AbstractAction> {
             val unexcerisedActions = HashSet<AbstractAction>()
-            unexcerisedActions.addAll(actionCount.filter { it.value == 0
+            unexcerisedActions.addAll(actionCount.filter {
+                it.value == 0
                     && it.key.actionName!="fake_action"
                     && it.key.actionName!="LaunchApp"
-                    && it.key.actionName!="ResetApp"}.keys)
-            unexcerisedActions.addAll(widgets.map { w -> w.actionCount.filter { it.value==0
-                    || (it.value < 3 && w.cardinality == Cardinality.MANY)
-                    || (it.value < 3 && it.key.actionName == "ItemClick")
-                    || (it.value < 10 && it.key.widgetGroup!!.attributePath.getClassName()=="android.webkit.WebView")
-            }}.map { it.keys }.flatten())
+                    && it.key.actionName!="ResetApp" }.map { it.key } )
+            unexcerisedActions.addAll(widgets.map {
+                w -> w.actionCount
+                    .filterNot { it.key.isCheckableOrTextInput() }
+                    .filter { it.value==0
+                    || (it.value < w.count/2+1 && w.cardinality == Cardinality.MANY)
+                    }}.map { it.keys }.flatten())
+            val itemActions = widgets.map { w -> w.actionCount.filter { it.key.isItemAction() } }.map { it.keys }.flatten()
+            if (currentState!=null || guiStates.isNotEmpty()) {
+                val state = if(currentState == null) {
+                    currentState?:guiStates.random()
+                } else
+                {
+                    currentState
+                }
+
+                itemActions.forEach {
+                    val widgetGroup = it.widgetGroup!!
+                    val runtimeWidgets = widgetGroup.getGUIWidgets(state)
+                    var childSize = 0
+                    runtimeWidgets.forEach { w ->
+                        val childWidgets = Helper.getAllInteractiveChild(state.widgets, w)
+                        childSize += childWidgets.size
+                    }
+                    val numberOfTry = childSize / 2 + 1
+                    if (widgetGroup.actionCount[it]!! < numberOfTry) {
+                        unexcerisedActions.add(it)
+                    }
+                }
+            }
   /*          if (this.window.activityClass == "org.wikipedia.main.MainActivity") {
                 unexcerisedActions.addAll(widgets.map {
                     w -> w.actionCount.filter {
@@ -153,6 +189,7 @@ open class AbstractState (
             action.widgetGroup.actionCount[action] = count
         }
     }
+
     fun increaseActionCount(action: AbstractAction) {
         if (action.widgetGroup==null) {
             if (actionCount.containsKey(action)) {
@@ -179,6 +216,26 @@ open class AbstractState (
             )
             if (widgetGroup.actionCount.containsKey(nonDataAction) && nonDataAction != action) {
                 widgetGroup.actionCount[nonDataAction] = widgetGroup.actionCount[nonDataAction]!! + 1
+            }
+            if (action.actionName == "Click" || action.actionName == "Click") {
+                val itemAction = when(action.actionName) {
+                    "Click" -> "ItemClick"
+                    "LongClick" -> "ItemLongClick"
+                    else -> "ItemClick"
+                }
+                var currentAttributePath: AttributePath? = action.widgetGroup!!.attributePath
+                while (currentAttributePath!=null) {
+                    val parentWidgetGroup = widgets.find { it.attributePath == currentAttributePath!!.parentAttributePath }
+                    if (parentWidgetGroup != null) {
+                        val parentItemAction = parentWidgetGroup.actionCount.entries.find { it.key.actionName == itemAction }
+                        if (parentItemAction!=null) {
+                            increaseActionCount(parentItemAction.key)
+                        }
+                        currentAttributePath = parentWidgetGroup.attributePath
+                    } else {
+                        currentAttributePath = currentAttributePath.parentAttributePath
+                    }
+                }
             }
         }
     }

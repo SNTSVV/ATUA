@@ -12,6 +12,7 @@ import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.strategy.autaut.task.*
@@ -19,10 +20,10 @@ import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 
-open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
-                                                               val budgetScale: Double = 1.0,
-                                                               dictionary: List<String> = emptyList(),
-                                                               useCoordinateClicks: Boolean = true
+open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
+                                                           val budgetScale: Double = 1.0,
+                                                           dictionary: List<String> = emptyList(),
+                                                           useCoordinateClicks: Boolean = true
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
@@ -44,7 +45,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
     fun getActionCounter() = counter
     fun getBlacklist() = blackList
     var isFullyRandomExploration: Boolean = false
-
+    var latestAbstractAction: AbstractAction? = null
     lateinit var phaseStrategy: AbstractPhaseStrategy
     //lateinit var phaseTwoStrategy: AbstractPhaseStrategy
     /**
@@ -67,10 +68,12 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
             if (eContext.isEmpty()) {
                 return GlobalAction(ActionType.FetchGUI)
             }
+            log.info("Cannot retrieve current abstract state.")
             return eContext.resetApp()
         }
-        if ((AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]!!.contains(currentAbstractState)
-                || AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]!!.contains(currentAbstractState))
+
+        if ((AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
+                || AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
                 && currentAbstractState.rotation == Rotation.LANDSCAPE) {
             return ExplorationAction.rotate(-90)
         }
@@ -78,7 +81,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
         if (phaseStrategy.isEnd()) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
-                if (regressionWatcher.allTargetWindows.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
+                if (regressionWatcher.allTargetWindows.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
                     return eContext.resetApp()
@@ -91,6 +94,7 @@ open class RegressionTestingStrategy @JvmOverloads constructor(priority: Int,
                 return ExplorationAction.terminateApp()
             }
         }
+
         log.info("Current abstract state: ${currentAbstractState.toString()}")
         log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.size}")
         val availableWidgets = eContext.getCurrentState().widgets

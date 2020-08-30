@@ -52,6 +52,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -77,8 +78,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
      val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
      val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
 
-    val recentExecutedStatements: ArrayList<String> = ArrayList()
-    val recentExecutedMethods: ArrayList<String> = ArrayList()
+    val recentExecutedStatements: HashSet<String> = HashSet()
+    val recentExecutedMethods: HashSet<String> = HashSet()
 
     var statementRead:Boolean = false
     //private val instrumentationMap = getInstrumentation(appName)
@@ -101,9 +102,10 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         statementRead = false
         mutex.withLock {
             // Fetch the statement data from the device
-
+            recentExecutedMethods.clear()
+            recentExecutedStatements.clear()
             val readStatements = readStatements()
-
+            val newModifiedMethod = HashSet<String>()
             readStatements
                     .forEach { statement ->
                         val timestamp = statement[0]
@@ -122,20 +124,21 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                             val methodId = parts2.last()
                             // Add the statement if it wasn't executed before
                             recentExecutedMethods.add(methodId)
-                            found = executedMethodsMap.contains(methodId)
+                            found = executedMethodsMap.containsKey(methodId)
                             if (!found)
                             {
                                 executedMethodsMap[methodId] = tms
                             }
-                            val modMethod = modMethodInstrumentationMap.contains(methodId)
+                            val modMethod = modMethodInstrumentationMap.containsKey(methodId)
                             if (modMethod)
                             {
-                                found = executedModifiedMethodsMap.contains(methodId)
+                                found = executedModifiedMethodsMap.containsKey(methodId)
                                 if (!found)
                                 {
                                     executedModifiedMethodsMap[methodId] = tms
+                                    newModifiedMethod.add(methodId)
                                 }
-                                found = executedModifiedMethodStatementsMap.contains(statementId)
+                                found = executedModifiedMethodStatementsMap.containsKey(statementId)
                                 if (!found)
                                 {
                                     executedModifiedMethodStatementsMap[statementId] = tms
@@ -143,6 +146,11 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                             }
                         }
                     }
+
+            newModifiedMethod.forEach {
+                val methodName = getMethodName(it)
+                log.info("New modified method: $methodName")
+            }
 
             log.info("Current statement coverage: ${"%.2f".format(getCurrentCoverage())}. Encountered statements: ${executedStatementsMap.size}")
             log.info("Current method coverage: ${"%.2f".format(getCurrentMethodCoverage())}. Encountered methods: ${executedMethodsMap.size}")

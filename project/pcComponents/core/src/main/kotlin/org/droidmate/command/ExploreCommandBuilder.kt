@@ -12,7 +12,7 @@ import org.droidmate.exploration.modelFeatures.reporter.*
 import org.droidmate.exploration.strategy.*
 import org.droidmate.exploration.strategy.login.LoginWithGoogle
 import org.droidmate.exploration.strategy.playback.Playback
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.exploration.strategy.widget.DFS
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.ModelFeatureI
@@ -198,7 +198,7 @@ open class ExploreCommandBuilder(
     }
 
     fun addRegressionTestingStrategy(budgetScale: Double): ExploreCommandBuilder{
-        strategies.add(RegressionTestingStrategy(getNextSelectorPriority(),budgetScale))
+        strategies.add(AutAutTestingStrategy(getNextSelectorPriority(),budgetScale))
 
         return this
     }

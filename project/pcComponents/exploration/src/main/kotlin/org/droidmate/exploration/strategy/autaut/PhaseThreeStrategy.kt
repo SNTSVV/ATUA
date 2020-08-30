@@ -2,7 +2,6 @@ package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.actions.closeAndReturn
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
@@ -29,12 +28,12 @@ import kotlin.collections.HashMap
 import kotlin.random.Random
 
 class PhaseThreeStrategy(
-        regressionTestingStrategy: RegressionTestingStrategy,
+        autAutTestingStrategy: AutAutTestingStrategy,
         budgetScale: Double,
         delay: Long,
         useCoordinateClicks: Boolean
 ):AbstractPhaseStrategy (
-        regressionTestingStrategy = regressionTestingStrategy,
+        autAutTestingStrategy = autAutTestingStrategy,
         budgetScale = budgetScale,
         delay = delay,
         useCoordinateClicks = useCoordinateClicks,
@@ -56,7 +55,7 @@ class PhaseThreeStrategy(
     }
 
     override fun isEnd(): Boolean {
-        if (regressionTestingMF.lastModifiedMethodCoverage == 1.0) {
+        if (autautMF.lastUpdatedStatementCoverage == 1.0) {
             return true
         }
         return false
@@ -85,9 +84,9 @@ class PhaseThreeStrategy(
     var needResetApp = false
     init {
         phaseState = PhaseState.P3_INITIAL
-        regressionTestingMF = regressionTestingStrategy.eContext.getOrCreateWatcher()
-        statementMF = regressionTestingStrategy.eContext.getOrCreateWatcher()
-        regressionTestingMF.modifiedMethodCoverageFromLastChangeCount = 0
+        autautMF = autAutTestingStrategy.eContext.getOrCreateWatcher()
+        statementMF = autAutTestingStrategy.eContext.getOrCreateWatcher()
+        autautMF.updateMethodCovFromLastChangeCount = 0
         WTGNode.allMeaningNodes.filter { it.isStatic() }.forEach {
             if (!targetWindowsCount.contains(it)) {
                 targetWindowsCount.put(it,0)
@@ -97,14 +96,14 @@ class PhaseThreeStrategy(
     }
 
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
-        if (regressionTestingMF == null)
+        if (autautMF == null)
         {
-            regressionTestingMF = eContext.findWatcher { it is AutAutMF } as AutAutMF
+            autautMF = eContext.findWatcher { it is AutAutMF } as AutAutMF
         }
         var chosenAction:ExplorationAction
 
         val currentState = eContext.getCurrentState()
-        val currentAppState = regressionTestingMF.getAbstractState(currentState)
+        val currentAppState = autautMF.getAbstractState(currentState)
         if (targetWindow == null) {
             computeScore()
             selectTargetWindow()
@@ -133,8 +132,8 @@ class PhaseThreeStrategy(
         if (targetWindow==null)
             return emptyList()
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbState = regressionTestingMF.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(regressionTestingMF.appPrevState!!)
+        val currentAbState = autautMF.getAbstractState(currentState)
+        val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
         val candiateNodes = ArrayList(WTGNode.allMeaningNodes.filterNot { it == currentAbState.window
@@ -158,7 +157,7 @@ class PhaseThreeStrategy(
 
         destinationAbStates.forEach {
             val existingPaths: List<TransitionPath>?
-            existingPaths = regressionTestingMF.allAvailableTransitionPaths[Pair(currentAbState,it)]
+            existingPaths = autautMF.allAvailableTransitionPaths[Pair(currentAbState,it)]
             if (existingPaths != null && existingPaths.isNotEmpty())
             {
                 transitionPaths.addAll(existingPaths)
@@ -170,7 +169,7 @@ class PhaseThreeStrategy(
                 childParentMap.put(currentAbState,null)
                 findPathToTargetComponentByBFS(currentState = currentState
                         , root = currentAbState
-                        ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
+                        ,traversingNodes = listOf(Pair(autautMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                         ,finalTarget = it
                         ,allPaths = transitionPaths
                         ,includeBackEvent = true
@@ -183,7 +182,7 @@ class PhaseThreeStrategy(
 
     override fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath> {
         val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(regressionTestingMF.appPrevState!!)
+        val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)
             return emptyList()
         val targetAppStatesDistribution = HashMap<AbstractState,Pair<Double, Double>>()
@@ -216,7 +215,7 @@ class PhaseThreeStrategy(
 
         val transitionPaths = ArrayList<TransitionPath>()
         val existingPaths: List<TransitionPath>?
-        existingPaths = regressionTestingMF.allAvailableTransitionPaths[Pair(currentAbState,targetAbState)]
+        existingPaths = autautMF.allAvailableTransitionPaths[Pair(currentAbState,targetAbState)]
         if (existingPaths != null && existingPaths.isNotEmpty())
         {
             transitionPaths.addAll(existingPaths)
@@ -227,7 +226,7 @@ class PhaseThreeStrategy(
             childParentMap.put(currentAbState,null)
             findPathToTargetComponentByBFS(currentState = currentState
                     , root = currentAbState
-                    ,traversingNodes = listOf(Pair(regressionTestingMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
+                    ,traversingNodes = listOf(Pair(autautMF.windowStack.clone() as Stack<WTGNode>, currentAbState))
                     ,finalTarget = targetAbState
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
@@ -244,7 +243,7 @@ class PhaseThreeStrategy(
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow)
         {
-            val abstractActions = regressionTestingMF.validateEvent(targetEvent!!,currentState)
+            val abstractActions = autautMF.validateEvent(targetEvent!!,currentState)
             if (abstractActions.isNotEmpty())
             {
                 targetEvents.put(targetEvent!!, abstractActions)
@@ -256,17 +255,17 @@ class PhaseThreeStrategy(
     var relatedWindow: WTGNode? = null
     fun chooseTask(eContext: ExplorationContext<*, *, *>, currentState: State<*>){
         log.debug("Choosing Task")
-        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherWindow.getInstance(regressionTestingMF, regressionTestingStrategy, delay, useCoordinateClicks)
-        val randomExplorationTask = RandomExplorationTask.getInstance(regressionTestingMF, regressionTestingStrategy,delay, useCoordinateClicks)
+        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
+        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, autAutTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
-        val currentAppState = regressionTestingMF!!.getAbstractState(currentState)!!
+        val currentAppState = autautMF!!.getAbstractState(currentState)!!
         if (budgetLeft > 0)
         {
             if (phaseState == PhaseState.P3_INITIAL)
             {
-                regressionTestingMF.modifiedMethodCoverageFromLastChangeCount = 0
+
                 if (currentAppState.window == relatedWindow) {
                     setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                     return
@@ -332,11 +331,12 @@ class PhaseThreeStrategy(
                     log.info("Continue ${strategyTask!!.javaClass.name}")
                     return
                 }
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!)) {
+                setFullyRandomExploration(randomExplorationTask, currentState)
+              /*  if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!)) {
                     setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
-                setFullyRandomExploration(randomExplorationTask, currentState)
+                setFullyRandomExploration(randomExplorationTask, currentState)*/
                 return
             }
             if (phaseState == PhaseState.P3_EXERCISE_TARGET_NODE)
@@ -433,7 +433,7 @@ class PhaseThreeStrategy(
             it.initialize(currentState)
             it.isFullyExploration = true
             it.backAction = true
-            it.setMaximumAttempt(10)
+            it.setMaximumAttempt((10*budgetScale).toInt())
             it.environmentChange = true
         }
     }
@@ -543,7 +543,7 @@ class PhaseThreeStrategy(
 
         //select related window
         selectRelatedWindow()
-
+        autautMF.updateMethodCovFromLastChangeCount = 0
     }
 
     private fun selectRelatedWindow() {
@@ -573,8 +573,8 @@ class PhaseThreeStrategy(
 
     fun computeEventWindowCorrelation() {
         eventWindowCorrelation.clear()
-        val eventsTerms = regressionTestingMF!!.accumulateEventsDependency()
-        val ir = InformationRetrieval<WTGNode,String>(regressionTestingMF!!.windowTermsHashMap)
+        val eventsTerms = autautMF!!.accumulateEventsDependency()
+        val ir = InformationRetrieval<WTGNode,String>(autautMF!!.windowTermsHashMap)
         eventsTerms.forEach {
             val result = ir.searchSimilarDocuments(it.value,10)
             val correlation = HashMap<WTGNode, Double>()
@@ -599,7 +599,7 @@ class PhaseThreeStrategy(
         val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {
             val methodName = statementMF!!.getMethodName(it)
-            if (!regressionTestingMF.unreachableModifiedMethods.contains(methodName))
+            if (!autautMF.unreachableModifiedMethods.contains(methodName))
             {
                 modifiedMethodTriggerCount.put(it,0)
                 val statements = statementMF!!.getMethodStatements(it)
@@ -610,12 +610,12 @@ class PhaseThreeStrategy(
 
         //get all AppState
         val appStateList = ArrayList<AbstractState>()
-        regressionTestingMF.appStatesMap.map { it.value }.forEach { appStateList.addAll(it) }
+        autautMF.appStatesMap.map { it.value }.forEach { appStateList.addAll(it) }
 
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<*, *>>()
         appStateList.forEach {appState ->
-            edges.addAll(regressionTestingMF.abstractTransitionGraph.edges(appState))
+            edges.addAll(autautMF.abstractTransitionGraph.edges(appState))
             appStateModifiedMethodMap.put(appState, ArrayList())
             appState.abstractInteractions.map { it.modifiedMethods }.forEach { hmap ->
                 hmap.forEach { m, _ ->
@@ -629,7 +629,7 @@ class PhaseThreeStrategy(
 
         //for each edge, count modified method appearing
         edges.forEach {
-            val coveredMethods = regressionTestingMF.abstractTransitionGraph.methodCoverageInfo[it]
+            val coveredMethods = autautMF.abstractTransitionGraph.methodCoverageInfo[it]
             if (coveredMethods!=null)
                 coveredMethods.forEach {
                     if (modifiedMethodTriggerCount.containsKey(it))
@@ -672,7 +672,7 @@ class PhaseThreeStrategy(
         }
 
         //calculate appState probability
-        regressionTestingMF.appStatesMap.forEach { static, appStateList ->
+        autautMF.appStatesMap.forEach { static, appStateList ->
             var totalScore = 0.0
             appStateList.forEach {
                 totalScore += appStatesScores[it]!!
@@ -692,13 +692,31 @@ class PhaseThreeStrategy(
             var weight: Double = 0.0
             val targetEvents = ArrayList<StaticEvent>()
             val modifiedMethods = ArrayList<String>()
-            regressionTestingMF.allTargetStaticEvents.filter { it.sourceWindow == n }. forEach {
+            autautMF.allTargetStaticEvents.filter { it.sourceWindow == n }. forEach {
                 modifiedMethods.addAll(it.modifiedMethods.map { it.key })
             }
-            if (regressionTestingMF.windowHandlersHashMap.containsKey(n)) {
-                regressionTestingMF.windowHandlersHashMap[n]!!.forEach {handler ->
-                    val methods = regressionTestingMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
+            if (autautMF.windowHandlersHashMap.containsKey(n)) {
+                autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
+                    val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
                     modifiedMethods.addAll(methods)
+                }
+                val optionsMenu = autautMF.wtg.getOptionsMenu(n)
+                val optionMenusModifiedMethods = ArrayList<String>()
+                if (optionsMenu != null) {
+                    autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
+                        val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
+                        optionMenusModifiedMethods.addAll(methods)
+                    }
+                    windowModifiedMethodMap.put(optionsMenu,optionMenusModifiedMethods)
+                }
+                val dialogs = autautMF.wtg.getDialogs(n)
+                dialogs.forEach { d ->
+                    val dialogModifiedMethods = ArrayList<String>()
+                    autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
+                        val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
+                        dialogModifiedMethods.addAll(methods)
+                    }
+                    windowModifiedMethodMap.put(d,dialogModifiedMethods)
                 }
             }
             windowModifiedMethodMap.put(n,modifiedMethods)
@@ -716,7 +734,7 @@ class PhaseThreeStrategy(
             weight+=1
             windowScores.put(n, weight)
             staticNodeTotalScore+=weight
-            regressionTestingMF.wtg.edges(n).map { it.label }.distinct().filter{ regressionTestingMF.allTargetStaticEvents.contains(it) }.forEach {
+            autautMF.wtg.edges(n).map { it.label }.distinct().filter{ autautMF.allTargetStaticEvents.contains(it) }.forEach {
                 allTargetEvents.put(it,0)
             }
         }

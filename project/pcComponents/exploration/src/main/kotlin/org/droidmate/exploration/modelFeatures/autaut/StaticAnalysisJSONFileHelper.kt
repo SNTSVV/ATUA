@@ -22,6 +22,8 @@ class StaticAnalysisJSONFileHelper() {
                 temp = temp.substring(nodetypeIdx + 1)
                 //get class type
                 val classtypeIdx = temp.indexOf(",")
+                if (classtypeIdx<0)
+                    return result
                 val classType = temp.substring(0, classtypeIdx)
                 result["className"] = classType
                 temp = temp.substring(classtypeIdx + 1)
@@ -132,7 +134,10 @@ class StaticAnalysisJSONFileHelper() {
                                                 wtgNode = wtgNode,
                                                 activity = wtgNode.classType)
                                     } else {
-                                        staticWidget = null
+                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                                className = widgetInfo["className"]!!,
+                                                wtgNode = wtgNode,
+                                                activity = wtgNode.classType)
                                     }
 
                                 } catch (e: Exception) {
@@ -151,6 +156,46 @@ class StaticAnalysisJSONFileHelper() {
                                         sourceWindow = wtgNode,
                                         allTargetStaticEvents = HashSet())
                                 allEventHandlers.addAll(event.eventHandlers)
+
+                                if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                                    var createItemClick = false
+                                    var createItemLongClick = false
+                                    when (jsonEventType) {
+                                       "touch" -> {
+                                            createItemClick=true
+                                        createItemLongClick=true
+                                        }
+                                        "click" -> {
+                                            createItemClick=true
+                                        }
+                                        "long_click" -> {
+                                            createItemLongClick=true
+                                        }
+                                    }
+                                    //create item click and long click
+                                    if (createItemClick) {
+                                        val itemClick = getOrCreateTargetEvent(
+                                                eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
+                                                eventTypeString = "item_click",
+                                                widget = staticWidget,
+                                                activity = wtgNode.classType,
+                                                sourceWindow = wtgNode,
+                                                allTargetStaticEvents = HashSet())
+                                        allEventHandlers.addAll(itemClick.eventHandlers)
+                                    }
+
+                                    if (createItemLongClick) {
+                                        //create item click and long click
+                                        val itemLongClick = getOrCreateTargetEvent(
+                                                eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
+                                                eventTypeString = "item_long_click",
+                                                widget = staticWidget,
+                                                activity = wtgNode.classType,
+                                                sourceWindow = wtgNode,
+                                                allTargetStaticEvents = HashSet())
+                                        allEventHandlers.addAll(itemLongClick.eventHandlers)
+                                    }
+                                }
                             }
 
                         }
@@ -198,13 +243,16 @@ class StaticAnalysisJSONFileHelper() {
                                                 className = widgetInfo["className"]!!,
                                                 wtgNode = sourceNode,
                                                 activity = sourceNode.classType)
-                                        if (!allTargetStaticWidgets.contains(staticWidget)) {
-                                            allTargetStaticWidgets.add(staticWidget)
-                                        }
-                                    } else {
-                                        staticWidget = null
-                                    }
 
+                                    } else {
+                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                                className = widgetInfo["className"]!!,
+                                                wtgNode = sourceNode,
+                                                activity = sourceNode.classType)
+                                    }
+                                    if (!allTargetStaticWidgets.contains(staticWidget)) {
+                                        allTargetStaticWidgets.add(staticWidget)
+                                    }
                                 } catch (e: Exception) {
                                     staticWidget = null
                                 }
@@ -226,6 +274,55 @@ class StaticAnalysisJSONFileHelper() {
                                     //let's create new edge
                                     wtg.add(sourceNode, sourceNode, event)
                                 }
+                                if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                                    var createItemClick = false
+                                    var createItemLongClick = false
+
+                                    when (jsonEventType) {
+                                        "touch" -> {
+                                            createItemClick = true
+                                            createItemLongClick = true
+                                        }
+                                        "click" -> {
+                                            createItemClick = true
+                                        }
+                                        "long_click" -> {
+                                            createItemLongClick = true
+                                        }
+                                    }
+
+                                    //create item click and long click
+                                    if (createItemClick) {
+                                        val itemClick = getOrCreateTargetEvent(
+                                                eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
+                                                eventTypeString = "item_click",
+                                                widget = staticWidget,
+                                                activity = sourceNode.classType,
+                                                sourceWindow = sourceNode,
+                                                allTargetStaticEvents = HashSet())
+                                        if (wtg.edges(sourceNode).find { it.label == itemClick } == null) {
+                                            //this event has not appeared in graph
+                                            //let's create new edge
+                                            wtg.add(sourceNode, sourceNode, itemClick)
+                                        }
+                                    }
+
+                                    if (createItemLongClick) {
+                                        //create item click and long click
+                                        val itemLongClick = getOrCreateTargetEvent(
+                                                eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
+                                                eventTypeString = "item_long_click",
+                                                widget = staticWidget,
+                                                activity = sourceNode.classType,
+                                                sourceWindow = sourceNode,
+                                                allTargetStaticEvents = HashSet())
+                                        if (wtg.edges(sourceNode).find { it.label == itemLongClick } == null) {
+                                            //this event has not appeared in graph
+                                            //let's create new edge
+                                            wtg.add(sourceNode, sourceNode, itemLongClick)
+                                        }
+                                    }
+                                }
                                 //addWidgetToActivtity_TargetWidget_Map(source, event)
                                 val event_methods = Pair<StaticEvent, ArrayList<String>>(event, ArrayList())
                                 //widget_methodInvocations.methodInvocations.add(event_methods)
@@ -237,7 +334,6 @@ class StaticAnalysisJSONFileHelper() {
                                     statements.forEach {
                                         event.modifiedMethodStatement.put(it, false)
                                     }
-
                                 }
                             }
 
@@ -266,7 +362,8 @@ class StaticAnalysisJSONFileHelper() {
 
 
         }
-        private fun getOrCreateTargetEvent(eventHandlers: Set<String>,
+
+        fun getOrCreateTargetEvent(eventHandlers: Set<String>,
                                            eventTypeString: String,
                                            widget: StaticWidget?,
                                            activity: String,
@@ -275,13 +372,14 @@ class StaticAnalysisJSONFileHelper() {
             var event = StaticEvent.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.activity == activity }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
             if (event != null) {
+                event.eventHandlers.addAll(eventHandlers)
                 if (!allTargetStaticEvents.contains(event)) {
-                    event.eventHandlers.addAll(eventHandlers)
+
                     allTargetStaticEvents.add(event)
                 }
                 return event
             }
-            event = StaticEvent(eventHandlers = ArrayList(eventHandlers)
+            event = StaticEvent(eventHandlers = HashSet(eventHandlers)
                     , eventType = EventType.valueOf(eventTypeString)
                     , widget = widget, activity = activity, sourceWindow = sourceWindow)
             allTargetStaticEvents.add(event)
@@ -452,7 +550,7 @@ class StaticAnalysisJSONFileHelper() {
                         if (event == null) {
                             event = StaticEvent(
                                     eventType = EventType.valueOf(eventType),
-                                    eventHandlers = ArrayList(),
+                                    eventHandlers = HashSet(),
                                     activity = sourceNode.classType,
                                     widget = staticWidget,
                                     sourceWindow = sourceNode

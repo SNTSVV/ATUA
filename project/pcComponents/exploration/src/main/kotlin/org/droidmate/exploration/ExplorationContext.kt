@@ -115,7 +115,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 	//TODO: add camera package
 	fun<S: State<*>> belongsToApp(state: S): Boolean {
 		return state.widgets.any { it.packageName == apk.packageName
-				|| it.packageName == "com.google.android.gms"
+				/*|| it.packageName == "com.google.android.gms"*/
 				|| it.packageName == "com.android.camera2"
 				}  // allow google's internal log-in screen
 	}

@@ -1,15 +1,14 @@
 package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
-import org.droidmate.explorationModel.interaction.State
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GoToTargetWindowTask (
         regressionWatcher: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks) {
+        autAutTestingStrategy: AutAutTestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks) {
 
     override fun increaseExecutedCount() {
         executedCount++
@@ -21,11 +20,11 @@ class GoToTargetWindowTask (
         var executedCount:Int = 0
         var instance: GoToTargetWindowTask? = null
         fun getInstance(regressionWatcher: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): GoToTargetWindowTask {
             if (instance == null) {
-                instance = GoToTargetWindowTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = GoToTargetWindowTask(regressionWatcher, autAutTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

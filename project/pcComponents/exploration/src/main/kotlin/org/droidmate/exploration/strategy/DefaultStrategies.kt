@@ -11,6 +11,7 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.random.Random
 
 @Suppress("unused")
 object DefaultStrategies: Logging {
@@ -135,6 +136,7 @@ object DefaultStrategies: Logging {
 	 */
 	fun handleTargetAbsence(prio: Int, maxWaitTime: Long = 5000) = object : AExplorationStrategy(){
 		private var cnt = 0
+		private var pressbackCnt = 0
 		// may be used to terminate if there are no targets after waiting for maxWaitTime
 		private var terminate = false
 
@@ -142,9 +144,12 @@ object DefaultStrategies: Logging {
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean {
 			val hasNext = !eContext.explorationCanMoveOn().also {
-				if(!it)
+				if(!it) {
 					cnt = 0  // reset the counter if we can proceed
+					pressbackCnt = 0
+				}
 				terminate = false
+
 			}
 			return hasNext
 		}
@@ -178,7 +183,8 @@ object DefaultStrategies: Logging {
 			val s_res = eContext.getState(eContext.getLastAction().resState)
 			val s_prev = eContext.getState(eContext.getLastAction().prevState)
 			return when {
-				lastActionType.isPressBack() -> { // if previous action was back, terminate
+				lastActionType.isPressBack() -> {
+					// if previous action was back, terminate
 					if (s.isAppHasStoppedDialogBox)
 					{
 						log.debug("Cannot explore. Last action was back. Currently on an 'App has stopped' dialog. Returning 'Wait'")
@@ -186,13 +192,25 @@ object DefaultStrategies: Logging {
 					}
 					else
 					{
-						log.debug("Cannot explore. Last action was back. Returning 'Reset'")
-						eContext.launchApp()
+						//some screens require pressback 2 times to exit activity
+						if (pressbackCnt < 2) {
+							log.debug("Cannot explore. Try pressback again")
+							pressbackCnt++
+							ExplorationAction.pressBack()
+						} else if (pressbackCnt < 3) {
+							// Try double pressback
+							pressbackCnt++
+							log.debug("Cannot explore. Try double pressback")
+							ActionQueue(arrayListOf(ExplorationAction.pressBack(),ExplorationAction.pressBack()),delay = 25)
+						} else
+							log.debug("Cannot explore. Last action was back. Returning 'Reset'")
+							eContext.launchApp()
+						}
 					}
-
-				}
 				lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
 					when {  // last action was reset
+
+
 						s.isAppHasStoppedDialogBox -> {
 							log.debug("Cannot explore. Last action was reset. Currently on an 'App has stopped' dialog. Returning 'Terminate'")
 							ExplorationAction.terminateApp()
@@ -214,7 +232,26 @@ object DefaultStrategies: Logging {
 				}
 				// by default, if it cannot explore, presses back
 				else -> {
-					ExplorationAction.pressBack()
+					if (s.actionableWidgets.isEmpty()) {
+						// for example: vlc video player
+						log.debug("Cannot explore because of no actionable widgets. Randomly choose PressBack or Click")
+						if (Random.nextBoolean()) {
+							log.debug("PressBack.")
+							ExplorationAction.pressBack()
+						} else
+						{
+							log.debug("Click on Screen")
+							val largestWidget = s.widgets.maxBy { it.boundaries.width+it.boundaries.height }
+							if (largestWidget !=null)
+								largestWidget.click()
+							else
+								ExplorationAction.pressEnter()
+						}
+
+					} else {
+						pressbackCnt +=1
+						ExplorationAction.pressBack()
+					}
 				}
 			}
 		}
@@ -224,13 +261,13 @@ object DefaultStrategies: Logging {
 	/**
 	 * Always clicks allow/ok for any runtime permission request
 	 */
-	fun allowPermission(prio: Int, maxTries: Int = 5) = object : AExplorationStrategy(){
+	fun allowPermission(prio: Int, maxTries: Int = 100) = object : AExplorationStrategy(){
 		private var numPermissions = HashMap<UUID,Int>()  // avoid some options which are misinterpreted as permission request to be infinitely triggered
 		override fun getPriority(): Int = prio
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean =
-			numPermissions.compute(eContext.getCurrentState().uid){ _,v -> v?.inc()?: 0 } ?: 0 < maxTries
-					&& eContext.getCurrentState().isRequestRuntimePermissionDialogBox
+				numPermissions.compute(eContext.getCurrentState().uid){ _,v -> v?.inc()?: 0 } ?: 0 < maxTries
+					&& eContext.getCurrentState().widgets.any { it.packageName.startsWith("com.google.android.") } && eContext.getCurrentState().isRequestRuntimePermissionDialogBox
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
 			// we do not require the element with the text ALLOW or OK to be clickabe since there may be overlaying elements

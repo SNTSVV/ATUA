@@ -9,7 +9,7 @@ import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.DataField
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -18,8 +18,8 @@ import org.slf4j.LoggerFactory
 
 class PrepareContextTask private constructor(
         regressionWatcher: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
+        autAutTestingStrategy: AutAutTestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         val availableWidgets = fillActions.map { it.key }.filter { currentState.widgets.contains(it) }
@@ -57,9 +57,9 @@ class PrepareContextTask private constructor(
             if (widget.checked!=null) {
                 fillActions[widget] = widget.click()
             } else {
-                val inputValue = TextInput.getSetTextInputValue(widget,currentState)
+                val inputValue = TextInput.getSetTextInputValue(widget,currentState,randomInput)
                 val inputAction = if (allInputWidgets.size == 1)
-                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
+                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                 else
                     widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                 fillActions[widget] = inputAction
@@ -111,6 +111,7 @@ class PrepareContextTask private constructor(
         return action
     }
 
+    var randomInput: Boolean = false
     private fun shouldInsertText(currentState: State<*>): Boolean {
         inputFillDecision.clear()
 
@@ -144,7 +145,11 @@ class PrepareContextTask private constructor(
                         }
                     }
                     if (!ignoreWidget) {
-                        if (random.nextBoolean()) {
+                        if (!it.isInputField) {
+                            if (random.nextBoolean()) {
+                                inputFillDecision.put(it, false)
+                            }
+                        } else {
                             inputFillDecision.put(it, false)
                         }
                     }
@@ -159,11 +164,11 @@ class PrepareContextTask private constructor(
         var executedCount:Int = 0
         var instance: PrepareContextTask? = null
         fun getInstance(regressionWatcher: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): PrepareContextTask {
             if (instance == null) {
-                instance = PrepareContextTask(regressionWatcher, regressionTestingStrategy, delay,useCoordinateClicks)
+                instance = PrepareContextTask(regressionWatcher, autAutTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

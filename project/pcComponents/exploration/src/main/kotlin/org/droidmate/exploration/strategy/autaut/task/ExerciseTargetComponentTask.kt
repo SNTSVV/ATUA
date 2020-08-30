@@ -7,7 +7,7 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -19,9 +19,9 @@ import kotlin.collections.HashMap
 
 class ExerciseTargetComponentTask private constructor(
         regressionWatcher: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
+        autAutTestingStrategy: AutAutTestingStrategy,
         delay: Long, useCoordinateClicks: Boolean)
-    : AbstractStrategyTask(regressionTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
+    : AbstractStrategyTask(autAutTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
 
     private var recentChangedSystemConfiguration: Boolean = false
     var environmentChange: Boolean = false
@@ -30,10 +30,10 @@ class ExerciseTargetComponentTask private constructor(
     var currentAbstractState: AbstractState? = null
     var fillingData = false
     var dataFilled = false
-    var randomReFillingData = false
+    var randomRefillingData = false
     private var prevAbstractState: AbstractState?=null
     var originalEventList: ArrayList<AbstractAction> = ArrayList()
-    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
+    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF,autAutTestingStrategy, delay, useCoordinateClicks)
 
     override fun chooseRandomOption(currentState: State<*>) {
         log.debug("Do nothing")
@@ -53,9 +53,9 @@ class ExerciseTargetComponentTask private constructor(
     }
 
     private var mainTaskFinished:Boolean = false
-    private val randomExplorationTask = RandomExplorationTask(regressionWatcher,regressionTestingStrategy, delay,useCoordinateClicks,true,3)
+    private val randomExplorationTask = RandomExplorationTask(regressionWatcher,autAutTestingStrategy, delay,useCoordinateClicks,true,3)
     private val candidateWidgetsMap = HashMap<State<*>, List<Widget>>()
-    private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,regressionTestingStrategy,delay, useCoordinateClicks)
+    private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,autAutTestingStrategy,delay, useCoordinateClicks)
     override fun initialize(currentState: State<*>) {
         reset()
         randomExplorationTask.fillingData=false
@@ -91,7 +91,7 @@ class ExerciseTargetComponentTask private constructor(
         prevAbstractState = null
         dataFilled = false
         fillingData = false
-        randomReFillingData = false
+        randomRefillingData = false
         recentChangedSystemConfiguration = false
         environmentChange = false
     }
@@ -204,10 +204,9 @@ class ExerciseTargetComponentTask private constructor(
             //reset input
             fillingData = false
             dataFilled = false
-            recentChangedSystemConfiguration = false
         }
         randomExplorationTask.isClickedShutterButton = false
-        if (!recentChangedSystemConfiguration && environmentChange) {
+        if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
             recentChangedSystemConfiguration = true
             if (regressionTestingMF.havingInternetConfiguration(currentAbstractState.window)) {
                 if (random.nextInt(4)<3)
@@ -236,22 +235,28 @@ class ExerciseTargetComponentTask private constructor(
             fillingData = true
             return fillDataTask.chooseAction(currentState)
         }
-        if (randomReFillingData
+       /* if (randomRefillingData
                 && originalEventList.size > eventList.size
                 && fillDataTask.isAvailable(currentState)) {
             fillDataTask.initialize(currentState)
             fillingData = true
             return fillDataTask.chooseAction(currentState)
-        }
+        }*/
         //TODO check eventList is not empty
         if (eventList.isEmpty()) {
             log.debug("No more target event. Random exploration.")
             return randomExplorationTask.chooseAction(currentState)
         }
 
-        chosenAbstractAction = eventList.random()
+        if (!eventList.any { it.widgetGroup!=null && it.widgetGroup.attributePath.isInputField() }) {
+            chosenAbstractAction = eventList.filterNot { it.widgetGroup!=null && it.widgetGroup.attributePath.isInputField() }.random()
+        } else {
+            chosenAbstractAction = eventList.random()
+        }
 
         eventList.remove(chosenAbstractAction!!)
+        dataFilled = false
+        fillingData = false
         if (chosenAbstractAction!=null)
         {
             log.info("Exercise Event: ${chosenAbstractAction!!.actionName}")
@@ -303,11 +308,11 @@ class ExerciseTargetComponentTask private constructor(
         private var instance: ExerciseTargetComponentTask? = null
         var executedCount:Int = 0
         fun getInstance(regressionWatcher: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): ExerciseTargetComponentTask {
             if (instance == null)
             {
-                instance = ExerciseTargetComponentTask(regressionWatcher, regressionTestingStrategy, delay, useCoordinateClicks)
+                instance = ExerciseTargetComponentTask(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

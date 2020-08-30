@@ -3,7 +3,7 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.RegressionTestingStrategy
+import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -13,9 +13,9 @@ import java.util.*
 
 class ReplayInteractionTask constructor(
         regressionTestingMF: AutAutMF,
-        regressionTestingStrategy: RegressionTestingStrategy,
+        autAutTestingStrategy: AutAutTestingStrategy,
         delay: Long,
-        useCoordinateClicks: Boolean): AbstractStrategyTask(regressionTestingStrategy,regressionTestingMF, delay, useCoordinateClicks){
+        useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy,regressionTestingMF, delay, useCoordinateClicks){
 
     var currentInteraction: Interaction<*>? = null
     var replayInteractionList = ArrayList<Pair<State<*>, Interaction<*>>>()
@@ -80,11 +80,11 @@ class ReplayInteractionTask constructor(
 
         var instance: ReplayInteractionTask? = null
         fun getInstance(regressionTestingMF: AutAutMF,
-                        regressionTestingStrategy: RegressionTestingStrategy,
+                        autAutTestingStrategy: AutAutTestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): ReplayInteractionTask {
             if (instance == null) {
-                instance = ReplayInteractionTask(regressionTestingMF,regressionTestingStrategy, delay, useCoordinateClicks)
+                instance = ReplayInteractionTask(regressionTestingMF,autAutTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

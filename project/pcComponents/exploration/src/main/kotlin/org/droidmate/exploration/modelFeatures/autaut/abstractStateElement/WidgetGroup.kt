@@ -9,20 +9,20 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality) {
+class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality, val count: Int =1) {
     var exerciseCount: Int = 0
     var guiWidgets = HashSet<Widget>()
     val actionCount = HashMap<AbstractAction, Int>()
 
     init {
-        if (attributePath.isClickable()) {
+        if (attributePath.isClickable() ) {
             val abstractAction = AbstractAction(
                     actionName = AbstractActionType.CLICK.actionName,
                     widgetGroup = this
             )
             actionCount.put(abstractAction, 0)
         }
-        if (attributePath.isLongClickable() && !attributePath.isInputField() && attributePath.getClassName()!="android.widget.TextView") {
+        if (attributePath.isLongClickable() && !attributePath.isInputField()) {
             val abstractAction = AbstractAction(
                     actionName = AbstractActionType.LONGCLICK.actionName,
                     widgetGroup = this
@@ -50,17 +50,20 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
                     widgetGroup = this,
                     extra = "SwipeRight"
             )
-            val abstractActionSwipeTillEnd = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
-                    extra = "SwipeTillEnd"
-            )
             actionCount.put(abstractActionSwipeUp, 0)
             actionCount.put(abstractActionSwipeDown, 0)
             actionCount.put(abstractActionSwipeLeft, 0)
             actionCount.put(abstractActionSwipeRight, 0)
-            actionCount.put(abstractActionSwipeTillEnd,0)
-
+            if (attributePath.getClassName().contains("RecyclerView")
+                    || attributePath.getClassName().contains("ListView")
+                    || attributePath.getClassName().equals("android.webkit.WebView") ) {
+                val abstractActionSwipeTillEnd = AbstractAction(
+                        actionName = AbstractActionType.SWIPE.actionName,
+                        widgetGroup = this,
+                        extra = "SwipeTillEnd"
+                )
+                actionCount.put(abstractActionSwipeTillEnd,0)
+            }
         }
         if (attributePath.isInputField()) {
             val abstractAction = AbstractAction(
@@ -69,26 +72,21 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
             )
             actionCount.put(abstractAction, 0)
         }
-        if (attributePath.getClassName() == "android.webkit.WebView") {
-            val abstractClickAction = AbstractAction(
-                    actionName = AbstractActionType.CLICK.actionName,
-                    widgetGroup = this
-            )
-            val abstractLongClickAction = AbstractAction(
-                    actionName = AbstractActionType.LONGCLICK.actionName,
-                    widgetGroup = this
-            )
-            actionCount.put(abstractClickAction, 0)
-            actionCount.put(abstractLongClickAction, 0)
-            val abstractActionSwipeTillEnd = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
-                    extra = "SwipeTillEnd"
-            )
-            actionCount.put(abstractActionSwipeTillEnd,0)
-        }
         //Item-containing Widget
-
+        if (attributePath.getClassName().equals("android.webkit.WebView")) {
+            val abstractAction = AbstractAction(
+                    actionName = AbstractActionType.CLICK.actionName,
+                    widgetGroup = this,
+                    extra = "RandomMultiple"
+            )
+            actionCount.put(abstractAction, 0)
+            val longclickAbstractAction = AbstractAction(
+                    actionName = AbstractActionType.LONGCLICK.actionName,
+                    widgetGroup = this,
+                    extra = "RandomMultiple"
+            )
+            actionCount.put(longclickAbstractAction, 0)
+        }
     }
 
     fun getGUIWidgets ( guiState: State<*>): List<Widget>{
@@ -96,7 +94,7 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val selectedGuiWidgets = ArrayList<Widget>()
-        Helper.getVisibleWidgets(guiState).forEach {
+        Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
             if (isAbstractRepresentationOf(it,guiState)) {
                 selectedGuiWidgets.add(it)
             }
@@ -109,7 +107,7 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
-        val reducedAttributePath = WidgetReducer.reduce(widget,guiState,abstractState.activity,tempFullAttributePaths,tempRelativeAttributePaths)
+        val reducedAttributePath = WidgetReducer.reduce(widget,guiState,abstractState.window.activityClass,tempFullAttributePaths,tempRelativeAttributePaths)
         if (reducedAttributePath.equals(attributePath))
         {
             return true

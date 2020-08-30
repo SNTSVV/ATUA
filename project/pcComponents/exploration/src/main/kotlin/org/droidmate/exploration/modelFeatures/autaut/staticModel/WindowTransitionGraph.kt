@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                               Graph(WTGNode("Root", 0.toString()),
@@ -68,19 +69,74 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                         val targetView = transition["widget"] as String
                         log.info("parsing widget: $targetView")
                         val widgetInfo = StaticAnalysisJSONFileHelper.widgetParser(targetView)
-                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
-                                resourceId = widgetInfo["resourceId"]!!,
-                                resourceIdName = widgetInfo["resourceIdName"]!!,
-                                className = widgetInfo["className"]!!
-                                , wtgNode = sourceNode
-                                , activity = sourceNode.classType)
+                        if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
+                            staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                    resourceId = widgetInfo["resourceId"]!!,
+                                    resourceIdName = widgetInfo["resourceIdName"]!!,
+                                    className = widgetInfo["className"]!!,
+                                    wtgNode = sourceNode,
+                                    activity = sourceNode.classType)
+                        } else if (widgetInfo.containsKey("className") && widgetInfo.containsKey("id")) {
+                            staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                    className = widgetInfo["className"]!!,
+                                    wtgNode = sourceNode,
+                                    activity = sourceNode.classType)
+                        } else {
+                            staticWidget = null
+                        }
                     } else {
                         staticWidget = null
                     }
-                    val event: StaticEvent
-                    event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
-                    edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
+                    if (ignoreWidget || (!ignoreWidget && staticWidget!=null) ) {
+                        val event = StaticEvent.getOrCreateEvent(
+                                eventTypeString = action,
+                                eventHandlers = emptySet(),
+                                widget = staticWidget,
+                                activity = sourceNode.classType,
+                                sourceWindow = sourceNode
 
+                        )
+                        //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
+                        edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
+
+                        if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                            var createItemClick = false
+                            var createItemLongClick = false
+                            when (action) {
+                                "touch" -> {
+                                    createItemClick=true
+                                    createItemLongClick=true
+                                }
+                                "click" -> {
+                                    createItemClick=true
+                                }
+                                "long_click" -> {
+                                    createItemLongClick=true
+                                }
+                            }
+                            if (createItemClick) {
+                                //create item click and long click
+                                val itemClick = StaticEvent.getOrCreateEvent(
+                                        eventHandlers = emptySet(),
+                                        eventTypeString = "item_click",
+                                        widget = staticWidget,
+                                        activity = sourceNode.classType,
+                                        sourceWindow = sourceNode)
+
+                                this.add(sourceNode, targetNode, itemClick)
+                            }
+                            if (createItemLongClick) {
+                                //create item click and long click
+                                val itemLongClick = StaticEvent.getOrCreateEvent(
+                                        eventHandlers = emptySet(),
+                                        eventTypeString = "item_long_click",
+                                        widget = staticWidget,
+                                        activity = sourceNode.classType,
+                                        sourceWindow = sourceNode)
+                                this.add(sourceNode, targetNode, itemLongClick  )
+                            }
+                        }
+                    }
                 }
 
                 //construct graph
@@ -92,7 +148,7 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                 val edges = this.edges(owner, o)
                 if (edges.isEmpty()) {
                     this.add(owner, o, StaticEvent(eventType = EventType.implicit_menu,
-                            eventHandlers = ArrayList(),
+                            eventHandlers = HashSet(),
                             widget = null,
                             activity = o.classType,
                             sourceWindow = o))
@@ -116,7 +172,7 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
             val activityNode = WTGActivityNode.allNodes.find { it.classType == wtgNode.classType }
             if (activityNode != null) {
                 if (this.edges(activityNode, wtgNode).isEmpty())
-                    this.add(activityNode, wtgNode, StaticEvent(EventType.implicit_menu, ArrayList(), null, activityNode.classType, sourceWindow = activityNode))
+                    this.add(activityNode, wtgNode, StaticEvent(EventType.implicit_menu, HashSet( ), null, activityNode.classType, sourceWindow = activityNode))
             }
 
         }
@@ -182,7 +238,7 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
     fun getDialogs(wtgNode: WTGNode): List<WTGDialogNode> {
         val edges = this.edges(wtgNode).filter { it.destination != null }
                 .filter { it.destination!!.data is WTGDialogNode }
-        return edges.map { it.destination!!.data as WTGDialogNode }.toMutableList()
+        return edges.map { it.destination!!.data as WTGDialogNode }.toHashSet().toList()
     }
 
     fun getWindowBackward(wtgNode: WTGNode): List<Edge<*, *>> {

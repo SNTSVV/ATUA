@@ -97,4 +97,28 @@ data class AttributePath (
     fun isInteractive(): Boolean{
         return isClickable() || isLongClickable() || isScrollable() || isCheckable()
     }
+
+    fun contains(attributePath: AttributePath): Boolean {
+        //check local
+        attributePath.localAttributes.forEach {
+            if (!localAttributes.containsKey(it.key))
+                return false
+            if (localAttributes[it.key] != it.value)
+                return false
+        }
+        if (parentAttributePath!=null && attributePath.parentAttributePath!=null) {
+            if (!parentAttributePath.contains(attributePath.parentAttributePath)) {
+                return false
+            }
+        }
+        if (childAttributePaths!=null && attributePath.childAttributePaths!=null) {
+            childAttributePaths.forEach { childAttPath->
+                if (!attributePath.childAttributePaths.any { childAttPath.contains(it)}){
+                    return false
+                }
+            }
+        }
+        return true
+
+    }
 }
