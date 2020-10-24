@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.localReducer
 
+import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeType
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.explorationModel.interaction.State
@@ -13,12 +14,13 @@ class LocalReducerLV2: AbstractLocalReducer() {
         reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())
         reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
-        reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
+        reducedAttributes.put(AttributeType.checkable,guiWidget.checked.isEnabled().toString())
         reducedAttributes.put(AttributeType.isInputField, guiWidget.isInputField.toString())
         if (guiWidget.className != "android.webkit.WebView") {
             reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
             reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
-            reducedAttributes.put(AttributeType.scrollable, guiWidget.scrollable.toString())
+            if (guiWidget.visibleBounds.height>200 && guiWidget.visibleBounds.width>200)
+                reducedAttributes.put(AttributeType.scrollable, guiWidget.scrollable.toString())
         } else {
             if (Helper.haveClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.clickable, true.toString())
@@ -31,6 +33,9 @@ class LocalReducerLV2: AbstractLocalReducer() {
             }
         }
         reducedAttributes.put(AttributeType.text,guiWidget.text)
+        reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
+        if (guiWidget.checked.isEnabled())
+            reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
         return reducedAttributes
     }
 }

@@ -193,7 +193,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 		//FIXBUG daemonUI could not extract correct information of widgets
 	fun explorationCanMoveOn() = isEmpty() || // we are starting the app -> no terminate yet
 			getCurrentState().isRequestRuntimePermissionDialogBox ||  // FIXME what if we currently have isHomeScreen?
-				(!getCurrentState().isHomeScreen && belongsToApp(getCurrentState()) && getCurrentState().actionableWidgets.isNotEmpty())
+				(!getCurrentState().isHomeScreen && belongsToApp(getCurrentState()) && getCurrentState().visibleTargets.any { it.clickable })
 
 
 	suspend fun assertLastGuiSnapshotIsHomeOrResultIsFailure() {

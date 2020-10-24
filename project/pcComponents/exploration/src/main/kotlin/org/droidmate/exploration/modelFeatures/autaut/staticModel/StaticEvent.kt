@@ -1,12 +1,15 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
+
 
 open class StaticEvent (
             val eventType: EventType,
             val eventHandlers: HashSet<String>,
             val widget: StaticWidget?,
             var activity: String,
-             var sourceWindow: WTGNode
+            var sourceWindow: WTGNode,
+            val createdAtRuntime: Boolean = false
 )
 {
     val modifiedMethods = HashMap<String,Boolean>() //method id,
@@ -15,39 +18,49 @@ open class StaticEvent (
     var data: Any? = null
     var exerciseCount: Int = 0
 
+
     init {
         allStaticEvents.add(this)
     }
 
-    fun convertToExplorationActionName(): String{
+    fun convertToExplorationActionName(): AbstractActionType{
         return when (eventType){
-            EventType.click, EventType.touch -> "Click"
-            EventType.drag -> "Swipe"
-            EventType.long_click -> "LongClick"
-            EventType.item_click -> "ItemClick"
-            EventType.item_long_click -> "ItemLongClick"
-            EventType.item_selected -> "ItemSelected"
-            EventType.enter_text -> "TextInsert"
-            EventType.editor_action -> "Click"
-            EventType.implicit_menu -> "PressMenu"
-            EventType.implicit_rotate_event -> "RotateUI"
-            EventType.implicit_back_event -> "PressBack"
-            EventType.press_back -> "PressBack"
-            EventType.callIntent -> "CallIntent"
-            EventType.implicit_home_event -> "MinimizeMaximize"
-            EventType.scroll -> "Swipe"
-            EventType.swipe -> "Swipe"
-            EventType.closeKeyboard -> "CloseKeyboard"
-            EventType.implicit_launch_event -> "LaunchApp"
-            EventType.resetApp -> "ResetApp"
+            EventType.click, EventType.touch -> AbstractActionType.CLICK
+            EventType.select -> AbstractActionType.CLICK
+            EventType.drag -> AbstractActionType.SWIPE
+            EventType.long_click -> AbstractActionType.LONGCLICK
+            EventType.item_click -> AbstractActionType.ITEM_CLICK
+            EventType.item_long_click -> AbstractActionType.ITEM_LONGCLICK
+            EventType.item_selected -> AbstractActionType.ITEM_SELECTED
+            EventType.enter_text -> AbstractActionType.TEXT_INSERT
+            EventType.editor_action -> AbstractActionType.CLICK
+            EventType.implicit_menu -> AbstractActionType.PRESS_MENU
+            EventType.implicit_rotate_event -> AbstractActionType.ROTATE_UI
+            EventType.implicit_back_event -> AbstractActionType.PRESS_BACK
+            EventType.press_back -> AbstractActionType.PRESS_BACK
+            EventType.callIntent -> AbstractActionType.SEND_INTENT
+            EventType.implicit_home_event -> AbstractActionType.MINIMIZE_MAXIMIZE
+            EventType.scroll -> AbstractActionType.SWIPE
+            EventType.swipe -> AbstractActionType.SWIPE
+            EventType.closeKeyboard -> AbstractActionType.CLOSE_KEYBOARD
+            EventType.implicit_launch_event -> AbstractActionType.LAUNCH_APP
+            EventType.resetApp -> AbstractActionType.RESET_APP
             else -> if (widget != null) {
-                "Click"
+                AbstractActionType.CLICK
             } else {
-                "Swipe"
+                AbstractActionType.FAKE_ACTION
             }
         }
     }
-
+    fun fullyCovered(): Boolean {
+        val uncoveredMethods = this.modifiedMethods.filter { it.value==false }.size
+        if (uncoveredMethods>0)
+            return false
+        val uncoveredStatements = this.modifiedMethodStatement.filter { it.value==false }.size
+        if (uncoveredStatements>0)
+            return false
+        return true
+    }
     companion object{
         val allStaticEvents = arrayListOf<StaticEvent>()
         fun isNoWidgetEvent(action: String): Boolean {
@@ -70,27 +83,32 @@ open class StaticEvent (
                     || action == EventType.implicit_lifecycle_event.name
                     || action == EventType.implicit_rotate_event.name
                     || action == EventType.implicit_back_event.name
+                    || action == EventType.implicit_home_event.name
                     || action == EventType.press_key.name
                     || action == EventType.dialog_press_key.name
                     || action == EventType.dialog_dismiss.name
                     || action == EventType.dialog_cancel.name)
         }
 
-        fun getEventTypeFromActionName(actionName: String): EventType{
+        fun getEventTypeFromActionName(actionName: AbstractActionType): EventType{
             return when (actionName)
             {
-                "Click" -> EventType.click
-                "LongClick" -> EventType.long_click
-                "Swipe" -> EventType.swipe
-                "TextInput" -> EventType.enter_text
-                "PressMenu" -> EventType.implicit_menu
-                "PressBack" -> EventType.press_back
-                "MinimizeMaximize" -> EventType.implicit_home_event
-                "RotateUI" -> EventType.implicit_rotate_event
-                "CallIntent" -> EventType.callIntent
-                "LaunchApp" -> EventType.implicit_launch_event
-                "CloseKeyboard" -> EventType.closeKeyboard
-                "ResetApp" -> EventType.resetApp
+                AbstractActionType.CLICK -> EventType.click
+                AbstractActionType.LONGCLICK-> EventType.long_click
+                AbstractActionType.SWIPE -> EventType.swipe
+                AbstractActionType.TEXT_INSERT -> EventType.enter_text
+                AbstractActionType.PRESS_MENU -> EventType.implicit_menu
+                AbstractActionType.PRESS_BACK -> EventType.press_back
+                AbstractActionType.MINIMIZE_MAXIMIZE -> EventType.implicit_home_event
+                AbstractActionType.ROTATE_UI -> EventType.implicit_rotate_event
+                AbstractActionType.SEND_INTENT -> EventType.callIntent
+                AbstractActionType.LAUNCH_APP -> EventType.implicit_launch_event
+                AbstractActionType.CLOSE_KEYBOARD -> EventType.closeKeyboard
+                AbstractActionType.RESET_APP -> EventType.resetApp
+                AbstractActionType.ITEM_CLICK -> EventType.item_click
+                AbstractActionType.ITEM_LONGCLICK -> EventType.item_long_click
+                AbstractActionType.ITEM_SELECTED -> EventType.item_selected
+                AbstractActionType.CLICK_OUTBOUND -> EventType.click
                 else -> EventType.fake_action
             }
         }

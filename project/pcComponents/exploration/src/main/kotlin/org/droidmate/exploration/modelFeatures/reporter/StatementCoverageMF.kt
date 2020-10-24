@@ -50,7 +50,6 @@ import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.coroutines.CoroutineContext
@@ -72,7 +71,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
      val executedModifiedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
      val executedModifiedMethodStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
      val statementInstrumentationMap= HashMap<String, String>() //statementid -> statement
-     val methodStatementInstrumentationMap = HashMap<String, String>() //statementid -> methodid
+     val statementMethodInstrumentationMap = HashMap<String, String>() //statementid -> methodid
      val methodInstrumentationMap= HashMap<String, String>() //method id -> method
      val modMethodInstrumentationMap= HashMap<String, String>() //method id -> method
      val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
@@ -289,7 +288,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                         // val l = "9946a686-9ef6-494f-b893-ac8b78efb667"
                         val methodId = parts2.last()
                         // Add the statement if it wasn't executed before
-                        methodStatementInstrumentationMap[uuid] = methodId
+                        statementMethodInstrumentationMap[uuid] = methodId
                         if (isModifiedMethod(methodId))
                         {
                             modMethodStatementInstrumentationMap[uuid] = methodId
@@ -352,7 +351,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     }
 
     fun isModifiedMethodStatement(statementId: String): Boolean {
-        val methodId = methodStatementInstrumentationMap[statementId]
+        val methodId = statementMethodInstrumentationMap[statementId]
         if (methodId == null)
             return false
         if (isModifiedMethod(methodId))
@@ -368,7 +367,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     }
     //Return List of statment id
     fun getMethodStatements(methodId: String): List<String>{
-        return methodStatementInstrumentationMap.filter { it.value.equals(methodId) }.map { it.key }
+        return statementMethodInstrumentationMap.filter { it.value.equals(methodId) }.map { it.key }
     }
 
     /**
@@ -411,12 +410,12 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
             sortedStatements
                     .forEach {
-                        val method = methodStatementInstrumentationMap[it.key]
+                        val method = statementMethodInstrumentationMap[it.key]
                         sb.appendln("${it.key};$method;${Duration.between(initialDate.toInstant(), it.value.toInstant()).toMillis() / 1000}")
                     }
         }
         statementInstrumentationMap.filterNot { executedStatementsMap.containsKey(it.key) }.forEach {
-            val method = methodStatementInstrumentationMap[it.key]
+            val method = statementMethodInstrumentationMap[it.key]
             sb.appendln("${it.key};$method")
         }
         val outputFile = context.model.config.baseDir.resolve(statementFileName)
@@ -461,12 +460,12 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         sb.appendln("Methods;${methodInstrumentationMap.size}")
         sb.appendln("ModifiedMethods;${modMethodInstrumentationMap.size}")
         sb.appendln("ModifiedMethodsStatements;${
-                methodStatementInstrumentationMap.filter { modMethodInstrumentationMap.contains(it.value) }.size
+                statementMethodInstrumentationMap.filter { modMethodInstrumentationMap.contains(it.value) }.size
         } ")
         sb.appendln("CoveredStatements;${executedStatementsMap.size}")
         sb.appendln("CoveredMethods;${executedMethodsMap.size}")
         sb.appendln("CoveredModifiedMethods;${executedModifiedMethodsMap.size}")
-        val executedModifiedMethodStatement = executedStatementsMap.filter { modMethodInstrumentationMap.contains(methodStatementInstrumentationMap[it.key]) }
+        val executedModifiedMethodStatement = executedStatementsMap.filter { modMethodInstrumentationMap.contains(statementMethodInstrumentationMap[it.key]) }
         sb.appendln("CoveredModifiedMethodsStatements;${executedModifiedMethodStatement.size}")
         sb.appendln("ListCoveredModifiedMethods")
         if (executedModifiedMethodsMap.isNotEmpty()) {

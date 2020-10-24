@@ -1,41 +1,67 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.explorationModel.interaction.Interaction
+import org.droidmate.explorationModel.interaction.Widget
 
 data class AbstractAction (
-    val actionName: String,
-    val widgetGroup: WidgetGroup?=null,
-    var extra: Any?=null
+        val actionType: AbstractActionType,
+        val attributeValuationSet: AttributeValuationSet?=null,
+        var extra: Any?=null
     ) {
+
+    init {
+    }
+
     fun isItemAction(): Boolean {
-        return when(actionName) {
-            "ItemClick","ItemLongClick","ItemSelected" -> true
+        return when(actionType) {
+            AbstractActionType.ITEM_CLICK,AbstractActionType.ITEM_LONGCLICK,AbstractActionType.ITEM_SELECTED -> true
             else -> false
         }
     }
+    fun isWidgetAction(): Boolean {
+        return attributeValuationSet!=null
+    }
     fun isLaunchOrReset(): Boolean {
-        return actionName == "LaunchApp" || actionName == "ResetApp"
+        return actionType == AbstractActionType.LAUNCH_APP || actionType == AbstractActionType.RESET_APP
     }
 
     fun isCheckableOrTextInput(): Boolean {
-        if (widgetGroup == null)
+        if (attributeValuationSet == null)
             return false
-        if (widgetGroup.attributePath.isInputField() || widgetGroup.attributePath.isCheckable()) {
+        if (attributeValuationSet.attributePath.isInputField() || attributeValuationSet.attributePath.isCheckable()) {
             return true
         }
         return false
     }
 
     fun isActionQueue(): Boolean {
-        return actionName == "ActionQueue"
+        return actionType == AbstractActionType.ACTION_QUEUE
+    }
+
+    fun getScore(): Double {
+        var actionScore = when(actionType) {
+            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 2
+            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 4
+            AbstractActionType.ITEM_CLICK -> 8
+            else -> 1
+        }
+        if (attributeValuationSet == null)
+            return actionScore.toDouble()
+        val cardinalityScore = when (attributeValuationSet!!.cardinality) {
+            Cardinality.ONE -> 1
+            Cardinality.MANY -> 2
+            else -> 1
+        }
+        return actionScore*cardinalityScore.toDouble()
     }
 
     companion object {
-        fun computeAbstractActionExtraData(actionType: String, interactionData: String): Any? {
-            if (actionType != AbstractActionType.SWIPE.actionName) {
+        fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>): Any? {
+            if (actionType != AbstractActionType.SWIPE) {
                 return null
             }
-            val swipeData = Helper.parseSwipeData(interactionData as String)
+            val swipeData = Helper.parseSwipeData(interaction.data)
             val begin = swipeData[0]!!
             val end = swipeData[1]!!
             val swipeAction = if (begin.first == end.first) {
@@ -54,12 +80,21 @@ data class AbstractAction (
             }
             return swipeAction
         }
+
+        fun getLaunchAction(): AbstractAction? {
+            return AbstractAction(
+                    actionType = AbstractActionType.LAUNCH_APP
+            )
+        }
     }
 }
 
 enum class AbstractActionType(val actionName: String) {
     CLICK("Click"),
     LONGCLICK("LongClick"),
+    ITEM_CLICK("ItemClick"),
+    ITEM_LONGCLICK("ItemLongClick"),
+    ITEM_SELECTED("ItemSelected"),
     SWIPE("Swipe"),
     PRESS_BACK("PressBack"),
     PRESS_MENU("PressMenu"),
@@ -67,6 +102,16 @@ enum class AbstractActionType(val actionName: String) {
     CLOSE_KEYBOARD("CloseKeyboard"),
     TEXT_INSERT("TextInsert"),
     MINIMIZE_MAXIMIZE("MinimizeMaximize"),
-    SEND_INTENT("CallIntent")
-
+    SEND_INTENT("CallIntent"),
+    RANDOM_CLICK("RandomClick"),
+    CLICK_OUTBOUND("ClickOutbound"),
+    ENABLE_DATA("EnableData"),
+    DISABLE_DATA("DisableData"),
+    LAUNCH_APP("LaunchApp"),
+    RESET_APP("ResetApp"),
+    ACTION_QUEUE("ActionQueue"),
+    PRESS_HOME("PressHome"),
+    RANDOM_KEYBOARD("RandomKeyboard"),
+    FAKE_ACTION("FakeAction"),
+    TERMINATE("Terminate")
 }

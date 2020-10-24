@@ -2,7 +2,7 @@ package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.redu
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Cardinality
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.WidgetGroup
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -10,7 +10,7 @@ import org.droidmate.explorationModel.interaction.Widget
 class StateReducer
 {
     companion object{
-        fun reduce(guiState: State<*>, activity: String): HashMap<Widget, WidgetGroup>{
+        fun reduce(guiState: State<*>, activity: String, packageName: String): HashMap<Widget, AttributeValuationSet>{
             val widgetReduceMap = HashMap<Widget,AttributePath>()
             val attributePaths = HashMap<AttributePath,Int>()
             val tempFullAttrPaths = HashMap<Widget,AttributePath>()
@@ -19,7 +19,7 @@ class StateReducer
             val toReduceWidgets = if (activity.startsWith("com.oath.mobile.platform.phoenix.core.")) {
                 Helper.getVisibleWidgets(guiState)
             } else {
-                Helper.getVisibleWidgetsForAbstraction(guiState)
+                Helper.getVisibleWidgetsForAbstraction(guiState,packageName = packageName)
             }
             //val toReduceWidgets = Helper.getVisibleWidgetsForAbstraction(guiState)
             toReduceWidgets.forEach {
@@ -42,7 +42,7 @@ class StateReducer
                 }
 
             }
-            val widgetList = HashMap<Widget, WidgetGroup>()
+            val widgetList = HashMap<Widget, AttributeValuationSet>()
             attributePaths.forEach { a, c ->
                 val cardinality: Cardinality = when (c)
                 {
@@ -50,7 +50,7 @@ class StateReducer
                     1 -> Cardinality.ONE
                     else -> Cardinality.MANY
                 }
-                val widgetGroup =  WidgetGroup(a,cardinality,c)
+                val widgetGroup =  AttributeValuationSet(a,cardinality,c)
                 widgetReduceMap.filter { it.value == a }.forEach { w,_ ->
                     widgetList.put(w,widgetGroup)
                 }

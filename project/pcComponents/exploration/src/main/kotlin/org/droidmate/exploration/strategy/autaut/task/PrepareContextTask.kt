@@ -1,20 +1,23 @@
 package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.isClick
+import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.DataField
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.random.Random
 
 class PrepareContextTask private constructor(
         regressionWatcher: AutAutMF,
@@ -54,14 +57,18 @@ class PrepareContextTask private constructor(
     private fun prepareFillActions(currentState: State<*>) {
         val allInputWidgets = Helper.getInputFields(currentState).filter { inputFillDecision.containsKey(it) }
         allInputWidgets.forEach {widget ->
-            if (widget.checked!=null) {
-                fillActions[widget] = widget.click()
+            val inputValue = TextInput.getSetTextInputValue(widget,currentState,randomInput)
+            if (widget.checked.isEnabled()) {
+                if(widget.checked.toString() != inputValue) {
+                    fillActions[widget] = widget.click()
+                    ExplorationTrace.widgetTargets.removeLast()
+                }
             } else {
-                val inputValue = TextInput.getSetTextInputValue(widget,currentState,randomInput)
                 val inputAction = if (allInputWidgets.size == 1)
-                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
+                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
                 else
-                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
+                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
+                ExplorationTrace.widgetTargets.removeLast()
                 fillActions[widget] = inputAction
             }
         }
@@ -95,6 +102,10 @@ class PrepareContextTask private constructor(
     override fun isAvailable(currentState: State<*>): Boolean {
         return hasInput(currentState) && shouldInsertText(currentState)
     }
+    fun isAvailable(currentState: State<*>, random: Boolean): Boolean {
+        randomInput = random
+        return isAvailable(currentState)
+    }
     val inputFillDecision = HashMap<Widget,Boolean>()
 
     private fun hasInput(currentState: State<*>): Boolean {
@@ -103,9 +114,13 @@ class PrepareContextTask private constructor(
 
     internal fun randomlyFill(currentState: State<*>): ExplorationAction {
         val availableWidgets = fillActions.map { it.key }.filter { currentState.widgets.contains(it) }
-        if (availableWidgets.isEmpty())
+        if (availableWidgets.isEmpty()) {
+            log.debug("No more filling data. Press back.")
             return ExplorationAction.pressBack()
-        val toFillWidget = availableWidgets.random()
+        }
+        val toFillWidget = availableWidgets.first()
+        log.debug("Selected widget: ${toFillWidget}")
+        ExplorationTrace.widgetTargets.add(toFillWidget)
         val action = fillActions[toFillWidget]!!
         fillActions.remove(toFillWidget)
         return action
@@ -121,11 +136,15 @@ class PrepareContextTask private constructor(
             val processingWidgets = widgets.toMutableList()
             processingWidgets.forEach {
                 if (!it.isPassword && it.isInputField) {
-                    if (TextInput.historyTextInput.contains(it.text)) {
-                        if (random.nextInt(100) < 25)
+                    if (randomInput) {
+                        if (TextInput.historyTextInput.contains(it.text)) {
+                            if (random.nextInt(100) < 25)
+                                inputFillDecision.put(it, false)
+                        } else {
                             inputFillDecision.put(it, false)
+                        }
                     } else {
-                        inputFillDecision.put(it, false)
+                        inputFillDecision.put(it,false)
                     }
                 } else {
                     var ignoreWidget = false
@@ -134,9 +153,12 @@ class PrepareContextTask private constructor(
                         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
                         val widgetGroup = abstractState.getWidgetGroup(widget = it, guiState = currentState)
                         if (widgetGroup != null) {
-                            val isGoToAnotherWindow = regressionTestingMF.abstractTransitionGraph.edges(abstractState).any {
+                            val isGoToAnotherWindow = autautMF.abstractTransitionGraph.edges(abstractState).any {
                                 it.destination!!.data.window != it.source.data.window
-                                        && it.label.abstractAction.actionName.isClick()
+                                        && it.label.abstractAction.actionType == AbstractActionType.CLICK
+                                        && it.label.abstractAction.isWidgetAction()
+                                        && it.label.abstractAction!!.attributeValuationSet == widgetGroup
+                                        && it.label.isExplicit()
                             }
                             if (isGoToAnotherWindow) {
                                 // any widget can lead to another window should be ignore.
@@ -145,13 +167,7 @@ class PrepareContextTask private constructor(
                         }
                     }
                     if (!ignoreWidget) {
-                        if (!it.isInputField) {
-                            if (random.nextBoolean()) {
-                                inputFillDecision.put(it, false)
-                            }
-                        } else {
-                            inputFillDecision.put(it, false)
-                        }
+                        inputFillDecision.put(it, false)
                     }
                 }
             }

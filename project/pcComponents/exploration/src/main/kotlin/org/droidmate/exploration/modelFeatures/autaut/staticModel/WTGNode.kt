@@ -1,21 +1,24 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 import org.droidmate.deviceInterface.exploration.Rectangle
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.explorationModel.interaction.State
 
 open class WTGNode(val classType: String,
-                   val nodeId: String)
+                   val nodeId: String,
+                   val fromModel: Boolean)
 {
     var activityClass = ""
     val widgets = arrayListOf<StaticWidget>()
     val widgetState = HashMap<StaticWidget, Boolean>()
-    val mappedStates = arrayListOf<State<*>>()
+    val mappedStates = arrayListOf<AbstractState>()
     var rotation:Int = 0
     var rotationSupport: Boolean = true
     var portraitDimension: Rectangle = Rectangle.empty()
     var landscapeDimension: Rectangle = Rectangle.empty()
     var portraitKeyboardDimension: Rectangle = Rectangle.empty()
     var landscapeKeyboardDimension: Rectangle = Rectangle.empty()
+
     val unexercisedWidgetCount: Int
     get() {return widgets.filter { !it.exercised && widgetState[it]?:true && it.interactive && it.mappedRuntimeWidgets.isNotEmpty()}.size}
     var hasOptionsMenu = true

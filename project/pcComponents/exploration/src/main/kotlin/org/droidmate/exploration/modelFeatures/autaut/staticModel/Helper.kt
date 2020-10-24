@@ -72,18 +72,18 @@ class Helper {
 
         fun calculateMatchScoreForEachNode(newState: State<*>, allPossibleNodes: List<WTGNode>, appName: String,
                                            autAutMF: AutAutMF): HashMap<WTGNode, Double> {
-            val matchWidgets = HashMap<WTGNode, Int>()
-            val missWidgets = HashMap<WTGNode, Int>()
-            val propertyChangedWidgets = HashMap<WTGNode, Int>()
+            val matchWidgets = HashMap<WTGNode, HashMap<Widget,HashSet<StaticWidget>>>()
+            val missWidgets = HashMap<WTGNode, HashSet<Widget>>()
+            val propertyChangedWidgets = HashMap<WTGNode, HashSet<Widget>>()
             val visibleWidgets = ArrayList<Widget>()
             visibleWidgets.addAll(getVisibleWidgets(newState))
             if (visibleWidgets.isEmpty()) {
                 visibleWidgets.addAll(newState.widgets.filterNot { it.isKeyboard })
             }
             allPossibleNodes.forEach {
-                matchWidgets[it] = 0
-                missWidgets[it] = 0
-                propertyChangedWidgets[it] = 0
+                matchWidgets[it] = HashMap()
+                missWidgets[it] = HashSet()
+                propertyChangedWidgets[it] = HashSet()
             }
             visibleWidgets.iterator().also {
                 while (it.hasNext()) {
@@ -92,32 +92,34 @@ class Helper {
                         val matchingWidget = getStaticWidgets(widget, newState, it, false, autAutMF)
                         if (matchingWidget.isNotEmpty()) {
                             if (matchWidgets.containsKey(it)) {
-                                matchWidgets[it] = matchWidgets[it]!! + matchingWidget.size
-                            } else {
-                                matchWidgets[it] = matchingWidget.size
+                                matchWidgets[it]!!.put(widget, HashSet(matchingWidget))
                             }
                         }
-/*                        else
+                        else
                         {
-                            if (missWidgets.contains(it)) {
-                                missWidgets[it] = missWidgets[it]!! + 1
-                            } else {
-                                missWidgets[it] = 1
+                            if (missWidgets.contains(it) && widget.resourceId.isNotBlank()) {
+                                missWidgets[it]!!.add(widget)
                             }
-                        }*/
+                        }
                     }
                 }
             }
             val scores = HashMap<WTGNode, Double>()
-            allPossibleNodes.forEach {
-                val totalWidgets = visibleWidgets.size
-                val score = if (matchWidgets[it]!! > 0 || it.widgets.size == 0) {
-                    (matchWidgets[it]!! * 1.0 - missWidgets[it]!! * 1.0) / totalWidgets
+            allPossibleNodes.forEach {window ->
+                val missStaticWidgets = window.widgets.filterNot { staticWidget -> matchWidgets[window]!!.values.any { it.contains(staticWidget) } }
+                val totalWidgets = matchWidgets[window]!!.size + missStaticWidgets.size
+                if (!window.fromModel && missWidgets.size/window.widgets.size.toDouble() > 0.7) {
+                    //need match perfectly at least all widgets with resource id.
+                    //Give a bound to be 70%
+                    scores.put(window,Double.NEGATIVE_INFINITY)
                 } else {
-                    Double.NEGATIVE_INFINITY
+                    val score = if (matchWidgets[window]!!.size > 0 || window.widgets.size == 0) {
+                        (matchWidgets[window]!!.size * 1.0 - missWidgets.size * 1.0) / totalWidgets
+                    } else {
+                        Double.NEGATIVE_INFINITY
+                    }
+                    scores.put(window, score)
                 }
-                scores.put(it, score)
-
             }
             return scores
         }
@@ -128,12 +130,20 @@ class Helper {
                 }
 
         fun getVisibleWidgets(state: State<*>) =
-                state.widgets.filter { it.enabled && it.isVisible && !it.isKeyboard && it.visibleAreas.isNotEmpty() }
+                state.widgets.filter { isVisibleWidget(it) }
 
-        fun getVisibleWidgetsForAbstraction(state: State<*>) =
+        private fun isVisibleWidget(it: Widget) =
+                it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty()) && !it.isKeyboard
+
+        fun getVisibleWidgetsForAbstraction(state: State<*>, packageName: String) =
                 state.widgets.filter {
-                    it.enabled && it.isVisible && it.visibleAreas.isNotEmpty()
-                            && !hasParentWithType(it, state, "WebView")
+                    it.enabled
+                            && it.isVisible
+                            && it.visibleAreas.isNotEmpty()
+                            && !it.isKeyboard
+                            //&& !hasParentWithType(it, state, "WebView")
+                            && isInteractiveWidget(it)
+                            //&& it.packageName == packageName
                 }
 
         fun getInputFields(state: State<*>) =
@@ -278,7 +288,7 @@ class Helper {
                 })
             }
             if (matchedStaticWidgets.isEmpty()
-                    && (widget.className == "android.widget.RelativeLayout" || widget.className == "android.widget.LinearLayout"))
+                    && (widget.className == "android.widget.RelativeLayout" || widget.className.contains("ListView") ||  widget.className.contains("RecycleView" ) ||  widget.className == "android.widget.LinearLayout"))
             {
                 matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
                     w.className.contains(widget.className) && w.resourceId.isBlank() && w.resourceIdName.isBlank()
@@ -494,8 +504,7 @@ class Helper {
         }
 
         fun isInteractiveWidget(widget: Widget): Boolean =
-                widget.enabled && widget.canInteractWith
-                        && !widget.visibleAreas.isEmpty()
+                widget.enabled && ( widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || widget.scrollable || (!widget.hasClickableDescendant && widget.selected.isEnabled() && widget.selected == true) )
 
         fun hasParentWithType(it: Widget, state: State<*>, parentType: String): Boolean {
             var widget: Widget = it
@@ -614,7 +623,7 @@ class Helper {
             parent.childHashes.forEach {
                 val childWidget = allWidgets.firstOrNull { w -> w.idHash == it }
                 if (childWidget != null) {
-                    if (isInteractiveWidget(childWidget)) {
+                    if (isInteractiveWidget(childWidget) && isVisibleWidget(childWidget)) {
                         interactiveWidgets.add(childWidget)
                     }
                     interactiveWidgets.addAll(getAllInteractiveChild(allWidgets, childWidget))
@@ -655,15 +664,23 @@ class Helper {
         }
 
         fun computeGuiTreeDimension(guiState: State<*>): Rectangle {
-            val bound = guiState.widgets.find { !it.hasParent && !it.isKeyboard }?.boundaries ?: guiState.widgets
-                    .sortedBy { it.boundaries.width + it.boundaries.height }.last().boundaries
+            val outboundViews = guiState.widgets.filter { !it.hasParent && !it.isKeyboard }
+            if (outboundViews.isNotEmpty()) {
+                val outBound = outboundViews.maxBy { it.boundaries.height+it.boundaries.width }!!.boundaries
+                return outBound
+            }
+            val bound = guiState.widgets.sortedBy { it.boundaries.width + it.boundaries.height }.last().boundaries
             return bound
         }
 
         fun computeGuiTreeVisibleDimension(guiState: State<*>): Rectangle {
-            val visibleBound = guiState.widgets.find { !it.hasParent && !it.isKeyboard }?.visibleBounds ?: guiState.widgets
-                    .sortedBy { it.visibleBounds.width + it.visibleBounds.height }.last().visibleBounds
-            return visibleBound
+            val outboundViews = guiState.widgets.filter { !it.hasParent && !it.isKeyboard }
+            if (outboundViews.isNotEmpty()) {
+                val outBound = outboundViews.maxBy { it.visibleBounds.height+it.visibleBounds.width }!!.visibleBounds
+                return outBound
+            }
+            val bound = guiState.widgets.sortedBy { it.visibleBounds.width + it.visibleBounds.height }.last().visibleBounds
+            return bound
         }
 
          fun parseSwipeData(data: String): List<Pair<Int, Int>> {
@@ -680,6 +697,38 @@ class Helper {
             val dx = abs(swipeInfo[0].first-swipeInfo[1].first)
             val dy = abs(swipeInfo[0].second-swipeInfo[1].second)
             return (dx+dy)/2
+        }
+
+        fun parseCoordinationData(data: String): Pair<Int,Int> {
+            val splitData = data.split(",")
+            if (splitData.size == 2) {
+                return Pair(splitData[0].toInt(),splitData[1].toInt())
+            }
+            return Pair(0,0)
+        }
+
+        fun extractInputFieldAndCheckableWidget(prevState: State<*>): Map<Widget,String> {
+            val condition = HashMap<Widget, String>()
+            prevState.visibleTargets.filter { it.isInputField }.forEach { widget ->
+                condition.put(widget, widget.text)
+            }
+            prevState.visibleTargets.filter { it.checked.isEnabled() }.forEach { widget ->
+                condition.put(widget, widget.checked.toString())
+            }
+            return condition
+        }
+
+        fun extractTextInputWidgetData(sourceNode: WTGNode, prevState: State<*>): HashMap<StaticWidget, String> {
+            val inputTextData = HashMap<StaticWidget, String>()
+            sourceNode.widgets.filter { it.isInputField }.forEach {
+                val textInputWidget = prevState.widgets.find { w ->
+                    it.containGUIWidget(w)
+                }
+                if (textInputWidget != null) {
+                    inputTextData.put(it, textInputWidget.text)
+                }
+            }
+            return inputTextData
         }
     }
 }

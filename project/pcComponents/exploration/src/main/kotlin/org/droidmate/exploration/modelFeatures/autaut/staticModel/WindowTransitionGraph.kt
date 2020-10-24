@@ -13,7 +13,7 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
-                              Graph(WTGNode("Root", 0.toString()),
+                              Graph(WTGNode("Root", 0.toString(),false),
                                       stateComparison = { a, b -> a == b },
                                       labelComparison = { a, b ->
                                           a == b
@@ -87,55 +87,55 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
                     } else {
                         staticWidget = null
                     }
-                    if (ignoreWidget || (!ignoreWidget && staticWidget!=null) ) {
-                        val event = StaticEvent.getOrCreateEvent(
-                                eventTypeString = action,
-                                eventHandlers = emptySet(),
-                                widget = staticWidget,
-                                activity = sourceNode.classType,
-                                sourceWindow = sourceNode
+                    if (StaticEvent.isNoWidgetEvent(action) || (!StaticEvent.isNoWidgetEvent(action) && staticWidget!=null) ) {
+                            val event = StaticEvent.getOrCreateEvent(
+                                    eventTypeString = action,
+                                    eventHandlers = emptySet(),
+                                    widget = staticWidget,
+                                    activity = sourceNode.classType,
+                                    sourceWindow = sourceNode
 
-                        )
-                        //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
-                        edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
+                            )
+                            //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
+                            edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
 
-                        if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
-                            var createItemClick = false
-                            var createItemLongClick = false
-                            when (action) {
-                                "touch" -> {
-                                    createItemClick=true
-                                    createItemLongClick=true
+                            if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                                var createItemClick = false
+                                var createItemLongClick = false
+                                /*when (action) {
+                                    "touch" -> {
+                                        createItemClick=true
+                                        createItemLongClick=true
+                                    }
+                                    "click" -> {
+                                        createItemClick=true
+                                    }
+                                    "long_click" -> {
+                                        createItemLongClick=true
+                                    }
+                                }*/
+                                if (createItemClick) {
+                                    //create item click and long click
+                                    val itemClick = StaticEvent.getOrCreateEvent(
+                                            eventHandlers = emptySet(),
+                                            eventTypeString = "item_click",
+                                            widget = staticWidget,
+                                            activity = sourceNode.classType,
+                                            sourceWindow = sourceNode)
+
+                                    this.add(sourceNode, targetNode, itemClick)
                                 }
-                                "click" -> {
-                                    createItemClick=true
-                                }
-                                "long_click" -> {
-                                    createItemLongClick=true
+                                if (createItemLongClick) {
+                                    //create item click and long click
+                                    val itemLongClick = StaticEvent.getOrCreateEvent(
+                                            eventHandlers = emptySet(),
+                                            eventTypeString = "item_long_click",
+                                            widget = staticWidget,
+                                            activity = sourceNode.classType,
+                                            sourceWindow = sourceNode)
+                                    this.add(sourceNode, targetNode, itemLongClick  )
                                 }
                             }
-                            if (createItemClick) {
-                                //create item click and long click
-                                val itemClick = StaticEvent.getOrCreateEvent(
-                                        eventHandlers = emptySet(),
-                                        eventTypeString = "item_click",
-                                        widget = staticWidget,
-                                        activity = sourceNode.classType,
-                                        sourceWindow = sourceNode)
-
-                                this.add(sourceNode, targetNode, itemClick)
-                            }
-                            if (createItemLongClick) {
-                                //create item click and long click
-                                val itemLongClick = StaticEvent.getOrCreateEvent(
-                                        eventHandlers = emptySet(),
-                                        eventTypeString = "item_long_click",
-                                        widget = staticWidget,
-                                        activity = sourceNode.classType,
-                                        sourceWindow = sourceNode)
-                                this.add(sourceNode, targetNode, itemLongClick  )
-                            }
-                        }
                     }
                 }
 
@@ -166,7 +166,7 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
             "OptionsMenu" -> WTGOptionsMenuNode.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!)
             "ContextMenu" -> WTGContextMenuNode.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!)
             "LAUNCHER_NODE" -> WTGLauncherNode.getOrCreateNode()
-            else -> WTGNode(windowInfo["id"]!!, windowInfo["className"]!!)
+            else -> WTGNode(windowInfo["id"]!!, windowInfo["className"]!!,true)
         }
         if (wtgNode is WTGOptionsMenuNode) {
             val activityNode = WTGActivityNode.allNodes.find { it.classType == wtgNode.classType }
@@ -237,8 +237,12 @@ class WindowTransitionGraph(private val graph: IGraph<WTGNode, StaticEvent> =
 
     fun getDialogs(wtgNode: WTGNode): List<WTGDialogNode> {
         val edges = this.edges(wtgNode).filter { it.destination != null }
-                .filter { it.destination!!.data is WTGDialogNode }
-        return edges.map { it.destination!!.data as WTGDialogNode }.toHashSet().toList()
+                .filter { it.destination!!.data is WTGDialogNode
+                        && (it.destination!!.data.activityClass.isBlank()
+                        || it.destination!!.data.activityClass == wtgNode.activityClass)}
+        val dialogs = edges.map { it.destination!!.data as WTGDialogNode }.toHashSet()
+        dialogs.addAll(WTGDialogNode.allNodes.filter { it.activityClass == wtgNode.activityClass })
+        return dialogs.toList()
     }
 
     fun getWindowBackward(wtgNode: WTGNode): List<Edge<*, *>> {

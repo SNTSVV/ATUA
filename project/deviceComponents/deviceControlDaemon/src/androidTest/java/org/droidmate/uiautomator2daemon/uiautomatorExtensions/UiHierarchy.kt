@@ -40,14 +40,15 @@ object UiHierarchy : UiParser() {
 			Log.d(LOGTAG, "current screen contains ${windows.size} app windows $windows")
 			//Ignore SystemUI windows
 			//And get the top layer
+			//TODO try keep systemUI
 			windows.filterNot { it.w.pkgName == "com.android.systemui" }
 					/*.sortedBy { it.layer }
 					.last()*/
-					.filter { it.w.hasFocus || it.w.hasInputFocus || it.isKeyboard}
+					//.filter { it.w.hasFocus || it.w.hasInputFocus || it.isKeyboard}
 					.forEach{ w: DisplayedWindow ->
 			//windows.forEach {  w: DisplayedWindow ->
 				//Try considering Launcher elements
-				if (w.isExtracted()) {  // for now we are not interested in the Launcher elements
+				if (w.isExtracted() || !w.isExtracted()) {  // for now we are not interested in the Launcher elements
 					w.area = LinkedList<Rect>().apply { w.initialArea.forEach { add(it) } }
 					if(w.rootNode == null) Log.w(LOGTAG,"ERROR root should not be null (window=$w)")
 					check(w.rootNode != null) {"if extraction is enabled we have to have a rootNode"}

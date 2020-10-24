@@ -1,6 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
-class WTGOutScopeNode(nodeId: String= getNodeId(), activity: String):WTGNode(activity,nodeId){
+class WTGOutScopeNode(nodeId: String= getNodeId(), activity: String):WTGNode(activity,nodeId,false){
     init {
         allNodes.add(this)
         WTGNode.allNodes.add(this)

@@ -1,7 +1,6 @@
 package org.droidmate.exploration.strategy.autaut
 
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.ExplorationContext
@@ -78,13 +77,16 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
             return ExplorationAction.rotate(-90)
         }
 
-        if (phaseStrategy.isEnd()) {
+        if (!phaseStrategy.hasNextAction(eContext.getCurrentState())) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
-                if (regressionWatcher.allTargetWindows.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
+                if (regressionWatcher.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
                     return eContext.resetApp()
+                  /*  phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
+                    regressionWatcher.updateStage2Info(eContext)
+                    return eContext.resetApp()*/
                 }
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)

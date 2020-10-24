@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput
 
+import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
@@ -56,6 +57,13 @@ class TextInput () {
                     }
                 }
             }
+            if (widget.checked.isEnabled()) {
+                if (random.nextBoolean()) {
+                    return "true"
+                }
+                return "false"
+            }
+            //widget is TextInput
             val reuseString = random.nextBoolean()
             if (reuseString && historyTextInput.isNotEmpty())
             {

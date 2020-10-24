@@ -6,7 +6,8 @@ enum class AttributeType {
     className,
     contentDesc,
     text,
-    checked,
+    checkable,
+
     enabled,
     password,
     selected,
@@ -14,5 +15,6 @@ enum class AttributeType {
     //action
     clickable,
     longClickable,
-    scrollable
+    scrollable,
+    checked,
 }

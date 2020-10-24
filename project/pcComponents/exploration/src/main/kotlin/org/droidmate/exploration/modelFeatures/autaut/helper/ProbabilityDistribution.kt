@@ -14,14 +14,24 @@ class ProbabilityDistribution<T>(
     {
         var sum:Double = 0.0
         population.forEach { _, u ->
-            sum = sum + u+1.0
+            sum = sum + u
         }
-        var indice = 0.0
-        population.forEach { t, u ->
-            //TODO round the length
-            val length = (u+1.0)/sum
-            distribution.add(Triple(t,indice, length+indice))
-            indice += length
+        if (sum > 0.0) {
+            var indice = 0.0
+            population.forEach { t, u ->
+                //TODO round the length
+                val length = (u) / sum
+                distribution.add(Triple(t, indice, length + indice))
+                indice += length
+            }
+        } else {
+            sum = population.count().toDouble()
+            var indice = 0.0
+            population.forEach { t, u ->
+                val length = 1.0/sum
+                distribution.add(Triple(t,indice,length+indice))
+                indice += length
+            }
         }
     }
 

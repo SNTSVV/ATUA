@@ -2,6 +2,7 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -14,6 +15,9 @@ class GoToTargetWindowTask (
         executedCount++
     }
 
+    override fun initPossiblePaths(currentState: State<*>) {
+        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState))
+    }
 
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }

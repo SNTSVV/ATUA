@@ -83,6 +83,7 @@ abstract class UiParser {
 		props.add("labeledBy = ${this.getLabeledBy()}")
 		props.add("liveRegion = ${this.liveRegion}")
 		props.add("windowId = ${this.windowId}")
+		props.add("visibleToUser = ${this.isVisibleToUser}")
 
 		var uncoveredArea = true
 		// due to bottomUp strategy we will only get coordinates which are not overlapped by other UiElements

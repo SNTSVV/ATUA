@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 class WTGLauncherNode
-    private constructor():WTGNode("",""){
+    private constructor():WTGNode("","",true){
 
     init {
         instance = this

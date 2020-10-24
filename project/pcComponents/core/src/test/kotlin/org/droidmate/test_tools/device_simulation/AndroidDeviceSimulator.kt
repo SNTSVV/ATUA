@@ -46,6 +46,14 @@ class AndroidDeviceSimulator/*(timeGenerator: ITimeGenerator,
                              private val exceptionSpecs: List<IExceptionSpec> = ArrayList(),
                              unreliableSimulation: Boolean = false)*/ // TODO Fix tests
 	: IAndroidDevice {
+	override suspend fun disableData() {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
+	override suspend fun enableData() {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
 	override suspend fun getDeviceScreenSize(): Rectangle {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}

@@ -87,8 +87,7 @@ data class AttributePath (
     }
 
     fun isCheckable(): Boolean{
-        if (localAttributes.containsKey(AttributeType.checked)
-                && localAttributes[AttributeType.checked]!!.matches(Regex("^(true|false)$")))
+        if (localAttributes[AttributeType.checkable]!!.equals("true"))
         {
             return true
         }
@@ -120,5 +119,27 @@ data class AttributePath (
         }
         return true
 
+    }
+
+    fun hasParentWithClassName(s: String): Boolean {
+        var parentAttributePath = this.parentAttributePath
+        while (parentAttributePath!=null) {
+            if (parentAttributePath.getClassName().contains(s)) {
+                return true
+            }
+            parentAttributePath = parentAttributePath.parentAttributePath
+        }
+        return false
+    }
+
+    fun hasParent(attributePath: AttributePath): Boolean {
+        var parentAttributePath = this.parentAttributePath
+        while (parentAttributePath!=null) {
+            if (parentAttributePath.equals(attributePath)) {
+                return true
+            }
+            parentAttributePath = parentAttributePath.parentAttributePath
+        }
+        return false
     }
 }

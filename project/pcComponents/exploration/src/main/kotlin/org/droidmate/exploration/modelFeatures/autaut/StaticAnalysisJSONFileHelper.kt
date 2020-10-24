@@ -160,7 +160,7 @@ class StaticAnalysisJSONFileHelper() {
                                 if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
                                     var createItemClick = false
                                     var createItemLongClick = false
-                                    when (jsonEventType) {
+                                    /*when (jsonEventType) {
                                        "touch" -> {
                                             createItemClick=true
                                         createItemLongClick=true
@@ -171,7 +171,7 @@ class StaticAnalysisJSONFileHelper() {
                                         "long_click" -> {
                                             createItemLongClick=true
                                         }
-                                    }
+                                    }*/
                                     //create item click and long click
                                     if (createItemClick) {
                                         val itemClick = getOrCreateTargetEvent(
@@ -231,7 +231,8 @@ class StaticAnalysisJSONFileHelper() {
                             jsonEventType = jsonEvent["eventType"] as String
                         var staticWidget: StaticWidget?
                         if (!StaticEvent.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
-                            if (StaticEvent.isNoWidgetEvent(jsonEventType)) {
+                            if (StaticEvent.isNoWidgetEvent(jsonEventType)
+                            ) {
                                 staticWidget = null
                             } else {
                                 try {
@@ -355,7 +356,8 @@ class StaticAnalysisJSONFileHelper() {
                 val methodTopCallersJsonArray = jsonObj[it] as JSONArray
                 methodTopCallersJsonArray.asSequence().forEach {
                     val callId = statementCoverageMF.getMethodId(it.toString())
-                    methodTopCallers.add(callId)
+                    if (callId.isNotBlank())
+                        methodTopCallers.add(callId)
                 }
                 methodTopCallersMap.put(methodId,methodTopCallers)
             }

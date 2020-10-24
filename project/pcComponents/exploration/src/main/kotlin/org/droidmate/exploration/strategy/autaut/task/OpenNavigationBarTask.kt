@@ -36,9 +36,9 @@ class OpenNavigationBarTask constructor(
     }
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
-        val currentNode = regressionTestingMF.getAbstractState(currentState)!!
-        if (!regressionTestingMF.openNavigationCheck.contains(currentNode))
-            regressionTestingMF.openNavigationCheck.add(currentNode)
+        val currentNode = autautMF.getAbstractState(currentState)!!
+        if (!autautMF.openNavigationCheck.contains(currentNode))
+            autautMF.openNavigationCheck.add(currentNode)
         val chosenWidget = chooseWidgets(currentState).firstOrNull()
         if (chosenWidget == null)
             return ExplorationAction.pressBack()

@@ -1,7 +1,8 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 class WTGActivityNode(classType: String,
-                      nodeId: String = getNodeId()):WTGNode(classType,nodeId){
+                      nodeId: String = getNodeId(),
+                      fromModel: Boolean):WTGNode(classType,nodeId,fromModel){
     init {
         allNodes.add(this)
         WTGNode.allNodes.add(this)
@@ -18,12 +19,12 @@ class WTGActivityNode(classType: String,
         var counter = 0
         val allNodes = ArrayList<WTGActivityNode>()
         fun getNodeId(): String = "Activity-${counter++}"
-        fun getOrCreateNode(nodeId: String, classType: String): WTGActivityNode{
+        fun getOrCreateNode(nodeId: String, classType: String,fromModel: Boolean=true): WTGActivityNode{
             val node = allNodes.find { it.nodeId == nodeId }
             if (node != null)
                 return node!!
             else
-                return WTGActivityNode(nodeId = nodeId,classType = classType)
+                return WTGActivityNode(nodeId = nodeId,classType = classType,fromModel = fromModel)
         }
     }
 }

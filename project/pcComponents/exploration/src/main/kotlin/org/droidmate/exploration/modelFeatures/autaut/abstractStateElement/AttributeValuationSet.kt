@@ -4,50 +4,62 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reduc
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinality, val count: Int =1) {
+class AttributeValuationSet (val attributePath: AttributePath, val cardinality: Cardinality, val count: Int =1) {
     var exerciseCount: Int = 0
     var guiWidgets = HashSet<Widget>()
     val actionCount = HashMap<AbstractAction, Int>()
 
     init {
         if (attributePath.isClickable() ) {
-            val abstractAction = AbstractAction(
-                    actionName = AbstractActionType.CLICK.actionName,
-                    widgetGroup = this
-            )
-            actionCount.put(abstractAction, 0)
+            if (attributePath.getClassName().equals("android.webkit.WebView")) {
+                val itemAbstractAction = AbstractAction(
+                        actionType = AbstractActionType.ITEM_CLICK,
+                        attributeValuationSet = this
+                )
+                actionCount.put(itemAbstractAction,0)
+                val itemLongClickAbstractAction = AbstractAction(
+                        actionType = AbstractActionType.ITEM_LONGCLICK,
+                        attributeValuationSet = this
+                )
+                actionCount.put(itemLongClickAbstractAction,0)
+            } else {
+                val abstractAction = AbstractAction(
+                        actionType = AbstractActionType.CLICK,
+                        attributeValuationSet = this
+                )
+                actionCount.put(abstractAction, 0)
+            }
         }
         if (attributePath.isLongClickable() && !attributePath.isInputField()) {
             val abstractAction = AbstractAction(
-                    actionName = AbstractActionType.LONGCLICK.actionName,
-                    widgetGroup = this
+                    actionType = AbstractActionType.LONGCLICK,
+                    attributeValuationSet = this
             )
             actionCount.put(abstractAction, 0)
         }
         if (attributePath.isScrollable()) {
             val abstractActionSwipeUp = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
+                    actionType = AbstractActionType.SWIPE,
+                    attributeValuationSet = this,
                     extra = "SwipeUp"
             )
             val abstractActionSwipeDown = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
+                    actionType = AbstractActionType.SWIPE,
+                    attributeValuationSet = this,
                     extra = "SwipeDown"
             )
             val abstractActionSwipeLeft = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
+                    actionType = AbstractActionType.SWIPE,
+                    attributeValuationSet = this,
                     extra = "SwipeLeft"
             )
             val abstractActionSwipeRight = AbstractAction(
-                    actionName = AbstractActionType.SWIPE.actionName,
-                    widgetGroup = this,
+                    actionType = AbstractActionType.SWIPE,
+                    attributeValuationSet = this,
                     extra = "SwipeRight"
             )
             actionCount.put(abstractActionSwipeUp, 0)
@@ -58,8 +70,8 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
                     || attributePath.getClassName().contains("ListView")
                     || attributePath.getClassName().equals("android.webkit.WebView") ) {
                 val abstractActionSwipeTillEnd = AbstractAction(
-                        actionName = AbstractActionType.SWIPE.actionName,
-                        widgetGroup = this,
+                        actionType = AbstractActionType.SWIPE,
+                        attributeValuationSet = this,
                         extra = "SwipeTillEnd"
                 )
                 actionCount.put(abstractActionSwipeTillEnd,0)
@@ -67,26 +79,26 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         }
         if (attributePath.isInputField()) {
             val abstractAction = AbstractAction(
-                    actionName = AbstractActionType.TEXT_INSERT.actionName,
-                    widgetGroup = this
+                    actionType = AbstractActionType.TEXT_INSERT,
+                    attributeValuationSet = this
             )
             actionCount.put(abstractAction, 0)
         }
         //Item-containing Widget
-        if (attributePath.getClassName().equals("android.webkit.WebView")) {
+       /* if (attributePath.getClassName().equals("android.webkit.WebView")) {
             val abstractAction = AbstractAction(
                     actionName = AbstractActionType.CLICK.actionName,
                     widgetGroup = this,
                     extra = "RandomMultiple"
             )
             actionCount.put(abstractAction, 0)
-            val longclickAbstractAction = AbstractAction(
+            *//*val longclickAbstractAction = AbstractAction(
                     actionName = AbstractActionType.LONGCLICK.actionName,
                     widgetGroup = this,
                     extra = "RandomMultiple"
             )
-            actionCount.put(longclickAbstractAction, 0)
-        }
+            actionCount.put(longclickAbstractAction, 0)*//*
+        }*/
     }
 
     fun getGUIWidgets ( guiState: State<*>): List<Widget>{
@@ -94,7 +106,7 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val selectedGuiWidgets = ArrayList<Widget>()
-        Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
+        Helper.getVisibleWidgets(guiState).forEach {
             if (isAbstractRepresentationOf(it,guiState)) {
                 selectedGuiWidgets.add(it)
             }
@@ -104,7 +116,9 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
 
     fun isAbstractRepresentationOf(widget: Widget, guiState: State<*>): Boolean
     {
-        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
+        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
+        if (abstractState == null)
+            return false
         val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
         val reducedAttributePath = WidgetReducer.reduce(widget,guiState,abstractState.window.activityClass,tempFullAttributePaths,tempRelativeAttributePaths)
@@ -133,13 +147,13 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         return attributePath.localAttributes
     }
 
-    fun havingSameContent(currentAbstractState: AbstractState, comparedWidgetGroup: WidgetGroup, comparedAbstractState: AbstractState): Boolean {
-        val widgetGroupChildren = currentAbstractState.widgets.filter {
+    fun havingSameContent(currentAbstractState: AbstractState, comparedAttributeValuationSet: AttributeValuationSet, comparedAbstractState: AbstractState): Boolean {
+        val widgetGroupChildren = currentAbstractState.attributeValuationSets.filter {
             isParent(it)
         }
 
-        val comparedWidgetGroupChildren = comparedAbstractState.widgets.filter {
-            comparedWidgetGroup.isParent(it)
+        val comparedWidgetGroupChildren = comparedAbstractState.attributeValuationSets.filter {
+            comparedAttributeValuationSet.isParent(it)
         }
         widgetGroupChildren.forEach {w1 ->
             if (!comparedWidgetGroupChildren.any { w2 -> w1 == w2 }) {
@@ -149,8 +163,8 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         return true
     }
 
-    private fun isParent(widgetGroup: WidgetGroup): Boolean {
-        var parentAttributePath: AttributePath? = widgetGroup.attributePath.parentAttributePath
+    private fun isParent(attributeValuationSet: AttributeValuationSet): Boolean {
+        var parentAttributePath: AttributePath? = attributeValuationSet.attributePath.parentAttributePath
         while(parentAttributePath != null) {
             if (parentAttributePath == this.attributePath) {
                 return true
@@ -160,12 +174,13 @@ class WidgetGroup (val attributePath: AttributePath, val cardinality: Cardinalit
         return false
     }
 
+
     override fun hashCode(): Int {
         return attributePath.hashCode()+cardinality.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other !is WidgetGroup)
+        if (other !is AttributeValuationSet)
             return false
         return this.hashCode()==other.hashCode()
     }

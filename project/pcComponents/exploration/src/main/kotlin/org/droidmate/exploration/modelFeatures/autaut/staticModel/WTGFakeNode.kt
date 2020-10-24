@@ -1,6 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
-class WTGFakeNode(nodeId: String= getNodeId()):WTGNode("",nodeId){
+class WTGFakeNode(nodeId: String= getNodeId()):WTGNode("",nodeId,true){
     init {
         allNodes.add(this)
         WTGNode.allNodes.add(this)

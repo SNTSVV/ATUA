@@ -88,10 +88,10 @@ class AbstractionFunction (val root: DecisionNode) {
             INSTANCE = AbstractionFunction(root)
         }
         private var backupAbstractionFunction: AbstractionFunction? = null
-        val backupAbstractStateList = ArrayList<Pair<State<*>,AbstractState>>()
+        //val backupAbstractStateList = ArrayList<Pair<State<*>,AbstractState>>()
         fun backup( autMF: AutAutMF){
-            backupAbstractStateList.clear()
-            backupAbstractStateList.addAll(autMF.abstractStateList)
+            //backupAbstractStateList.clear()
+            //backupAbstractStateList.addAll(autMF.abstractStateList)
 
             val root = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV1() ))
             val lv2Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV2()))
@@ -119,10 +119,10 @@ class AbstractionFunction (val root: DecisionNode) {
                 INSTANCE = backupAbstractionFunction!!
                 backupAbstractionFunction = null
             }
-            if (backupAbstractStateList.isNotEmpty()) {
+           /* if (backupAbstractStateList.isNotEmpty()) {
                 autMF.abstractStateList.clear()
                 autMF.abstractStateList.addAll(backupAbstractStateList)
-            }
+            }*/
         }
     }
 }

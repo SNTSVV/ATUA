@@ -1,1 +1,1 @@
---Core-configPath=./defaultConfig-debug.properties --StatementCoverage-enableCoverage=true
+--Core-configPath=./defaultConfig-RT.properties --StatementCoverage-enableCoverage=true

@@ -86,7 +86,7 @@ object DefaultStrategies: Logging {
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean {
 			val lastReset = eContext.explorationTrace.P_getActions()
-				.indexOfLast { it.actionType == LaunchApp.name }
+				.indexOfLast { it.actionType == "ResetApp" }
 
 			val currAction = eContext.explorationTrace.size
 			val diff = currAction - lastReset
@@ -113,9 +113,9 @@ object DefaultStrategies: Logging {
 			val value = rnd.nextDouble()
 
 			val lastLaunchDistance = with(eContext.explorationTrace.getActions()) {
-				size-lastIndexOf(findLast{ it.actionType.isLaunchApp() })
+				size-lastIndexOf(findLast{ it.actionType.isLaunchApp() || it.actionType=="ResetApp" })
 			}
-			return (lastLaunchDistance > 3 && value > probability )
+			return (lastLaunchDistance > 3 && value < probability )
 		}
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
@@ -137,6 +137,8 @@ object DefaultStrategies: Logging {
 	fun handleTargetAbsence(prio: Int, maxWaitTime: Long = 5000) = object : AExplorationStrategy(){
 		private var cnt = 0
 		private var pressbackCnt = 0
+		private var clickScreen = false
+		private var pressEnter = false
 		// may be used to terminate if there are no targets after waiting for maxWaitTime
 		private var terminate = false
 
@@ -144,12 +146,13 @@ object DefaultStrategies: Logging {
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean {
 			val hasNext = !eContext.explorationCanMoveOn().also {
-				if(!it) {
+				if(it) {
 					cnt = 0  // reset the counter if we can proceed
 					pressbackCnt = 0
+					clickScreen = false
+					pressEnter = false
+					terminate = false
 				}
-				terminate = false
-
 			}
 			return hasNext
 		}
@@ -174,7 +177,7 @@ object DefaultStrategies: Logging {
 				eContext.explorationTrace.getActions().filterNot {
 					it.actionType.isQueueStart()|| it.actionType.isQueueEnd() }
 			){
-				lastIndexOf(findLast{ it.actionType.isLaunchApp() }).let{ launchIdx ->
+				lastIndexOf(findLast{ it.actionType == "ResetApp" || it.actionType.isLaunchApp() }).let{ launchIdx ->
 					val beforeLaunch = this.getOrNull(launchIdx - 1)
 					Pair( size-launchIdx, beforeLaunch)
 				}
@@ -203,14 +206,12 @@ object DefaultStrategies: Logging {
 							log.debug("Cannot explore. Try double pressback")
 							ActionQueue(arrayListOf(ExplorationAction.pressBack(),ExplorationAction.pressBack()),delay = 25)
 						} else
-							log.debug("Cannot explore. Last action was back. Returning 'Reset'")
+							log.debug("Cannot explore. Last action was back. Returning 'Launch'")
 							eContext.launchApp()
 						}
 					}
 				lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
 					when {  // last action was reset
-
-
 						s.isAppHasStoppedDialogBox -> {
 							log.debug("Cannot explore. Last action was reset. Currently on an 'App has stopped' dialog. Returning 'Terminate'")
 							ExplorationAction.terminateApp()
@@ -232,22 +233,25 @@ object DefaultStrategies: Logging {
 				}
 				// by default, if it cannot explore, presses back
 				else -> {
-					if (s.actionableWidgets.isEmpty()) {
+					if (!s.actionableWidgets.any { it.clickable }  ) {
 						// for example: vlc video player
 						log.debug("Cannot explore because of no actionable widgets. Randomly choose PressBack or Click")
-						if (Random.nextBoolean()) {
+						if (pressEnter || clickScreen) {
+							pressbackCnt +=1
 							log.debug("PressBack.")
 							ExplorationAction.pressBack()
 						} else
 						{
 							log.debug("Click on Screen")
 							val largestWidget = s.widgets.maxBy { it.boundaries.width+it.boundaries.height }
-							if (largestWidget !=null)
+							if (largestWidget !=null) {
+								clickScreen = true
 								largestWidget.click()
-							else
+							} else {
+								pressEnter = true
 								ExplorationAction.pressEnter()
+							}
 						}
-
 					} else {
 						pressbackCnt +=1
 						ExplorationAction.pressBack()

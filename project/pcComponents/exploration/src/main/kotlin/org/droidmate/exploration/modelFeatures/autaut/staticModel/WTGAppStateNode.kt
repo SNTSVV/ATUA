@@ -3,7 +3,7 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 
 
 open class WTGAppStateNode(nodeId: String= getNodeId(),
-                      val wtgRelatedNode: WTGNode):WTGNode(wtgRelatedNode.classType,nodeId){
+                      val wtgRelatedNode: WTGNode):WTGNode(wtgRelatedNode.classType,nodeId,false){
     init {
         allNodes.add(this)
         WTGNode.allNodes.add(this)
