@@ -129,13 +129,13 @@ class PhaseThreeStrategy(
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
         log.debug("Target: $targetWindow")
-        log.debug("To test Window position: $targetEvent")
+        log.debug("To test Window transition: $targetEvent")
         log.debug("Related window: $relatedWindow")
         chooseTask(eContext, currentState)
-        if (needResetApp) {
+        /*if (needResetApp) {
             needResetApp = false
             return eContext.resetApp()
-        }
+        }*/
       /*  if (strategyTask is RandomExplorationTask) {
             if (!(strategyTask as RandomExplorationTask).fillingData)   {
               budgetLeft--
@@ -195,7 +195,7 @@ class PhaseThreeStrategy(
         return transitionPaths
     }
 
-    override fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath> {
+    override fun getPathsToTargetWindows(currentState: State<*>, includePressbackEvent: Boolean): List<TransitionPath> {
         val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)

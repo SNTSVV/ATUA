@@ -20,6 +20,7 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.InputConfiguration
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.InputConfigurationFileHelper
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.*
+import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.deviceEnvironment.DeviceEnvironmentConfiguration
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.deviceEnvironment.DeviceEnvironmentConfigurationFileHelper
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
@@ -264,7 +265,9 @@ class AutAutMF(private val appName: String,
                 appPrevState = prevState
                 if (prevState.isHomeScreen )
                 {
-                    retrieveScreenDimension(prevState)
+                    if (retrieveScreenDimension(prevState)) {
+                        AbstractStateManager.instance.ABSTRACT_STATES.removeIf { it !is VirtualAbstractState }
+                    }
                 }
                 if (!prevState.isHomeScreen && prevState.widgets.find { it.packageName == appName } != null)
                 {
@@ -314,20 +317,68 @@ class AutAutMF(private val appName: String,
                     log.debug("Encountering Crash state.")
                 }
                 if (newState.isHomeScreen ) {
-                    retrieveScreenDimension(newState)
+
+                    if (retrieveScreenDimension(newState)) {
+                        AbstractStateManager.instance.ABSTRACT_STATES.removeIf { it !is VirtualAbstractState }
+                    }
                 }
                 currentRotation = computeRotation()
 
 
                 updateAppModel(prevState, newState, interactions,context)
 
+                //validateModel(newState)
             }
+
         } finally {
                 mutex.unlock()
         }
     }
 
-    private fun retrieveScreenDimension(state: State<*>) {
+    private fun validateModel(currentState: State<*>) {
+        val currentAbstractState = getAbstractState(currentState)!!
+        val runtimeAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
+                .filter {
+                    it !is VirtualAbstractState
+                            && it != currentAbstractState
+                }
+        var pathStatus = HashMap<AbstractState,Boolean>()
+
+        runtimeAbstractStates.forEach { dest ->
+            val paths = ArrayList<TransitionPath>()
+            PathFindingHelper.findPathToTargetComponent(
+                    autautMF = this,
+                    currentState = currentState,
+                    root = currentAbstractState,
+                    useVirtualAbstractState = false,
+                    stopWhenHavingUnexercisedAction = false,
+                    allPaths = paths,
+                    finalTarget = dest,
+                    includeBackEvent = true,
+                    includeReset = true,
+                    pathCountLimitation = 25,
+                    shortest = true,
+                    traversingNodes = listOf(Pair(windowStack.clone() as Stack<WTGNode>, currentAbstractState))
+            )
+            if (paths.size > 0)
+                pathStatus.put(dest,true)
+            else
+                pathStatus.put(dest,false)
+        }
+        if (pathStatus.any { it.value == false }) {
+            log.debug("Unreachable abstract states.")
+            pathStatus.filter { it.value == false }.forEach { abstrateState, _ ->
+                val inEdges = abstractTransitionGraph.edges().filter {
+                    it.destination?.data == abstrateState
+                            && it.source != it.destination
+                            && it.source.data !is VirtualAbstractState
+                }
+                log.debug("${inEdges.size} go to $abstrateState")
+            }
+        }
+    }
+
+    private fun retrieveScreenDimension(state: State<*>): Boolean {
         //get fullscreen app resolution
         val rotation = computeRotation()
         if (rotation == Rotation.PORTRAIT && portraitScreenSurface == Rectangle.empty()) {
@@ -338,6 +389,7 @@ class AutAutMF(private val appName: String,
             landscapeScreenSurface = Rectangle.create(fullDimension.topY, fullDimension.leftX, fullDimension.bottomY, fullDimension.rightX)
             landscapeVisibleScreenSurface = Rectangle.create(fullVisbleDimension.topY, fullVisbleDimension.leftX, fullVisbleDimension.bottomY, fullVisbleDimension.rightX)
             log.debug("Screen resolution: $portraitScreenSurface")
+            return true
         } else if (rotation == Rotation.LANDSCAPE && landscapeScreenSurface == Rectangle.empty()) {
             val fullDimension = Helper.computeGuiTreeDimension(state)
             val fullVisbleDimension = Helper.computeGuiTreeVisibleDimension(state)
@@ -346,7 +398,9 @@ class AutAutMF(private val appName: String,
             portraitScreenSurface = Rectangle.create(fullDimension.topY, fullDimension.leftX, fullDimension.bottomY, fullDimension.rightX)
             portraitVisibleScreenSurface = Rectangle.create(fullVisbleDimension.topY, fullVisbleDimension.leftX, fullVisbleDimension.bottomY, fullVisbleDimension.rightX)
             log.debug("Screen resolution: $portraitScreenSurface")
+            return true
         }
+        return false
     }
 
     private fun updateWindowStack(prevAbstractState: AbstractState?, currentAbstractState: AbstractState, isLaunch: Boolean) {
@@ -658,6 +712,7 @@ class AutAutMF(private val appName: String,
 
             }
         }
+
     }
 
     var prevAbstractStateRefinement: Int = 0
@@ -755,7 +810,7 @@ class AutAutMF(private val appName: String,
         if (disablePath.size == 1 && disablePath.all { it.label.isImplicit }) {
             abstractTransitionGraph.remove(disablePath.first())
         }
-        if (disablePath.isNotEmpty() && disablePath.any { it.label.isImplicit })
+        if (disablePath.isNotEmpty())
             disablePaths.add(disablePath)
         /*if (edge.label.abstractAction.actionName.isPressBack()) {
             abstractTransitionGraph.edges(edge.source.data).filter {
@@ -813,6 +868,7 @@ class AutAutMF(private val appName: String,
         val isFromLaunchApp = lastInteractions.find { it.actionType.isLaunchApp() || it.actionType == "ResetApp" }!=null
         val newAbstractState = AbstractStateManager.instance.getOrCreateNewTestState(
                 newState, currentActivity, currentRotation,internetStatus,null)
+        assert(newAbstractState.guiStates.contains(newState))
         increaseNodeVisit(abstractState = newAbstractState)
         log.info("Computing Abstract State. - DONE")
         return newAbstractState
@@ -990,7 +1046,7 @@ class AutAutMF(private val appName: String,
 
         }
 
-        if (allTargetWindow_ModifiedMethods.containsKey(prevAbstractState.window) &&
+       /* if (allTargetWindow_ModifiedMethods.containsKey(prevAbstractState.window) &&
                 newAbstractState.window.activityClass == prevAbstractState.window.activityClass
                 ) {
             if (!allTargetWindow_ModifiedMethods.containsKey(newAbstractState.window)) {
@@ -999,7 +1055,7 @@ class AutAutMF(private val appName: String,
                     windowHandlersHashMap.put(newAbstractState.window, windowHandlersHashMap[prevAbstractState.window]!!)
                 }
             }
-        }
+        }*/
 
         if (abstractInteraction.abstractAction.actionType != AbstractActionType.ACTION_QUEUE) {
             measureTimeMillis {
@@ -1138,7 +1194,6 @@ class AutAutMF(private val appName: String,
                 }
                 statementMF!!.recentExecutedMethods.forEach { methodId ->
                     val methodName = statementMF!!.getMethodName(methodId)
-                    allModifiedMethod.put(methodId,true)
                     if (!edgeMethodCoverage.contains(methodId)) {
                         edgeMethodCoverage.add(methodId)
                     }
@@ -1354,7 +1409,10 @@ class AutAutMF(private val appName: String,
     fun isDisablePath(path: TransitionPath): Boolean {
         disablePaths.forEach {
             var matched = false
-            matched = path.edges().containsAll(it)
+            if (path.edges().any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }) {
+                matched = path.edges().containsAll(it) && it.any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }
+            } else
+                matched = path.edges().containsAll(it)
             if (matched)
                 return true
         }

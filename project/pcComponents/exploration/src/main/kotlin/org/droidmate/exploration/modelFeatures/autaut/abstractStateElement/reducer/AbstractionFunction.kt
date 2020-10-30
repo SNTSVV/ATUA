@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributePath
@@ -13,7 +14,7 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
 class AbstractionFunction (val root: DecisionNode) {
-    val abandonedAttributePaths: HashSet<Pair<AttributePath, AbstractInteraction>> = HashSet()
+    val abandonedAttributePaths: HashSet<Pair<AttributePath, AbstractActionType>> = HashSet()
     fun reduce(guiWidget: Widget, guiState: State<*>,activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
     , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         var currentDecisionNode: DecisionNode?=null
@@ -53,11 +54,17 @@ class AbstractionFunction (val root: DecisionNode) {
             return true
         }
         else {
-            if (attributePath.parentAttributePath!=null && guiWidget.parentId!=null) {
+            if (attributePath.parentAttributePath == null)
+                return false
+            var parentAttributePath = attributePath.parentAttributePath
+            var parentWidget: Widget? = guiState.widgets.find { it.id == guiWidget.parentId }
+            while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
+                parentAttributePath = parentAttributePath!!.parentAttributePath
+                parentWidget = guiState.widgets.find { it.id == parentWidget!!.parentId }
+            }
+            if (parentAttributePath!=null && parentWidget!=null) {
                 //increaseReduceLevel for parent
-                val parentWidget = guiState.widgets.find { it.id == guiWidget.parentId }
-                if (parentWidget!=null) {
-                    val result = increaseReduceLevel(attributePath.parentAttributePath, activity, level2Maximum, parentWidget, guiState)
+                val result = increaseReduceLevel(parentAttributePath, activity, level2Maximum, parentWidget, guiState)
                    /*if (result == true) {
                         val newParrentAttributePath = reduce(parentWidget, guiState, activity, hashMapOf(), hashMapOf())
                         val newAttributePath = AttributePath(localAttributes = attributePath.localAttributes,
@@ -65,8 +72,7 @@ class AbstractionFunction (val root: DecisionNode) {
                                 childAttributePaths = attributePath.childAttributePaths)
                         prevDecisionNode!!.attributePaths.add(Pair(newAttributePath, activity))
                     }*/
-                    return result
-                }
+                return result
             }
             return false
         }

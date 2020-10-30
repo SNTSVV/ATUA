@@ -1,7 +1,8 @@
 package org.droidmate.exploration.strategy.autaut
 
-import org.droidmate.deviceInterface.exploration.ActionQueue
+import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.resetApp
@@ -10,12 +11,12 @@ import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
+import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
-import kotlin.random.Random
 
 class PhaseOneStrategy(
         autAutTestingStrategy: AutAutTestingStrategy,
@@ -49,7 +50,7 @@ class PhaseOneStrategy(
     val windowRandomExplorationBudgetUsed: HashMap<WTGNode, Int> = HashMap()
     val windowRandomExplorationBudget2: HashMap<AbstractState,Int> = HashMap()
     val windowRandomExplorationBudgetUsed2: HashMap<AbstractState, Int> = HashMap()
-    val window_AttrValSetMaps = HashMap<WTGNode, HashSet<AttributeValuationSet>> ()
+    val window_Widgets = HashMap<WTGNode, HashSet<Widget>> ()
 
     init {
         phaseState = PhaseState.P1_INITIAL
@@ -62,6 +63,7 @@ class PhaseOneStrategy(
             untriggeredTargetEvents.add(it)
         }
     }
+
 
     override fun registerTriggeredEvents( abstractAction: AbstractAction, guiState: State<*>)
     {
@@ -109,9 +111,11 @@ class PhaseOneStrategy(
             it.key.mappedStates.isNotEmpty() &&
                     it.key.mappedStates.any { it !is VirtualAbstractState }
         }
-        if (reachedWindows.size/targetWindowTryCount.size.toDouble() < 0.25 )
-            return true
-        return isAvailableAbstractStatesExisting(currentState)
+        return isAvailableAbstractStatesExisting(currentState).also {
+            if (it == false) {
+                log.debug("No available abstract states to explore.")
+            }
+        }
         /*val toExploreWindows = targetWindowTryCount.filterNot { flaggedWindows.contains(it.key) || fullyCoveredWindows.contains(it.key) || unreachableWindows.contains(it.key)}
         if (toExploreWindows.isEmpty()) {
 
@@ -133,7 +137,7 @@ class PhaseOneStrategy(
                 .filter {
                     it !is VirtualAbstractState &&
                             windowRandomExplorationBudget.containsKey(it.window) &&
-                    !flaggedWindows.contains(it.window) &&
+                            !flaggedWindows.contains(it.window) &&
                             !unreachableWindows.contains(it.window) &&
                             hasBudgetLeft2(null, it)
                 }
@@ -147,56 +151,31 @@ class PhaseOneStrategy(
 
     private fun initBudgetForNewWindow(currentState: State<*>) {
         //val currentAppState = autautMF.getAbstractState(currentState)!!
-        window_AttrValSetMaps.clear()
-        AbstractStateManager.instance.ABSTRACT_STATES
-                .filter { it !is VirtualAbstractState &&
-                            !it.isOutOfApplication &&
-                            !it.isHomeScreen &&
-                            !it.isRequestRuntimePermissionDialogBox &&
-                            !it.isAppHasStoppedDialogBox
-                }.forEach {
-                    val window = it.window
-                    if (!window_AttrValSetMaps.containsKey(window)) {
-                        window_AttrValSetMaps.put(window,HashSet())
-                    }
-                    val attrValSets = window_AttrValSetMaps[window]!!
-                    it.attributeValuationSets.filter { !attrValSets.contains(it) }.forEach {
-                        attrValSets.add(it)
-                    }
-                }
-        WTGNode.allMeaningNodes.forEach { window ->
-            if (window_AttrValSetMaps.containsKey(window)) {
-                if (window is WTGActivityNode)
-                    windowRandomExplorationBudget[window] = window_AttrValSetMaps[window]!!.size + 8
-                else
-                    windowRandomExplorationBudget[window] = window_AttrValSetMaps[window]!!.size
-                if (!windowRandomExplorationBudgetUsed.containsKey(window)) {
-                    windowRandomExplorationBudgetUsed.put(window, 0)
-                }
-            }
+        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val window = currentAppState.window
+        if (window is WTGLauncherNode || window is WTGOutScopeNode) {
+            return
         }
+        if (!window_Widgets.containsKey(window)) {
+            window_Widgets.put(window,HashSet())
+        }
+        val widgets = window_Widgets[window]!!
+        val newWidgets = ArrayList<Widget>()
+        Helper.getVisibleInteractableWidgets(currentState).filter { w-> !widgets.any { it.uid == w.uid } }.forEach {w->
+            widgets.add(w)
+            if (!newWidgets.any { w.uid == it.uid  })
+                newWidgets.add(w)
+        }
+        if (!windowRandomExplorationBudget.containsKey(window)) {
+            if (window is WTGActivityNode)
+                windowRandomExplorationBudget[window] = 8
+            else
+                windowRandomExplorationBudget[window] = 0
+            windowRandomExplorationBudgetUsed[window] = 0
+        }
+        windowRandomExplorationBudget[window] = windowRandomExplorationBudget[window]!! + (newWidgets.map { it.availableActions(delay, useCoordinateClicks) }.flatten().size*budgetScale).toInt()
+        ExplorationTrace.widgetTargets.clear()
 
-/*        val visibleInterativeWidgets =  Helper.getVisibleInteractableWidgets(currentState)
-        if (!windowRandomExplorationBudget.containsKey(currentAppState.window)) {
-            *//* val isWebViewBased = true
-            val budget = if (isWebViewBased) {
-                Helper.getVisibleInteractableWidgets(currentState).map { it.availableActions(100, false) }.flatten().size * 2 * budgetScale
-            } else {
-                Helper.getVisibleInteractableWidgets(currentState).filter { !Helper.hasParentWithType(it, currentState, "WebView") }.map { it.availableActions(100, false) }.flatten().size  * budgetScale
-            }*//*
-            windowRandomExplorationBudget.put(currentAppState.window, budget.toInt())
-            windowRandomExplorationBudgetUsed.put(currentAppState.window, 0)
-        }
-        if (!windowRandomExplorationBudget2.containsKey(currentAppState)) {
-            val isWebViewBased = true
-            val budget = if (isWebViewBased) {
-                Helper.getVisibleInteractableWidgets(currentState).map { it.availableActions(100, false) }.flatten().size*2* budgetScale
-            } else {
-                Helper.getVisibleInteractableWidgets(currentState).filter { !Helper.hasParentWithType(it, currentState, "WebView") }.map { it.availableActions(100, false) }.flatten().size * budgetScale
-            }
-            windowRandomExplorationBudget2.put(currentAppState, budget.toInt())
-            windowRandomExplorationBudgetUsed2.put(currentAppState, 0)
-        }*/
     }
 
     private fun updateFlaggedWindows() {
@@ -270,16 +249,6 @@ class PhaseOneStrategy(
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
         val toRemove = ArrayList<WTGNode>()
-        unreachableWindows.forEach {
-            if (currentAppState.window == it) {
-                toRemove.add(it)
-            } else {
-                val transitionPaths = getPathsToWindow(currentState, it, true)
-                if (transitionPaths.isNotEmpty())
-                    toRemove.add(it)
-            }
-        }
-        unreachableWindows.removeAll(toRemove)
         var chosenAction:ExplorationAction
 
 
@@ -349,11 +318,11 @@ class PhaseOneStrategy(
 
         log.info("Target window: $targetWindow")
         chooseTask_P1(eContext, currentState)
-        if (needResetApp) {
+        /*if (needResetApp) {
             needResetApp = false
             autautMF.updateMethodCovFromLastChangeCount = 0
             return eContext.resetApp()
-        }
+        }*/
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
             if (isCountAction(chosenAction)
@@ -409,18 +378,21 @@ class PhaseOneStrategy(
                     return
                 }
             }
-
-            if (hasBudgetLeft2(currentState, currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
+            if (strategyTask is GoToAnotherWindow) {
+                if (hasBudgetLeft2(currentState, currentAppState) && hasUnexploreWidgets(currentState)) {
+                    setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
+                    return
+                }
+                if (currentAppState.window is WTGDialogNode) {
+                    setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
+                    return
+                }
             }
-            if (currentAppState.window is WTGDialogNode) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState,true,false)
-                return
-            }
-            if (goToAnotherNode.isAvailable(currentState)) {
-              setGoToExploreState(goToAnotherNode, currentState)
-                return
+            if (strategyTask is RandomExplorationTask) {
+                if (goToAnotherNode.isAvailable(currentState)) {
+                    setGoToExploreState(goToAnotherNode, currentState)
+                    return
+                }
             }
             setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
             return
@@ -434,7 +406,7 @@ class PhaseOneStrategy(
                 }
                 // In case target events not found
                 // Try random exploration
-                if (hasBudgetLeft2(currentState,currentAppState)) {
+                if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
                     setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                     return
                 }
@@ -460,7 +432,7 @@ class PhaseOneStrategy(
             }
             unreachableWindows.add(targetWindow!!)
             if (hasBudgetLeft2(currentState,currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
+                setRandomExploration(randomExplorationTask, currentState, currentAppState,false,false)
                 return
             }
 /*            if (isLoginWindow(currentAppState)) {
@@ -515,8 +487,8 @@ class PhaseOneStrategy(
                 return
             }
             unreachableWindows.add(targetWindow!!)
-            if (hasBudgetLeft2(currentState,currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
+                setRandomExploration(randomExplorationTask, currentState, currentAppState,false,false)
                 return
             }
             if (goToAnotherNode.isAvailable(currentState)) {
@@ -563,7 +535,7 @@ class PhaseOneStrategy(
                 setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
                 return
             }
-            if (hasBudgetLeft2(currentState,currentAppState)) {
+            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
                 setRandomExploration(randomExplorationTask, currentState, currentAppState,true)
                 return
             }
@@ -640,7 +612,7 @@ class PhaseOneStrategy(
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
-                if (hasBudgetLeft2(currentState,currentAppState)) {
+                if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
                     setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                     return
                 }
@@ -735,7 +707,7 @@ class PhaseOneStrategy(
                 return
             }
             if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
                     setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
@@ -748,7 +720,7 @@ class PhaseOneStrategy(
             }
             unreachableWindows.add(targetWindow!!)
 
-            if (hasBudgetLeft2(currentState,currentAppState)) {
+            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
                 setRandomExploration(randomExplorationTask, currentState, currentAppState)
                 return
             }
@@ -774,6 +746,13 @@ class PhaseOneStrategy(
 
     }
 
+    private fun hasUnexploreWidgets(currentState: State<*>): Boolean {
+        return Helper.getVisibleInteractableWidgets(currentState)
+                .filterNot { it.isInputField || it.checked.isEnabled()  }.any {
+                    runBlocking { autAutTestingStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
+                }
+    }
+
     override fun isTargetState(currentState: State<*>): Boolean {
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
         if (isTargetAbstractState(currentAbstractState)) {
@@ -794,7 +773,7 @@ class PhaseOneStrategy(
             it.retryTimes = 0
         }
         log.info("Go to target window by visiting another window: ${targetWindow.toString()}")
-        phaseState = PhaseState.P2_GO_TO_EXPLORE_STATE
+        phaseState = PhaseState.P1_GO_TO_EXPLORE_STATE
     }
 
     private fun setGoToTarget(goToTargetNodeTask: GoToTargetWindowTask, currentState: State<*>) {
@@ -925,11 +904,10 @@ class PhaseOneStrategy(
 
 
 
-    override fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath> {
+    override fun getPathsToTargetWindows(currentState: State<*>, includePressBackEvent: Boolean): List<TransitionPath> {
         log.debug("getAllTargetNodePaths")
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbstractState==null)
             return transitionPaths
         val targetStates = getTargetAbstractStates(currentNode = currentAbstractState)
@@ -939,7 +917,7 @@ class PhaseOneStrategy(
             stateScores.put(it,score)
         }
         getPathToStates(transitionPaths,stateScores,currentAbstractState,currentState,
-                false,useVirtualAbstractState,true,true,true,1)
+                false,useVirtualAbstractState,includePressBackEvent,includePressBackEvent,true,1)
         return transitionPaths
     }
 

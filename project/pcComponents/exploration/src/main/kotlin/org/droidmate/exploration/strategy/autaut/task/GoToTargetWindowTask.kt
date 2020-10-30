@@ -16,7 +16,7 @@ class GoToTargetWindowTask (
     }
 
     override fun initPossiblePaths(currentState: State<*>) {
-        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState))
+        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,usingPressback))
     }
 
     companion object {

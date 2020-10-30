@@ -43,14 +43,12 @@ class ExerciseTargetComponentTask private constructor(
         return false
     }
     override fun isTaskEnd(currentState: State<*>): Boolean {
-        if (eventList.isNotEmpty()) {
-            return false
-        }
         if (isCameraOpening(currentState)) {
             return false
         }
-        if (fillingData)
+        if (eventList.isNotEmpty()) {
             return false
+        }
         return true
     }
 
@@ -183,22 +181,20 @@ class ExerciseTargetComponentTask private constructor(
             }
         }
 
+        if (!dataFilled && !fillingData) {
+            if (fillDataTask.isAvailable(currentState,alwaysUseRandomInput)) {
+                fillDataTask.initialize(currentState)
+                fillingData = true
+            }
+        }
         if (fillingData && !fillDataTask.isTaskEnd(currentState))
             return fillDataTask.chooseAction(currentState)
         if (fillingData) {
             fillingData = false
             if (fillDataTask.fillActions.isNotEmpty()  ) {
                 dataFilled = false
-            } else {
+            } else
                 dataFilled = true
-            }
-        }
-        if (!dataFilled && alwaysUseRandomInput) {
-            if (fillDataTask.isAvailable(currentState,alwaysUseRandomInput)) {
-                fillDataTask.initialize(currentState)
-                fillingData = true
-                return fillDataTask.chooseAction(currentState)
-            }
         }
        /* if (randomRefillingData
                 && originalEventList.size > eventList.size
@@ -208,6 +204,7 @@ class ExerciseTargetComponentTask private constructor(
             return fillDataTask.chooseAction(currentState)
         }*/
         //TODO check eventList is not empty
+
         if (eventList.isEmpty()) {
             log.debug("No more target event. Random exploration.")
             return randomExplorationTask.chooseAction(currentState)

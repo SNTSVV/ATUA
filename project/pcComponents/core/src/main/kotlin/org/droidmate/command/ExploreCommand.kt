@@ -283,7 +283,7 @@ open class ExploreCommand<M,S,W>(
 			while (isFirst || !action.isTerminate()) {
 				try {
 					if (isFirst) {
-						action = GlobalAction(ActionType.FetchGUI)
+						action = GlobalAction(ActionType.PressHome)
 					} else {
 						// decide for an action
 						action = strategyScheduler.nextAction(explorationContext) // check if we need to initialize timeProvider.getNow() here

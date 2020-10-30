@@ -188,29 +188,31 @@ object DefaultStrategies: Logging {
 			return when {
 				lastActionType.isPressBack() -> {
 					// if previous action was back, terminate
-					if (s.isAppHasStoppedDialogBox)
-					{
+					if (s.isAppHasStoppedDialogBox) {
 						log.debug("Cannot explore. Last action was back. Currently on an 'App has stopped' dialog. Returning 'Wait'")
 						waitForLaunch(eContext)
-					}
-					else
-					{
+					} else {
 						//some screens require pressback 2 times to exit activity
-						if (pressbackCnt < 2) {
-							log.debug("Cannot explore. Try pressback again")
-							pressbackCnt++
-							ExplorationAction.pressBack()
-						} else if (pressbackCnt < 3) {
-							// Try double pressback
-							pressbackCnt++
-							log.debug("Cannot explore. Try double pressback")
-							ActionQueue(arrayListOf(ExplorationAction.pressBack(),ExplorationAction.pressBack()),delay = 25)
-						} else
-							log.debug("Cannot explore. Last action was back. Returning 'Launch'")
+						if (s.isHomeScreen) {
 							eContext.launchApp()
+						} else {
+							if (pressbackCnt < 2) {
+								log.debug("Cannot explore. Try pressback again")
+								pressbackCnt++
+								ExplorationAction.pressBack()
+							} else if (pressbackCnt < 3) {
+								// Try double pressback
+								pressbackCnt++
+								log.debug("Cannot explore. Try double pressback")
+								ActionQueue(arrayListOf(ExplorationAction.pressBack(), ExplorationAction.pressBack()), delay = 25)
+							} else {
+								log.debug("Cannot explore. Last action was back. Returning 'Launch'")
+								eContext.launchApp()
+							}
 						}
 					}
-				lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
+				}
+				 lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
 					when {  // last action was reset
 						s.isAppHasStoppedDialogBox -> {
 							log.debug("Cannot explore. Last action was reset. Currently on an 'App has stopped' dialog. Returning 'Terminate'")

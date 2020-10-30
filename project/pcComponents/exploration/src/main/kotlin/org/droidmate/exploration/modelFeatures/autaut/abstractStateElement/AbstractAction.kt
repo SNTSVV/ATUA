@@ -41,9 +41,9 @@ data class AbstractAction (
 
     fun getScore(): Double {
         var actionScore = when(actionType) {
-            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 2
-            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 4
-            AbstractActionType.ITEM_CLICK -> 8
+            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 1
+            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 2
+            AbstractActionType.ITEM_CLICK -> 4
             else -> 1
         }
         if (attributeValuationSet == null)

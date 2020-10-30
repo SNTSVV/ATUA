@@ -71,9 +71,29 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = true,
-                        includeImplicitInteraction = true)
+                        includeImplicitInteraction = false)
             }
             if (allPaths.isEmpty() && useVirtualAbstractState) {
+                childParentMap.clear()
+                childParentMap.put(root, null)
+                findPathToTargetComponentByBFS(
+                        autautMF = autautMF,
+                        currentState = currentState,
+                        root = root,
+                        traversingNodes =  traversingNodes,
+                        finalTarget =  finalTarget,
+                        allPaths =  allPaths,
+                        includeBackEvent =  includeBackEvent,
+                        childParentMap =  childParentMap,
+                        depth = 0,
+                        useVirtualAbstractState =  true,
+                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
+                        shortest = shortest,
+                        pathCountLimitation = pathCountLimitation,
+                        considerResetOrLaunchAction = false,
+                        includeImplicitInteraction = true)
+            }
+            if (allPaths.isEmpty() && useVirtualAbstractState && includeReset) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -93,6 +113,7 @@ class PathFindingHelper {
                         considerResetOrLaunchAction = includeReset,
                         includeImplicitInteraction = true)
             }
+
         }
 
         fun findPathToTargetComponentByBFS(autautMF: AutAutMF,currentState: State<*>, root: AbstractState,
@@ -104,7 +125,7 @@ class PathFindingHelper {
                                            stopWhenHavingUnexercisedAction: Boolean = false,
                                            shortest: Boolean = true,
                                            pathCountLimitation: Int = 1,
-                                           considerResetOrLaunchAction: Boolean,
+                                           considerResetOrLaunchAction: Boolean,//TODO rename
                                            includeBackEvent: Boolean,
                                            includeImplicitInteraction: Boolean
         ) {
@@ -320,17 +341,6 @@ class PathFindingHelper {
             }
         }
 
-        private fun includingLaunchOrNot(it: Edge<AbstractState, AbstractInteraction>, includeBackEvent: Boolean, depth: Int): Boolean {
-            if (depth > 0)
-                return false
-            if (includeBackEvent)
-                return true
-            if (it.label.abstractAction.isLaunchOrReset()) {
-                return false
-            }
-            return true
-        }
-
         private fun includingWTGOrNot(edge: Edge<AbstractState, AbstractInteraction>, includeWTG: Boolean): Boolean {
             if (includeWTG)
                 return true
@@ -352,12 +362,22 @@ class PathFindingHelper {
         }
 
         private fun includingResetOrNot(it: Edge<AbstractState, AbstractInteraction>, includeReset: Boolean,depth: Int): Boolean {
-            if (depth > 0)
+            if (includeReset && depth == 0) {
+                if (it.label.abstractAction.actionType==AbstractActionType.RESET_APP) {
+                    return true
+                }
                 return false
-            if (includeReset)
-                return true
+            }
             else
                 return it.label.abstractAction.actionType!=AbstractActionType.RESET_APP
+        }
+
+        private fun includingLaunchOrNot(it: Edge<AbstractState, AbstractInteraction>, includeLaunch: Boolean,depth: Int): Boolean {
+            if (includeLaunch && depth == 0) {
+                return true
+            }
+            else
+                return it.label.abstractAction.actionType!=AbstractActionType.LAUNCH_APP
         }
 
         private fun createWindowStackForNext(windowStack: Stack<WTGNode>, prevState: AbstractState, nextState: AbstractState): Stack<WTGNode> {

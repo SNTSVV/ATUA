@@ -38,7 +38,7 @@ abstract class AbstractPhaseStrategy(
     abstract fun isTargetWindow(window: WTGNode): Boolean
 
     abstract fun getPathsToOtherWindows(currentState: State<*>): List<TransitionPath>
-    abstract fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath>
+    abstract fun getPathsToTargetWindows(currentState: State<*>, includePressbackEvent: Boolean): List<TransitionPath>
 
     open fun getPathsToWindow(currentState: State<*>, targetWindow: WTGNode, usingPressback: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
@@ -58,7 +58,7 @@ abstract class AbstractPhaseStrategy(
                 stateByActionCount.put(it,1.0)
             }
         }
-        getPathToStates(transitionPaths,stateByActionCount,currentAbstractState,currentState,false,useVirtualAbstractState,usingPressback,usingPressback, false,25)
+        getPathToStates(transitionPaths,stateByActionCount,currentAbstractState,currentState,false,useVirtualAbstractState,usingPressback,usingPressback, true,25)
         return transitionPaths
     }
     abstract fun getCurrentTargetEvents(currentState: State<*>):  Set<AbstractAction>
@@ -213,4 +213,5 @@ abstract class AbstractPhaseStrategy(
 
         }
     }
+
 }

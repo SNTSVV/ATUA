@@ -139,10 +139,10 @@ class PhaseTwoStrategy (
         log.info("Current window: ${currentAppState.window}")
         log.info("Target window: $targetWindow")
         chooseTask(eContext, currentState)
-        if (needResetApp) {
+        /*if (needResetApp) {
             needResetApp = false
             return eContext.resetApp()
-        }
+        }*/
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
         } else {
@@ -153,7 +153,7 @@ class PhaseTwoStrategy (
         return chosenAction
     }
 
-    override fun getPathsToTargetWindows(currentState: State<*>): List<TransitionPath> {
+    override fun getPathsToTargetWindows(currentState: State<*>, includePressbackEvent: Boolean): List<TransitionPath> {
         //computeAppStatesScore()
         val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)

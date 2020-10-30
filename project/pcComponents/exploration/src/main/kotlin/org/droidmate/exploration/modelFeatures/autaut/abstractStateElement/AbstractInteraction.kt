@@ -21,9 +21,11 @@ class AbstractInteraction(
     fun isExplicit() = !isImplicit
     fun updateUpdateStatementCoverage(statement: String, autautMF: AutAutMF) {
         if (autautMF.statementMF!!.isModifiedMethodStatement(statement)) {
+
             this.modifiedMethodStatement.put(statement, true)
             val methodId = autautMF.statementMF!!.statementMethodInstrumentationMap.get(statement)
             if (methodId != null) {
+                autautMF.allModifiedMethod.put(methodId,true)
                 this.modifiedMethods.put(methodId, true)
             }
         }

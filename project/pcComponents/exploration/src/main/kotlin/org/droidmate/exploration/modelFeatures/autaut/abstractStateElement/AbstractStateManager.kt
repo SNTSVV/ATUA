@@ -15,6 +15,7 @@ import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.LoggerFactory
+import java.lang.Exception
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
@@ -649,7 +650,7 @@ class AbstractStateManager() {
 
     private fun isSameFullScreenDimension(rotation: Rotation, guiTreeDimension: Rectangle): Boolean {
         if (rotation == Rotation.PORTRAIT) {
-            if (guiTreeDimension.leftX == 0 && guiTreeDimension.width == autautMF.portraitScreenSurface.width) {
+            if (guiTreeDimension.leftX == 0 && guiTreeDimension.width >= autautMF.portraitScreenSurface.width) {
                 if (guiTreeDimension.height / autautMF.portraitScreenSurface.height.toDouble() > 0.9) {
                     return true
                 }
@@ -739,7 +740,7 @@ class AbstractStateManager() {
             val tempFullAttributePaths = HashMap<Widget, AttributePath>()
             val tempRelativeAttributePaths = HashMap<Widget, AttributePath>()
             val attributePath = abstractionFunction.reduce(actionWidget, actionGUIState, actionAbstractState.window.activityClass, tempFullAttributePaths, tempRelativeAttributePaths)
-             if (AbstractionFunction.INSTANCE.abandonedAttributePaths.contains(Pair(attributePath, abstractInteraction)))
+             if (AbstractionFunction.INSTANCE.abandonedAttributePaths.contains(Pair(attributePath, abstractInteraction.abstractAction.actionType)))
                 break
             if (abstractionFunction.increaseReduceLevel(attributePath, actionAbstractState.window.activityClass, false,guiInteraction.targetWidget!!,actionGUIState)) {
                 /*if (!refineAbstractionFunction(actionAbstractState)) {
@@ -760,12 +761,12 @@ class AbstractStateManager() {
                 AbstractionFunction.restore(autautMF)
                 refinementGrainCount = 0
                 rebuildModel(actionAbstractState.window)
-                AbstractionFunction.INSTANCE.abandonedAttributePaths.add(Pair(attributePath, abstractInteraction))
+                AbstractionFunction.INSTANCE.abandonedAttributePaths.add(Pair(attributePath, abstractInteraction.abstractAction.actionType))
                 break
             }
-            if (refinementGrainCount>REFINEMENT_MAX) {
+            /*if (refinementGrainCount>REFINEMENT_MAX) {
                 break
-            }
+            }*/
         }
         /*if (refinementGrainCount>0) {
             val actionAbstractState = getAbstractState(actionGUIState)!!
@@ -1030,10 +1031,11 @@ class AbstractStateManager() {
                         && it.label.prevWindow == abstractEdge.label.prevWindow
             }
             similarEdges.forEach {
-                val similarEdgeCondition = autautMF.abstractTransitionGraph.edgeConditions[it]!!
+               /* val similarEdgeCondition = autautMF.abstractTransitionGraph.edgeConditions[it]!!
                 if (similarEdgeCondition.equals(edgeCondition)) {
                     abstractEdges.add(it)
-                }
+                }*/
+                abstractEdges.add(it)
             }
         }
         val distinctAbstractInteractions1 = abstractEdges.distinctBy { it.destination?.data?.window?.activityClass }
@@ -1051,10 +1053,11 @@ class AbstractStateManager() {
                         && it.label.isImplicit == false
             }
             similarExplicitEdges.forEach {
-                val similarEdgeCondition = autautMF.abstractTransitionGraph.edgeConditions[it]!!
+               /* val similarEdgeCondition = autautMF.abstractTransitionGraph.edgeConditions[it]!!
                 if (similarEdgeCondition.equals(edgeCondition)) {
                     abstractEdges.add(it)
-                }
+                }*/
+                abstractEdges.add(it)
             }
         }
 
@@ -1075,8 +1078,8 @@ class AbstractStateManager() {
         initAbstractInteractions(virtualAbstractState,null)
         //get all related abstract state
         val oldAbstractStates = ABSTRACT_STATES.filter { it.window == staticNode && it !is VirtualAbstractState }
+        ABSTRACT_STATES.removeIf { oldAbstractStates.contains(it) }
         val old_newAbstractStates = HashMap<AbstractState, ArrayList<AbstractState>>()
-        val possibleAbstractStates = ABSTRACT_STATES
         val processedGuiState = HashSet<State<*>>()
 
         val oldGuiStates = HashMap<AbstractState, List<State<*>>>()
@@ -1099,22 +1102,18 @@ class AbstractStateManager() {
                         InternetStatus.Disable -> false
                         else -> true
                     }
-                    measureNanoTime {
-                        val abstractState = getOrCreateNewTestState(guiState, oldAbstractState.window.activityClass, oldAbstractState.rotation, internet,oldAbstractState.window)
-                        //val abstractState = refineAbstractState(possibleAbstractStates, guiState, oldAbstractState.window, oldAbstractState.rotation, oldAbstractState.internet)
-                        if (!newAbstractStates.contains(abstractState)) {
-                            newAbstractStates.add(abstractState)
-                            autautMF.abstractStateVisitCount[abstractState] = 1
-                        } else {
-                            autautMF.abstractStateVisitCount[abstractState] = autautMF.abstractStateVisitCount[abstractState]!! + 1
-                        }
-                        if (!abstractState.guiStates.contains(guiState)) {
-                            abstractState.guiStates.add(guiState)
-                        }
-                        autautMF.guiState_AbstractStateMap.put(guiState,abstractState)
-                    }.let {
-                        computeGuiStateTime+=it
+                    val abstractState = getOrCreateNewTestState(guiState, oldAbstractState.window.activityClass, oldAbstractState.rotation, internet,oldAbstractState.window)
+                    //val abstractState = refineAbstractState(possibleAbstractStates, guiState, oldAbstractState.window, oldAbstractState.rotation, oldAbstractState.internet)
+                    if (!newAbstractStates.contains(abstractState)) {
+                        newAbstractStates.add(abstractState)
+                        autautMF.abstractStateVisitCount[abstractState] = 1
+                    } else {
+                        autautMF.abstractStateVisitCount[abstractState] = autautMF.abstractStateVisitCount[abstractState]!! + 1
                     }
+                    if (!abstractState.guiStates.contains(guiState)) {
+                        abstractState.guiStates.add(guiState)
+                    }
+                    autautMF.guiState_AbstractStateMap.put(guiState,abstractState)
                 }
                 old_newAbstractStates.put(oldAbstractState, newAbstractStates)
             }
@@ -1129,9 +1128,6 @@ class AbstractStateManager() {
             log.debug("Recompute gui states took ${computeGuiStateTime/1000000} millis with ${processedGuiState.size} states")
 
         }
-            //update launch states
-            //launchAbstractStates[LAUNCH_STATE.NORMAL_LAUNCH]!!.removeIf { !ABSTRACT_STATES.contains(it) }
-            //launchAbstractStates[LAUNCH_STATE.RESET_LAUNCH]!!.removeIf { !ABSTRACT_STATES.contains(it) }*/
 
             val allNewAbstractStates = old_newAbstractStates.map { it.value }.flatten()
             val stateId_AbstractStateMap = HashMap<ConcreteId, AbstractState>()
@@ -1169,9 +1165,9 @@ class AbstractStateManager() {
                         autautMF.abstractTransitionGraph.remove(it)
                     }
 
-                    var explicitAbstractEdges = outAbstractEdges.filter { !it.label.isImplicit }
+                    val explicitOutAbstractEdges = outAbstractEdges.filter { !it.label.isImplicit }
 
-                    explicitAbstractEdges.forEach { oldAbstractEdge ->
+                    explicitOutAbstractEdges.forEach { oldAbstractEdge ->
                         if (oldAbstractEdge.label.abstractAction.isLaunchOrReset()) {
                             //log.debug("LaunchApp or ResetApp interaction. Do nothing.")
                         }
@@ -1200,36 +1196,30 @@ class AbstractStateManager() {
                                     //log.debug("Processed interaction in refining model")
                                 } else {
                                     processedGUIInteractions.add(interaction)
+                                    var sourceState: State<*>? = null
+                                    var destState: State<*>? = null
+                                    sourceState = autautMF.abstractStateList.find { it.stateId == interaction.prevState }!!
+                                    destState = autautMF.abstractStateList.find { it.stateId == interaction.resState }!!
+
                                     var sourceAbstractState = stateId_AbstractStateMap[interaction.prevState]
 
                                     if (sourceAbstractState == null)
-                                        sourceAbstractState = oldAbstractEdge.source.data
+                                        throw Exception("Cannot find new resState' abstract state")
 
-                                    var destinationAbstractState = if (oldAbstractEdge.destination!!.data.window == staticNode) {
+                                    val destinationAbstractState = getAbstractState(destState)
+                                   /* var destinationAbstractState = if (oldAbstractEdge.destination!!.data.window == staticNode) {
                                         stateId_AbstractStateMap[interaction.resState]
                                     } else {
                                         oldAbstractEdge.destination!!.data
-                                    }
+                                    }*/
                                     if (destinationAbstractState == null)
-                                        destinationAbstractState = oldAbstractEdge.destination!!.data
-                                    var sourceState: State<*>? = null
-                                    var destState: State<*>? = null
-                                    measureNanoTime {
-                                         sourceState = autautMF.abstractStateList.find { it.stateId == interaction.prevState }!!
-                                         destState = autautMF.abstractStateList.find { it.stateId == interaction.resState }!!
-                                    }.let {
-                                        getGuiStateTime+=it
-                                    }
+                                        throw Exception("Cannot find new resState's abstract state")
 
-                                    measureNanoTime {
-                                        val newEdge = updateAbstractTransition(oldAbstractEdge, isTarget, sourceAbstractState!!, destinationAbstractState!!, interaction, sourceState!!,destState!!)
-                                        if (newEdge!=null) {
-                                            newEdges.add(newEdge)
-                                        }
-                                    }.let {
-                                        computeInteractionsTime+=it
-                                    }
+                                    val newEdge = updateAbstractTransition(oldAbstractEdge, isTarget, sourceAbstractState!!, destinationAbstractState!!, interaction, sourceState!!,destState!!)
+                                    newEdges.add(newEdge!!)
+                                    if (newEdge!=null) {
 
+                                    }
                                 }
                             }
                         }
@@ -1237,9 +1227,9 @@ class AbstractStateManager() {
 
                     // process in-edges
 
-                    explicitAbstractEdges = inAbstractEdges.filter { !it.label.isImplicit }
+                    val explicitInAbstractEdges = inAbstractEdges.filter { !it.label.isImplicit }
 
-                    explicitAbstractEdges.forEach { oldAbstractEdge ->
+                    explicitInAbstractEdges.forEach { oldAbstractEdge ->
                         if (oldAbstractEdge.label.abstractAction.isLaunchOrReset()) {
                            // log.debug("LaunchApp or ResetApp interaction. Do nothing.")
                         }
@@ -1260,40 +1250,46 @@ class AbstractStateManager() {
                         } else {
                             val isTarget = oldAbstractState.targetActions.contains(oldAbstractEdge.label.abstractAction)
                             val interactions = oldAbstractEdge.label.interactions.toList()
-                            interactions.forEach { interaction ->
+                            interactions.filter {
+                                val destStateId = it.resState
+                                val desState = autautMF.stateGraph!!.getVertices().find { it.data.stateId.equals(destStateId) }?.data
+                                if (desState == null) {
+                                    true
+                                } else {
+                                    val abstractState = getAbstractState(desState)
+                                    if (abstractState == null)
+                                         true
+                                    else if (abstractState.window == staticNode)
+                                         true
+                                        else
+                                          false
+                                    }
+                                }.forEach { interaction ->
                                 if (processedGUIInteractions.contains(interaction)) {
                                    // log.debug("Processed interaction in refining model")
                                 } else {
                                     processedGUIInteractions.add(interaction)
-                                    var destinationAbstractState = stateId_AbstractStateMap[interaction.resState]
-
-                                    if (destinationAbstractState == null)
-                                        destinationAbstractState = oldAbstractEdge.destination!!.data
-
-                                    var sourceAbstractState = if (oldAbstractEdge.source.data.window == staticNode) {
-                                        stateId_AbstractStateMap[interaction.prevState]
-                                    } else {
-                                        oldAbstractEdge.source.data
-                                    }
-                                    if (sourceAbstractState == null)
-                                        sourceAbstractState = oldAbstractEdge.source.data
-
                                     var sourceState: State<*>? = null
                                     var destState: State<*>? = null
-                                    measureNanoTime {
-                                        sourceState = autautMF.abstractStateList.find { it.stateId == interaction.prevState }!!
-                                        destState = autautMF.abstractStateList.find { it.stateId == interaction.resState }!!
-                                    }.let {
-                                        getGuiStateTime+=it
+                                    sourceState = autautMF.abstractStateList.find { it.stateId == interaction.prevState }!!
+                                    destState = autautMF.abstractStateList.find { it.stateId == interaction.resState }!!
+
+                                    var destinationAbstractState = getAbstractState(destState!!)
+
+                                    if (destinationAbstractState == null) {
+                                        throw Exception("Cannot find new resState' abstract state")
                                     }
+
+                                    var sourceAbstractState =  getAbstractState(sourceState!!)
+                                    if (sourceAbstractState == null)
+                                        throw Exception("Cannot find new prevState' abstract state")
+
+
                                     //let create new interaction
-                                    measureNanoTime {
-                                        val newEdge = updateAbstractTransition(oldAbstractEdge, isTarget, sourceAbstractState!!, destinationAbstractState!!, interaction, sourceState!!,destState!!)
-                                        if (newEdge!=null) {
-                                            newEdges.add(newEdge)
-                                        }
-                                    }.let {
-                                        computeInteractionsTime+=it
+                                    val newEdge = updateAbstractTransition(oldAbstractEdge, isTarget, sourceAbstractState!!, destinationAbstractState!!, interaction, sourceState!!,destState!!)
+                                    newEdges.add(newEdge!!)
+                                    if (newEdge!=null) {
+
                                     }
                                 }
                             }
@@ -1315,20 +1311,48 @@ class AbstractStateManager() {
 
             measureTimeMillis {
                 allAbstractStates.forEach { abstractState ->
-                    val launchInteractions =autautMF.abstractTransitionGraph.edges(abstractState).filter {
-                        it.label.abstractAction.isLaunchOrReset()
-                    }
-                    launchInteractions.forEach {
-                        if (it.label.abstractAction.actionType ==AbstractActionType.LAUNCH_APP)
-                            autautMF.abstractTransitionGraph.update(abstractState, it.destination?.data, launchAbstractState, it.label, it.label)
-                        if (it.label.abstractAction.actionType == AbstractActionType.RESET_APP)
-                            autautMF.abstractTransitionGraph.update(abstractState, it.destination?.data, resetAbstractState, it.label, it.label)
-                    }
+                    updateOrCreateLaunchAppTransition(abstractState, launchAbstractState)
+                    updateOrCreateResetAppTransition(abstractState, resetAbstractState)
                 }
             }.let {
                 log.debug("Recompute Launch interactions took $it millis")
             }
 
+    }
+
+    private fun updateOrCreateResetAppTransition(abstractState: AbstractState, resetAbstractState: AbstractState) {
+        val resetInteraction = autautMF.abstractTransitionGraph.edges(abstractState).find {
+            it.label.abstractAction.actionType == AbstractActionType.RESET_APP
+        }
+        if (resetInteraction != null) {
+            autautMF.abstractTransitionGraph.update(abstractState, resetInteraction?.destination?.data, resetAbstractState, resetInteraction.label, resetInteraction.label)
+        } else {
+            val resetAction = AbstractAction(
+                    actionType = AbstractActionType.RESET_APP
+            )
+            val abstractInteraction = AbstractInteraction(abstractAction = resetAction,
+                    isImplicit = true, prevWindow = null)
+            abstractState.abstractInteractions.add(abstractInteraction)
+            autautMF.abstractTransitionGraph.add(abstractState, resetAbstractState, abstractInteraction)
+        }
+    }
+
+    private fun updateOrCreateLaunchAppTransition(abstractState: AbstractState, launchAbstractState: AbstractState): Edge<AbstractState, AbstractInteraction>? {
+        val launchInteraction = autautMF.abstractTransitionGraph.edges(abstractState).find {
+            it.label.abstractAction.actionType == AbstractActionType.LAUNCH_APP
+        }
+        if (launchInteraction != null) {
+            autautMF.abstractTransitionGraph.update(abstractState, launchInteraction?.destination?.data, launchAbstractState, launchInteraction.label, launchInteraction.label)
+        } else {
+            val launchAction = AbstractAction(
+                    actionType = AbstractActionType.LAUNCH_APP
+            )
+            val abstractInteraction = AbstractInteraction(abstractAction = launchAction,
+                    isImplicit = true, prevWindow = null)
+            abstractState.abstractInteractions.add(abstractInteraction)
+            autautMF.abstractTransitionGraph.add(abstractState, launchAbstractState, abstractInteraction)
+        }
+        return launchInteraction
     }
 
     private fun updateAbstractTransition(oldAbstractEdge: Edge<AbstractState, AbstractInteraction>
