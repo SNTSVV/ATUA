@@ -61,6 +61,10 @@ open class StaticEvent (
             return false
         return true
     }
+
+    override fun toString(): String {
+        return "$sourceWindow - $eventType on $widget"
+    }
     companion object{
         val allStaticEvents = arrayListOf<StaticEvent>()
         fun isNoWidgetEvent(action: String): Boolean {

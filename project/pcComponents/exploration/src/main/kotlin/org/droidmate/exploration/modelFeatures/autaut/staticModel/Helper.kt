@@ -3,34 +3,29 @@ package org.droidmate.exploration.modelFeatures.autaut.staticModel
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeValuationSet
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import kotlin.math.abs
 
 class Helper {
     companion object {
-        fun mergeOptionsMenusWithActivities(optionsMenuNodes: ArrayList<WTGNode>, newState: State<*>, activityNodes: ArrayList<WTGNode>,
-                                            wtg: WindowTransitionGraph, autAutMF: AutAutMF) {
-            var shouldMerge = false
-            //FIXTHIS
-            optionsMenuNodes.forEach { n ->
-                val activityNode = activityNodes.find { wtg.getOptionsMenu(it)?.equals(n) ?: false }
-                mergeOptionsMenuWithActivity(newState, n, activityNode!!, wtg, autAutMF)
-            }
 
-        }
-
-        fun mergeOptionsMenuWithActivity(newState: State<*>, optionsMenuNode: WTGNode, activityNode: WTGNode, wtg: WindowTransitionGraph, autAutMF: AutAutMF): Boolean {
+        fun mergeOptionsMenuWithActivity(newState: State<*>, widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>, optionsMenuNode: WTGNode, activityNode: WTGNode, wtg: WindowTransitionGraph, autAutMF: AutAutMF): Boolean {
 
             var shouldMerge = false
             var containsOptionMenuWidgets = false
             var containsActivityWidgets = false
             var optionsMenuWidgets = ArrayList<StaticWidget>()
             var activityWidgets = ArrayList<StaticWidget>()
-            newState.widgets.iterator().also {
+            newState.widgets.filter { widget_AttributeValuationSetHashMap.containsKey(it) } .iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    optionsMenuWidgets.addAll(getStaticWidgets(widget, newState, optionsMenuNode, false, autAutMF))
+                    if (autAutMF.getAbstractState(newState)==null)
+                        continue
+                    val attributeValuationSet = widget_AttributeValuationSetHashMap[widget]!!
+
+                    optionsMenuWidgets.addAll(getStaticWidgets(widget, newState, attributeValuationSet, optionsMenuNode, false, autAutMF))
                     if (optionsMenuWidgets.isEmpty()) {
                         containsOptionMenuWidgets = false
                     } else {
@@ -40,10 +35,14 @@ class Helper {
                         break
                 }
             }
-            newState.widgets.iterator().also {
+            newState.widgets.filter { widget_AttributeValuationSetHashMap.containsKey(it) }.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    activityWidgets.addAll(getStaticWidgets(widget, newState, activityNode, false, autAutMF))
+                    if (autAutMF.getAbstractState(newState)==null)
+                        continue
+                     val attributeValuationSet = widget_AttributeValuationSetHashMap[widget]!!
+
+                    activityWidgets.addAll(getStaticWidgets(widget, newState, attributeValuationSet, activityNode, false, autAutMF))
                     if (activityWidgets.isEmpty()) {
                         containsActivityWidgets = false
                     } else {
@@ -70,15 +69,15 @@ class Helper {
             return false
         }
 
-        fun calculateMatchScoreForEachNode(newState: State<*>, allPossibleNodes: List<WTGNode>, appName: String,
+        fun calculateMatchScoreForEachNode(guiState: State<*>, allPossibleNodes: List<WTGNode>, appName: String,
                                            autAutMF: AutAutMF): HashMap<WTGNode, Double> {
             val matchWidgets = HashMap<WTGNode, HashMap<Widget,HashSet<StaticWidget>>>()
             val missWidgets = HashMap<WTGNode, HashSet<Widget>>()
             val propertyChangedWidgets = HashMap<WTGNode, HashSet<Widget>>()
             val visibleWidgets = ArrayList<Widget>()
-            visibleWidgets.addAll(getVisibleWidgets(newState))
+            visibleWidgets.addAll(getVisibleWidgetsForAbstraction(guiState,autAutMF.packageName))
             if (visibleWidgets.isEmpty()) {
-                visibleWidgets.addAll(newState.widgets.filterNot { it.isKeyboard })
+                visibleWidgets.addAll(guiState.widgets.filterNot { it.isKeyboard })
             }
             allPossibleNodes.forEach {
                 matchWidgets[it] = HashMap()
@@ -88,8 +87,11 @@ class Helper {
             visibleWidgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
+                    if (autAutMF.getAbstractState(guiState)==null)
+                        continue
+                    val attributeValuationSet = autAutMF.getAbstractState(guiState)!!.getAttributeValuationSet(widget,guiState)!!
                     allPossibleNodes.forEach {
-                        val matchingWidget = getStaticWidgets(widget, newState, it, false, autAutMF)
+                        val matchingWidget = getStaticWidgets(widget, guiState, attributeValuationSet, it, false, autAutMF)
                         if (matchingWidget.isNotEmpty()) {
                             if (matchWidgets.containsKey(it)) {
                                 matchWidgets[it]!!.put(widget, HashSet(matchingWidget))
@@ -108,7 +110,7 @@ class Helper {
             allPossibleNodes.forEach {window ->
                 val missStaticWidgets = window.widgets.filterNot { staticWidget -> matchWidgets[window]!!.values.any { it.contains(staticWidget) } }
                 val totalWidgets = matchWidgets[window]!!.size + missStaticWidgets.size
-                if (!window.fromModel && missWidgets.size/window.widgets.size.toDouble() > 0.7) {
+                if (!window.fromModel && matchWidgets[window]!!.values.flatten().size/window.widgets.size.toDouble() < 0.7) {
                     //need match perfectly at least all widgets with resource id.
                     //Give a bound to be 70%
                     scores.put(window,Double.NEGATIVE_INFINITY)
@@ -149,119 +151,7 @@ class Helper {
         fun getInputFields(state: State<*>) =
                 Helper.getVisibleWidgets(state).filter { it.isInputField || it.checked.isEnabled() }
 
-        fun getUnmappedWidgets(visibleWidgets: List<Widget>, bestMatchedNode: WTGNode, state: State<*>): List<Widget> {
-            return visibleWidgets.filter { w ->
-                bestMatchedNode.widgets.map { it.mappedRuntimeWidgets }
-                        .find {
-                            it.find {
-                                it.second.uid == w.uid
-                            } != null
-                        } == null
-            }.filter {
-                !hasParentWithType(it, state, "WebView")
-                        && it.resourceId != "android:id/floating_toolbar_menu_item_text"
-            }
-        }
-
-        fun matchWidget(originalWidget: Widget, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
-                        autAutMF: AutAutMF): StaticWidget? {
-            var matchedStaticWidget: StaticWidget? = null
-            val appName = autAutMF.getAppName()
-            var widget = originalWidget
-            if (widget.resourceId.isBlank() && !widget.className.contains("Button") && widget.contentDesc.isBlank()
-                    && widget.text.isBlank() && !hasParentWithType(widget, state, "ListView")) {
-                widget = tryGetParentHavingResourceId(widget, state)
-            }
-            if (widget.resourceId.isBlank() || hasParentWithType(widget, state, "ListView")) {
-                //In this case, we try to use the xpath, then text and finally contentDesc to identify
-                matchedStaticWidget = wtgNode.widgets.find {
-                    it.xpath.isNotBlank() &&
-                            it.xpath == originalWidget.xpath
-                            && (it.mappedRuntimeWidgets.find { w -> w.second.text == originalWidget.text } != null
-                            || it.contentDesc == originalWidget.contentDesc)
-                }
-            }
-            if (matchedStaticWidget == null) {
-                val unqualifiedResourceId = getUnqualifiedResourceId(widget)
-                //Process firstly for menu item or some kind of list items created by Framework
-                if ((widget.resourceId.startsWith("android:id/title")
-                                || widget.resourceId.startsWith("$appName:id/title")
-                                || widget.resourceId.contains("menu_item"))
-                        && !widget.isInputField && state.widgets.filter { it.resourceId == widget.resourceId }.size > 1) {
-                    //use text to map
-                    if (widget.text.isNotBlank()) {
-                        matchedStaticWidget = wtgNode.widgets.find { w ->
-                            w.possibleTexts.contains(widget.text)
-                        }
-                    } else {
-                        if (widget.contentDesc.isNotBlank()) {
-                            matchedStaticWidget = wtgNode.widgets.find { w ->
-                                widget.contentDesc == w.contentDesc ||
-                                        w.possibleTexts.contains(widget.text)
-                            }
-                        }
-                    }
-                } else {
-                    matchedStaticWidget = wtgNode.widgets.find {
-                        it.resourceIdName == unqualifiedResourceId
-                    }
-                    if (matchedStaticWidget == null) {
-                        if (widget.contentDesc.isNotBlank()) {
-                            matchedStaticWidget = wtgNode.widgets.find { w ->
-                                widget.contentDesc == w.contentDesc ||
-                                        w.possibleTexts.contains(widget.text)
-                            }
-                        } else if (widget.text.isNotBlank()) {
-                            matchedStaticWidget = wtgNode.widgets.find { w ->
-                                w.possibleTexts.contains(widget.text)
-                            }
-                        }
-                    }
-
-                }
-            }
-            if (updateModel) {
-                if (matchedStaticWidget != null) {
-                    matchedStaticWidget.mappedRuntimeWidgets.add(Pair(state, originalWidget))
-                    //addRuntimeWigetInfo(matchedStaticWidget, originalWidget, state)
-                    matchedStaticWidget.xpath = originalWidget.xpath
-                    matchedStaticWidget.isInputField = originalWidget.isInputField
-                    updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, false, autAutMF)
-                    if (originalWidget.isInputField && originalWidget.text.isNotBlank()) {
-                        matchedStaticWidget.textInputHistory.add(originalWidget.text)
-                    }
-                    if (wtgNode is WTGAppStateNode && !originalWidget.isInputField && originalWidget.text != matchedStaticWidget.appStateTextProperty[wtgNode]) {
-                        matchedStaticWidget.appStateTextProperty[wtgNode] = originalWidget.text
-                    }
-                } else {
-                    //Create new StaticWidget
-                    if (shouldCreateNewWidget(originalWidget)) {
-                        val unqualifiedResourceId = getUnqualifiedResourceId(widget)
-                        val staticWidget = StaticWidget.getOrCreateStaticWidget(StaticWidget.getWidgetId(), unqualifiedResourceId, "", originalWidget.className, wtgNode.classType, wtgNode)
-                        matchedStaticWidget = staticWidget
-                        staticWidget.contentDesc = originalWidget.contentDesc
-                        staticWidget.xpath = originalWidget.xpath
-                        staticWidget.className == originalWidget.className
-                        if (!originalWidget.isInputField) {
-                            staticWidget.text = originalWidget.nlpText
-                            if (!staticWidget.possibleTexts.contains(originalWidget.text))
-                                staticWidget.possibleTexts.add(originalWidget.text)
-                            if (wtgNode is WTGAppStateNode && originalWidget.text != matchedStaticWidget.appStateTextProperty[wtgNode]) {
-                                matchedStaticWidget.appStateTextProperty[wtgNode] = originalWidget.text
-                            }
-                        }
-                        //add mappedRuntime
-                        staticWidget.mappedRuntimeWidgets.add(Pair(state, originalWidget))
-                        //addRuntimeWigetInfo(staticWidget, originalWidget, state)
-                        updateInteractiveWidget(originalWidget, state, matchedStaticWidget, wtgNode, true, autAutMF)
-                    }
-
-                }
-            }
-            return matchedStaticWidget
-        }
-
-        fun getStaticWidgets(originalWidget: Widget, state: State<*>, wtgNode: WTGNode, updateModel: Boolean,
+        fun  getStaticWidgets(originalWidget: Widget, state: State<*>, attributeValuationSet: AttributeValuationSet, wtgNode: WTGNode, updateModel: Boolean,
                              autAutMF: AutAutMF): List<StaticWidget> {
             var matchedStaticWidgets: ArrayList<StaticWidget> = ArrayList()
             val appName = autAutMF.getAppName()
@@ -287,7 +177,12 @@ class Helper {
                     w.possibleTexts.contains(widget.text)
                 })
             }
-            if (matchedStaticWidgets.isEmpty()
+            if (matchedStaticWidgets.isEmpty()) {
+                matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
+                    w.xpath.equals(originalWidget.xpath)
+                })
+            }
+            /*if (matchedStaticWidgets.isEmpty()
                     && (widget.className == "android.widget.RelativeLayout" || widget.className.contains("ListView") ||  widget.className.contains("RecycleView" ) ||  widget.className == "android.widget.LinearLayout"))
             {
                 matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
@@ -298,13 +193,12 @@ class Helper {
                     (hasParentWithType(widget, state, "ListView") || hasParentWithType(widget, state, "RecycleView"))) {
                 //this is an item of ListView or RecycleView
 
-            }
+            }*/
             if (updateModel) {
                 matchedStaticWidgets.forEach {
                     if (originalWidget.isInputField && originalWidget.text.isNotBlank()) {
                         it.textInputHistory.add(originalWidget.text)
                     }
-
                 }
                 if (matchedStaticWidgets.isEmpty()) {
                     if (originalWidget.resourceId == "android:id/content") {
@@ -408,100 +302,6 @@ class Helper {
         }
 
         internal var changeRatioCriteria: Double = 0.05
-        fun checkShouldCreateNewNode(newState: State<*>, bestMatchedNode: WTGNode, currentRotation: Int, appName: String,
-                                     autAutMF: AutAutMF): Boolean {
-            if (bestMatchedNode.rotation != currentRotation)
-                return true
-            var newWidgets = ArrayList<Widget>()
-            var changeWidgets = HashMap<StaticWidget, String>()
-            val visibleWidgets = getVisibleWidgets(newState)
-            val matchedWidgets = HashMap<StaticWidget, Boolean>()
-            bestMatchedNode.widgets.filter { it.mappedRuntimeWidgets.isNotEmpty() }.forEach {
-                matchedWidgets.put(it, false)
-            }
-            val mappedWidgets = getMappedGUIWidgets(visibleWidgets, bestMatchedNode)
-            mappedWidgets.forEach { w, sw ->
-                matchedWidgets.put(sw, true)
-                if (!w.isInputField) {
-                    if (sw.mappedRuntimeWidgets.find { sw.possibleTexts.contains(it.second.text) } == null)
-                        changeWidgets.put(sw, w.text)
-                }
-            }
-            val unmappedWidgets = visibleWidgets.filter { !mappedWidgets.containsKey(it) }
-            unmappedWidgets.forEach {
-                var matchedStaticWidget: StaticWidget?
-                matchedStaticWidget = matchWidget(it, newState, bestMatchedNode, false, autAutMF)
-                if (matchedStaticWidget != null) {
-                    //new widget found
-                    matchedWidgets[matchedStaticWidget] = true
-                    //This is really a new widget
-                    if (matchedStaticWidget.mappedRuntimeWidgets.isEmpty())
-                        newWidgets.add(it)
-                } else {
-                    var widget = it
-                    if (shouldCreateNewWidget(widget))
-                        newWidgets.add(it)
-                }
-
-            }
-            if (newWidgets.size / matchedWidgets.size.toDouble() > 0.05) {
-                return true
-            }
-            //check lost identified widget
-            var lostWidgets = matchedWidgets.filter { it.value == false }
-
-            if (lostWidgets.size / matchedWidgets.size.toDouble() > 0.05) {
-//            if (lostWidget.find { it.className!="android.widget.Image" } != null)
-//                return true
-                return true
-            }
-            return false
-            if (changeWidgets.size / matchedWidgets.size.toDouble() > 0.1) {
-                return true
-            }
-            return false
-        }
-
-        fun transferStaticWidgetsAndEvents(sourceNode: WTGNode, newNode: WTGNode, newState: State<*>, appName: String
-                                           , autAutMF: AutAutMF) {
-            autAutMF.wtg.edges(sourceNode).filter { it.label.widget == null }.forEach {
-                if (it.destination?.data == sourceNode)
-                    autAutMF.wtg.add(newNode, newNode, it.label)
-                else
-                    autAutMF.wtg.add(newNode, it.destination?.data, it.label)
-            }
-            //Copy mapped widget
-            val visibleWidgets = getVisibleWidgets(newState)
-            val mappedWidgets = getMappedGUIWidgets(visibleWidgets, sourceNode)
-            mappedWidgets.forEach { w, sw ->
-                if (!sw.possibleTexts.contains(w.text) && sw.possibleTexts.isNotEmpty() && !w.isInputField) // it should be an similar widget
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.wtg)
-                else
-                    copyStaticWidgetAndItsEvents(sw, newNode, sourceNode, autAutMF.wtg)
-            }
-
-            //process unmappedWidget
-            val unmappedWidgets = visibleWidgets.filter { !mappedWidgets.containsKey(it) }
-            unmappedWidgets.forEach {
-                var matchedStaticWidget: StaticWidget? = matchWidget(it, newState, sourceNode, false, autAutMF)
-
-                if (matchedStaticWidget != null) {
-                    if (matchedStaticWidget.mappedRuntimeWidgets.isEmpty()) {
-                        //move if this static widget never mapped before
-                        //change owner wtgNode
-                        copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
-                        //update event
-
-                    } else {
-                        //copy else
-                        if (!matchedStaticWidget.possibleTexts.contains(it.text))
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
-                        else
-                            copyStaticWidgetAndItsEvents(matchedStaticWidget, newNode, sourceNode, autAutMF.wtg)
-                    }
-                }
-            }
-        }
 
         fun isInteractiveWidget(widget: Widget): Boolean =
                 widget.enabled && ( widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || widget.scrollable || (!widget.hasClickableDescendant && widget.selected.isEnabled() && widget.selected == true) )

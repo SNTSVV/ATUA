@@ -356,7 +356,7 @@ class AutAutMF(private val appName: String,
                     finalTarget = dest,
                     includeBackEvent = true,
                     includeReset = true,
-                    pathCountLimitation = 25,
+                    pathCountLimitation = 10,
                     shortest = true,
                     traversingNodes = listOf(Pair(windowStack.clone() as Stack<WTGNode>, currentAbstractState))
             )
@@ -624,7 +624,7 @@ class AutAutMF(private val appName: String,
                 //addImplicitAbstractInteraction(prevAbstractState,currentAbstractState,lastExecutedInteraction!!,windowStack.peek())
             }
         } else {
-            var widgetGroup = prevAbstractState.getWidgetGroup(interaction.targetWidget!!, prevState)
+            var widgetGroup = prevAbstractState.getAttributeValuationSet(interaction.targetWidget!!, prevState)
             //TODO: create new widgetGroup
            /* if (widgetGroup == null) {
                 widgetGroup = prevAbstractState.widgets.find { it.getGUIWidgets(prevState).contains(interaction.targetWidget!!) }
@@ -697,7 +697,7 @@ class AutAutMF(private val appName: String,
                 }
             }
         }
-        if (lastExecutedAction!=null)
+        if (lastExecutedAction!=null && !currentAbstractState.isRequestRuntimePermissionDialogBox)
             prevAbstractState.increaseActionCount(lastExecutedAction!!)
         else{
             log.debug("execution action null")
@@ -967,7 +967,7 @@ class AutAutMF(private val appName: String,
                 firstRun = false
             }
 
-            updateWindowStack(prevAbstractState, currentAbstractState,fromLaunch)
+
             if (lastInteractions.isNotEmpty()) {
                 lastExecutedInteraction = null
                 lastExecutedAction = null
@@ -983,6 +983,7 @@ class AutAutMF(private val appName: String,
             } else {
                 updated = false
             }
+            updateWindowStack(prevAbstractState, currentAbstractState,fromLaunch)
         }.let {
             log.debug("Update model took $it  millis")
         }
@@ -1012,7 +1013,7 @@ class AutAutMF(private val appName: String,
         //create StaticEvent if it dose not exist in case this abstract Interaction triggered modified methods
         if(!prevAbstractState.staticEventMapping.containsKey(abstractInteraction.abstractAction) && !abstractInteraction.abstractAction.isActionQueue() && !abstractInteraction.abstractAction.isLaunchOrReset() )
         {
-            createStaticEventFromAbstractInteraction(prevAbstractState,newAbstractState,abstractInteraction)
+            createStaticEventFromAbstractInteraction(prevAbstractState,newAbstractState,abstractInteraction,lastInteractions.first())
         }
         if(prevAbstractState.window !is WTGOutScopeNode)
         {
@@ -1070,13 +1071,16 @@ class AutAutMF(private val appName: String,
 
 
 
-    private fun createStaticEventFromAbstractInteraction(prevAbstractState: AbstractState, newAbstractState: AbstractState, abstractInteraction: AbstractInteraction) {
+    private fun createStaticEventFromAbstractInteraction(prevAbstractState: AbstractState, newAbstractState: AbstractState, abstractInteraction: AbstractInteraction, interaction: Interaction<Widget>?) {
         val eventType = StaticEvent.getEventTypeFromActionName(abstractInteraction.abstractAction.actionType)
         if (eventType == EventType.fake_action || eventType == EventType.resetApp || eventType == EventType.implicit_launch_event)
             return
+        if (interaction!=null && interaction.targetWidget!=null && interaction.targetWidget!!.isKeyboard)
+            return
+        var newStaticEvent: StaticEvent? = null
         if (abstractInteraction.abstractAction.attributeValuationSet == null)
         {
-            val newStaticEvent = StaticEvent(
+            newStaticEvent = StaticEvent(
                     eventType = eventType,
                     widget = null,
                     activity = prevAbstractState.activity,
@@ -1088,9 +1092,6 @@ class AutAutMF(private val appName: String,
             newStaticEvent.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
             newStaticEvent.modifiedMethodStatement.putAll(abstractInteraction.modifiedMethodStatement)
             newStaticEvent.eventHandlers.addAll(abstractInteraction.handlers.map { it.key })
-            if (newStaticEvent.modifiedMethods.isNotEmpty()) {
-                allTargetStaticEvents.add(newStaticEvent)
-            }
 
             wtg.add(prevAbstractState.window,newAbstractState.window,newStaticEvent)
             if (!prevAbstractState.staticEventMapping.containsKey(abstractInteraction.abstractAction)) {
@@ -1100,7 +1101,7 @@ class AutAutMF(private val appName: String,
             AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == prevAbstractState }. filter { it.window == prevAbstractState.window }.forEach {
                 val similarAbstractAction = it.getAvailableActions().find { it == abstractInteraction.abstractAction }
                 if (similarAbstractAction != null) {
-                    it.staticEventMapping.put(similarAbstractAction, arrayListOf(newStaticEvent))
+                    it.staticEventMapping.put(similarAbstractAction, arrayListOf(newStaticEvent!!))
                 }
             }
         }
@@ -1108,22 +1109,29 @@ class AutAutMF(private val appName: String,
         {
             val widgetGroup = abstractInteraction.abstractAction.attributeValuationSet
             if (!prevAbstractState.staticWidgetMapping.containsKey(widgetGroup)){
-                // create new static widget and add to the abstract state
-                val staticWidget = StaticWidget(
-                        widgetId = widgetGroup.hashCode().toString(),
-                        resourceIdName = widgetGroup.getLocalAttributes()[AttributeType.resourceId]?:"",
-                        resourceId = "",
-                        activity = prevAbstractState.activity,
-                        wtgNode = prevAbstractState.window,
-                        className = widgetGroup.getLocalAttributes()[AttributeType.className]?:"",
-                        contentDesc = widgetGroup.getLocalAttributes()[AttributeType.contentDesc]?:"",
-                        text = widgetGroup.getLocalAttributes()[AttributeType.text]?:""
-                )
-                prevAbstractState.staticWidgetMapping.put(widgetGroup, arrayListOf(staticWidget))
-                AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == prevAbstractState }. filter { it.window == prevAbstractState.window }.forEach {
-                    val similarWidget = it.attributeValuationSets.find { it == widgetGroup }
-                    if (similarWidget != null ) {
-                        it.staticWidgetMapping.put(similarWidget,arrayListOf(staticWidget))
+                val createNewStaticWidget = widgetGroup.attributePath.getResourceId().isNotBlank() ||
+                        abstractInteraction.modifiedMethods.filter { it.value == true }.isNotEmpty()
+                if (createNewStaticWidget) {
+                    // create new static widget and add to the abstract state
+                    val staticWidget = StaticWidget(
+                            widgetId = widgetGroup.hashCode().toString(),
+                            resourceIdName = widgetGroup.getLocalAttributes()[AttributeType.resourceId]?:"",
+                            resourceId = "",
+                            activity = prevAbstractState.activity,
+                            wtgNode = prevAbstractState.window,
+                            className = widgetGroup.getLocalAttributes()[AttributeType.className]?:"",
+                            contentDesc = widgetGroup.getLocalAttributes()[AttributeType.contentDesc]?:"",
+                            text = widgetGroup.getLocalAttributes()[AttributeType.text]?:""
+                    )
+                    if (staticWidget.resourceIdName.isBlank()) {
+                        staticWidget.xpath = interaction!!.targetWidget!!.xpath
+                    }
+                    prevAbstractState.staticWidgetMapping.put(widgetGroup, arrayListOf(staticWidget))
+                    AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == prevAbstractState }. filter { it.window == prevAbstractState.window }.forEach {
+                        val similarWidget = it.attributeValuationSets.find { it == widgetGroup }
+                        if (similarWidget != null ) {
+                            it.staticWidgetMapping.put(similarWidget,arrayListOf(staticWidget))
+                        }
                     }
                 }
             }
@@ -1132,32 +1140,36 @@ class AutAutMF(private val appName: String,
 
                 prevAbstractState.staticWidgetMapping[widgetGroup]!!.forEach { staticWidget->
                     allTargetStaticWidgets.add(staticWidget)
-                    val newStaticEvent = StaticEvent(
+                    newStaticEvent = StaticEvent(
                               eventType = eventType,
                               widget = staticWidget,
                               activity = prevAbstractState.activity,
                               sourceWindow = prevAbstractState.window,
                               eventHandlers = HashSet(),
                             createdAtRuntime = true
-                )
-                    newStaticEvent.data = abstractInteraction.abstractAction.extra
-                    newStaticEvent.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
-                    newStaticEvent.modifiedMethodStatement.putAll(abstractInteraction.modifiedMethodStatement)
-                    newStaticEvent.eventHandlers.addAll(abstractInteraction.handlers.map { it.key })
-                    allTargetStaticEvents.add(newStaticEvent)
-                    wtg.add(prevAbstractState.window,newAbstractState.window,newStaticEvent)
+                    )
+                    newStaticEvent!!.data = abstractInteraction.abstractAction.extra
+                    newStaticEvent!!.modifiedMethods.putAll(abstractInteraction.modifiedMethods)
+                    newStaticEvent!!.modifiedMethodStatement.putAll(abstractInteraction.modifiedMethodStatement)
+                    newStaticEvent!!.eventHandlers.addAll(abstractInteraction.handlers.map { it.key })
+
+                    wtg.add(prevAbstractState.window,newAbstractState.window,newStaticEvent!!)
                     if (!prevAbstractState.staticEventMapping.containsKey(abstractInteraction.abstractAction)) {
                         prevAbstractState.staticEventMapping.put(abstractInteraction.abstractAction, arrayListOf())
                     }
-                    prevAbstractState.staticEventMapping.get(abstractInteraction.abstractAction)!!.add(newStaticEvent)
+                    prevAbstractState.staticEventMapping.get(abstractInteraction.abstractAction)!!.add(newStaticEvent!!)
                     AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == prevAbstractState }. filter { it.window == prevAbstractState.window }.forEach {
                         val similarAbstractAction = it.getAvailableActions().find { it == abstractInteraction.abstractAction }
                         if (similarAbstractAction != null) {
-                            it.staticEventMapping.put(similarAbstractAction, arrayListOf(newStaticEvent))
+                            it.staticEventMapping.put(similarAbstractAction, arrayListOf(newStaticEvent!!))
                         }
                     }
                 }
             }
+        }
+        if (newStaticEvent!=null && abstractInteraction.modifiedMethods.any { it.value == true }) {
+            log.debug("New target Window Transition detected: $newStaticEvent")
+            allTargetStaticEvents.add(newStaticEvent!!)
         }
 
     }
@@ -1410,7 +1422,7 @@ class AutAutMF(private val appName: String,
         disablePaths.forEach {
             var matched = false
             if (path.edges().any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }) {
-                matched = path.edges().containsAll(it) && it.any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }
+                matched = path.edges().filterNot { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }.containsAll(it)
             } else
                 matched = path.edges().containsAll(it)
             if (matched)
@@ -1936,11 +1948,11 @@ class AutAutMF(private val appName: String,
         sb.appendln("Phase2ModifiedMethodCoverage;$stage2ModifiedCoverage")
         sb.appendln("Phase2ModifiedStatementCoverage;$stage2ModifiedStatementCoverage")
         sb.appendln("Phase2ActionCount;$stage2Actions")
-        sb.appendln("StrategyStatistics;")
+        /*sb.appendln("StrategyStatistics;")
         sb.appendln("ExerciseTargetComponent;${ExerciseTargetComponentTask.executedCount}")
         sb.appendln("GoToTargetNode;${GoToTargetWindowTask.executedCount}")
         sb.appendln("GoToAnotherNode;${GoToAnotherWindow.executedCount}")
-        sb.appendln("RandomExploration;${RandomExplorationTask.executedCount}")
+        sb.appendln("RandomExploration;${RandomExplorationTask.executedCount}")*/
         var totalEvents = allTargetStaticEvents.size
         /*sb.appendln("TotalTargetEvents;$totalEvents")
         sb.appendln("TriggeredEvents;")
@@ -1966,11 +1978,11 @@ class AutAutMF(private val appName: String,
                         sb.append("Widget null:${it.eventType}\n")
                     }
                 }*/
-        sb.appendln("Unreached node;")
+        sb.appendln("Unreached windows;")
         WTGNode.allNodes.filterNot {
             it is WTGAppStateNode || it is WTGLauncherNode
                 || it is WTGOutScopeNode || it is WTGFakeNode
-        }. filter { node -> AbstractStateManager.instance.ABSTRACT_STATES.find { it.window == node } == null} .forEach {
+        }. filter { node -> AbstractStateManager.instance.ABSTRACT_STATES.find { it.window == node && it !is VirtualAbstractState} == null} .forEach {
                 sb.appendln(it.toString())
         }
       /*  sb.appendln("Unmatched widget: ${allTargetStaticWidgets.filter { it.mappedRuntimeWidgets.isEmpty() }.size}")

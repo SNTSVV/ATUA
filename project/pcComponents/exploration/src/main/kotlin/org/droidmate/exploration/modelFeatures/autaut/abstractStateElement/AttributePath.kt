@@ -97,26 +97,29 @@ data class AttributePath (
         return isClickable() || isLongClickable() || isScrollable() || isCheckable()
     }
 
-    fun contains(attributePath: AttributePath): Boolean {
+    fun contains(containedAttributePath: AttributePath): Boolean {
+        //check parent first
+        if (parentAttributePath!=null && containedAttributePath.parentAttributePath!=null) {
+            if (!parentAttributePath.contains(containedAttributePath.parentAttributePath)) {
+                return false
+            }
+        }
         //check local
-        attributePath.localAttributes.forEach {
+        containedAttributePath.localAttributes.forEach {
             if (!localAttributes.containsKey(it.key))
                 return false
             if (localAttributes[it.key] != it.value)
                 return false
         }
-        if (parentAttributePath!=null && attributePath.parentAttributePath!=null) {
-            if (!parentAttributePath.contains(attributePath.parentAttributePath)) {
-                return false
-            }
-        }
-        if (childAttributePaths!=null && attributePath.childAttributePaths!=null) {
-            childAttributePaths.forEach { childAttPath->
-                if (!attributePath.childAttributePaths.any { childAttPath.contains(it)}){
+
+        if (!containedAttributePath.childAttributePaths.isEmpty()) {
+            containedAttributePath.childAttributePaths.forEach { containedChildAttributePath ->
+                if (!childAttributePaths.any { it.contains(containedChildAttributePath) }) {
                     return false
                 }
             }
         }
+
         return true
 
     }

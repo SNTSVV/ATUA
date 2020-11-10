@@ -12,7 +12,6 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGActivityNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGDialogNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGLauncherNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
@@ -58,6 +57,7 @@ class RandomExplorationTask constructor(
     var lastAction: AbstractAction? = null
     var isScrollToEnd = false
 
+    val recentActions = ArrayList<AbstractAction>()
     override fun reset() {
         attemptCount = 0
         prevAbState=null
@@ -74,6 +74,7 @@ class RandomExplorationTask constructor(
         alwaysUseRandomInput = false
         triedRandomKeyboard = false
         stopWhenHavingTestPath = false
+        recentActions.clear()
     }
 
     override fun initialize(currentState: State<*>) {
@@ -82,14 +83,21 @@ class RandomExplorationTask constructor(
     }
     fun lockTargetWindow (window: WTGNode) {
         lockedWindow = window
-        goToLockedWindowTask =  GoToAnotherWindow(autautMF,autautStrategy,delay,useCoordinateClicks)
+
     }
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
+        if (isCameraOpening(currentState))
+            return false
         if (attemptCount >= maximumAttempt)
         {
             return true
         }
+        val prevState = autautMF.appPrevState
+        val prevAppState = autautMF.getAbstractState(prevState!!)!!
+        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        if (prevAppState.window != currentAbstractState.window && !currentAbstractState.isOutOfApplication && !prevAppState.isOutOfApplication && lockedWindow == null)
+            return true
         /*if (isFullyExploration)
             return false
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
@@ -198,6 +206,7 @@ class RandomExplorationTask constructor(
         if (isCameraOpening(currentState)) {
             return dealWithCamera(currentState)
         }
+        isClickedShutterButton = false
         if (currentAbstractState.isOutOfApplication
                 || Helper.getVisibleWidgets(currentState).find { it.resourceId == "android:id/floating_toolbar_menu_item_text" } != null) {
 
@@ -215,22 +224,27 @@ class RandomExplorationTask constructor(
             }
         }
 
-        if (lockedWindow != null && goToLockedWindowTask != null && currentAbstractState.window !is WTGDialogNode) {
-            if (lockedWindow != currentAbstractState.window) {
+        if (lockedWindow != null && lockedWindow != currentAbstractState.window) {
+            if (goToLockedWindowTask != null) {
                 // should go back to target Window
-
                 //reset data filling
-                dataFilled = false
-                if (goToLockedWindowTask!!.isTaskEnd(currentState)) {
-                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!,true)) {
+
+                if (!goToLockedWindowTask!!.isTaskEnd(currentState)) {
+                    return goToLockedWindowTask!!.chooseAction(currentState)
+                }
+            } else {
+
+                if (currentAbstractState.window !is WTGDialogNode) {
+                    dataFilled = false
+                    goToLockedWindowTask = GoToAnotherWindow(autAutTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
+                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true,false)) {
                         goToLockedWindowTask!!.initialize(currentState)
                         return goToLockedWindowTask!!.chooseAction(currentState)
                     }
-                } else
-                    return goToLockedWindowTask!!.chooseAction(currentState)
+                }
             }
         }
-
+        goToLockedWindowTask = null
         if (!triedRandomKeyboard) {
             if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty()
                     && Helper.getVisibleInteractableWidgets(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty()) {
@@ -291,12 +305,12 @@ class RandomExplorationTask constructor(
                         return GlobalAction(ActionType.DisableData).also {
                             autautMF.internetStatus = false
                         }
-                } else {
+                } else if (autautMF.internetStatus == false) {
                     return GlobalAction(ActionType.EnableData).also {
-                        autautMF.internetStatus = false
+                        autautMF.internetStatus = true
                     }
                 }
-            } else {
+            } /*else {
                 if (isFullyExploration && autautMF.havingInternetConfiguration(currentAbstractState.window)) {
                     //20%
                     if (random.nextInt(4) == 0) {
@@ -310,7 +324,7 @@ class RandomExplorationTask constructor(
                             }
                     }
                 }
-            }
+            }*/
         }
 
 //        if (currentAbstractState.window is WTGActivityNode) {
@@ -342,6 +356,7 @@ class RandomExplorationTask constructor(
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && prevAbstractState != currentAbstractState
                 && prevAbstractState.window == currentAbstractState.window
+                && autautMF.abstractStateVisitCount[currentAbstractState]!! == 1
                 && tryLastAction < MAX_TRY_LAST_ACTION
                 /*&& isScrollToEnd
                 && lastAction!!.extra == "SwipeTillEnd"*/
@@ -449,7 +464,14 @@ class RandomExplorationTask constructor(
 
                 //getActionScores(currentAbstractState, interestingActions, actionScore, currentState)
                 getActionScores2(currentAbstractState, allActions, actionScore, currentState)
-                randomAction = actionScore.maxBy { it.value }!!.key
+                val unexercisedActions = actionScore.filter { !recentActions.contains(it.key) }
+                if (unexercisedActions.isNotEmpty()) {
+                    randomAction = unexercisedActions.maxBy { it.value }!!.key
+
+                } else {
+                    randomAction = actionScore.entries.random().key
+                }
+                recentActions.add(randomAction)
             }
         }
 
@@ -599,21 +621,21 @@ class RandomExplorationTask constructor(
                 actionPotentialScore /= 5
         }
 
-        val openEdges = autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+/*        val openEdges = autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.source.data != edge.destination?.data
                     && edge.destination?.data !is VirtualAbstractState
                     && edge.destination?.data?.window !is WTGOutScopeNode
                     && edge.destination?.data?.window !is WTGLauncherNode
         }
-/*        if (action.actionType != AbstractActionType.PRESS_BACK && openEdges.isNotEmpty()) {
+*//*        if (action.actionType != AbstractActionType.PRESS_BACK && openEdges.isNotEmpty()) {
             if (openEdges.all { it.label.isImplicit }) {
                 actionPotentialScore *= (2* openEdges.size)
             } else {
                 actionPotentialScore *= (4* openEdges.map { it.label.interactions }.flatten().size)
             }
-        }*/
-        val unexploredWidgetAction = ArrayList<AbstractAction>()
+        }*//*
+        val allUnexploredWidgetAction = ArrayList<AbstractAction>()
         openEdges.forEach { edge ->
             val dest = edge.destination?.data
             if (dest != null) {
@@ -622,9 +644,9 @@ class RandomExplorationTask constructor(
                 val widgetGroupFrequences = AbstractStateManager.instance.widgetGroupFrequency[dest.window]!!
                 val unexploredWidgetActions = dest.getUnExercisedActions(null).filterNot { it.attributeValuationSet == null }
                 unexploredWidgetActions
-                        .filterNot { unexploredWidgetAction.contains(it) }
+                        .filterNot { allUnexploredWidgetAction.contains(it) }
                         .forEach {
-                            unexploredWidgetAction.add(it)
+                            allUnexploredWidgetAction.add(it)
                             if (!widgetGroupFrequences.containsKey(it.attributeValuationSet)) {
                                 actionPotentialScore *= (1 + it.getScore() / (numberOfAbstractStates))
                             } else {
@@ -634,7 +656,7 @@ class RandomExplorationTask constructor(
                 actionPotentialScore = actionPotentialScore
 
             }
-        }
+        }*/
 
         val considerDeadEdges = true
         if (considerDeadEdges) {
@@ -811,6 +833,7 @@ class RandomExplorationTask constructor(
         val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
         if (doneButton!=null)
         {
+
             log.info("Widget: $doneButton")
             val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
             if (clickActions.isNotEmpty()) {

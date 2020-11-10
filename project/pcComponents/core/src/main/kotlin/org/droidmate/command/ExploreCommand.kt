@@ -292,7 +292,7 @@ open class ExploreCommand<M,S,W>(
 					// execute action
 					result = action.execute(app, device)
 
-				/*	if (cfg[ConfigProperties.UiAutomatorServer.delayedImgFetch]) {
+					if (cfg[ConfigProperties.UiAutomatorServer.delayedImgFetch]) {
 						if (capturedPreviously && action is ActionQueue) {
 							action.actions.forEachIndexed { i, a ->
 								log.debug("action queue element {} should have screenshot for ExploreCommand {}", i, a)
@@ -315,7 +315,7 @@ open class ExploreCommand<M,S,W>(
 							pullScreenShot(id, explorationContext.model.config.imgDst, device, explorationContext)
 						}
 					}
-					capturedPreviously = result.guiSnapshot.capturedScreen*/
+					capturedPreviously = result.guiSnapshot.capturedScreen
 
 					explorationContext.update(action, result)
 

@@ -11,7 +11,6 @@ class LocalReducerLV2: AbstractLocalReducer() {
         val reducedAttributes = HashMap<AttributeType, String>()
         reducedAttributes.put(AttributeType.className,guiWidget.className)
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)
-        reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())
         reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
         reducedAttributes.put(AttributeType.checkable,guiWidget.checked.isEnabled().toString())

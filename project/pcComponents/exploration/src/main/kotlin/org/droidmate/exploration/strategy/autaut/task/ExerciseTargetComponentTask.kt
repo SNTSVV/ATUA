@@ -7,6 +7,7 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Cardinality
+import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -46,6 +47,8 @@ class ExerciseTargetComponentTask private constructor(
         if (isCameraOpening(currentState)) {
             return false
         }
+        if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
+            return true
         if (eventList.isNotEmpty()) {
             return false
         }
@@ -63,6 +66,7 @@ class ExerciseTargetComponentTask private constructor(
         currentAbstractState = autautMF.getAbstractState(currentState)
         initializeExtraTasks(currentState)
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        targetWindow = autautMF.getAbstractState(currentState)!!.window
         eventList.filter { it.isItemAction() }.forEach { action ->
             currentAbstractState!!.attributeValuationSets.filter { it.attributePath.hasParent(action.attributeValuationSet!!.attributePath) }.forEach { childWidget->
                 val childActionType = when (action.actionType) {
@@ -115,18 +119,20 @@ class ExerciseTargetComponentTask private constructor(
         recentChangedSystemConfiguration = false
         environmentChange = false
         alwaysUseRandomInput = false
+        targetWindow = null
     }
 
+    var targetWindow: WTGNode? = null
     override fun isAvailable(currentState: State<*>): Boolean {
         reset()
-        log.info("Checking if current state contains target Events")
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         originalEventList.addAll(eventList)
         if (eventList.isNotEmpty()){
-            log.info("Current node has ${eventList.size} target event(s).")
+            targetWindow = autautMF.getAbstractState(currentState)!!.window
+            log.info("Current node has ${eventList.size} target Window transition(s).")
             return true
         }
-        log.info("Current node has no target event.")
+        log.info("Current node has no target Window transition.")
         return false
     }
 
@@ -163,20 +169,22 @@ class ExerciseTargetComponentTask private constructor(
             dataFilled = false
         }
         randomExplorationTask.isClickedShutterButton = false
-        if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
-            recentChangedSystemConfiguration = true
-            if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
-                if (random.nextInt(4)<3)
+        if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
+            if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
+                recentChangedSystemConfiguration = true
+                if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
+                    if (random.nextInt(4) < 3)
+                        return GlobalAction(ActionType.EnableData).also {
+                            autautMF.internetStatus = true
+                        }
+                    else
+                        return GlobalAction(ActionType.DisableData).also {
+                            autautMF.internetStatus = false
+                        }
+                } else {
                     return GlobalAction(ActionType.EnableData).also {
-                        autautMF.internetStatus = true
-                    }
-                else
-                    return GlobalAction(ActionType.DisableData).also {
                         autautMF.internetStatus = false
                     }
-            } else {
-                return GlobalAction(ActionType.EnableData).also {
-                    autautMF.internetStatus = false
                 }
             }
         }
@@ -228,7 +236,7 @@ class ExerciseTargetComponentTask private constructor(
                 chosenWidget = candidates.firstOrNull()
                 if (chosenWidget==null)
                 {
-                    log.debug("No widget found. Choose another event.")
+                    log.debug("No widget found. Choose another Window transition.")
                     return chooseAction(currentState)
                 }
                 log.info("Choose Action for Widget: $chosenWidget")
@@ -256,6 +264,7 @@ class ExerciseTargetComponentTask private constructor(
                 autautMF.lastExecutedAction = chosenAbstractAction
                 autautStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
                 autautMF.isAlreadyRegisteringEvent = true
+                dataFilled = false
                 return chosenAction
             }
         }

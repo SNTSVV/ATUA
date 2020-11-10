@@ -12,11 +12,11 @@ class GoToRelatedWindowTask protected constructor(
         delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks) {
 
     override fun chooseRandomOption(currentState: State<*>) {
-        log.debug("Change options")
+        //log.debug("Change options")
         currentPath = possiblePaths.random()
         possiblePaths.remove(currentPath!!)
         expectedNextAbState=currentPath!!.root.data
-        log.debug("Try to reach ${currentPath!!.getFinalDestination()}")
+        log.debug("Try reaching ${currentPath!!.getFinalDestination()}")
         currentEdge = null
         mainTaskFinished = false
     }
@@ -25,7 +25,7 @@ class GoToRelatedWindowTask protected constructor(
         executedCount++
     }
     override fun initPossiblePaths(currentState: State<*>) {
-        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,true))
+        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,true,false))
     }
 
     companion object {

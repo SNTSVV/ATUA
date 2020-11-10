@@ -29,7 +29,8 @@ class PathFindingHelper {
                                       , stopWhenHavingUnexercisedAction: Boolean = false
                                       , includeReset: Boolean = true
                                       , shortest: Boolean = true
-                                      , pathCountLimitation: Int = 1) {
+                                      , pathCountLimitation: Int = 1
+                                      , forcingExplicit: Boolean = false) {
             val childParentMap = HashMap<AbstractState,
                     Triple<AbstractState,
                             AbstractInteraction,
@@ -52,7 +53,29 @@ class PathFindingHelper {
                     shortest = shortest,
                     pathCountLimitation = pathCountLimitation,
                     considerResetOrLaunchAction = false,
-                    includeImplicitInteraction = true)
+                    includeImplicitInteraction = !forcingExplicit,
+                    includeLaunchAction = false)
+            if (allPaths.isEmpty()) {
+                childParentMap.clear()
+                childParentMap.put(root, null)
+                findPathToTargetComponentByBFS(
+                        autautMF = autautMF,
+                        currentState = currentState,
+                        root = root,
+                        traversingNodes =  traversingNodes,
+                        finalTarget =  finalTarget,
+                        allPaths =  allPaths,
+                        includeBackEvent =  includeBackEvent,
+                        childParentMap =  childParentMap,
+                        depth = 0,
+                        useVirtualAbstractState =  false,
+                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
+                        shortest = shortest,
+                        pathCountLimitation = pathCountLimitation,
+                        considerResetOrLaunchAction = false,
+                        includeImplicitInteraction = !forcingExplicit,
+                        includeLaunchAction = true)
+            }
             if (allPaths.isEmpty() && includeReset) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
@@ -71,9 +94,10 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = true,
-                        includeImplicitInteraction = false)
+                        includeImplicitInteraction = !forcingExplicit,
+                        includeLaunchAction = true)
             }
-            if (allPaths.isEmpty() && useVirtualAbstractState) {
+            if (allPaths.isEmpty() && useVirtualAbstractState && !forcingExplicit) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -91,9 +115,10 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = false,
-                        includeImplicitInteraction = true)
+                        includeImplicitInteraction = !forcingExplicit,
+                        includeLaunchAction = false)
             }
-            if (allPaths.isEmpty() && useVirtualAbstractState && includeReset) {
+            if (allPaths.isEmpty() && useVirtualAbstractState && includeReset && !forcingExplicit) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -111,7 +136,8 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = includeReset,
-                        includeImplicitInteraction = true)
+                        includeImplicitInteraction = !forcingExplicit,
+                        includeLaunchAction = true)
             }
 
         }
@@ -127,7 +153,8 @@ class PathFindingHelper {
                                            pathCountLimitation: Int = 1,
                                            considerResetOrLaunchAction: Boolean,//TODO rename
                                            includeBackEvent: Boolean,
-                                           includeImplicitInteraction: Boolean
+                                           includeImplicitInteraction: Boolean,
+                                           includeLaunchAction: Boolean
         ) {
             if (traversingNodes.isEmpty())
                 return
@@ -160,7 +187,8 @@ class PathFindingHelper {
                         stopWhenHavingUnexercisedAction =  stopWhenHavingUnexercisedAction,
                         includeWTG =  useVirtualAbstractState,
                         includeResetAction =  considerResetOrLaunchAction,
-                        includeImplicitInteraction = includeImplicitInteraction)
+                        includeImplicitInteraction = includeImplicitInteraction,
+                        includeLauchAction = includeLaunchAction)
             }
             /*if (nextLevelNodes.isEmpty() && !useVirtualAbstractState) {
                 for (traversing in traversingNodes)
@@ -191,7 +219,8 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = considerResetOrLaunchAction,
-                        includeImplicitInteraction = includeImplicitInteraction)
+                        includeImplicitInteraction = includeImplicitInteraction,
+                        includeLaunchAction = includeLaunchAction)
         }
 
         private fun getNextTraversingNodes(autautMF: AutAutMF, windowStack: Stack<WTGNode>, graph: AbstractTransitionGraph, source: AbstractState,
@@ -203,7 +232,8 @@ class PathFindingHelper {
                                            stopWhenHavingUnexercisedAction: Boolean,
                                            includeImplicitInteraction: Boolean,
                                            includeResetAction: Boolean,
-                                           includeBackEvent: Boolean) {
+                                           includeBackEvent: Boolean,
+                                           includeLauchAction: Boolean) {
 
             if (includeBackEvent && windowStack.isNotEmpty()) {
                 val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
@@ -226,7 +256,7 @@ class PathFindingHelper {
                             }
                         }
                     }
-                } else if (backCandiates.containsKey(true) && depth==0) {
+                } else if (backCandiates.containsKey(true)) {
                     backCandiates[true]!!.forEach {
                         if (!childParentMap.containsKey(it.destination!!.data)) {
                             processingBackEdges.add(it)
@@ -261,7 +291,7 @@ class PathFindingHelper {
                         && includingRotateUIOrNot(autautMF, it)
                         && includingResetOrNot(it, includeResetAction,depth)
                         && includingWTGOrNot(it, includeWTG)
-                        && includingLaunchOrNot(it, includeBackEvent,depth)
+                        && includingLaunchOrNot(it, includeLauchAction,depth)
                 /*&& isTheSamePrevWindow(windowStack.peek(), it)*/
             }
 
@@ -306,10 +336,10 @@ class PathFindingHelper {
                         val implicitTransitions = u.filter { it.label.isImplicit }
                         if (reliableTransition.isEmpty()) {
                             //        if (reliableTransition.isEmpty()) {
-                            if (includeImplicitInteraction == true)
+                            if (includeImplicitInteraction == true && depth == 0)
                                 processedTransition.addAll(implicitTransitions)
-                            else if (depth == 0)
-                                processedTransition.addAll(implicitTransitions)
+                            else if (includeWTG)
+                                processedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
                         }
                         processedTransition.addAll(reliableTransition)
 

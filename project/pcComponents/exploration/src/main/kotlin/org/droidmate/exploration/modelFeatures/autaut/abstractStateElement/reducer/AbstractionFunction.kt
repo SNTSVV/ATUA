@@ -19,17 +19,19 @@ class AbstractionFunction (val root: DecisionNode) {
     , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         var currentDecisionNode: DecisionNode?=null
         var attributePath: AttributePath
+        var level = 0
         do {
             tempWidgetReduceMap.remove(guiWidget)
-            tempChildWidgetAttributePaths.clear()
+            //tempChildWidgetAttributePaths.clear()
             if (currentDecisionNode==null)
                 currentDecisionNode = root
             else
                 currentDecisionNode = currentDecisionNode.nextNode
+            level += 1
             attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.nextNode!!.containAttributePath(attributePath,activity))
+                && currentDecisionNode.containAttributePath(attributePath,activity))
         return attributePath
     }
 
@@ -38,44 +40,55 @@ class AbstractionFunction (val root: DecisionNode) {
      */
     fun increaseReduceLevel(attributePath: AttributePath, activity: String, level2Maximum: Boolean,guiWidget: Widget, guiState: State<*>): Boolean
     {
-        var currentDecisionNode: DecisionNode? = root
-        var tempAttributePath: AttributePath
-        var prevDecisionNode: DecisionNode? = null
+        var currentDecisionNode: DecisionNode? = null
         var level = 1
         do {
             if (level2Maximum && level == 2)
                 break
-            prevDecisionNode = currentDecisionNode
-            currentDecisionNode = currentDecisionNode!!.nextNode
+            if (currentDecisionNode==null)
+                currentDecisionNode = root
+            else
+                currentDecisionNode = currentDecisionNode.nextNode
             level++
-        }while (currentDecisionNode!=null && currentDecisionNode!!.attributePaths.filter { it.second == activity }. any { attributePath.contains(it.first) })
-        if (currentDecisionNode!=null) {
-            currentDecisionNode!!.attributePaths.add(Pair(attributePath,activity))
+        }while (currentDecisionNode!!.nextNode!=null && currentDecisionNode.containAttributePath(attributePath, activity))
+        if (!currentDecisionNode!!.containAttributePath(attributePath, activity)) {
+            currentDecisionNode.attributePaths.add(Pair(attributePath,activity))
+           /* val newAttributePath = reduce(guiWidget,guiState,activity, hashMapOf(), hashMapOf())
+            updateAllAttributePathsHavingParent(attributePath,newAttributePath,activity)*/
             return true
         }
         else {
             if (attributePath.parentAttributePath == null)
                 return false
             var parentAttributePath = attributePath.parentAttributePath
-            var parentWidget: Widget? = guiState.widgets.find { it.id == guiWidget.parentId }
-            while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
+            var parentWidget: Widget? = guiState.widgets.find { it.idHash == guiWidget.parentHash }
+            /*while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
                 parentAttributePath = parentAttributePath!!.parentAttributePath
                 parentWidget = guiState.widgets.find { it.id == parentWidget!!.parentId }
-            }
-            if (parentAttributePath!=null && parentWidget!=null) {
+            }*/
+            if (parentWidget!=null) {
                 //increaseReduceLevel for parent
-                val result = increaseReduceLevel(parentAttributePath, activity, level2Maximum, parentWidget, guiState)
-                   /*if (result == true) {
-                        val newParrentAttributePath = reduce(parentWidget, guiState, activity, hashMapOf(), hashMapOf())
-                        val newAttributePath = AttributePath(localAttributes = attributePath.localAttributes,
-                                parentAttributePath = newParrentAttributePath,
-                                childAttributePaths = attributePath.childAttributePaths)
-                        prevDecisionNode!!.attributePaths.add(Pair(newAttributePath, activity))
-                    }*/
+                val result = increaseReduceLevel(parentAttributePath, activity, false, parentWidget, guiState)
                 return result
             }
             return false
         }
+    }
+
+    private fun updateAllAttributePathsHavingParent(oldParentAttributePath: AttributePath, newParentAttributePath: AttributePath, activity: String) {
+        var currentDecisionNode: DecisionNode? = root
+        do {
+            val oldAttributePaths =currentDecisionNode!!.attributePaths.filter { it.second == activity && it.first.parentAttributePath == oldParentAttributePath }
+            oldAttributePaths.forEach {
+                val newAttributePath = AttributePath(localAttributes = it.first.localAttributes,
+                        parentAttributePath = newParentAttributePath,
+                        childAttributePaths = it.first.childAttributePaths)
+                currentDecisionNode!!.attributePaths.add(Pair(newAttributePath,activity))
+                currentDecisionNode!!.attributePaths.remove(it)
+                updateAllAttributePathsHavingParent(it.first,newAttributePath,activity)
+            }
+            currentDecisionNode = currentDecisionNode.nextNode
+        } while (currentDecisionNode!=null)
     }
 
 

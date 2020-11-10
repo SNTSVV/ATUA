@@ -1,8 +1,7 @@
 package org.droidmate.exploration.strategy.autaut
 
-import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.isEnabled
+import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.resetApp
@@ -89,21 +88,21 @@ class PhaseOneStrategy(
     var tryCount = 0
     var forceEnd = false
     override fun hasNextAction(currentState: State<*>): Boolean {
-/*        if (forceEnd)
-            return true*/
+        if (forceEnd)
+            return false
         //For debug, end phase one after 100 actions
         /*if (autAutTestingStrategy.eContext.explorationTrace.getActions().size > 100)
             return true*/
-        if (autautMF.lastUpdatedMethodCoverage == 1.0) {
+        if (autautMF.lastUpdatedStatementCoverage == 1.0) {
             return false
         }
-        initBudgetForNewWindow(currentState)
+        updateBudgetForWindow(currentState)
         updateTargetWindows()
         updateFlaggedWindows()
         updateUnreachableWindows(currentState)
 
 
-        if (targetWindowTryCount.filterNot{fullyCoveredWindows.contains(it.key)}.isEmpty()) {
+        if (targetWindowTryCount.filterNot{fullyCoveredWindows.contains(it.key) || flaggedWindows.contains(it.key)}.isEmpty()) {
             return false
         }
 
@@ -149,11 +148,11 @@ class PhaseOneStrategy(
         return false
     }
 
-    private fun initBudgetForNewWindow(currentState: State<*>) {
+    private fun updateBudgetForWindow(currentState: State<*>) {
         //val currentAppState = autautMF.getAbstractState(currentState)!!
         val currentAppState = autautMF.getAbstractState(currentState)!!
         val window = currentAppState.window
-        if (window is WTGLauncherNode || window is WTGOutScopeNode) {
+        if (window is WTGLauncherNode) {
             return
         }
         if (!window_Widgets.containsKey(window)) {
@@ -161,33 +160,86 @@ class PhaseOneStrategy(
         }
         val widgets = window_Widgets[window]!!
         val newWidgets = ArrayList<Widget>()
-        Helper.getVisibleInteractableWidgets(currentState).filter { w-> !widgets.any { it.uid == w.uid } }.forEach {w->
-            widgets.add(w)
-            if (!newWidgets.any { w.uid == it.uid  })
+
+        val interactableWidgets = Helper.getVisibleInteractableWidgets(currentState)
+/*
+        interactableWidgets.filter { w -> !widgets.any { it.uid == w.uid } }.forEach { w ->
+            if (!widgets.any { w.uid == it.uid }) {
+                widgets.add(w)
+            }
+            if (!newWidgets.any { w.uid == it.uid })
                 newWidgets.add(w)
+        }
+*/
+        if (widgets.isEmpty()) {
+            interactableWidgets.filter { w -> !widgets.any { it.uid == w.uid } }.forEach { w ->
+                if (!widgets.any { w.uid == it.uid }) {
+                    widgets.add(w)
+                }
+                if (!newWidgets.any { w.uid == it.uid })
+                    newWidgets.add(w)
+            }
+        } else
+        {
+            // we count only new widget with new resourceId
+            interactableWidgets.filter{w -> w.resourceId.isNotBlank() }. filter { w -> !widgets.any { it.resourceId == w.resourceId } }.forEach { w ->
+                if (!widgets.any { w.resourceId == it.resourceId }) {
+                    widgets.add(w)
+                }
+                if (!newWidgets.any { w.resourceId == it.resourceId })
+                    newWidgets.add(w)
+            }
         }
         if (!windowRandomExplorationBudget.containsKey(window)) {
             if (window is WTGActivityNode)
-                windowRandomExplorationBudget[window] = 8
+                windowRandomExplorationBudget[window] = 4
             else
                 windowRandomExplorationBudget[window] = 0
             windowRandomExplorationBudgetUsed[window] = 0
         }
-        windowRandomExplorationBudget[window] = windowRandomExplorationBudget[window]!! + (newWidgets.map { it.availableActions(delay, useCoordinateClicks) }.flatten().size*budgetScale).toInt()
+        var newActions = 0
+        newWidgets.forEach {
+            if (it.visibleBounds.width > 200 && it.visibleBounds.height > 200 ) {
+               newActions += it.availableActions(delay, useCoordinateClicks).size
+            } else {
+                newActions += it.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe }.size
+            }
+        }
+        windowRandomExplorationBudget[window] = windowRandomExplorationBudget[window]!! + (newActions*budgetScale).toInt()
         ExplorationTrace.widgetTargets.clear()
 
     }
 
     private fun updateFlaggedWindows() {
+        val addToFlagWindows = ArrayList<WTGNode>()
+        flaggedWindows.forEach {
+            if (it is WTGActivityNode) {
+                val optionsMenu = autautMF.wtg.getOptionsMenu(it)
+                if (optionsMenu!=null) {
+                    addToFlagWindows.add(optionsMenu)
+                }
+                val dialogs = autautMF.wtg.getDialogs(it)
+                addToFlagWindows.addAll(dialogs)
+            }
+        }
+        flaggedWindows.addAll(addToFlagWindows)
         val availableAbState_Window =  AbstractStateManager.instance.ABSTRACT_STATES
                 .filter { it !is VirtualAbstractState &&
                         !flaggedWindows.contains(it.window) &&
                         !unreachableWindows.contains(it.window)
                 }.groupBy { it.window }
         availableAbState_Window.forEach {
-           if (it.value.all { !hasBudgetLeft2(null,it) }) {
-               flaggedWindows.add(it.key)
-           }
+          if (!hasBudgetLeft(it.key)) {
+              flaggedWindows.add(it.key)
+              if (it.key is WTGActivityNode) {
+                  val optionsMenu = autautMF.wtg.getOptionsMenu(it.key)
+                  if (optionsMenu!=null) {
+                      flaggedWindows.add(optionsMenu)
+                  }
+                  val dialogs = autautMF.wtg.getDialogs(it.key)
+                  flaggedWindows.addAll(dialogs)
+              }
+          }
 
         }
     }
@@ -230,10 +282,11 @@ class PhaseOneStrategy(
                 includeBackEvent = true,
                 currentState = currentState,
                 currentAbstractState = currentAbstractState,
-                useVABS = false,
+                includeWTG = false,
                 shortest = true,
-                pathCountLimitation = 1,
-                includeReset = true
+                pathCountLimitation = 10,
+                includeReset = true,
+                forcingExplicit = true
                 )
         if (transitionPath.isEmpty())
             return true
@@ -243,14 +296,12 @@ class PhaseOneStrategy(
     override fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction {
         //TODO Update target windows
 
-
         val currentState = eContext.getCurrentState()
         val currentAppState = autautMF.getAbstractState(currentState)!!
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
         val toRemove = ArrayList<WTGNode>()
         var chosenAction:ExplorationAction
-
 
         /* if (autautMF.updateMethodCovFromLastChangeCount > 25 * budgetScale
                  && actionCountSinceSelectTarget > 25 * budgetScale) {
@@ -262,6 +313,11 @@ class PhaseOneStrategy(
                  }
              }
          }*/
+        if (flaggedWindows.contains(targetWindow)) {
+            targetWindow = null
+        }
+        if (unreachableWindows.contains(targetWindow))
+            targetWindow = null
         if (targetWindow != currentAppState.window) {
             if (isTargetWindow(currentAppState)) {
                 targetWindow = currentAppState.window
@@ -286,50 +342,19 @@ class PhaseOneStrategy(
             }
         }
 
-/*        if (regressionTestingMF.appPrevState!=null) {
-                val prevAppState = regressionTestingMF.getAbstractState(regressionTestingMF.appPrevState!!)!!
-            if (currentAppState.window != prevAppState.window && currentAppState.rotation == Rotation.LANDSCAPE) {
-                // rotate to portrait
-                return ExplorationAction.rotate(-90)
-            }
-        }*/
-
-
-
-
         ExplorationTrace.widgetTargets.clear()
-        // check if target window is fully covered
-/*        val targetEvents = untriggeredTargetEvents.filter { it.sourceWindow == targetWindow }
-        if (targetEvents.isEmpty()) {
-            if (regressionTestingMF.windowHandlersHashMap.containsKey(targetWindow)) {
-                val targetHandlers = regressionTestingMF.windowHandlersHashMap[targetWindow!!]!!.filter { regressionTestingMF.allTargetHandlers.contains(it) }
-                if (regressionTestingMF.untriggeredTargetHandlers.intersect(targetHandlers).isEmpty()) {
-                    //No need to test this Window
-                    fullyCoveredWindows.add(targetWindow!!)
-                    selectTargetNode()
-                    //TODO relaunch app
-                }
-            } else {
-                if (targetWindow!=null)
-                    fullyCoveredWindows.add(targetWindow!!)
-                selectTargetNode()
-            }
-        }*/
 
         log.info("Target window: $targetWindow")
         chooseTask_P1(eContext, currentState)
-        /*if (needResetApp) {
+        if (needResetApp) {
             needResetApp = false
-            autautMF.updateMethodCovFromLastChangeCount = 0
             return eContext.resetApp()
-        }*/
+        }
         if (strategyTask != null) {
             chosenAction = strategyTask!!.chooseAction(currentState)
             if (isCountAction(chosenAction)
                     && windowRandomExplorationBudgetUsed.containsKey(currentAppState.window)
-                    && phaseState!=PhaseState.P1_GO_TO_TARGET_NODE
-                    && phaseState!=PhaseState.P1_GO_TO_EXPLORE_STATE
-                    && phaseState!=PhaseState.P1_EXERCISE_TARGET_NODE) {
+                    && (strategyTask is RandomExplorationTask && (strategyTask as RandomExplorationTask).fillingData == false)) {
 
                 windowRandomExplorationBudgetUsed[currentAppState.window] = windowRandomExplorationBudgetUsed[currentAppState.window]!! + 1
 /*                if (windowRandomExplorationBudgetUsed[currentAppState.window]!! > windowRandomExplorationBudget[currentAppState.window]!!) {
@@ -355,388 +380,36 @@ class PhaseOneStrategy(
         val currentState = eContext.getCurrentState()
         val currentAppState = autautMF.getAbstractState(currentState)!!
 
-/*        if (strategyTask == null) {
-            log.info("No current task selected.")
-            log.info("Choose new task.")
-            chooseTask_P1(eContext, currentState)
-        } else if (phaseState == PhaseState.P1_RANDOM_IN_EXERCISE_TARGET_NODE) {
-        } else if (strategyTask != null && strategyTask!!.isTaskEnd(currentState)) {
-            log.info("Current task is end.")
-            log.info("Choose new task.")
-            chooseTask_P1(eContext, currentState)
-        } else {
-            log.info("Continue ${strategyTask!!.javaClass.name} task.")
-        }*/
         log.debug("${currentAppState.window} - Budget: ${windowRandomExplorationBudgetUsed[currentAppState.window]}/${windowRandomExplorationBudget[currentAppState.window]}")
 
         if (targetWindow == null) {
-
-            if (strategyTask!=null) {
-                if (!strategyTask!!.isTaskEnd(currentState)) {
-                    // if random can be still run, keep running
-                    log.info("Continue current task: $strategyTask")
-                    return
-                }
-            }
-            if (strategyTask is GoToAnotherWindow) {
-                if (hasBudgetLeft2(currentState, currentAppState) && hasUnexploreWidgets(currentState)) {
-                    setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
-                    return
-                }
-                if (currentAppState.window is WTGDialogNode) {
-                    setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
-                    return
-                }
-            }
-            if (strategyTask is RandomExplorationTask) {
-                if (goToAnotherNode.isAvailable(currentState)) {
-                    setGoToExploreState(goToAnotherNode, currentState)
-                    return
-                }
-            }
-            setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
+            nextActionWithoutTargetWindow(currentState, currentAppState, randomExplorationTask, goToAnotherNode)
             return
         }
         if (phaseState == PhaseState.P1_INITIAL) {
-            if (currentAppState.window == targetWindow) {
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                // In case target events not found
-                // Try random exploration
-                if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-                /*else {
-                    flaggedWindows.add(targetWindow!!)
-                    selectTargetNode()
-                    phaseState = PhaseState.P1_INITIAL
-                    //needResetApp = true
-                    return
-                }*/
-            }
-            if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-                return
-            }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
-            unreachableWindows.add(targetWindow!!)
-            if (hasBudgetLeft2(currentState,currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState,false,false)
-                return
-            }
-/*            if (isLoginWindow(currentAppState)) {
-                // Try random login Window
-                log.info("Try random in login window")
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }*/
-            if (goToAnotherNode.isAvailable(currentState)) {
-                setGoToExploreState(goToAnotherNode, currentState)
-                return
-            }
-            setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
+            nextActionOnInitial(currentAppState, exerciseTargetComponentTask, currentState, randomExplorationTask, goToAnotherNode, goToTargetNodeTask)
             return
         }
         if (phaseState == PhaseState.P1_EXERCISE_TARGET_NODE) {
 
-            if (currentAppState.window == targetWindow) {
-                if (!strategyTask!!.isTaskEnd(currentState)) {
-                    //Keep current task
-                    log.info("Continue exercise target window")
-                    return
-                }
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                // In case target events not found
-                // Try random exploration
-                if (hasBudgetLeft2(currentState,currentAppState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-            }
-/*            if (isLoginWindow(currentAppState) && hasBudgetLeft2(currentAppState.window)) {
-                // Try random login Window
-                log.info("Try random in login window")
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }*/
-            if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-                return
-            }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
-            unreachableWindows.add(targetWindow!!)
-            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState,false,false)
-                return
-            }
-            if (goToAnotherNode.isAvailable(currentState)) {
-                setGoToExploreState(goToAnotherNode, currentState)
-                return
-            }
-            /*if (hasBudgetLeft2(currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState,currentAppState)
-                return
-            }*/
-            setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
+            nextActionOnExerciseTargetWindow(currentAppState, currentState, exerciseTargetComponentTask, randomExplorationTask, goToAnotherNode, goToTargetNodeTask)
             return
         }
         if (phaseState == PhaseState.P1_GO_TO_TARGET_NODE) {
-            if (currentAppState.window == targetWindow) {
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                if (!strategyTask!!.isTaskEnd(currentState)) {
-                    //Keep current task
-                    log.info("Continue go to target window")
-                    return
-                }
-                // In case target events not found
-                // Try random exploration if having budget
-                if (hasBudgetLeft2(currentState,currentAppState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-            }
-            /* if (isLoginWindow(currentAppState) && hasBudgetLeft2(currentAppState.window)) {
-                 // Try random login Window
-                 log.info("Try random in login window")
-                 setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                 return
-             }*/
-            if (!strategyTask!!.isTaskEnd(currentState)) {
-                log.info("Continue ${strategyTask!!}")
-                return
-            }
-            if (currentAppState.window is WTGDialogNode) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-                return
-            }
-            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState,true)
-                return
-            }
-            setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
+            nextActionOnGoToTargetNode(currentAppState, exerciseTargetComponentTask, currentState, randomExplorationTask, goToAnotherNode)
             return
 
         }
         if (phaseState == PhaseState.P1_GO_TO_EXPLORE_STATE) {
-            if (currentAppState.window == targetWindow) {
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                // In case target events not found
-                // Try random exploration if having budget
-                if (hasBudgetLeft2(currentState,currentAppState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-            }
-            /*if (isLoginWindow(currentAppState) && hasBudgetLeft2(currentAppState)) {
-                // Try random login Window
-                log.info("Try random in login window")
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }*/
-            if (!strategyTask!!.isTaskEnd(currentState)) {
-                log.info("Continue ${strategyTask!!}")
-                return
-            }
-            if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-                return
-            }
-            if (goToAnotherNode.destWindow == currentAppState.window) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-            }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
-            unreachableWindows.add(targetWindow!!)
-            if (hasBudgetLeft2(currentState,currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }
-            if (!goToAnotherNode.isReachExpectedNode(currentState) && numOfContinousTry < 10) {
-                if (goToAnotherNode.isAvailable(currentState)) {
-                    setGoToExploreState(goToAnotherNode, currentState)
-                    return
-                }
-            }
-            setFullyRandomExploration(randomExplorationTask, currentState,currentAppState)
+            nextActionOnGoToExploreState(currentAppState, exerciseTargetComponentTask, currentState, randomExplorationTask, goToAnotherNode, goToTargetNodeTask)
             return
         }
         if (phaseState == PhaseState.P1_RANDOM_IN_EXERCISE_TARGET_NODE) {
-            if (currentAppState.window == targetWindow) {
-                if (randomExplorationTask.fillingData || randomExplorationTask.attemptCount == 0) {
-                    // if random can be still run, keep running
-                    log.info("Continue filling data")
-                    return
-                }
-                if (!strategyTask!!.isTaskEnd(currentState)) {
-                    log.info("Continue random in target window")
-                    return
-                }
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-                if (randomExplorationTask.isFullyExploration || shouldChangeTargetWindow() ) {
-                    selectTargetNode(currentState,0)
-                    phaseState = PhaseState.P1_INITIAL
-                    //needResetApp = true
-                    return
-                }
-                setFullyRandomExploration(randomExplorationTask, currentState,currentAppState)
-                phaseState = PhaseState.P1_RANDOM_IN_EXERCISE_TARGET_NODE
-                randomExplorationTask.lockTargetWindow(currentAppState.window)
-                return
-                /*if (shouldChangeTargetWindow()) {
-                    if (goToAnotherNode.isAvailable(currentState)) {
-                        strategyTask = goToAnotherNode.also {
-                            it.initialize(currentState)
-                        }
-                        log.info("Go to explore window: ${goToAnotherNode.destWindow.toString()}")
-
-                        phaseState = PhaseState.P1_GO_TO_ANOTHER_NODE
-                        return
-                    }
-                }*/
-
-            }
-            /*if (isLoginWindow(currentAppState) && hasBudgetLeft2(currentAppState)) {
-                // Try random login Window
-                log.info("Try random in login window")
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }*/
-            if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-                return
-            }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
-            unreachableWindows.add(targetWindow!!)
-            if (hasBudgetLeft2(currentState,currentAppState)) {
-                    setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                    return
-                }
-
-            if (goToAnotherNode.isAvailable(currentState)) {
-                setGoToExploreState(goToAnotherNode, currentState)
-                return
-            }
-            /*if (hasBudgetLeft2(currentAppState)) {
-               setRandomExploration(randomExplorationTask, currentState,currentAppState)
-               return
-           }*/
-            setFullyRandomExploration(randomExplorationTask,currentState,currentAppState)
+            nextActionOnRandomInTargetWindow(currentAppState, randomExplorationTask, exerciseTargetComponentTask, currentState, goToAnotherNode, goToTargetNodeTask)
             return
         }
         if (phaseState == PhaseState.P1_RANDOM_EXPLORATION) {
-            if (currentAppState.window == targetWindow) {
-                if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    //Target events found
-                    setExerciseTarget(exerciseTargetComponentTask, currentState)
-                    return
-                }
-                if (hasBudgetLeft2(currentState,currentAppState)) {
-                    setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                    return
-                }
-            }
-            if (randomExplorationTask.fillingData || randomExplorationTask.attemptCount == 0) {
-                // if random can be still run, keep running
-                log.info("Continue filling data")
-                return
-            }
-            if (randomExplorationTask.isFullyExploration && !strategyTask!!.isTaskEnd(currentState)) {
-                log.info("Continue fully exploration")
-                return
-            }
-            if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-            }
-            if (!strategyTask!!.isTaskEnd(currentState)) {
-                // if random can be still run, keep running
-                log.info("Continue exploration")
-                return
-            }
-            if (currentAppState.window is WTGDialogNode) {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false)) {
-                    setGoToTarget(goToTargetNodeTask, currentState)
-                    return
-                }
-                setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,true)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
-            unreachableWindows.add(targetWindow!!)
-
-            if (hasBudgetLeft2(currentState,currentAppState) && hasUnexploreWidgets(currentState)) {
-                setRandomExploration(randomExplorationTask, currentState, currentAppState)
-                return
-            }
-            if (goToAnotherNode.isAvailable(currentState)) {
-                setGoToExploreState(goToAnotherNode, currentState)
-                return
-            }
-
-
-            if (randomExplorationTask.isFullyExploration) {
-                selectTargetNode(currentState,0)
-                phaseState = PhaseState.P1_INITIAL
-                //needResetApp = true
-                return
-            }
-            setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+            nextActionOnRandomExploration(currentAppState, exerciseTargetComponentTask, currentState, randomExplorationTask, goToAnotherNode, goToTargetNodeTask)
             return
         }
         selectTargetNode(currentState,0)
@@ -746,12 +419,382 @@ class PhaseOneStrategy(
 
     }
 
-    private fun hasUnexploreWidgets(currentState: State<*>): Boolean {
-        return Helper.getVisibleInteractableWidgets(currentState)
-                .filterNot { it.isInputField || it.checked.isEnabled()  }.any {
-                    runBlocking { autAutTestingStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
-                }
+    private fun nextActionWithoutTargetWindow(currentState: State<*>, currentAppState: AbstractState, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow) {
+        if (strategyTask != null) {
+            if (continueOrEndCurrentTask(currentState)) return
+        }
+        if (hasBudgetLeft(currentAppState.window) && hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
+            return
+        }
+        if (currentAppState.window is WTGDialogNode) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (strategyTask is GoToAnotherWindow && !goToAnotherNode.isReachExpectedNode(currentState)) {
+            setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (strategyTask is RandomExplorationTask && randomExplorationTask.isFullyExploration) {
+            forceEnd = true
+            needResetApp = true
+            return
+        }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
     }
+
+    private fun nextActionOnInitial(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
+        if (currentAppState.window == targetWindow) {
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            // In case target events not found
+            // Try random exploration
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (hasBudgetLeft(currentAppState.window)) {
+                if (goToAnotherNode.isAvailable(currentState, targetWindow!!, true, true)) {
+                    setGoToExploreState(goToAnotherNode, currentState)
+                    return
+                }
+                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+                return
+            }
+        }
+        if (currentAppState.window is WTGDialogNode) {
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false, false)) {
+                setGoToTarget(goToTargetNodeTask, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+            return
+        }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        unreachableWindows.add(targetWindow!!)
+        if (hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, false, false)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun nextActionOnExerciseTargetWindow(currentAppState: AbstractState, currentState: State<*>, exerciseTargetComponentTask: ExerciseTargetComponentTask, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
+        if (currentAppState.window == targetWindow) {
+            if (continueOrEndCurrentTask(currentState)) return
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            // In case target events not found
+            // Try random exploration
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (hasBudgetLeft(currentAppState.window)) {
+                if (goToAnotherNode.isAvailable(currentState, targetWindow!!, true, true)) {
+                    setGoToExploreState(goToAnotherNode, currentState)
+                    return
+                }
+                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+                return
+            }
+        }
+        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        unreachableWindows.add(targetWindow!!)
+        if (hasBudgetLeft(currentAppState.window) && hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, false, false)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun nextActionOnGoToTargetNode(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow) {
+        if (currentAppState.window == targetWindow) {
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            if (continueOrEndCurrentTask(currentState)) return
+            // In case target events not found
+            // Try random exploration if having budget
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (hasBudgetLeft(currentAppState.window)) {
+                if (goToAnotherNode.isAvailable(currentState, targetWindow!!, true, true)) {
+                    setGoToExploreState(goToAnotherNode, currentState)
+                    return
+                }
+                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+                return
+            }
+        }
+        if (continueOrEndCurrentTask(currentState)) return
+        unreachableWindows.add(targetWindow!!)
+        if (currentAppState.window is WTGDialogNode) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+            return
+        }
+        if (hasBudgetLeft2(currentState, currentAppState) && hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun nextActionOnGoToExploreState(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
+        if (currentAppState.window == targetWindow) {
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            // In case target events not found
+            // Try random exploration if having budget
+            if (continueOrEndCurrentTask(currentState)) return
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (hasBudgetLeft(currentAppState.window)) {
+                if (!goToAnotherNode.isReachExpectedNode(currentState) && goToAnotherNode.isAvailable(currentState, targetWindow!!, true, true)) {
+                    setGoToExploreState(goToAnotherNode, currentState)
+                    return
+                }
+                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+                return
+            }
+        }
+        if (continueOrEndCurrentTask(currentState)) return
+        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
+        if (goToAnotherNode.destWindow == currentAppState.window) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+        }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        unreachableWindows.add(targetWindow!!)
+        if (hasBudgetLeft2(currentState, currentAppState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (!goToAnotherNode.isReachExpectedNode(currentState) && numOfContinousTry < 10) {
+            if (goToAnotherNode.isAvailable(currentState)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun nextActionOnRandomInTargetWindow(currentAppState: AbstractState, randomExplorationTask: RandomExplorationTask, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
+        if (currentAppState.window == targetWindow) {
+            if (continueRandomExplorationIfIsFillingData(randomExplorationTask)) return
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            if (continueOrEndCurrentTask(currentState)) return
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (goToUnexploitedAbstractStateOrRandomlyExplore(currentAppState, goToAnotherNode, currentState, randomExplorationTask)) return
+            if (selectAnotherTargetIfFullyExploration(randomExplorationTask, currentState)) return
+            setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+            phaseState = PhaseState.P1_RANDOM_IN_EXERCISE_TARGET_NODE
+            randomExplorationTask.lockTargetWindow(currentAppState.window)
+            return
+
+        }
+        if (continueOrEndCurrentTask(currentState)) return
+        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
+
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        unreachableWindows.add(targetWindow!!)
+
+        if (hasBudgetLeft2(currentState, currentAppState) && hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun selectAnotherTargetIfFullyExploration(randomExplorationTask: RandomExplorationTask, currentState: State<*>): Boolean {
+        if (randomExplorationTask.isFullyExploration || shouldChangeTargetWindow()) {
+            selectTargetNode(currentState, 0)
+            phaseState = PhaseState.P1_INITIAL
+            //needResetApp = true
+            return true
+        }
+        return false
+    }
+
+    private fun nextActionOnDialog(currentAppState: AbstractState, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToTargetNodeTask: GoToTargetWindowTask): Boolean {
+        if (currentAppState.window is WTGDialogNode) {
+            if (hasUnexploreWidgets(currentState)) {
+                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+            }
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false, false)) {
+                setGoToTarget(goToTargetNodeTask, currentState)
+                return true
+            }
+            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+            return true
+        }
+        return false
+    }
+
+    private fun nextActionOnRandomExploration(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
+        if (currentAppState.window == targetWindow) {
+            if (exerciseTargetIfAvailable(exerciseTargetComponentTask, currentState)) return
+            if (randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState, randomExplorationTask)) return
+            if (goToUnexploitedAbstractStateOrRandomlyExplore(currentAppState, goToAnotherNode, currentState, randomExplorationTask)) return
+        }
+        if (continueRandomExplorationIfIsFillingData(randomExplorationTask)) return
+        if (randomExplorationTask.isFullyExploration && !strategyTask!!.isTaskEnd(currentState)) {
+            log.info("Continue ${strategyTask!!}")
+            return
+        }
+        if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is WTGDialogNode && currentAppState.window !is WTGOutScopeNode) {
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+                setGoToTarget(goToTargetNodeTask, currentState)
+                return
+            }
+        }
+        if (continueOrEndCurrentTask(currentState)) return
+        if (currentAppState.window is WTGDialogNode) {
+            if (hasUnexploreWidgets(currentState)) {
+                setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+            }
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false, false)) {
+                setGoToTarget(goToTargetNodeTask, currentState)
+                return
+            }
+            setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        unreachableWindows.add(targetWindow!!)
+        if (hasBudgetLeft2(currentState, currentAppState) && hasUnexploreWidgets(currentState)) {
+            setRandomExploration(randomExplorationTask, currentState, currentAppState)
+            return
+        }
+        if (goToUnexploitedAbstractStateOrRandomlyExplore(currentAppState,goToAnotherNode,currentState, randomExplorationTask))
+            return
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+        if (randomExplorationTask.isFullyExploration) {
+            selectTargetNode(currentState, 0)
+            phaseState = PhaseState.P1_INITIAL
+            //needResetApp = true
+            return
+        }
+        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        return
+    }
+
+    private fun goToUnexploitedAbstractStateOrRandomlyExplore(currentAppState: AbstractState, goToAnotherNode: GoToAnotherWindow, currentState: State<*>, randomExplorationTask: RandomExplorationTask): Boolean {
+        if (hasBudgetLeft(currentAppState.window)) {
+            if (goToAnotherNode.isAvailable(currentState, currentAppState.window, true, true)) {
+                setGoToExploreState(goToAnotherNode, currentState)
+                return true
+            }
+            if (currentAppState.window == targetWindow)
+                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+            else
+                setRandomExploration(randomExplorationTask,currentState,currentAppState)
+            return true
+        }
+        return false
+    }
+
+    private fun randomlyExploreTargetIfHasBudgetAndUnexploredWidgets(currentState: State<*>, randomExplorationTask: RandomExplorationTask): Boolean {
+        if (hasBudgetLeft(targetWindow!!) && hasUnexploreWidgets(currentState)) {
+            setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+            return true
+        }
+        return false
+    }
+
+    private fun exerciseTargetIfAvailable(exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>): Boolean {
+        if (exerciseTargetComponentTask.isAvailable(currentState)) {
+            setExerciseTarget(exerciseTargetComponentTask, currentState)
+            return true
+        }
+        return false
+    }
+
+    private fun continueRandomExplorationIfIsFillingData(randomExplorationTask: RandomExplorationTask): Boolean {
+        if (randomExplorationTask.fillingData || randomExplorationTask.attemptCount == 0) {
+            // if random can be still run, keep running
+            log.info("Continue ${strategyTask!!}")
+            return true
+        }
+        return false
+    }
+
+    private fun continueOrEndCurrentTask(currentState: State<*>): Boolean {
+        if (!strategyTask!!.isTaskEnd(currentState)) {
+            log.info("Continue ${strategyTask!!}")
+            return true
+        }
+        return false
+    }
+
 
     override fun isTargetState(currentState: State<*>): Boolean {
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
@@ -814,7 +857,7 @@ class PhaseOneStrategy(
             }
         }
         if (targetWindow != null) {
-            val transitionPaths = getPathsToWindow(currentState,targetWindow!!,true)
+            val transitionPaths = getPathsToWindow(currentState,targetWindow!!,true,true)
             targetWindowTryCount[targetWindow!!] = targetWindowTryCount[targetWindow!!]!! + 1
             if (transitionPaths.isEmpty()) {
                 unreachableWindows.add(targetWindow!!)
@@ -842,7 +885,7 @@ class PhaseOneStrategy(
                         it == currentAbstractState ||
                         it.window is WTGLauncherNode ||
                         it.window is WTGOutScopeNode ||
-                        !hasBudgetLeft2(null,it)
+                        flaggedWindows.contains(it.window)
                 }
         /*val candiateWindows = WTGNode.allMeaningNodes.filter { window -> runtimeAbstractStates.find { it.window == window } != null}
         val candidateVisitedFoundNodes = regressionTestingMF.windowVisitCount
@@ -895,10 +938,7 @@ class PhaseOneStrategy(
             return transitionPaths*/
         //val activityVisitCount = HashMap(this.activityVisitCount)
         getPathToStates(transitionPaths, stateCandidates, currentAbstractState, currentState
-                ,false,false,true,true,true,1)
-        if (transitionPaths.size == 0) {
-            forceEnd = true
-        }
+                ,false,false,true,true,true,10)
         return transitionPaths
     }
 
@@ -917,7 +957,7 @@ class PhaseOneStrategy(
             stateScores.put(it,score)
         }
         getPathToStates(transitionPaths,stateScores,currentAbstractState,currentState,
-                false,useVirtualAbstractState,includePressBackEvent,includePressBackEvent,true,1)
+                false,useVirtualAbstractState,includePressBackEvent,includePressBackEvent,true,10)
         return transitionPaths
     }
 
@@ -984,9 +1024,10 @@ class PhaseOneStrategy(
 
     private fun hasBudgetLeft(window: WTGNode): Boolean {
         if (!windowRandomExplorationBudget.containsKey(window))
+            return false
+        if (windowRandomExplorationBudgetUsed[window]!! <= windowRandomExplorationBudget[window]!!) {
             return true
-        if (windowRandomExplorationBudgetUsed[window]!! <= windowRandomExplorationBudget[window]!!)
-            return true
+        }
         return false
     }
 
@@ -1070,7 +1111,7 @@ class PhaseOneStrategy(
                 it.setMaxiumAttempt(randomBudgetLeft)
             }
         }
-        log.info("This window is a target window but cannot find any target event")
+        log.info("This window is a target window but cannot find any target window transition")
         log.info("Random exploration in current window")
         phaseState = PhaseState.P1_RANDOM_IN_EXERCISE_TARGET_NODE
     }

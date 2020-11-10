@@ -14,6 +14,7 @@ import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.factory.AbstractModel
@@ -84,7 +85,7 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
                     return eContext.resetApp()
-                  /*  phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
+                    /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                     regressionWatcher.updateStage2Info(eContext)
                     return eContext.resetApp()*/
                 }
@@ -98,7 +99,7 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
         }
 
         log.info("Current abstract state: ${currentAbstractState.toString()}")
-        log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.size}")
+        log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.filter{it !is VirtualAbstractState}.size}")
         val availableWidgets = eContext.getCurrentState().widgets
         chosenAction = phaseStrategy.nextAction(eContext)
         prevNode = regressionWatcher.getAbstractState(eContext.getCurrentState())

@@ -41,13 +41,14 @@ data class AbstractAction (
 
     fun getScore(): Double {
         var actionScore = when(actionType) {
-            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 1
-            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 2
-            AbstractActionType.ITEM_CLICK -> 4
-            else -> 1
+            AbstractActionType.PRESS_BACK -> 0.5
+            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 1.0
+            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 2.0
+            AbstractActionType.ITEM_CLICK -> 4.0
+            else -> 1.0
         }
         if (attributeValuationSet == null)
-            return actionScore.toDouble()
+            return actionScore
         val cardinalityScore = when (attributeValuationSet!!.cardinality) {
             Cardinality.ONE -> 1
             Cardinality.MANY -> 2

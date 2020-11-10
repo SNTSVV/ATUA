@@ -11,7 +11,7 @@ class DecisionNode (
 ) {
     fun containAttributePath(attributePath: AttributePath, activity: String): Boolean {
         attributePaths.filter { it.second == activity }.map { it.first }. forEach {
-            if (it.contains(attributePath)) {
+            if (attributePath.contains(it)) {
                 return true
             }
         }

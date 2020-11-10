@@ -71,6 +71,9 @@ open class StaticWidget constructor(val widgetId: String,//sootandroid id
         newStaticWidget.mappedRuntimeWidgets.addAll(this.mappedRuntimeWidgets)
         return newStaticWidget
     }
+
+
+
     companion object{
         val allStaticWidgets= ArrayList<StaticWidget>()
         fun getOrCreateStaticWidget(widgetId: String,

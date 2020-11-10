@@ -5,8 +5,14 @@ import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.AbstractionFunction
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.explorationModel.ConcreteId
+import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 open class AbstractState (
         val activity: String,
@@ -25,10 +31,24 @@ open class AbstractState (
         var rotation: Rotation,
         var internet: InternetStatus
 ) {
-        val unexercisedWidgetCount: Int
-                get() {return attributeValuationSets.filter { it.exerciseCount==0}.size}
         val actionCount = HashMap<AbstractAction, Int>()
         val targetActions = HashSet<AbstractAction> ()
+
+/*        val stateId by lazy {
+            ConcreteId(uid, configId)
+        }
+        val uid: UUID by lazy { lazyIds.value.uid }
+        val configId: UUID by lazy { lazyIds.value.configId }
+
+        protected open val lazyIds: Lazy<ConcreteId> =
+            lazy {
+                a.fold(ConcreteId(emptyUUID, emptyUUID)) { (id, configId), widget ->
+                    // e.g. keyboard elements are ignored for uid computation within [addRelevantId]
+                    // however different selectable auto-completion proposes are only 'rendered'
+                    // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different
+                    ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
+                }
+            }*/
 
         init {
             window.mappedStates.add(this)
@@ -104,6 +124,8 @@ open class AbstractState (
             }
         }
 
+
+
         fun addWidgetGroup (attributeValuationSet: AttributeValuationSet) {
             if (attributeValuationSets.contains(attributeValuationSet)) {
                 return
@@ -129,13 +151,25 @@ open class AbstractState (
             }
         }
 
-        fun getWidgetGroup(widget: Widget, guiState: State<*>): AttributeValuationSet{
-            val tempAttributePath = HashMap<Widget,AttributePath>()
+        fun getAttributeValuationSet(widget: Widget, guiState: State<*>): AttributeValuationSet?{
+            /*val tempAttributePath = HashMap<Widget,AttributePath>()
             val tempChildWidgetAttributePaths = HashMap<Widget,AttributePath>()
             val reducedAttributePath = AbstractionFunction.INSTANCE.reduce(widget,guiState,window.activityClass,tempAttributePath,tempChildWidgetAttributePaths)
             return attributeValuationSets.find {
                 it.attributePath.equals(reducedAttributePath)
-            }?: AttributeValuationSet(reducedAttributePath,Cardinality.ONE)
+            }?: AttributeValuationSet(reducedAttributePath,Cardinality.ONE)*/
+            if (!guiStates.contains(guiState))
+                return null
+            val mappedWidget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[activity]
+            if (mappedWidget_AttributeValuationSet == null)
+                return null
+            val mappedAttributeValuationSet = mappedWidget_AttributeValuationSet.get(widget)
+            if (mappedAttributeValuationSet == null)
+                return null
+            val attributeValuationSet = attributeValuationSets.find {
+                it.attributePath.equals(mappedAttributeValuationSet.attributePath)
+            }
+            return attributeValuationSet
         }
 
         fun getAvailableActions(): List<AbstractAction> {
@@ -152,8 +186,9 @@ open class AbstractState (
             val widget_WidgetGroupMap = HashMap<Widget, AttributeValuationSet>()
             if (currentState != null) {
                 Helper.getVisibleWidgetsForAbstraction(currentState, AbstractStateManager.instance.autautMF.packageName).forEach { w ->
-                    val wg = this.getWidgetGroup(w,currentState)
-                    widget_WidgetGroupMap.put(w,wg)
+                    val wg = this.getAttributeValuationSet(w,currentState)
+                    if (wg!=null)
+                        widget_WidgetGroupMap.put(w,wg)
                 }
             }
             unexcerisedActions.addAll(actionCount.filter {
@@ -373,19 +408,7 @@ open class AbstractState (
         return potentialActionCount+localScore
     }
 
-    fun getLeastExerciseWidgets(currentState: State<*>): List<AttributeValuationSet> {
-        val interactiveWidgetGroups = this.attributeValuationSets
-                .filterNot { it.attributePath.isCheckable() || it.attributePath.isInputField() }
-        if (interactiveWidgetGroups.isNotEmpty()) {
-            val leastExerciseCount = interactiveWidgetGroups.minBy { it.exerciseCount }!!.exerciseCount
-            val leastExerciseAttributeValuationSets = interactiveWidgetGroups.filter {
-                it.exerciseCount == leastExerciseCount
-                        && !it.attributePath.isInputField()
-            }
-            return leastExerciseAttributeValuationSets
-        }
-        return emptyList()
-    }
+
 }
 
 enum class InternetStatus {
@@ -401,7 +424,8 @@ class VirtualAbstractState(activity: String,
         window = staticNode,
         rotation = Rotation.PORTRAIT,
         internet = InternetStatus.Undefined,
-        isHomeScreen = isHomeScreen
+        isHomeScreen = isHomeScreen,
+        isOutOfApplication = (staticNode is WTGOutScopeNode)
         )
 
 class AppResetAbstractState():AbstractState(activity = "", window = WTGLauncherNode.getOrCreateNode(),rotation = Rotation.PORTRAIT,internet = InternetStatus.Undefined)

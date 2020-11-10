@@ -13,6 +13,13 @@ class ProbabilityDistribution<T>(
     private fun computeDistribution()
     {
         var sum:Double = 0.0
+
+        val newPopulation = HashMap<T, Double>()
+        if (population.any{it.value == 0.0}) {
+            population.forEach { t, u ->
+                newPopulation.put(t,u+1.0)
+            }
+        }
         population.forEach { _, u ->
             sum = sum + u
         }

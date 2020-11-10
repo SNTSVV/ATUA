@@ -64,7 +64,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                           private val resourceDir: Path,
                           private val statementFileName: String = "coverage.txt",
                           private val methodFileName: String = "methodCoverage.txt",
-                          private val modifiedMethodFileName: String = "modifiedMethodCoverage.txt") : ModelFeature() {
+                          private val modifiedMethodFileName: String = "updatedMethodCoverage.txt") : ModelFeature() {
     override val coroutineContext: CoroutineContext = CoroutineName("StatementCoverageMF") + Job()
 
      val executedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() //methodid -> first executed

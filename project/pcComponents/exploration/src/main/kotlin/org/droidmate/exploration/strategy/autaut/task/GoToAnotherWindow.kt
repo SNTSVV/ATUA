@@ -23,18 +23,18 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 open class GoToAnotherWindow constructor(
-        regressionWatcher: AutAutMF,
+        autautMF: AutAutMF,
         autAutTestingStrategy: AutAutTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(autAutTestingStrategy, regressionWatcher, delay, useCoordinateClicks) {
+        delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(autAutTestingStrategy, autautMF, delay, useCoordinateClicks) {
 
     private var tryOpenNavigationBar: Boolean = false
     private var tryScroll: Boolean = false
     protected var mainTaskFinished:Boolean = false
     protected var prevState: State<*>?=null
     protected var prevAbState: AbstractState?=null
-    protected var randomExplorationTask: RandomExplorationTask = RandomExplorationTask(autautMF,autAutTestingStrategy,delay,useCoordinateClicks,true,1)
+    protected var randomExplorationTask: RandomExplorationTask = RandomExplorationTask(this.autautMF,autAutTestingStrategy,delay,useCoordinateClicks,true,1)
 
-    protected var isFillingText: Boolean = false
+    var isFillingText: Boolean = false
     protected var currentEdge: Edge<AbstractState, AbstractInteraction>?=null
     protected var expectedNextAbState: AbstractState?=null
     protected var currentPath: TransitionPath? = null
@@ -49,12 +49,12 @@ open class GoToAnotherWindow constructor(
 
     override fun chooseRandomOption(currentState: State<*>) {
         currentPath = possiblePaths.random()
-        log.debug(currentPath.toString())
         destWindow = currentPath!!.getFinalDestination().window
         possiblePaths.remove(currentPath!!)
         expectedNextAbState=currentPath!!.root.data
         val destination = currentPath!!.getFinalDestination()
-        log.debug("Try to reach ${destination.window}")
+        log.debug("Try reaching ${destination.window}")
+        log.debug(currentPath.toString())
         mainTaskFinished = false
         isFillingText = false
         tryOpenNavigationBar = false
@@ -105,7 +105,7 @@ open class GoToAnotherWindow constructor(
                     if (!useInputTargetWindow && isAvailable(currentState)) {
                         initialize(currentState)
                         return false
-                    } else if (destWindow != null && isAvailable(currentState, destWindow!!,usingPressback)) {
+                    } else if (destWindow != null && isAvailable(currentState, destWindow!!,usingPressback,includeReset)) {
                         initialize(currentState)
                         return false
                     }
@@ -239,12 +239,13 @@ open class GoToAnotherWindow constructor(
         return false
     }
 
-    open fun isAvailable(currentState: State<*>, destWindow: WTGNode, usingPressback: Boolean): Boolean {
+    open fun isAvailable(currentState: State<*>, destWindow: WTGNode, usingPressback: Boolean, includeResetApp: Boolean): Boolean {
         log.info("Checking if there is any path to $destWindow")
         reset()
         this.usingPressback = usingPressback
         this.destWindow = destWindow
         this.useInputTargetWindow = true
+        this.includeReset = includeReset
         initPossiblePaths(currentState)
         if (possiblePaths.size > 0) {
             return true
@@ -267,10 +268,12 @@ open class GoToAnotherWindow constructor(
     }
 
     var usingPressback = true
+    var includeReset = true
+
     open protected fun initPossiblePaths(currentState: State<*>) {
         possiblePaths.clear()
         if (useInputTargetWindow && destWindow!=null) {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,usingPressback))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,usingPressback,includeReset))
         } else {
             possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
            /* if (possiblePaths.isEmpty()) {

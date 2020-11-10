@@ -66,7 +66,7 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
             actionCount.put(abstractActionSwipeDown, 0)
             actionCount.put(abstractActionSwipeLeft, 0)
             actionCount.put(abstractActionSwipeRight, 0)
-            if (attributePath.getClassName().contains("RecyclerView")
+            /*if (attributePath.getClassName().contains("RecyclerView")
                     || attributePath.getClassName().contains("ListView")
                     || attributePath.getClassName().equals("android.webkit.WebView") ) {
                 val abstractActionSwipeTillEnd = AbstractAction(
@@ -75,7 +75,7 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
                         extra = "SwipeTillEnd"
                 )
                 actionCount.put(abstractActionSwipeTillEnd,0)
-            }
+            }*/
         }
         if (attributePath.isInputField()) {
             val abstractAction = AbstractAction(
@@ -101,10 +101,7 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
         }*/
     }
 
-    fun getGUIWidgets ( guiState: State<*>): List<Widget>{
-        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
-        val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
-        val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
+    fun getGUIWidgets (guiState: State<*>): List<Widget>{
         val selectedGuiWidgets = ArrayList<Widget>()
         Helper.getVisibleWidgets(guiState).forEach {
             if (isAbstractRepresentationOf(it,guiState)) {
@@ -119,10 +116,14 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
         if (abstractState == null)
             return false
-        val tempFullAttributePaths: HashMap<Widget, AttributePath> = HashMap()
-        val tempRelativeAttributePaths: HashMap<Widget, AttributePath> = HashMap()
-        val reducedAttributePath = WidgetReducer.reduce(widget,guiState,abstractState.window.activityClass,tempFullAttributePaths,tempRelativeAttributePaths)
-        if (reducedAttributePath.equals(attributePath))
+        val activity = abstractState.activity
+        if (!AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap.containsKey(activity))
+            return false
+        val widget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[activity]!!
+        if (!widget_AttributeValuationSet.containsKey(widget))
+            return false
+        val derivedAttributeValuationSet = widget_AttributeValuationSet.get(widget)!!
+        if (derivedAttributeValuationSet.attributePath.equals(attributePath))
         {
             return true
         }
@@ -195,6 +196,7 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
                 "[scrollable=${attributePath.isScrollable()}]" +
                 "[checkable=${attributePath.isCheckable()}]"
     }
+
 
 }
 

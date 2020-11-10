@@ -17,7 +17,6 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.random.Random
 
 class PrepareContextTask private constructor(
         regressionWatcher: AutAutMF,
@@ -151,7 +150,7 @@ class PrepareContextTask private constructor(
                     if (!it.isInputField) {
                         // check if a click on this widget will go to another window
                         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
-                        val widgetGroup = abstractState.getWidgetGroup(widget = it, guiState = currentState)
+                        val widgetGroup = abstractState.getAttributeValuationSet(widget = it, guiState = currentState)
                         if (widgetGroup != null) {
                             val isGoToAnotherWindow = autautMF.abstractTransitionGraph.edges(abstractState).any {
                                 it.destination!!.data.window != it.source.data.window

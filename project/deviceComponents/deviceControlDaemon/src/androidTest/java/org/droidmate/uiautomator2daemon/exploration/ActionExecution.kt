@@ -104,7 +104,7 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 //			env.device.click(x, y, interactiveTimeout).apply {
 //				delay(delay)
 //			}
-			env.device.swipe(x,y,x+1,y,200)
+			env.device.swipe(x,y,x,y,200)
 //			env.device.longClick(x, y, interactiveTimeout).apply {
 //				delay(delay)
 //			}
