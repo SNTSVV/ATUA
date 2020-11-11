@@ -181,7 +181,7 @@ class PhaseTwoStrategy (
                     ,allPaths = transitionPaths
                     ,includeBackEvent = true
                     ,autautMF = autautMF
-                    ,useVirtualAbstractState = useVirtualAbstractState,
+                    ,includingWTG = useVirtualAbstractState,
                     shortest = false,
                     pathCountLimitation = 10)
             return transitionPaths
@@ -667,7 +667,7 @@ class PhaseTwoStrategy (
             targetWindow = targetWindowsCount.map { it.key }.random()
         }
         targetWindowsCount[targetWindow!!] = targetWindowsCount[targetWindow!!]!!+1
-       if (numberOfTried< maxTried && getPathsToWindow(currentState, targetWindow!!,true,true).isEmpty()) {
+       if (numberOfTried< maxTried && getPathsToWindowToExplore(currentState, targetWindow!!,true,true).isEmpty()) {
             selectTargetWindow(currentState, numberOfTried+1,maxTried)
             return
         }

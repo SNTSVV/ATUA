@@ -331,7 +331,7 @@ class AbstractStateManager() {
                             isImplicit = true,
                             prevWindow = null,
                             data = staticEdge.label.data,
-                            fromWTG = !staticEdge.label.createdAtRuntime
+                            fromWTG = true
                             )
                     staticEdge.label.modifiedMethods.forEach {
                         abstractInteraction.modifiedMethods.put(it.key, false)
@@ -420,7 +420,7 @@ class AbstractStateManager() {
                         } else {
                             abstractInteraction = AbstractInteraction(abstractAction = widgetAbstractAction,
                                     isImplicit = true, prevWindow = null, data = staticEdge.label.data,
-                                    fromWTG = !staticEdge.label.createdAtRuntime)
+                                    fromWTG = true)
                             abstractState.abstractInteractions.add(abstractInteraction)
 
                         }
@@ -583,7 +583,7 @@ class AbstractStateManager() {
             var activityNode: WTGNode? = WTGActivityNode.allNodes.find { it.classType == activity }
             if (activityNode == null) {
                 val newWTGNode =
-                        if (guiState.widgets.any { it.packageName == autautMF.packageName }) {
+                        if (guiState.widgets.any { it.packageName == autautMF.packageName } && !guiState.isRequestRuntimePermissionDialogBox) {
                             WTGActivityNode.getOrCreateNode(
                                     nodeId = WTGActivityNode.getNodeId(),
                                     classType = activity
@@ -918,13 +918,13 @@ class AbstractStateManager() {
 
     fun rebuildModel(staticNode: WTGNode) {
         //reset virtual abstract state
-        ABSTRACT_STATES.removeIf { it.window == staticNode && it is VirtualAbstractState }
+        ABSTRACT_STATES.removeIf { it is VirtualAbstractState && it.window.activityClass == staticNode.activityClass }
         AbstractStateManager.instance.widgetGroupFrequency.remove(staticNode)
         val virtualAbstractState = VirtualAbstractState(staticNode.activityClass, staticNode, staticNode is WTGLauncherNode)
         ABSTRACT_STATES.add(virtualAbstractState)
         initAbstractInteractions(virtualAbstractState,null)
         //get all related abstract state
-        val oldAbstractStates = ABSTRACT_STATES.filter { it.window == staticNode && it !is VirtualAbstractState }
+        val oldAbstractStates = ABSTRACT_STATES.filter { it.window.activityClass == staticNode.activityClass && it !is VirtualAbstractState }
         rebuildAbstractStates(oldAbstractStates, staticNode)
         val allAbstractStates = ABSTRACT_STATES
         val launchState = launchAbstractStates[LAUNCH_STATE.NORMAL_LAUNCH]!!

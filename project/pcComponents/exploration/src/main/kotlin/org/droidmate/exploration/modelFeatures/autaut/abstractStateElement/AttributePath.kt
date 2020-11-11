@@ -1,12 +1,21 @@
 package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
+import org.droidmate.explorationModel.toUUID
+import java.util.*
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 data class AttributePath (
         val localAttributes: HashMap<AttributeType, String> = HashMap(),
         val parentAttributePath: AttributePath? = null,
         val childAttributePaths: HashSet<AttributePath> = HashSet()){
 
+    val attributePathId: UUID by lazy { lazyIds.value }
+
+    protected open val lazyIds: Lazy<UUID> =
+            lazy {
+                listOf<Any>(this.toString()).joinToString(separator = "<;>").toUUID()
+            }
     override fun equals(other: Any?): Boolean {
         if (other !is AttributePath)
             return false
@@ -93,6 +102,22 @@ data class AttributePath (
         }
         return false
     }
+
+    fun isChecked(): Boolean {
+        if (localAttributes[AttributeType.checked]!!.equals("true"))
+        {
+            return true
+        }
+        return false
+    }
+
+    fun isEnable(): Boolean {
+        if (localAttributes[AttributeType.enabled]!!.equals("true"))
+        {
+            return true
+        }
+        return false
+    }
     fun isInteractive(): Boolean{
         return isClickable() || isLongClickable() || isScrollable() || isCheckable()
     }
@@ -142,6 +167,14 @@ data class AttributePath (
                 return true
             }
             parentAttributePath = parentAttributePath.parentAttributePath
+        }
+        return false
+    }
+
+    fun isSelected(): Boolean {
+        if (localAttributes[AttributeType.selected]!!.equals("true"))
+        {
+            return true
         }
         return false
     }

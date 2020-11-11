@@ -2,13 +2,17 @@ package org.droidmate.exploration.modelFeatures.autaut.abstractStateElement
 
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reducer.WidgetReducer
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.toUUID
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class AttributeValuationSet (val attributePath: AttributePath, val cardinality: Cardinality, val count: Int =1) {
+
     var exerciseCount: Int = 0
     var guiWidgets = HashSet<Widget>()
     val actionCount = HashMap<AbstractAction, Int>()
@@ -100,6 +104,13 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
             actionCount.put(longclickAbstractAction, 0)*//*
         }*/
     }
+
+    val avsId: UUID by lazy { lazyIds.value }
+
+    protected open val lazyIds: Lazy<UUID> =
+            lazy {
+                    listOf<Any>(attributePath.toString(),cardinality.toString()).joinToString(separator = "<;>").toUUID()
+                }
 
     fun getGUIWidgets (guiState: State<*>): List<Widget>{
         val selectedGuiWidgets = ArrayList<Widget>()
@@ -195,6 +206,17 @@ class AttributeValuationSet (val attributePath: AttributePath, val cardinality: 
                 "[longClickable=${attributePath.isLongClickable()}]" +
                 "[scrollable=${attributePath.isScrollable()}]" +
                 "[checkable=${attributePath.isCheckable()}]"
+    }
+
+    /**
+     * Write in csv
+     */
+    fun dump(): String {
+        return "${avsId.toString()};${attributePath.getClassName()};${attributePath.getResourceId()};" +
+                "${attributePath.getContentDesc()};${attributePath.getText()};${attributePath.isEnable()};" +
+                "${attributePath.isSelected()};${attributePath.isCheckable()};${attributePath.isInputField()};" +
+                "${attributePath.isClickable()};${attributePath.isLongClickable()};${attributePath.isScrollable()};" +
+                "${attributePath.isChecked()};$attributePath."
     }
 
 

@@ -242,9 +242,7 @@ class AutAutMF(private val appName: String,
             }
             else
             {
-                if (!context.getLastActionType().isFetch()) {
-                    interactions.add(context.getLastAction())
-                }
+                interactions.add(context.getLastAction())
             }
             if (interactions.any { it.actionType.isLaunchApp() || it.actionType == "ResetApp" }) {
                 fromLaunch = true
@@ -350,7 +348,7 @@ class AutAutMF(private val appName: String,
                     autautMF = this,
                     currentState = currentState,
                     root = currentAbstractState,
-                    useVirtualAbstractState = false,
+                    includingWTG = false,
                     stopWhenHavingUnexercisedAction = false,
                     allPaths = paths,
                     finalTarget = dest,
@@ -1015,7 +1013,7 @@ class AutAutMF(private val appName: String,
         {
             createStaticEventFromAbstractInteraction(prevAbstractState,newAbstractState,abstractInteraction,lastInteractions.first())
         }
-        if(prevAbstractState.window !is WTGOutScopeNode)
+        if(prevAbstractState.window !is WTGOutScopeNode && !prevAbstractState.isRequestRuntimePermissionDialogBox)
         {
             val event = prevAbstractState.staticEventMapping[abstractInteraction.abstractAction]
             if (event != null) {

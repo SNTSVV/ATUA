@@ -25,7 +25,7 @@ class GoToRelatedWindowTask protected constructor(
         executedCount++
     }
     override fun initPossiblePaths(currentState: State<*>) {
-        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,true,false))
+        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,true,false))
     }
 
     companion object {

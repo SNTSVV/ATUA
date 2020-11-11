@@ -10,7 +10,6 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.EventType
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticEvent
@@ -22,11 +21,9 @@ import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGOutScopeNod
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
-import org.droidmate.legacy.flatten
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import presto.android.gui.clients.regression.informationRetrieval.InformationRetrieval
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -676,7 +673,7 @@ class PhaseThreeStrategy(
         else
             maxTry
 
-        if (numTried < max && getPathsToWindow(currentState, targetWindow!!, true,true).isEmpty()) {
+        if (numTried < max && getPathsToWindowToExplore(currentState, targetWindow!!, true,true).isEmpty()) {
             selectTargetWindow(currentState, numTried + 1, max)
             return true
         }
@@ -744,7 +741,7 @@ class PhaseThreeStrategy(
                 relatedWindow = targetWindow
             }
         }
-        if (numTried< max && getPathsToWindow(currentState, relatedWindow!!,true,true).isEmpty()) {
+        if (numTried< max && getPathsToWindowToExplore(currentState, relatedWindow!!,true,true).isEmpty()) {
             selectRelatedWindow(currentState, numTried+1,max)
         }
 

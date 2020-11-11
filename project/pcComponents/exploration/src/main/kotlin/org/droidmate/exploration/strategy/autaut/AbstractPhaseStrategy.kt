@@ -40,7 +40,7 @@ abstract class AbstractPhaseStrategy(
                     runBlocking { autAutTestingStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
                 }
     }
-    open fun getPathsToWindow(currentState: State<*>, targetWindow: WTGNode, usingPressback: Boolean, includeReset: Boolean): List<TransitionPath> {
+    open fun getPathsToWindowToExplore(currentState: State<*>, targetWindow: WTGNode, usingPressback: Boolean, includeReset: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (currentAbstractState==null)
@@ -95,20 +95,19 @@ abstract class AbstractPhaseStrategy(
                     if (existingPaths != null && existingPaths.isNotEmpty()) {
                         transitionPaths.addAll(existingPaths)
                     } else {
-
                         PathFindingHelper.findPathToTargetComponent(currentState = currentState
                                 , root = currentAbstractState
                                 , traversingNodes = listOf(Pair(autautMF.windowStack.clone() as Stack<WTGNode>, currentAbstractState))
                                 , finalTarget = abstractState
                                 , allPaths = transitionPaths
                                 , includeBackEvent = includeBackEvent
-                                , useVirtualAbstractState = includeWTG
+                                , includingWTG = includeWTG
                                 , stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction
                                 , includeReset = includeReset
-                        , shortest = shortest
-                        , pathCountLimitation = pathCountLimitation,
+                                , shortest = shortest
+                                , pathCountLimitation = pathCountLimitation,
                                 autautMF = autautMF
-                        , forcingExplicit = forcingExplicit)
+                                , forcingExplicit = forcingExplicit)
                     }
                     //windowStates.remove(abstractState)
                     candidateStates.remove(abstractState)

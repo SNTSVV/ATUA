@@ -170,6 +170,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         if (widget == null)
         {
             return when (action){
+                AbstractActionType.WAIT -> GlobalAction(ActionType.FetchGUI)
                 AbstractActionType.ENABLE_DATA -> GlobalAction(ActionType.EnableData)
                 AbstractActionType.DISABLE_DATA -> GlobalAction(ActionType.DisableData)
                 AbstractActionType.PRESS_MENU -> pressMenuOrClickMoreOption(currentState)

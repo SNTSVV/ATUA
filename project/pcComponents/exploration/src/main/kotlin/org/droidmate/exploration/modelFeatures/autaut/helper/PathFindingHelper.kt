@@ -6,7 +6,6 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Abstr
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractTransitionGraph
 import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.TransitionPath
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGDialogNode
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGFakeNode
@@ -25,7 +24,7 @@ class PathFindingHelper {
     companion object {
         fun findPathToTargetComponent(autautMF: AutAutMF, currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<WTGNode>, AbstractState>>, finalTarget: AbstractState
                                       , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean
-                                      , useVirtualAbstractState: Boolean
+                                      , includingWTG: Boolean
                                       , stopWhenHavingUnexercisedAction: Boolean = false
                                       , includeReset: Boolean = true
                                       , shortest: Boolean = true
@@ -56,6 +55,7 @@ class PathFindingHelper {
                     includeImplicitInteraction = !forcingExplicit,
                     includeLaunchAction = false)
             if (allPaths.isEmpty()) {
+                // consider Launch Action
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -77,6 +77,7 @@ class PathFindingHelper {
                         includeLaunchAction = true)
             }
             if (allPaths.isEmpty() && includeReset) {
+                // consider reset actions
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -94,10 +95,10 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = true,
-                        includeImplicitInteraction = !forcingExplicit,
+                        includeImplicitInteraction = false,
                         includeLaunchAction = true)
             }
-            if (allPaths.isEmpty() && useVirtualAbstractState && !forcingExplicit) {
+            if (allPaths.isEmpty() && includingWTG && !forcingExplicit) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -118,7 +119,7 @@ class PathFindingHelper {
                         includeImplicitInteraction = !forcingExplicit,
                         includeLaunchAction = false)
             }
-            if (allPaths.isEmpty() && useVirtualAbstractState && includeReset && !forcingExplicit) {
+            if (allPaths.isEmpty() && includingWTG && includeReset && forcingExplicit) {
                 childParentMap.clear()
                 childParentMap.put(root, null)
                 findPathToTargetComponentByBFS(
@@ -136,7 +137,7 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = includeReset,
-                        includeImplicitInteraction = !forcingExplicit,
+                        includeImplicitInteraction = false,
                         includeLaunchAction = true)
             }
 
@@ -286,8 +287,7 @@ class PathFindingHelper {
                 it.destination != null
                         //&& it.source != it.destination
                         && it.destination!!.data.window !is WTGFakeNode
-                        && !(it.label.abstractAction.actionType == AbstractActionType.MINIMIZE_MAXIMIZE
-                        || it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK)
+                        && it.label.abstractAction.actionType != AbstractActionType.PRESS_BACK
                         && includingRotateUIOrNot(autautMF, it)
                         && includingResetOrNot(it, includeResetAction,depth)
                         && includingWTGOrNot(it, includeWTG)
@@ -332,17 +332,20 @@ class PathFindingHelper {
             val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
             possibleTransitions.groupBy({ it.label.abstractAction }, { it })
                     .forEach { interaction, u ->
-                        val reliableTransition = u.filter { !it.label.isImplicit }
-                        val implicitTransitions = u.filter { it.label.isImplicit }
-                        if (reliableTransition.isEmpty()) {
-                            //        if (reliableTransition.isEmpty()) {
-                            if (includeImplicitInteraction == true && depth == 0)
-                                processedTransition.addAll(implicitTransitions)
-                            else if (includeWTG)
-                                processedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
+                        if (interaction.isLaunchOrReset())
+                            processedTransition.addAll(u)
+                        else {
+                            val reliableTransition = u.filter { !it.label.isImplicit }
+                            val implicitTransitions = u.filter { it.label.isImplicit }
+                            if (reliableTransition.isEmpty()) {
+                                //        if (reliableTransition.isEmpty()) {
+                                if (includeImplicitInteraction == true && depth == 0)
+                                    processedTransition.addAll(implicitTransitions)
+                                else if (includeWTG)
+                                    processedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
+                            }
+                            processedTransition.addAll(reliableTransition)
                         }
-                        processedTransition.addAll(reliableTransition)
-
                     }
 
             processedTransition.forEach {

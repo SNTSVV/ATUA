@@ -114,5 +114,6 @@ enum class AbstractActionType(val actionName: String) {
     PRESS_HOME("PressHome"),
     RANDOM_KEYBOARD("RandomKeyboard"),
     FAKE_ACTION("FakeAction"),
-    TERMINATE("Terminate")
+    TERMINATE("Terminate"),
+    WAIT("FetchGUI")
 }

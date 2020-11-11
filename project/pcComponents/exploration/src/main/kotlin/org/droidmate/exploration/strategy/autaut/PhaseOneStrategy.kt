@@ -391,7 +391,6 @@ class PhaseOneStrategy(
             return
         }
         if (phaseState == PhaseState.P1_EXERCISE_TARGET_NODE) {
-
             nextActionOnExerciseTargetWindow(currentAppState, currentState, exerciseTargetComponentTask, randomExplorationTask, goToAnotherNode, goToTargetNodeTask)
             return
         }
@@ -857,7 +856,7 @@ class PhaseOneStrategy(
             }
         }
         if (targetWindow != null) {
-            val transitionPaths = getPathsToWindow(currentState,targetWindow!!,true,true)
+            val transitionPaths = getPathsToWindowToExplore(currentState,targetWindow!!,true,true)
             targetWindowTryCount[targetWindow!!] = targetWindowTryCount[targetWindow!!]!! + 1
             if (transitionPaths.isEmpty()) {
                 unreachableWindows.add(targetWindow!!)
@@ -1118,6 +1117,8 @@ class PhaseOneStrategy(
 
     fun getTargetAbstractStates(currentNode: AbstractState): ArrayList<AbstractState>
     {
+        if (targetWindow == null)
+            return ArrayList()
         val candidates = ArrayList<AbstractState>()
         val excludedNode = currentNode
         candidates.add( AbstractStateManager.instance.ABSTRACT_STATES.find{it is VirtualAbstractState && it.window == targetWindow}!!)

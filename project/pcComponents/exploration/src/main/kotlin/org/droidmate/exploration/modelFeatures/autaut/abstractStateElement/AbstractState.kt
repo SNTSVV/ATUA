@@ -6,9 +6,13 @@ import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.reduc
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.StaticWidget
 import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
 import org.droidmate.explorationModel.ConcreteId
+import org.droidmate.explorationModel.config.ConfigProperties
+import org.droidmate.explorationModel.config.ModelConfig
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.retention.StringCreator
+import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -34,97 +38,96 @@ open class AbstractState (
         val actionCount = HashMap<AbstractAction, Int>()
         val targetActions = HashSet<AbstractAction> ()
 
-/*        val stateId by lazy {
-            ConcreteId(uid, configId)
-        }
-        val uid: UUID by lazy { lazyIds.value.uid }
-        val configId: UUID by lazy { lazyIds.value.configId }
-
-        protected open val lazyIds: Lazy<ConcreteId> =
-            lazy {
-                a.fold(ConcreteId(emptyUUID, emptyUUID)) { (id, configId), widget ->
-                    // e.g. keyboard elements are ignored for uid computation within [addRelevantId]
-                    // however different selectable auto-completion proposes are only 'rendered'
-                    // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different
-                    ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
-                }
-            }*/
-
-        init {
-            window.mappedStates.add(this)
-            val pressBackAction = AbstractAction(
-                    actionType = AbstractActionType.PRESS_BACK
+        val stateId: UUID by lazy { lazyIds.value }
+    init {
+        window.mappedStates.add(this)
+        val pressBackAction = AbstractAction(
+                actionType = AbstractActionType.PRESS_BACK
+        )
+        actionCount.put(pressBackAction,0)
+        if (window !is WTGOptionsMenuNode && window !is WTGDialogNode ) {
+            val pressMenuAction = AbstractAction(
+                    actionType = AbstractActionType.PRESS_MENU
             )
-            actionCount.put(pressBackAction,0)
-            if (window !is WTGOptionsMenuNode && window !is WTGDialogNode ) {
-                val pressMenuAction = AbstractAction(
-                        actionType = AbstractActionType.PRESS_MENU
-                )
-                actionCount.put(pressMenuAction, 0)
-                val minmaxAction = AbstractAction(
-                        actionType = AbstractActionType.MINIMIZE_MAXIMIZE
-                )
-                actionCount.put(minmaxAction,0)
+            actionCount.put(pressMenuAction, 0)
+            val minmaxAction = AbstractAction(
+                    actionType = AbstractActionType.MINIMIZE_MAXIMIZE
+            )
+            actionCount.put(minmaxAction,0)
 
-            }
-            if (window is WTGActivityNode) {
-               /* val swipeUpAction = AbstractAction(
-                        actionType = AbstractActionType.SWIPE,
-                        extra = "SwipeUp"
-                )
-                val swipeDownAction = AbstractAction(
-                        actionType = AbstractActionType.SWIPE,
-                        extra = "SwipeDown"
-                )
-                val swipeLeftAction = AbstractAction(
-                        actionType = AbstractActionType.SWIPE,
-                        extra = "SwipeLeft"
-                )
-                val swipeRightAction = AbstractAction(
-                        actionType = AbstractActionType.SWIPE,
-                        extra = "SwipeRight"
-                )
+        }
+        if (window is WTGActivityNode) {
+            /* val swipeUpAction = AbstractAction(
+                     actionType = AbstractActionType.SWIPE,
+                     extra = "SwipeUp"
+             )
+             val swipeDownAction = AbstractAction(
+                     actionType = AbstractActionType.SWIPE,
+                     extra = "SwipeDown"
+             )
+             val swipeLeftAction = AbstractAction(
+                     actionType = AbstractActionType.SWIPE,
+                     extra = "SwipeLeft"
+             )
+             val swipeRightAction = AbstractAction(
+                     actionType = AbstractActionType.SWIPE,
+                     extra = "SwipeRight"
+             )
 
-                actionCount.put(swipeUpAction, 0)
-                actionCount.put(swipeDownAction, 0)
-                actionCount.put(swipeLeftAction, 0)
-                actionCount.put(swipeRightAction, 0)*/
+             actionCount.put(swipeUpAction, 0)
+             actionCount.put(swipeDownAction, 0)
+             actionCount.put(swipeLeftAction, 0)
+             actionCount.put(swipeRightAction, 0)*/
 
 
-            }
-            if (window is WTGActivityNode || rotation == Rotation.LANDSCAPE) {
-                val rotationAction = AbstractAction(
-                        actionType = AbstractActionType.ROTATE_UI
-                )
-                actionCount.put(rotationAction, 0)
-            }
-
-            if (window is WTGDialogNode) {
-                val clickOutDialog = AbstractAction(
-                        actionType = AbstractActionType.CLICK_OUTBOUND
-                )
-                actionCount.put(clickOutDialog,0)
-            }
-            if (isOpeningKeyboard) {
-                val closeKeyboardAction = AbstractAction(
-                        actionType = AbstractActionType.CLOSE_KEYBOARD
-                )
-                actionCount.put(closeKeyboardAction, 0)
-            }
-            if (!AbstractStateManager.instance.widgetGroupFrequency.containsKey(window)) {
-                AbstractStateManager.instance.widgetGroupFrequency.put(window, HashMap())
-            }
-            val widgetGroupFrequency = AbstractStateManager.instance.widgetGroupFrequency[window]!!
-            attributeValuationSets.forEach {
-                if (!widgetGroupFrequency.containsKey(it)) {
-                    widgetGroupFrequency.put(it,1)
-                } else {
-                    widgetGroupFrequency[it] =  widgetGroupFrequency[it]!!+1
-                }
-            }
+        }
+        if (window is WTGActivityNode || rotation == Rotation.LANDSCAPE) {
+            val rotationAction = AbstractAction(
+                    actionType = AbstractActionType.ROTATE_UI
+            )
+            actionCount.put(rotationAction, 0)
         }
 
+        if (window is WTGDialogNode) {
+            val clickOutDialog = AbstractAction(
+                    actionType = AbstractActionType.CLICK_OUTBOUND
+            )
+            actionCount.put(clickOutDialog,0)
+        }
+        if (isOpeningKeyboard) {
+            val closeKeyboardAction = AbstractAction(
+                    actionType = AbstractActionType.CLOSE_KEYBOARD
+            )
+            actionCount.put(closeKeyboardAction, 0)
+        }
+        if (!AbstractStateManager.instance.widgetGroupFrequency.containsKey(window)) {
+            AbstractStateManager.instance.widgetGroupFrequency.put(window, HashMap())
+        }
+        val widgetGroupFrequency = AbstractStateManager.instance.widgetGroupFrequency[window]!!
+        attributeValuationSets.forEach {
+            if (!widgetGroupFrequency.containsKey(it)) {
+                widgetGroupFrequency.put(it,1)
+            } else {
+                widgetGroupFrequency[it] =  widgetGroupFrequency[it]!!+1
+            }
+        }
+    }
+        protected open val lazyIds: Lazy<UUID> =
+            lazy {
+                attributeValuationSets.fold(emptyUUID) { id, avs ->
+                    /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
+                    // however different selectable auto-completion proposes are only 'rendered'
+                    // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/
 
+                    //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
+                    id + avs.avsId
+
+                }
+            }
+        internal operator fun UUID.plus(uuid: UUID?): UUID {
+            return if(uuid == null) this
+            else UUID(this.mostSignificantBits + uuid.mostSignificantBits, this.leastSignificantBits + uuid.mostSignificantBits)
+        }
 
         fun addWidgetGroup (attributeValuationSet: AttributeValuationSet) {
             if (attributeValuationSets.contains(attributeValuationSet)) {
@@ -296,7 +299,7 @@ open class AbstractState (
 
 
     override fun toString(): String {
-        return "AbstractState[${this.hashCode()}]-${window}-Rotation:$rotation"
+        return "AbstractState[${this.stateId}]-${window}-Rotation:$rotation"
     }
     fun setActionCount(action: AbstractAction, count: Int) {
         if (action.attributeValuationSet == null) {
@@ -408,7 +411,23 @@ open class AbstractState (
         return potentialActionCount+localScore
     }
 
+    /**
+     * write csv
+     * uuid -> AbstractState_[uuid]
+     */
+    open fun dump(config: ModelConfig, parentDirectory: String) {
+        File( config.baseDir.toString()+File.pathSeparatorChar+parentDirectory+File.pathSeparatorChar+"AbstractState_"+stateId.toString() ).bufferedWriter().use { all ->
+            all.write(header())
+            attributeValuationSets.forEach {
+                all.newLine()
+                all.write( it.dump() )
+            }
+        }
+    }
 
+    fun header(): String {
+        return "AttributeValuationSetID;className;resourceId;contentDesc;text;enabled;selected;checkable;isInputField;clickable;longClickable;scrollable;checked;parentId;childId;"
+    }
 }
 
 enum class InternetStatus {

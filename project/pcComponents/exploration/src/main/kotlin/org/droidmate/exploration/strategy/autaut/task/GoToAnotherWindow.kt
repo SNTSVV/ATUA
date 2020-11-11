@@ -273,7 +273,7 @@ open class GoToAnotherWindow constructor(
     open protected fun initPossiblePaths(currentState: State<*>) {
         possiblePaths.clear()
         if (useInputTargetWindow && destWindow!=null) {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindow(currentState,destWindow!!,usingPressback,includeReset))
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,usingPressback,includeReset))
         } else {
             possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
            /* if (possiblePaths.isEmpty()) {
