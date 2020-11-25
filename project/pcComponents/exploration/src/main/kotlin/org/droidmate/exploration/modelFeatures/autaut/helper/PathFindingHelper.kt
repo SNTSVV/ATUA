@@ -1,18 +1,18 @@
 package org.droidmate.exploration.modelFeatures.autaut.helper
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractTransitionGraph
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.TransitionPath
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGDialogNode
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGFakeNode
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGLauncherNode
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGOptionsMenuNode
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGOutScopeNode
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractTransition
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractTransitionGraph
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.autaut.WTG.TransitionPath
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.FakeWindow
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -22,17 +22,35 @@ import kotlin.collections.HashMap
 
 class PathFindingHelper {
     companion object {
-        fun findPathToTargetComponent(autautMF: AutAutMF, currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<WTGNode>, AbstractState>>, finalTarget: AbstractState
-                                      , allPaths: ArrayList<TransitionPath>, includeBackEvent: Boolean
+        val allAvailableTransitionPaths =  HashMap<Pair<AbstractState,AbstractState>,ArrayList<TransitionPath>>()
+        private val disableEdges = HashSet<Edge<AbstractState, AbstractTransition>>()
+        private val disablePaths = HashSet<List<Edge<AbstractState,AbstractTransition>>>()
+
+        fun findPathToTargetComponent(autautMF: AutAutMF, currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<Window>, AbstractState>>, finalTarget: AbstractState
+                                      , allPaths: ArrayList<TransitionPath>
+                                      , includeBackEvent: Boolean
                                       , includingWTG: Boolean
                                       , stopWhenHavingUnexercisedAction: Boolean = false
                                       , includeReset: Boolean = true
                                       , shortest: Boolean = true
                                       , pathCountLimitation: Int = 1
                                       , forcingExplicit: Boolean = false) {
+            val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
+            if (existingPaths!= null && existingPaths.isNotEmpty()) {
+               val satisfiedPaths = existingPaths.filter {
+                   (includeBackEvent || it.edges().all { it.label.abstractAction.actionType!=AbstractActionType.PRESS_BACK })
+                           && (!forcingExplicit || it.edges().all { it.label.isExplicit() })
+                           && (includeReset || it.edges().all { it.label.abstractAction.actionType != AbstractActionType.RESET_APP })
+                           && (includingWTG || it.edges().all { !it.label.fromWTG })
+               }
+                if (satisfiedPaths.isNotEmpty()) {
+                    allPaths.addAll(satisfiedPaths)
+                    return
+                }
+            }
             val childParentMap = HashMap<AbstractState,
                     Triple<AbstractState,
-                            AbstractInteraction,
+                            AbstractTransition,
                             ArrayList<HashMap<Widget,String>>
                             >?
                     >()
@@ -143,10 +161,10 @@ class PathFindingHelper {
 
         }
 
-        fun findPathToTargetComponentByBFS(autautMF: AutAutMF,currentState: State<*>, root: AbstractState,
-                                           traversingNodes: List<Pair<Stack<WTGNode>, AbstractState>>,
+        fun findPathToTargetComponentByBFS(autautMF: AutAutMF, currentState: State<*>, root: AbstractState,
+                                           traversingNodes: List<Pair<Stack<Window>, AbstractState>>,
                                            finalTarget: AbstractState, allPaths: ArrayList<TransitionPath>,
-                                           childParentMap: HashMap<AbstractState,Triple<AbstractState, AbstractInteraction,ArrayList<HashMap<Widget,String>>>?>,
+                                           childParentMap: HashMap<AbstractState,Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>,
                                            depth: Int,
                                            useVirtualAbstractState: Boolean,
                                            stopWhenHavingUnexercisedAction: Boolean = false,
@@ -160,12 +178,12 @@ class PathFindingHelper {
             if (traversingNodes.isEmpty())
                 return
             val graph = autautMF.abstractTransitionGraph
-            val nextLevelNodes = ArrayList<Pair<Stack<WTGNode>,AbstractState>>()
+            val nextLevelNodes = ArrayList<Pair<Stack<Window>,AbstractState>>()
             for (traversing in traversingNodes)
             {
 
                 val source = traversing.second
-                if (source.window is WTGLauncherNode)
+                if (source.window is Launcher)
                     continue
                 if (source is VirtualAbstractState && !useVirtualAbstractState) {
                     continue
@@ -224,11 +242,11 @@ class PathFindingHelper {
                         includeLaunchAction = includeLaunchAction)
         }
 
-        private fun getNextTraversingNodes(autautMF: AutAutMF, windowStack: Stack<WTGNode>, graph: AbstractTransitionGraph, source: AbstractState,
+        private fun getNextTraversingNodes(autautMF: AutAutMF, windowStack: Stack<Window>, graph: AbstractTransitionGraph, source: AbstractState,
                                            depth: Int,
-                                           childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractInteraction,ArrayList<HashMap<Widget,String>>>?>,
+                                           childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>,
                                            finalTarget: AbstractState, root: AbstractState,
-                                           allPaths: ArrayList<TransitionPath>, nextLevelNodes: ArrayList<Pair<Stack<WTGNode>, AbstractState>>,
+                                           allPaths: ArrayList<TransitionPath>, nextLevelNodes: ArrayList<Pair<Stack<Window>, AbstractState>>,
                                            includeWTG: Boolean,
                                            stopWhenHavingUnexercisedAction: Boolean,
                                            includeImplicitInteraction: Boolean,
@@ -237,15 +255,15 @@ class PathFindingHelper {
                                            includeLauchAction: Boolean) {
 
             if (includeBackEvent && windowStack.isNotEmpty()) {
-                val processingBackEdges = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+                val processingBackEdges = ArrayList<Edge<AbstractState, AbstractTransition>>()
                 val backEdges = graph.edges(source).filter {
                     it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK
                             && it.destination != null
                 }
 
                 val backCandiates = backEdges.filter {
-                    it.destination!!.data.window !is WTGOutScopeNode
-                            && it.destination!!.data.window !is WTGLauncherNode
+                    it.destination!!.data.window !is OutOfApp
+                            && it.destination!!.data.window !is Launcher
                             && isTheSamePrevWindow(windowStack.peek(),it)
                 }.groupBy { it.label.isImplicit }
 
@@ -270,11 +288,11 @@ class PathFindingHelper {
                     val backState = edge.destination!!.data
                     val edgeCondition = graph.edgeConditions[edge]!!
                     childParentMap.put(backState, Triple(source, backEvent,edgeCondition))
-                    if (isArrived(backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
+                    if (isArrived(edge.label, backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
                         val fullPath = createTransitionPath(autautMF, backState, root, childParentMap)
-                        if (!autautMF.isDisablePath(fullPath)) {
+                        if (!isDisablePath(fullPath)) {
                             allPaths.add(fullPath)
-                            autautMF.registerTransitionPath(root, backState, fullPath)
+                            registerTransitionPath(root, backState, fullPath)
                         }
                     }
                     val nextWindowStack = createWindowStackForNext(windowStack, source, backState)
@@ -286,7 +304,7 @@ class PathFindingHelper {
             val forwardTransitions = edgesFromSource.filter {
                 it.destination != null
                         //&& it.source != it.destination
-                        && it.destination!!.data.window !is WTGFakeNode
+                        && it.destination!!.data.window !is FakeWindow
                         && it.label.abstractAction.actionType != AbstractActionType.PRESS_BACK
                         && includingRotateUIOrNot(autautMF, it)
                         && includingResetOrNot(it, includeResetAction,depth)
@@ -295,7 +313,7 @@ class PathFindingHelper {
                 /*&& isTheSamePrevWindow(windowStack.peek(), it)*/
             }
 
-            val possibleTransitions = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+            val possibleTransitions = ArrayList<Edge<AbstractState, AbstractTransition>>()
             forwardTransitions.groupBy { it.label.abstractAction }.forEach { action, edges ->
                 if (action.isLaunchOrReset()) {
                     possibleTransitions.addAll(edges)
@@ -329,7 +347,7 @@ class PathFindingHelper {
                 }
 
             }
-            val processedTransition = ArrayList<Edge<AbstractState, AbstractInteraction>>()
+            val processedTransition = ArrayList<Edge<AbstractState, AbstractTransition>>()
             possibleTransitions.groupBy({ it.label.abstractAction }, { it })
                     .forEach { interaction, u ->
                         if (interaction.isLaunchOrReset())
@@ -357,14 +375,14 @@ class PathFindingHelper {
                     childParentMap.put(nextState, Triple(source, event, edgeCondition))
                     val fullGraph = createTransitionPath(autautMF, nextState, root, childParentMap)
                     var foundPath = false
-                    if (!autautMF.isDisablePath(fullGraph)) {
-                        if (isArrived(nextState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
+                    if (!isDisablePath(fullGraph)) {
+                        if (isArrived(it.label, nextState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
                             allPaths.add(fullGraph)
-                            autautMF.registerTransitionPath(root, nextState, fullGraph)
+                            registerTransitionPath(root, nextState, fullGraph)
                             foundPath = true
                         }
                         val nextWindowStack = if (event.abstractAction.isLaunchOrReset()) {
-                            Stack<WTGNode>().also { it.push(WTGLauncherNode.getOrCreateNode()) }
+                            Stack<Window>().also { it.push(Launcher.getOrCreateNode()) }
                         } else {
                             createWindowStackForNext(windowStack, source, nextState)
                         }
@@ -374,7 +392,7 @@ class PathFindingHelper {
             }
         }
 
-        private fun includingWTGOrNot(edge: Edge<AbstractState, AbstractInteraction>, includeWTG: Boolean): Boolean {
+        private fun includingWTGOrNot(edge: Edge<AbstractState, AbstractTransition>, includeWTG: Boolean): Boolean {
             if (includeWTG)
                 return true
             if (edge.label.fromWTG)
@@ -382,9 +400,14 @@ class PathFindingHelper {
             return true
         }
 
-        private fun isArrived(nextState: AbstractState, finalTarget: AbstractState, stopWhenHavingUnexercisedAction: Boolean, useVirtualAbstractState: Boolean): Boolean {
-            if (nextState == finalTarget)
-                return true
+        private fun isArrived(abstractTransition: AbstractTransition, nextState: AbstractState, finalTarget: AbstractState, stopWhenHavingUnexercisedAction: Boolean, useVirtualAbstractState: Boolean): Boolean {
+            if (nextState == finalTarget){
+                if (abstractTransition.isExplicit())
+                    return true
+                if (useVirtualAbstractState)
+                    return true
+            }
+
             if (stopWhenHavingUnexercisedAction &&
                     nextState !is VirtualAbstractState &&
                     nextState.getUnExercisedActions(null).isNotEmpty())
@@ -394,7 +417,7 @@ class PathFindingHelper {
             return false
         }
 
-        private fun includingResetOrNot(it: Edge<AbstractState, AbstractInteraction>, includeReset: Boolean,depth: Int): Boolean {
+        private fun includingResetOrNot(it: Edge<AbstractState, AbstractTransition>, includeReset: Boolean, depth: Int): Boolean {
             if (includeReset && depth == 0) {
                 if (it.label.abstractAction.actionType==AbstractActionType.RESET_APP) {
                     return true
@@ -405,7 +428,7 @@ class PathFindingHelper {
                 return it.label.abstractAction.actionType!=AbstractActionType.RESET_APP
         }
 
-        private fun includingLaunchOrNot(it: Edge<AbstractState, AbstractInteraction>, includeLaunch: Boolean,depth: Int): Boolean {
+        private fun includingLaunchOrNot(it: Edge<AbstractState, AbstractTransition>, includeLaunch: Boolean, depth: Int): Boolean {
             if (includeLaunch && depth == 0) {
                 return true
             }
@@ -413,8 +436,8 @@ class PathFindingHelper {
                 return it.label.abstractAction.actionType!=AbstractActionType.LAUNCH_APP
         }
 
-        private fun createWindowStackForNext(windowStack: Stack<WTGNode>, prevState: AbstractState, nextState: AbstractState): Stack<WTGNode> {
-            val nextWindowStack = windowStack.clone() as Stack<WTGNode>
+        private fun createWindowStackForNext(windowStack: Stack<Window>, prevState: AbstractState, nextState: AbstractState): Stack<Window> {
+            val nextWindowStack = windowStack.clone() as Stack<Window>
             if (nextWindowStack.contains(nextState.window) && nextWindowStack.size > 1) {
                 // Return to the prev window
                 // Pop the window
@@ -423,7 +446,7 @@ class PathFindingHelper {
                 }
             } else {
                 if (nextState.window != prevState.window) {
-                    if (prevState.window !is WTGDialogNode && prevState.window !is WTGOptionsMenuNode) {
+                    if (prevState.window !is Dialog && prevState.window !is OptionsMenu) {
                         nextWindowStack.push(prevState.window)
                     }
                 } else if (nextState.isOpeningKeyboard) {
@@ -433,22 +456,22 @@ class PathFindingHelper {
             return nextWindowStack
         }
 
-        private fun backToLauncherOrNot(it: Edge<AbstractState, AbstractInteraction>) =
-                it.destination!!.data.window !is WTGLauncherNode
+        private fun backToLauncherOrNot(it: Edge<AbstractState, AbstractTransition>) =
+                it.destination!!.data.window !is Launcher
 
-        private fun includingRotateUIOrNot(autautMF: AutAutMF, it: Edge<AbstractState, AbstractInteraction>): Boolean {
+        private fun includingRotateUIOrNot(autautMF: AutAutMF, it: Edge<AbstractState, AbstractTransition>): Boolean {
             if (autautMF.appRotationSupport)
                 return true
             return it.label.abstractAction.actionType != AbstractActionType.ROTATE_UI
         }
 
-        private fun isTheSamePrevWindow(prevWindow: WTGNode?, it: Edge<AbstractState, AbstractInteraction>): Boolean {
+        private fun isTheSamePrevWindow(prevWindow: Window?, it: Edge<AbstractState, AbstractTransition>): Boolean {
             return (
                     (prevWindow != null && it.label.prevWindow == prevWindow)
                             || prevWindow == null || it.label.prevWindow == null)
         }
 
-        private fun createTransitionPath(autautMF: AutAutMF, finalTarget: AbstractState, startingNode: AbstractState, childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractInteraction,ArrayList<HashMap<Widget,String>>>?>): TransitionPath {
+        private fun createTransitionPath(autautMF: AutAutMF, finalTarget: AbstractState, startingNode: AbstractState, childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>): TransitionPath {
             val fullPath = TransitionPath(startingNode)
             var backwardNode = finalTarget
             while (backwardNode!=startingNode)
@@ -466,6 +489,117 @@ class PathFindingHelper {
             }
             return fullPath
         }
+        fun registerTransitionPath(source: AbstractState, destination: AbstractState, fullPath: TransitionPath) {
+            if (!allAvailableTransitionPaths.containsKey(Pair(source, destination)))
+                allAvailableTransitionPaths.put(Pair(source, destination), ArrayList())
+            allAvailableTransitionPaths[Pair(source, destination)]!!.add(fullPath)
+        }
+        val unsuccessfulInteractions = HashMap<AbstractTransition, Int>()
 
+        fun addDisablePathFromState(transitionPath: TransitionPath, edge: Edge<AbstractState,AbstractTransition>, currentAbstractState: AbstractState){
+           /* val abstractInteraction = edge.label
+            if (abstractInteraction.abstractAction.isItemAction())
+            {
+                if (!unsuccessfulInteractions.containsKey(abstractInteraction)) {
+                    unsuccessfulInteractions.put(abstractInteraction,0)
+                }
+                if (unsuccessfulInteractions[abstractInteraction]!! < 5) {
+                    unsuccessfulInteractions[abstractInteraction] = unsuccessfulInteractions[abstractInteraction]!!+1
+                    return
+                }
+            }*/
+            //abstractTransitionGraph.remove(edge)
+
+
+            val expectedAbstractState = edge.destination?.data!!
+            val corruptedEdge = if (currentAbstractState.window != expectedAbstractState.window) {
+                edge
+            } else if (expectedAbstractState !is VirtualAbstractState && currentAbstractState.isOpeningKeyboard != expectedAbstractState.isOpeningKeyboard) {
+                edge
+            } else {
+                transitionPath.edges(expectedAbstractState!!).firstOrNull()
+            }
+            if (corruptedEdge == null)
+                return
+            /* if (corruptedEdge.label.fromWTG) {
+                 disableEdges.add(corruptedEdge)
+             }*/
+
+            val disablePath = ArrayList<Edge<AbstractState,AbstractTransition>>()
+            var abstrateState: AbstractState? = transitionPath.root.data
+            while (abstrateState!=null) {
+                val edge = transitionPath.edges(abstrateState).firstOrNull()
+                if (edge == null) {
+                    break
+                }
+                disablePath.add(edge)
+                if (edge.label.abstractAction.isLaunchOrReset()) {
+                    disablePath.clear()
+                }
+                if (edge == corruptedEdge) {
+                    break
+                }
+                abstrateState = edge.destination?.data
+            }
+            /*if (disablePath.size == 1 && disablePath.all { it.label.fromWTG }) {
+
+            }*/
+            if (disablePath.isNotEmpty())
+                disablePaths.add(disablePath)
+            /*if (edge.label.abstractAction.actionName.isPressBack()) {
+                abstractTransitionGraph.edges(edge.source.data).filter {
+                    it.label.abstractAction == edge.label.abstractAction
+                            && it.destination?.data?.window == edge.destination?.data?.window
+                            && it.label.prevWindow == edge.label.prevWindow
+                }.forEach {
+                    abstractTransitionGraph.remove(it)
+                }
+            }*/
+
+
+            val root = transitionPath.root.data
+            val destination = transitionPath.getFinalDestination()
+            unregisteredTransitionPath(root, destination, transitionPath)
+            //log.debug("Disable edges count: ${disableEdges.size}")
+
+        }
+
+        private fun unregisteredTransitionPath(root: AbstractState, destination: AbstractState, transitionPath: TransitionPath) {
+            if (allAvailableTransitionPaths.containsKey(Pair(root, destination))) {
+                val existingPaths = allAvailableTransitionPaths[Pair(root, destination)]!!
+                if (existingPaths.contains(transitionPath)) {
+                    existingPaths.remove(transitionPath)
+                }
+            }
+        }
+
+        fun checkIsDisableEdge(edge: Edge<AbstractState, AbstractTransition>): Boolean {
+            if (disableEdges.contains(edge)) {
+                return true
+            } else
+                return false
+        }
+
+        fun isDisablePath(path: TransitionPath): Boolean {
+            disablePaths.forEach {
+                var matched = false
+                if (path.edges().any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }) {
+                    matched = path.edges().filterNot { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }.containsAll(it)
+                } else
+                    matched = path.edges().containsAll(it)
+                if (matched)
+                    return true
+            }
+            disableEdges.forEach {
+                var matched = false
+                matched = path.edges().contains(it)
+                if (matched)
+                    return true
+            }
+            /*if (path.edges().any { disableEdges.contains(it) }) {
+                return true
+            }*/
+            return false
+        }
     }
 }

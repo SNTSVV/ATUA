@@ -2,7 +2,9 @@ package org.droidmate.exploration.modelFeatures.autaut
 
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentData
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.json.JSONArray
 import org.json.JSONObject
@@ -68,7 +70,7 @@ class StaticAnalysisJSONFileHelper() {
             result["className"] = classType
             temp = temp.substring(classtypeIdx + 1)
             //get sootandroidId
-            val allocIndex = temp.indexOf(" alloc: ")
+            val allocIndex = temp.indexOf(", alloc: ")
             if (allocIndex == -1) {
                 val sootandroidId = temp
                 result["id"] = sootandroidId
@@ -120,8 +122,8 @@ class StaticAnalysisJSONFileHelper() {
                         val eventJsonObject = eventJson as JSONObject
                         val jsonEventHandlers = eventJsonObject["handler"] as JSONArray
                         val jsonEventType = eventJsonObject["action"] as String
-                        if (!StaticEvent.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
-                            if (StaticEvent.isNoWidgetEvent(jsonEventType)) {
+                        if (!Input.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
+                            if (Input.isNoWidgetEvent(jsonEventType)) {
                                 staticWidget = null
                             } else {
                                 try {
@@ -145,8 +147,8 @@ class StaticAnalysisJSONFileHelper() {
                                 }
 
                             }
-                            if (StaticEvent.isNoWidgetEvent(jsonEventType) ||
-                                    (!StaticEvent.isNoWidgetEvent(jsonEventType) &&
+                            if (Input.isNoWidgetEvent(jsonEventType) ||
+                                    (!Input.isNoWidgetEvent(jsonEventType) &&
                                             staticWidget != null)) {
                                 val event = getOrCreateTargetEvent(
                                         eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
@@ -154,7 +156,7 @@ class StaticAnalysisJSONFileHelper() {
                                         widget = staticWidget,
                                         activity = wtgNode.classType,
                                         sourceWindow = wtgNode,
-                                        allTargetStaticEvents = HashSet())
+                                        allTargetInputs = HashSet())
                                 allEventHandlers.addAll(event.eventHandlers)
 
                                 if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
@@ -180,7 +182,7 @@ class StaticAnalysisJSONFileHelper() {
                                                 widget = staticWidget,
                                                 activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
-                                                allTargetStaticEvents = HashSet())
+                                                allTargetInputs = HashSet())
                                         allEventHandlers.addAll(itemClick.eventHandlers)
                                     }
 
@@ -192,7 +194,7 @@ class StaticAnalysisJSONFileHelper() {
                                                 widget = staticWidget,
                                                 activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
-                                                allTargetStaticEvents = HashSet())
+                                                allTargetInputs = HashSet())
                                         allEventHandlers.addAll(itemLongClick.eventHandlers)
                                     }
                                 }
@@ -208,7 +210,7 @@ class StaticAnalysisJSONFileHelper() {
         fun readModifiedMethodInvocation(jsonObj: JSONObject,
                                          wtg: WindowTransitionGraph,
                                          allTargetStaticWidgets: HashSet<StaticWidget>,
-                                         allTargetStaticEvents: HashSet<StaticEvent>,
+                                         allTargetInputs: HashSet<Input>,
                                          statementCoverageMF: StatementCoverageMF
         ) {
             jsonObj.keys().asSequence().forEach { key ->
@@ -230,8 +232,8 @@ class StaticAnalysisJSONFileHelper() {
                         else
                             jsonEventType = jsonEvent["eventType"] as String
                         var staticWidget: StaticWidget?
-                        if (!StaticEvent.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
-                            if (StaticEvent.isNoWidgetEvent(jsonEventType)
+                        if (!Input.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
+                            if (Input.isNoWidgetEvent(jsonEventType)
                             ) {
                                 staticWidget = null
                             } else {
@@ -259,8 +261,8 @@ class StaticAnalysisJSONFileHelper() {
                                 }
 
                             }
-                            if (StaticEvent.isNoWidgetEvent(jsonEventType) ||
-                                    (!StaticEvent.isNoWidgetEvent(jsonEventType) &&
+                            if (Input.isNoWidgetEvent(jsonEventType) ||
+                                    (!Input.isNoWidgetEvent(jsonEventType) &&
                                             staticWidget != null)) {
                                 val jsonEventHandler = jsonEvent["eventHandlers"] as JSONArray
                                 val event = getOrCreateTargetEvent(
@@ -269,7 +271,7 @@ class StaticAnalysisJSONFileHelper() {
                                         widget = staticWidget,
                                         activity = sourceNode.classType,
                                         sourceWindow = sourceNode,
-                                        allTargetStaticEvents = allTargetStaticEvents)
+                                        allTargetInputs = allTargetInputs)
                                 if (wtg.edges(sourceNode).find { it.label == event } == null) {
                                     //this event has not appeared in graph
                                     //let's create new edge
@@ -300,7 +302,7 @@ class StaticAnalysisJSONFileHelper() {
                                                 widget = staticWidget,
                                                 activity = sourceNode.classType,
                                                 sourceWindow = sourceNode,
-                                                allTargetStaticEvents = HashSet())
+                                                allTargetInputs = HashSet())
                                         if (wtg.edges(sourceNode).find { it.label == itemClick } == null) {
                                             //this event has not appeared in graph
                                             //let's create new edge
@@ -316,7 +318,7 @@ class StaticAnalysisJSONFileHelper() {
                                                 widget = staticWidget,
                                                 activity = sourceNode.classType,
                                                 sourceWindow = sourceNode,
-                                                allTargetStaticEvents = HashSet())
+                                                allTargetInputs = HashSet())
                                         if (wtg.edges(sourceNode).find { it.label == itemLongClick } == null) {
                                             //this event has not appeared in graph
                                             //let's create new edge
@@ -325,7 +327,7 @@ class StaticAnalysisJSONFileHelper() {
                                     }
                                 }
                                 //addWidgetToActivtity_TargetWidget_Map(source, event)
-                                val event_methods = Pair<StaticEvent, ArrayList<String>>(event, ArrayList())
+                                val event_methods = Pair<Input, ArrayList<String>>(event, ArrayList())
                                 //widget_methodInvocations.methodInvocations.add(event_methods)
                                 val methods = jsonEvent["modMethods"] as JSONArray
                                 methods.forEach {
@@ -366,25 +368,25 @@ class StaticAnalysisJSONFileHelper() {
         }
 
         fun getOrCreateTargetEvent(eventHandlers: Set<String>,
-                                           eventTypeString: String,
-                                           widget: StaticWidget?,
-                                           activity: String,
-                                           sourceWindow: WTGNode,
-                                           allTargetStaticEvents: HashSet<StaticEvent>): StaticEvent {
-            var event = StaticEvent.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.activity == activity }
+                                   eventTypeString: String,
+                                   widget: StaticWidget?,
+                                   @Suppress activity: String,
+                                   sourceWindow: Window,
+                                   allTargetInputs: HashSet<Input>): Input {
+            var event = Input.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
             if (event != null) {
                 event.eventHandlers.addAll(eventHandlers)
-                if (!allTargetStaticEvents.contains(event)) {
+                if (!allTargetInputs.contains(event)) {
 
-                    allTargetStaticEvents.add(event)
+                    allTargetInputs.add(event)
                 }
                 return event
             }
-            event = StaticEvent(eventHandlers = HashSet(eventHandlers)
+            event = Input(eventHandlers = HashSet(eventHandlers)
                     , eventType = EventType.valueOf(eventTypeString)
-                    , widget = widget, activity = activity, sourceWindow = sourceWindow)
-            allTargetStaticEvents.add(event)
+                    , widget = widget, sourceWindow = sourceWindow)
+            allTargetInputs.add(event)
             return event
         }
 
@@ -398,7 +400,7 @@ class StaticAnalysisJSONFileHelper() {
             }
         }
 
-        fun readMenuItemText(jsonObj: JSONObject, optionsMenuList: List<WTGOptionsMenuNode>) {
+        fun readMenuItemText(jsonObj: JSONObject, optionsMenuList: List<OptionsMenu>) {
             jsonObj.keys().asSequence().forEach { key ->
                 val widgetInfo = widgetParser(key)
                 optionsMenuList.forEach {
@@ -517,8 +519,8 @@ class StaticAnalysisJSONFileHelper() {
             return testData
         }
 
-        fun readEventWindowCorrelation(jsonObj: JSONObject, wtg: WindowTransitionGraph): HashMap<StaticEvent, HashMap<WTGNode, Double>> {
-            val result: HashMap<StaticEvent, HashMap<WTGNode, Double>> = HashMap()
+        fun readEventWindowCorrelation(jsonObj: JSONObject, wtg: WindowTransitionGraph): HashMap<Input, HashMap<Window, Double>> {
+            val result: HashMap<Input, HashMap<Window, Double>> = HashMap()
             jsonObj.keys().asSequence().forEach { key ->
                 val source = key as String
                 val sourceInfo = windowParser(source)
@@ -531,8 +533,8 @@ class StaticAnalysisJSONFileHelper() {
                     if (eventType == "touch")
                         eventType = "click"
                     var staticWidget: StaticWidget? = null
-                    if (!StaticEvent.isIgnoreEvent(eventType) && eventType != EventType.implicit_back_event.name) {
-                        if (StaticEvent.isNoWidgetEvent(eventType)) {
+                    if (!Input.isIgnoreEvent(eventType) && eventType != EventType.implicit_back_event.name) {
+                        if (Input.isNoWidgetEvent(eventType)) {
                             staticWidget = null
                         } else {
                             try {
@@ -548,17 +550,16 @@ class StaticAnalysisJSONFileHelper() {
                                 staticWidget = null
                             }
                         }
-                        var event: StaticEvent? = StaticEvent.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == staticWidget && it.eventType.name == eventType }
+                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == staticWidget && it.eventType.name == eventType }
                         if (event == null) {
-                            event = StaticEvent(
+                            event = Input(
                                     eventType = EventType.valueOf(eventType),
                                     eventHandlers = HashSet(),
-                                    activity = sourceNode.classType,
                                     widget = staticWidget,
                                     sourceWindow = sourceNode
                             )
                         }
-                        val correlation = HashMap<WTGNode, Double>()
+                        val correlation = HashMap<Window, Double>()
                         val jsonCorrelaions = jsonEventCorrelation["correlations"] as JSONArray
                         jsonCorrelaions.forEach { item ->
                             val jsonItem = item as JSONObject
@@ -593,8 +594,8 @@ class StaticAnalysisJSONFileHelper() {
             return methodTerms
         }
 
-        fun readWindowTerms(jsonObj: JSONObject, wtg: WindowTransitionGraph):Map<WTGNode, HashMap<String, Long>>{
-            val windowTerms = HashMap<WTGNode, HashMap<String,Long>>()
+        fun readWindowTerms(jsonObj: JSONObject, wtg: WindowTransitionGraph):Map<Window, HashMap<String, Long>>{
+            val windowTerms = HashMap<Window, HashMap<String,Long>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
                 val window = wtg.getOrCreateWTGNode(windowInfo)
@@ -612,8 +613,8 @@ class StaticAnalysisJSONFileHelper() {
             return windowTerms
         }
 
-        fun readWindowHandlers(jsonObj: JSONObject, wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF): Map<WTGNode, Set<String>> {
-            val windowHandlers = HashMap<WTGNode, HashSet<String>>()
+        fun readWindowHandlers(jsonObj: JSONObject, wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF): Map<Window, Set<String>> {
+            val windowHandlers = HashMap<Window, HashSet<String>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
                 val window = wtg.getOrCreateWTGNode(windowInfo)

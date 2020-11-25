@@ -8,11 +8,13 @@ import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractInteraction
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractTransition
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.autaut.WTG.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -35,12 +37,12 @@ open class GoToAnotherWindow constructor(
     protected var randomExplorationTask: RandomExplorationTask = RandomExplorationTask(this.autautMF,autAutTestingStrategy,delay,useCoordinateClicks,true,1)
 
     var isFillingText: Boolean = false
-    protected var currentEdge: Edge<AbstractState, AbstractInteraction>?=null
+    protected var currentEdge: Edge<AbstractState, AbstractTransition>?=null
     protected var expectedNextAbState: AbstractState?=null
     protected var currentPath: TransitionPath? = null
     protected val possiblePaths = ArrayList<TransitionPath>()
 
-    var destWindow: WTGNode? = null
+    var destWindow: Window? = null
     var useInputTargetWindow: Boolean = false
     var retryTimes: Int = 0
     var isTarget: Boolean = false
@@ -130,7 +132,7 @@ open class GoToAnotherWindow constructor(
          val currentAbState = autautMF.getAbstractState(currentState)
 
          var expectedAbstractState: AbstractState? = expectedNextAbState
-         var lastTraverseEdge: Edge<AbstractState,AbstractInteraction>? = currentEdge
+         var lastTraverseEdge: Edge<AbstractState,AbstractTransition>? = currentEdge
          var isFirst = true
          while (expectedAbstractState != null) {
 
@@ -239,7 +241,7 @@ open class GoToAnotherWindow constructor(
         return false
     }
 
-    open fun isAvailable(currentState: State<*>, destWindow: WTGNode, usingPressback: Boolean, includeResetApp: Boolean): Boolean {
+    open fun isAvailable(currentState: State<*>, destWindow: Window, usingPressback: Boolean, includeResetApp: Boolean): Boolean {
         log.info("Checking if there is any path to $destWindow")
         reset()
         this.usingPressback = usingPressback
@@ -388,7 +390,7 @@ open class GoToAnotherWindow constructor(
         return randomExplorationTask!!.chooseAction(currentState)
     }
 
-    private fun executeCurrentEdgeAction(currentState: State<*>, prevEdge: Edge<AbstractState, AbstractInteraction>?, currentAbstractState: AbstractState): ExplorationAction {
+    private fun executeCurrentEdgeAction(currentState: State<*>, prevEdge: Edge<AbstractState, AbstractTransition>?, currentAbstractState: AbstractState): ExplorationAction {
         if (currentEdge!!.label.abstractAction.actionType == AbstractActionType.PRESS_MENU) {
             return pressMenuOrClickMoreOption(currentState)
         }
@@ -469,12 +471,12 @@ open class GoToAnotherWindow constructor(
 
     protected fun addIncorrectPath(currentAbstractState: AbstractState) {
         if (currentEdge!=null)
-            autautMF.addDisablePathFromState(currentPath!!,currentEdge!!,currentAbstractState)
+            PathFindingHelper.addDisablePathFromState(currentPath!!,currentEdge!!,currentAbstractState)
 
     }
 
-    protected fun addIncorrectPath( edge: Edge<AbstractState,AbstractInteraction>, currentAbstractState: AbstractState) {
-        autautMF.addDisablePathFromState(currentPath!!, edge,currentAbstractState)
+    protected fun addIncorrectPath(edge: Edge<AbstractState,AbstractTransition>, currentAbstractState: AbstractState) {
+        PathFindingHelper.addDisablePathFromState(currentPath!!, edge,currentAbstractState)
     }
 
     companion object {

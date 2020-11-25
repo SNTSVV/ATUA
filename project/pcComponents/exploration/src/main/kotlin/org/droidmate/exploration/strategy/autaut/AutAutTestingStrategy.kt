@@ -11,10 +11,10 @@ import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.VirtualAbstractState
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.factory.AbstractModel
@@ -78,6 +78,10 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
             return ExplorationAction.rotate(-90)
         }
 
+        if(currentAbstractState.isOpeningKeyboard && !AbstractStateManager.instance.ABSTRACT_STATES.any { it !is VirtualAbstractState && it.window == currentAbstractState.window && !it.isOpeningKeyboard }) {
+            return GlobalAction(actionType = ActionType.CloseKeyboard)
+        }
+
         if (!phaseStrategy.hasNextAction(eContext.getCurrentState())) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
@@ -85,10 +89,10 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
                     return eContext.resetApp()
-                    /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
+                }
+              /*      phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                     regressionWatcher.updateStage2Info(eContext)
                     return eContext.resetApp()*/
-                }
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
@@ -98,7 +102,7 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
             }
         }
 
-        log.info("Current abstract state: ${currentAbstractState.toString()}")
+        log.info("Current abstract state: ${currentAbstractState}")
         log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.filter{it !is VirtualAbstractState}.size}")
         val availableWidgets = eContext.getCurrentState().widgets
         chosenAction = phaseStrategy.nextAction(eContext)

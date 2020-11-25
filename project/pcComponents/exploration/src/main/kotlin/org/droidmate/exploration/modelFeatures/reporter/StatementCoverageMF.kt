@@ -37,15 +37,22 @@ import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.explorationModel.ExplorationTrace
+import org.droidmate.explorationModel.config.ConfigProperties
+import org.droidmate.explorationModel.config.ModelConfig
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
+import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.retention.StringCreator
+import org.droidmate.legacy.getExtension
 import org.droidmate.misc.deleteDir
 import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
@@ -79,10 +86,14 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
     val recentExecutedStatements: HashSet<String> = HashSet()
     val recentExecutedMethods: HashSet<String> = HashSet()
+    val actionTraceCoverage = HashMap<Int,Int>()
+    val actionIncreaseCoverage = HashMap<Int,Int>()
 
+    var prevUpdateCoverage: Int = 0
     var statementRead:Boolean = false
     //private val instrumentationMap = getInstrumentation(appName)
     val mutex = Mutex()
+
 
     private var trace: ExplorationTrace<*,*>? = null
 
@@ -99,6 +110,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
     override suspend fun onContextUpdate(context: ExplorationContext<*, *, *>) {
         statementRead = false
+        val newExecutedStatements = HashSet<String>()
+        prevUpdateCoverage = executedModifiedMethodStatementsMap.size
         mutex.withLock {
             // Fetch the statement data from the device
             recentExecutedMethods.clear()
@@ -114,8 +127,10 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                         val statementId = parts.last()
                         recentExecutedStatements.add(statementId)
                         var found = executedStatementsMap.containsKey(statementId)
-                        if (!found /*&& instrumentationMap.containsKey(id)*/)
+                        if (!found /*&& instrumentationMap.containsKey(id)*/) {
                             executedStatementsMap[statementId] = tms
+                            newExecutedStatements.add(statementId)
+                        }
                         val parts2 = parts[0].split(" methodId=".toRegex(),2)
                         if (parts2.size > 1)
                         {
@@ -166,6 +181,9 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         }
         statementRead = true
 
+        val lastAction = context.getLastAction()
+        actionTraceCoverage.put(lastAction.actionId,getAllExecutedStatements().size)
+        actionIncreaseCoverage.put(lastAction.actionId,newExecutedStatements.size)
     }
     /**
      * Fetch the statement data form the device. Afterwards, it parses the data and updates [executedStatementsMap].
@@ -397,6 +415,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         produceStatementCoverageOutput(context)
         produceMethodCoverageOutput(context)
         produceModMethodCoverageOutput(context)
+        dumpActionTraceWithCoverage(context)
     }
     fun produceStatementCoverageOutput(context: ExplorationContext<*,*,*>){
         val sb = StringBuilder()
@@ -491,6 +510,13 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         Files.write(outputFile, sb.lines())
         log.info("Finished writing coverage in ${outputFile.fileName}")
     }
+
+    fun dumpActionTraceWithCoverage(context: ExplorationContext<*, *, *>) {
+        launch(CoroutineName("trace-coverage-dump")) {
+            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionTraceCoverage, actionIncreaseCoverage = actionIncreaseCoverage)
+        }
+
+    }
     companion object {
         private const val statement_header = "Statement(id);Method id;Time(Duration in sec till first occurrence)"
         private const val method_header = "Method(id);Method name;Time(Duration in sec till first occurrence)"
@@ -509,4 +535,25 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
     }
 
+}
+
+private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(config:ModelConfig, actionTraceCoverage: HashMap<Int, Int>, actionIncreaseCoverage: HashMap<Int, Int>) {
+    File(config.traceFile2(id.toString())).bufferedWriter().use { out ->
+        out.write(StringCreator.actionHeader(config[ConfigProperties.ModelProperties.dump.sep]))
+        out.write(";newExecutedStatements;OverallExecutedStatements")
+        out.newLine()
+        // ensure that our trace is complete before dumping it by calling blocking getActions
+        P_getActions().forEach { action ->
+            out.write(StringCreator.createActionString(action, config[ConfigProperties.ModelProperties.dump.sep]))
+            out.write(";${actionIncreaseCoverage.get(action.actionId)};${actionTraceCoverage.get(action.actionId)}")
+            out.newLine()
+        }
+    }
+}
+
+private fun ModelConfig.traceFile2(traceId: String): String {
+    val oldtraceFile = traceFile(traceId).toString()
+    val traceFileExtension = Paths.get(oldtraceFile).getExtension()
+    val newTraceFile = oldtraceFile.toString().removeSuffix(".{$traceFileExtension}")+"_autaut.csv"
+    return newTraceFile
 }

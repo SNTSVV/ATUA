@@ -91,10 +91,10 @@ class TextInput () {
 
         fun saveSpecificTextInputData(guiState: State<*>) {
             guiState.widgets.forEach {
-                if (it.text.isNotBlank()) {
+                if (it.text.isNotBlank() && !arrayListOf<String>("ALLOW", "DENY", "DON'T ALLOW").contains(it.text)) {
                     generalDictionary.add(it.text)
                 }
-                if (it.isInputField && !it.text.isBlank()) {
+                if (it.isInputField && !it.text.isBlank() && !arrayListOf<String>("ALLOW", "DENY", "DON'T ALLOW").contains(it.text)) {
                     if (!specificTextInput.containsKey(it.uid)) {
                         specificTextInput.put(it.uid, ArrayList())
                     }

@@ -6,10 +6,10 @@ import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.DataField
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
@@ -156,7 +156,7 @@ class PrepareContextTask private constructor(
                                 it.destination!!.data.window != it.source.data.window
                                         && it.label.abstractAction.actionType == AbstractActionType.CLICK
                                         && it.label.abstractAction.isWidgetAction()
-                                        && it.label.abstractAction!!.attributeValuationSet == widgetGroup
+                                        && it.label.abstractAction.attributeValuationSet == widgetGroup
                                         && it.label.isExplicit()
                             }
                             if (isGoToAnotherWindow) {

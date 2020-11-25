@@ -273,7 +273,9 @@ object DefaultStrategies: Logging {
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> hasNext(eContext: ExplorationContext<M, S, W>): Boolean =
 				numPermissions.compute(eContext.getCurrentState().uid){ _,v -> v?.inc()?: 0 } ?: 0 < maxTries
-					&& eContext.getCurrentState().widgets.any { it.packageName.startsWith("com.google.android.") } && eContext.getCurrentState().isRequestRuntimePermissionDialogBox
+					&& eContext.getCurrentState().widgets.any { it.packageName.startsWith("com.google.android.") }
+						&&  eContext.getCurrentState().isRequestRuntimePermissionDialogBox
+						&& !eContext.getCurrentState().widgets.any { it.isKeyboard }
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
 			// we do not require the element with the text ALLOW or OK to be clickabe since there may be overlaying elements

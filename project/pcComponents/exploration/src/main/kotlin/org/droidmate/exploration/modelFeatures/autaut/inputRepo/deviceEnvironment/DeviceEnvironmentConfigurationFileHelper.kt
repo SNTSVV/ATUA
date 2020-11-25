@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.autaut.inputRepo.deviceEnvironment
 
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.autaut.WTG.WindowManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.file.Files
@@ -27,10 +27,10 @@ class DeviceEnvironmentConfigurationFileHelper {
                 (environmentJson as JSONArray).forEach {
                     val settingConfigJson = it as JSONObject
                     val setting = settingConfigJson.getString("SettingName")
-                    val windows = HashSet<WTGNode>()
+                    val windows = HashSet<Window>()
                     settingConfigJson.getJSONArray("AppliedActivities").forEach {
                         val activity = it.toString()
-                        val window = WTGNode.allMeaningNodes.find { it.activityClass == activity || it.classType == activity }
+                        val window = WindowManager.instance.allMeaningWindows.find { it.activityClass == activity || it.classType == activity }
                         if (window != null) {
                             windows.add(window)
                         }

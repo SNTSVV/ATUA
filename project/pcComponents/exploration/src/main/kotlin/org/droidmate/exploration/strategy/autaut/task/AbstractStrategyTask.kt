@@ -9,13 +9,14 @@ import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.Helper
+import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
+import org.droidmate.exploration.modelFeatures.autaut.WTG.DescendantLayoutDirection
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
@@ -218,7 +219,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
     }
 
     private fun doClickWithoutTarget(data: Any?, currentState: State<*>): ExplorationAction? {
-        if (data is String) {
+        if (data is String && data.isNotBlank()) {
             val point = Helper.parseCoordinationData(data)
             return Click(x = point.first,y=point.second)
         }
@@ -428,10 +429,11 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             }
             return explorationAction
         }
-        val actionList = chosenWidget.availableActions(delay, useCoordinateClicks)
+        val actionList = getAvailableActionsForWidget(chosenWidget, currentState)
+
         val widgetActions = actionList.filter {
             when (action) {
-                AbstractActionType.CLICK-> (it.name == "Click" || it.name == "ClickEvent")
+                AbstractActionType.CLICK -> (it.name == "Click" || it.name == "ClickEvent")
                 AbstractActionType.LONGCLICK -> it.name == "LongClick" || it.name == "LongClickEvent"
                 AbstractActionType.SWIPE -> it.name == "Swipe"
                 else -> it.name == "Click" || it.name == "ClickEvent"
@@ -448,6 +450,52 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             else -> chosenWidget.click(ignoreClickable = true)
         }
         return hardAction
+    }
+
+    fun doRandomActionOnWidget(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
+        var actionList = getAvailableActionsForWidget(chosenWidget, currentState)
+        if (actionList.isNotEmpty()) {
+            val maxVal = actionList.size
+
+            assert(maxVal > 0) { "No actions can be performed on the widget $chosenWidget" }
+
+            val randomIdx = random.nextInt(maxVal)
+            //val randomAction = chooseActionWithName(AbstractActionType.values().find { it.actionName.equals(actionList[randomIdx].name) }!!, "", chosenWidget, currentState, null)
+            val randomAction =actionList.random()
+            log.info("$randomAction")
+            return randomAction ?: ExplorationAction.pressBack().also { log.info("Action null -> PressBack") }
+        } else {
+            ExplorationTrace.widgetTargets.clear()
+            return autautStrategy.eContext.navigateTo(chosenWidget, { it.click() }) ?: ExplorationAction.pressBack()
+        }
+    }
+
+    private fun getAvailableActionsForWidget(chosenWidget: Widget, currentState: State<*>): ArrayList<ExplorationAction> {
+        var actionList = if (Helper.isScrollableWidget(chosenWidget)) {
+            val availableActions = ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
+            when (Helper.getViewsChildrenLayout(chosenWidget, currentState)) {
+                DescendantLayoutDirection.HORIZONTAL -> {
+                    availableActions.add(chosenWidget.swipeLeft())
+                    availableActions.add(chosenWidget.swipeRight())
+                }
+                DescendantLayoutDirection.VERTICAL -> {
+                    availableActions.add(chosenWidget.swipeUp())
+                    availableActions.add(chosenWidget.swipeDown())
+                }
+                else -> {
+                    availableActions.add(chosenWidget.swipeUp())
+                    availableActions.add(chosenWidget.swipeDown())
+                    availableActions.add(chosenWidget.swipeLeft())
+                    availableActions.add(chosenWidget.swipeRight())
+                }
+            }
+            availableActions
+        } else {
+            ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
+        }
+        ExplorationTrace.widgetTargets.clear()
+        ExplorationTrace.widgetTargets.add(chosenWidget)
+        return actionList
     }
 
     private fun doDeepSwipeUp(chosenWidget: Widget,currentState: State<*>): ExplorationAction? {

@@ -3,11 +3,11 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.Cardinality
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.WTGNode
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.Cardinality
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -68,7 +68,7 @@ class ExerciseTargetComponentTask private constructor(
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         targetWindow = autautMF.getAbstractState(currentState)!!.window
         eventList.filter { it.isItemAction() }.forEach { action ->
-            currentAbstractState!!.attributeValuationSets.filter { it.attributePath.hasParent(action.attributeValuationSet!!.attributePath) }.forEach { childWidget->
+            currentAbstractState!!.attributeValuationSets.filter { action.attributeValuationSet!!.isParent(it) }.forEach { childWidget->
                 val childActionType = when (action.actionType) {
                     AbstractActionType.ITEM_CLICK -> AbstractActionType.CLICK
                    AbstractActionType.ITEM_LONGCLICK -> AbstractActionType.LONGCLICK
@@ -122,7 +122,7 @@ class ExerciseTargetComponentTask private constructor(
         targetWindow = null
     }
 
-    var targetWindow: WTGNode? = null
+    var targetWindow: Window? = null
     override fun isAvailable(currentState: State<*>): Boolean {
         reset()
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
@@ -218,8 +218,8 @@ class ExerciseTargetComponentTask private constructor(
             return randomExplorationTask.chooseAction(currentState)
         }
 
-        if (!eventList.any { it.attributeValuationSet!=null && it.attributeValuationSet.attributePath.isInputField() }) {
-            chosenAbstractAction = eventList.filterNot { it.attributeValuationSet!=null && it.attributeValuationSet.attributePath.isInputField() }.random()
+        if (!eventList.any { it.attributeValuationSet!=null && it.attributeValuationSet.isInputField() }) {
+            chosenAbstractAction = eventList.filterNot { it.attributeValuationSet!=null && it.attributeValuationSet.isInputField() }.random()
         } else {
             chosenAbstractAction = eventList.random()
         }
@@ -261,7 +261,6 @@ class ExerciseTargetComponentTask private constructor(
             }
             else
             {
-                autautMF.lastExecutedAction = chosenAbstractAction
                 autautStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
                 autautMF.isAlreadyRegisteringEvent = true
                 dataFilled = false

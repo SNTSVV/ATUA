@@ -38,3 +38,4 @@ project/pcComponents/core/build
 buildSrc
 out
 out
+.gradle

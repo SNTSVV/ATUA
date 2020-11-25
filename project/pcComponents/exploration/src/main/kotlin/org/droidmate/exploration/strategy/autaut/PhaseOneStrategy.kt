@@ -5,8 +5,13 @@ import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.resetApp
-import org.droidmate.exploration.modelFeatures.autaut.abstractStateElement.*
-import org.droidmate.exploration.modelFeatures.autaut.staticModel.*
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Activity
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -29,7 +34,7 @@ class PhaseOneStrategy(
         useCoordinateClicks = useCoordinateClicks,
         useVirtualAbstractState = true
 ) {
-    override fun isTargetWindow(window: WTGNode): Boolean {
+    override fun isTargetWindow(window: Window): Boolean {
         if (window == targetWindow)
             return true
         return false
@@ -37,19 +42,19 @@ class PhaseOneStrategy(
 
 
     val untriggeredWidgets = arrayListOf<StaticWidget>()
-    val untriggeredTargetEvents = arrayListOf<StaticEvent>()
+    val untriggeredTargetEvents = arrayListOf<Input>()
 
     var attemps: Int
-    var targetWindow: WTGNode? = null
-    val flaggedWindows = HashSet<WTGNode>()
-    val unreachableWindows = HashSet<WTGNode>()
-    val fullyCoveredWindows = HashSet<WTGNode>()
-    val targetWindowTryCount: HashMap<WTGNode,Int> = HashMap()
-    val windowRandomExplorationBudget: HashMap<WTGNode,Int> = HashMap()
-    val windowRandomExplorationBudgetUsed: HashMap<WTGNode, Int> = HashMap()
+    var targetWindow: Window? = null
+    val flaggedWindows = HashSet<Window>()
+    val unreachableWindows = HashSet<Window>()
+    val fullyCoveredWindows = HashSet<Window>()
+    val targetWindowTryCount: HashMap<Window,Int> = HashMap()
+    val windowRandomExplorationBudget: HashMap<Window,Int> = HashMap()
+    val windowRandomExplorationBudgetUsed: HashMap<Window, Int> = HashMap()
     val windowRandomExplorationBudget2: HashMap<AbstractState,Int> = HashMap()
     val windowRandomExplorationBudgetUsed2: HashMap<AbstractState, Int> = HashMap()
-    val window_Widgets = HashMap<WTGNode, HashSet<Widget>> ()
+    val window_Widgets = HashMap<Window, HashSet<Widget>> ()
 
     init {
         phaseState = PhaseState.P1_INITIAL
@@ -69,7 +74,7 @@ class PhaseOneStrategy(
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
-        val staticEvents = abstractState.staticEventMapping[abstractAction]
+        val staticEvents = abstractState.inputMapping[abstractAction]
         if (staticEvents != null) {
             staticEvents.forEach {
                 untriggeredTargetEvents.remove(it)
@@ -101,6 +106,9 @@ class PhaseOneStrategy(
         updateFlaggedWindows()
         updateUnreachableWindows(currentState)
 
+        val currentAbstractState = autautMF.getAbstractState(currentState)
+        if (currentAbstractState!=null && currentAbstractState.window is Dialog)
+            return true
 
         if (targetWindowTryCount.filterNot{fullyCoveredWindows.contains(it.key) || flaggedWindows.contains(it.key)}.isEmpty()) {
             return false
@@ -152,7 +160,7 @@ class PhaseOneStrategy(
         //val currentAppState = autautMF.getAbstractState(currentState)!!
         val currentAppState = autautMF.getAbstractState(currentState)!!
         val window = currentAppState.window
-        if (window is WTGLauncherNode) {
+        if (window is Launcher) {
             return
         }
         if (!window_Widgets.containsKey(window)) {
@@ -191,7 +199,7 @@ class PhaseOneStrategy(
             }
         }
         if (!windowRandomExplorationBudget.containsKey(window)) {
-            if (window is WTGActivityNode)
+            if (window is Activity)
                 windowRandomExplorationBudget[window] = 4
             else
                 windowRandomExplorationBudget[window] = 0
@@ -211,9 +219,9 @@ class PhaseOneStrategy(
     }
 
     private fun updateFlaggedWindows() {
-        val addToFlagWindows = ArrayList<WTGNode>()
+        val addToFlagWindows = ArrayList<Window>()
         flaggedWindows.forEach {
-            if (it is WTGActivityNode) {
+            if (it is Activity) {
                 val optionsMenu = autautMF.wtg.getOptionsMenu(it)
                 if (optionsMenu!=null) {
                     addToFlagWindows.add(optionsMenu)
@@ -231,7 +239,7 @@ class PhaseOneStrategy(
         availableAbState_Window.forEach {
           if (!hasBudgetLeft(it.key)) {
               flaggedWindows.add(it.key)
-              if (it.key is WTGActivityNode) {
+              if (it.key is Activity) {
                   val optionsMenu = autautMF.wtg.getOptionsMenu(it.key)
                   if (optionsMenu!=null) {
                       flaggedWindows.add(optionsMenu)
@@ -300,7 +308,7 @@ class PhaseOneStrategy(
         val currentAppState = autautMF.getAbstractState(currentState)!!
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
-        val toRemove = ArrayList<WTGNode>()
+        val toRemove = ArrayList<Window>()
         var chosenAction:ExplorationAction
 
         /* if (autautMF.updateMethodCovFromLastChangeCount > 25 * budgetScale
@@ -426,7 +434,7 @@ class PhaseOneStrategy(
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
             return
         }
-        if (currentAppState.window is WTGDialogNode) {
+        if (currentAppState.window is Dialog) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, false)
             return
         }
@@ -470,7 +478,7 @@ class PhaseOneStrategy(
                 return
             }
         }
-        if (currentAppState.window is WTGDialogNode) {
+        if (currentAppState.window is Dialog) {
             if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false, false)) {
                 setGoToTarget(goToTargetNodeTask, currentState)
                 return
@@ -563,7 +571,7 @@ class PhaseOneStrategy(
         }
         if (continueOrEndCurrentTask(currentState)) return
         unreachableWindows.add(targetWindow!!)
-        if (currentAppState.window is WTGDialogNode) {
+        if (currentAppState.window is Dialog) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
             return
         }
@@ -678,7 +686,7 @@ class PhaseOneStrategy(
     }
 
     private fun nextActionOnDialog(currentAppState: AbstractState, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToTargetNodeTask: GoToTargetWindowTask): Boolean {
-        if (currentAppState.window is WTGDialogNode) {
+        if (currentAppState.window is Dialog) {
             if (hasUnexploreWidgets(currentState)) {
                 setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
             }
@@ -703,14 +711,14 @@ class PhaseOneStrategy(
             log.info("Continue ${strategyTask!!}")
             return
         }
-        if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is WTGDialogNode && currentAppState.window !is WTGOutScopeNode) {
+        if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is Dialog && currentAppState.window !is OutOfApp) {
             if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true)) {
                 setGoToTarget(goToTargetNodeTask, currentState)
                 return
             }
         }
         if (continueOrEndCurrentTask(currentState)) return
-        if (currentAppState.window is WTGDialogNode) {
+        if (currentAppState.window is Dialog) {
             if (hasUnexploreWidgets(currentState)) {
                 setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
             }
@@ -827,7 +835,7 @@ class PhaseOneStrategy(
         phaseState = PhaseState.P1_GO_TO_TARGET_NODE
     }
 
-    private fun isWindowHasBudgetLeft(window: WTGNode): Boolean {
+    private fun isWindowHasBudgetLeft(window: Window): Boolean {
         if (AbstractStateManager.instance.ABSTRACT_STATES.filter { it !is VirtualAbstractState
                 && it.window == window}.any { hasBudgetLeft2(null,it) }) {
             return true
@@ -838,12 +846,12 @@ class PhaseOneStrategy(
     private fun selectTargetNode(currentState: State<*>, tried: Int) {
         //Try finding reachable target
 
-        val explicitTargetWindows = WTGNode.allMeaningNodes.filter { window ->
+        val explicitTargetWindows = WindowManager.instance.allMeaningWindows.filter { window ->
             untriggeredTargetEvents.any { it.sourceWindow == window }
         }
         var candidates = targetWindowTryCount.filter { isExplicitCandidateWindow(explicitTargetWindows,it) }
         if (candidates.isNotEmpty()) {
-            val leastTriedWindow = candidates.map { Pair<WTGNode,Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
+            val leastTriedWindow = candidates.map { Pair<Window,Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
             targetWindow = leastTriedWindow.value.random().first
         } else {
             targetWindow = null
@@ -851,7 +859,7 @@ class PhaseOneStrategy(
         if (targetWindow == null) {
             candidates = targetWindowTryCount.filter { isCandidateWindow(it) }
             if (candidates.isNotEmpty()) {
-                val leastTriedWindow = candidates.map { Pair<WTGNode, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
+                val leastTriedWindow = candidates.map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
                 targetWindow = leastTriedWindow.value.random().first
             }
         }
@@ -867,10 +875,10 @@ class PhaseOneStrategy(
         actionCountSinceSelectTarget = 0
     }
 
-    private fun isExplicitCandidateWindow(explicitTargetWindows: List<WTGNode>, it: Map.Entry<WTGNode, Int>) =
+    private fun isExplicitCandidateWindow(explicitTargetWindows: List<Window>, it: Map.Entry<Window, Int>) =
             explicitTargetWindows.contains(it.key) && !flaggedWindows.contains(it.key) && !fullyCoveredWindows.contains(it.key) && !unreachableWindows.contains(it.key)
 
-    private fun isCandidateWindow(it: Map.Entry<WTGNode, Int>) =
+    private fun isCandidateWindow(it: Map.Entry<Window, Int>) =
             !flaggedWindows.contains(it.key) && !fullyCoveredWindows.contains(it.key) && !unreachableWindows.contains(it.key)
 
     override fun  getPathsToOtherWindows(currentState: State<*>): List<TransitionPath> {
@@ -882,8 +890,8 @@ class PhaseOneStrategy(
         val runtimeAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
                 .filterNot { it is VirtualAbstractState ||
                         it == currentAbstractState ||
-                        it.window is WTGLauncherNode ||
-                        it.window is WTGOutScopeNode ||
+                        it.window is Launcher ||
+                        it.window is OutOfApp ||
                         flaggedWindows.contains(it.window)
                 }
         /*val candiateWindows = WTGNode.allMeaningNodes.filter { window -> runtimeAbstractStates.find { it.window == window } != null}
@@ -961,7 +969,7 @@ class PhaseOneStrategy(
     }
 
     override fun getCurrentTargetEvents(currentState: State<*>): Set<AbstractAction> {
-        val targetEvents = HashMap<StaticEvent,List<AbstractAction>>()
+        val targetEvents = HashMap<Input,List<AbstractAction>>()
         if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
             return emptySet<AbstractAction>()
         val currentWindowTargetEvents = untriggeredTargetEvents.filter { it.sourceWindow == targetWindow }
@@ -1021,7 +1029,7 @@ class PhaseOneStrategy(
         phaseState = PhaseState.P1_EXERCISE_TARGET_NODE
     }
 
-    private fun hasBudgetLeft(window: WTGNode): Boolean {
+    private fun hasBudgetLeft(window: Window): Boolean {
         if (!windowRandomExplorationBudget.containsKey(window))
             return false
         if (windowRandomExplorationBudgetUsed[window]!! <= windowRandomExplorationBudget[window]!!) {
@@ -1121,7 +1129,13 @@ class PhaseOneStrategy(
             return ArrayList()
         val candidates = ArrayList<AbstractState>()
         val excludedNode = currentNode
-        candidates.add( AbstractStateManager.instance.ABSTRACT_STATES.find{it is VirtualAbstractState && it.window == targetWindow}!!)
+        val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find{
+            it is VirtualAbstractState && it.window == targetWindow}
+        if (virtualAbstractState!=null) {
+            candidates.add(virtualAbstractState)
+        } else {
+            log.debug("Something is wrong")
+        }
         //Get all AbstractState contain target events
         AbstractStateManager.instance.ABSTRACT_STATES
                 .filter {
@@ -1139,9 +1153,9 @@ class PhaseOneStrategy(
 
     private fun isTargetAbstractState(abstractState: AbstractState): Boolean {
         val abstractActions = autautMF.abstractTransitionGraph.edges(abstractState).filter { edge ->
-            abstractState.staticEventMapping.contains(edge.label.abstractAction)
+            abstractState.inputMapping.contains(edge.label.abstractAction)
         }.map { it.label.abstractAction }
-        val staticEvents = abstractState.staticEventMapping.filter { abstractActions.contains(it.key) }.map { it.value }
+        val staticEvents = abstractState.inputMapping.filter { abstractActions.contains(it.key) }.map { it.value }
         if (staticEvents.find { untriggeredTargetEvents.intersect(it).isNotEmpty() } != null) {
             return true
         } else {
