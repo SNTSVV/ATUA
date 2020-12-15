@@ -1,8 +1,9 @@
 package org.droidmate.exploration.modelFeatures.autaut.DSTG
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.LocalAttribute
+import org.droidmate.exploration.modelFeatures.autaut.AutAutModelLoader
 import org.droidmate.exploration.modelFeatures.autaut.WTG.DescendantLayoutDirection
 import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
+import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.explorationModel.toUUID
@@ -12,47 +13,56 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class AttributeValuationSet (attributePath: AttributePath, var cardinality: Cardinality, val activity: String,
-                             listOfConstructedAVS: ArrayList<AttributeValuationSet>) {
-    val localAttributes: HashMap<AttributeType, String> = HashMap()
-    val parentAttributeValuationSet: AttributeValuationSet?
-    val childAttributeValuationSets: HashSet<AttributeValuationSet>?
+class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String> = HashMap(),
+                             var parentAttributeValuationSetId: UUID = emptyUUID,
+                             var childAttributeValuationSetIds: HashSet<UUID> = HashSet(),
+                             val cardinality: Cardinality,
+                             val activity: String) {
+
     var exerciseCount: Int = 0
     val actionCount = HashMap<AbstractAction, Int>()
     var captured = false
-    val avsId: UUID by lazy { lazyIds.value }
 
-    protected open val lazyIds: Lazy<UUID> =
-            lazy {
-                this.fullAttributeValuationMap().toUUID()
-            }
-    init {
+    constructor(attributePath: AttributePath,  cardinality: Cardinality,  activity: String, attributPath_cardinality: HashMap<UUID,Cardinality>): this(cardinality = cardinality,activity = activity) {
+        if (!allAttributeValuationSet.containsKey(activity)) {
+            allAttributeValuationSet.put(activity, HashMap())
+        }
         localAttributes.putAll(attributePath.localAttributes)
-        if (attributePath.parentAttributePath == null) {
-            parentAttributeValuationSet = null
+        if (attributePath.parentAttributePathId == emptyUUID) {
+            parentAttributeValuationSetId = emptyUUID
         } else {
-            if (listOfConstructedAVS.any { it.haveTheSameAttributePath(attributePath.parentAttributePath) }) {
-                parentAttributeValuationSet = listOfConstructedAVS.find { it.haveTheSameAttributePath(attributePath.parentAttributePath) }!!
+            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)
+            if (allAttributeValuationSet[activity]!!.any { it.value.haveTheSameAttributePath(parentAttributePath) }) {
+                parentAttributeValuationSetId = allAttributeValuationSet[activity]!!.map {it.value}.find{ it.haveTheSameAttributePath(parentAttributePath) }!!.avsId
             } else {
-                val newParentAttributeValuationSet = AttributeValuationSet(attributePath.parentAttributePath,
-                        Cardinality.ONE, activity, listOfConstructedAVS)
-                listOfConstructedAVS.add(newParentAttributeValuationSet)
-                parentAttributeValuationSet = newParentAttributeValuationSet
+                val parentCardinality = if (attributPath_cardinality.containsKey(parentAttributeValuationSetId))
+                        attributPath_cardinality[attributePath.parentAttributePathId]!!
+                else
+                    Cardinality.ONE
+                val newParentAttributeValuationSet = AttributeValuationSet(parentAttributePath,
+                        parentCardinality, activity,attributPath_cardinality)
+                parentAttributeValuationSetId = newParentAttributeValuationSet.avsId
             }
         }
         //TODO
-        if (attributePath.childAttributePaths==null) {
-            childAttributeValuationSets = null
-        } else {
-            childAttributeValuationSets = HashSet()
-            attributePath.childAttributePaths.forEach {
-                childAttributeValuationSets.add(AttributeValuationSet(it,Cardinality.ONE,activity,listOfConstructedAVS))
+        if (attributePath.childAttributePathIds.isNotEmpty()) {
+            attributePath.childAttributePathIds.map { AttributePath.getAttributePathById(it,activity) }.forEach {
+                val childAttributeValuationSet = AttributeValuationSet(it,Cardinality.ONE,activity, HashMap())
+                childAttributeValuationSetIds.add(childAttributeValuationSet.avsId)
             }
         }
+        //TODO
+        if (avsId == parentAttributeValuationSetId) {
+            allAttributeValuationSet[activity]!!.put(avsId,this)
+        } else {
+            allAttributeValuationSet[activity]!!.put(avsId, this)
+        }
+    }
+
+    val avsId: UUID by lazy {  this.fullAttributeValuationMap().toUUID()}
+    fun initActions() {
         /*if (!AbstractStateManager.instance.activity_attrValSetsMap.containsKey(activity))
             AbstractStateManager.instance.activity_attrValSetsMap.put(activity, ArrayList())*/
-
-
         if (isClickable() ) {
             if (getClassName().equals("android.webkit.WebView")) {
                 val itemAbstractAction = AbstractAction(
@@ -154,23 +164,21 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
             actionCount.put(abstractAction, 0)
         }
         //Item-containing Widget
-       /* if (attributePath.getClassName().equals("android.webkit.WebView")) {
-            val abstractAction = AbstractAction(
-                    actionName = AbstractActionType.CLICK.actionName,
-                    widgetGroup = this,
-                    extra = "RandomMultiple"
-            )
-            actionCount.put(abstractAction, 0)
-            *//*val longclickAbstractAction = AbstractAction(
+        /* if (attributePath.getClassName().equals("android.webkit.WebView")) {
+             val abstractAction = AbstractAction(
+                     actionName = AbstractActionType.CLICK.actionName,
+                     widgetGroup = this,
+                     extra = "RandomMultiple"
+             )
+             actionCount.put(abstractAction, 0)
+             *//*val longclickAbstractAction = AbstractAction(
                     actionName = AbstractActionType.LONGCLICK.actionName,
                     widgetGroup = this,
                     extra = "RandomMultiple"
             )
             actionCount.put(longclickAbstractAction, 0)*//*
         }*/
-        allAttributeValuationSet.put(avsId,this)
     }
-    
     fun getClassName(): String {
         if (localAttributes.containsKey(AttributeType.className))
         {
@@ -185,7 +193,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return ""
     }
-
     fun getContentDesc(): String {
         if (localAttributes.containsKey(AttributeType.contentDesc))
         {
@@ -193,7 +200,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return ""
     }
-
     fun getText(): String {
         if (localAttributes.containsKey(AttributeType.text))
         {
@@ -201,7 +207,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return ""
     }
-
     fun isClickable(): Boolean{
         if (localAttributes.containsKey(AttributeType.clickable))
         {
@@ -209,7 +214,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return false
     }
-
     fun isLongClickable(): Boolean{
         if (localAttributes.containsKey(AttributeType.longClickable))
         {
@@ -217,15 +221,9 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return false
     }
-
     fun isScrollable(): Boolean{
-        if (localAttributes.containsKey(AttributeType.scrollable))
-        {
-            return localAttributes[AttributeType.scrollable]!!.toBoolean()
-        }
-        return false
+        return localAttributes[AttributeType.scrollable]!!.toBoolean()
     }
-
     fun isInputField(): Boolean{
         if (localAttributes.containsKey(AttributeType.isInputField))
         {
@@ -233,7 +231,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return false
     }
-
     fun isCheckable(): Boolean{
         if (localAttributes[AttributeType.checkable]!!.equals("true"))
         {
@@ -241,7 +238,6 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
         }
         return false
     }
-
     fun isChecked(): Boolean {
         if (localAttributes.containsKey(AttributeType.checked))
         {
@@ -260,17 +256,10 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
     fun isInteractive(): Boolean{
         return isClickable() || isLongClickable() || isScrollable() || isCheckable()
     }
-    fun isSelected(): Boolean {
-        if (localAttributes[AttributeType.selected]!!.equals("true"))
-        {
-            return true
-        }
-        return false
-    }
 
     fun getGUIWidgets (guiState: State<*>): List<Widget>{
         val selectedGuiWidgets = ArrayList<Widget>()
-        Helper.getVisibleWidgets(guiState).forEach {
+        Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
             if (isAbstractRepresentationOf(it,guiState)) {
                 selectedGuiWidgets.add(it)
             }
@@ -314,99 +303,109 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
     }
 
      fun isParent(attributeValuationSet: AttributeValuationSet): Boolean {
-        if (attributeValuationSet.parentAttributeValuationSet==null)
+        if (attributeValuationSet.parentAttributeValuationSetId== emptyUUID)
             return false
-        if (haveTheSameAttributePath(attributeValuationSet.parentAttributeValuationSet))
+         val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(attributeValuationSet.parentAttributeValuationSetId)!!
+        if (haveTheSameAttributePath(parentAttributeValuationSet))
             return true
         return false
     }
 
     fun haveTheSameAttributePath(attributePath: AttributePath): Boolean {
-        if (parentAttributeValuationSet != null && attributePath.parentAttributePath == null)
+        if (localAttributes.hashCode() != attributePath.localAttributes.hashCode()) {
             return false
-        if (parentAttributeValuationSet == null && attributePath.parentAttributePath != null)
+        }
+        if (childAttributeValuationSetIds.isEmpty() && attributePath.childAttributePathIds.isNotEmpty()) {
             return false
-        if (parentAttributeValuationSet != null) {
-            if (attributePath.parentAttributePath == null) {
+        }
+        if (childAttributeValuationSetIds.isNotEmpty() && attributePath.childAttributePathIds.isEmpty())
+            return false
+        val childAttributePaths = attributePath.childAttributePathIds.map { AttributePath.getAttributePathById(it,activity) }
+        val childAttributeValuationSets = childAttributeValuationSetIds.map { allAttributeValuationSet[activity]!!.get(it)!! }
+        if (!childAttributeValuationSets.all { childAttributeValuationSet -> childAttributePaths.any { childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
+            return false
+        }
+        if (parentAttributeValuationSetId != emptyUUID && attributePath.parentAttributePathId == emptyUUID)
+            return false
+        if (parentAttributeValuationSetId == emptyUUID && attributePath.parentAttributePathId != emptyUUID)
+            return false
+        if (parentAttributeValuationSetId != emptyUUID) {
+            if (attributePath.parentAttributePathId == emptyUUID) {
                 return false
             }
-            if (!parentAttributeValuationSet.haveTheSameAttributePath(attributePath.parentAttributePath)) {
+            val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(parentAttributeValuationSetId)!!
+            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)
+            if (!parentAttributeValuationSet.haveTheSameAttributePath(parentAttributePath)) {
                 return false
             }
-        }
-        if (!localAttributes.equals(attributePath.localAttributes)) {
-            return false
-        }
-        if (childAttributeValuationSets == null) {
-            if (attributePath.childAttributePaths == null)
-                return true
-            return false
-        }
-        if (attributePath.childAttributePaths == null)
-            return false
-        if (childAttributeValuationSets.any { childAttributeValuationSet -> attributePath.childAttributePaths.all { !childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
-            return false
         }
         return true
     }
 
-    fun haveTheSameAttributePath(attributeValuationSet: AttributeValuationSet): Boolean {
-        if (parentAttributeValuationSet != null && attributeValuationSet.parentAttributeValuationSet == null)
+    fun haveTheSameAttributePath(cmpAttributeValuationSet: AttributeValuationSet): Boolean {
+       /* if (parentAttributeValuationSetId != emptyUUID && cmpAttributeValuationSet.parentAttributeValuationSetId == emptyUUID)
             return false
-        if (parentAttributeValuationSet == null && attributeValuationSet.parentAttributeValuationSet != null)
+        if (parentAttributeValuationSetId == emptyUUID && cmpAttributeValuationSet.parentAttributeValuationSetId != emptyUUID)
             return false
-        if (parentAttributeValuationSet != null) {
-            if (!parentAttributeValuationSet.haveTheSameAttributePath(attributeValuationSet.parentAttributeValuationSet!!)) {
+        if (parentAttributeValuationSetId != emptyUUID) {
+            val parentAttributeValuationSet = allAttributeValuationSet.get(parentAttributeValuationSetId)!!
+            val cmpParentAttributeValuationSet = allAttributeValuationSet.get(cmpAttributeValuationSet.parentAttributeValuationSetId)!!
+            if (!parentAttributeValuationSet.haveTheSameAttributePath(cmpParentAttributeValuationSet)) {
                 return false
             }
         }
-        if (!localAttributes.equals(attributeValuationSet.localAttributes)) {
+        if (!localAttributes.equals(cmpAttributeValuationSet.localAttributes)) {
             return false
         }
-        if (childAttributeValuationSets == null) {
-            if (attributeValuationSet.childAttributeValuationSets == null)
+        if (childAttributeValuationSetIds == null) {
+            if (cmpAttributeValuationSet.childAttributeValuationSetIds == null)
                 return true
             return false
         }
-        if (attributeValuationSet.childAttributeValuationSets == null)
+        if (cmpAttributeValuationSet.childAttributeValuationSetIds == null)
             return false
-        if (childAttributeValuationSets.any { childAttributeValuationSet -> attributeValuationSet.childAttributeValuationSets.all { !childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
+        if (childAttributeValuationSetIds.any { childAttributeValuationSet -> cmpAttributeValuationSet.childAttributeValuationSetIds.all { !childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
             return false
-        }
+        }*/
+        if (avsId != cmpAttributeValuationSet.avsId)
+            return false
         return true
     }
 
-    fun isDerivedFrom(moreAbstractAttributeValuationSet: AttributeValuationSet): Boolean {
-        //check parent first
-        if (parentAttributeValuationSet!=null && moreAbstractAttributeValuationSet.parentAttributeValuationSet!=null) {
-            if (!parentAttributeValuationSet.isDerivedFrom(moreAbstractAttributeValuationSet.parentAttributeValuationSet)) {
-                return false
-            }
-        }
+    fun isDerivedFrom(abstractAttributeValuationSet: AttributeValuationSet): Boolean {
         //check local
-        moreAbstractAttributeValuationSet.localAttributes.forEach {
+        abstractAttributeValuationSet.localAttributes.forEach {
             if (!localAttributes.containsKey(it.key))
                 return false
             if (localAttributes[it.key] != it.value)
                 return false
         }
-        if (childAttributeValuationSets == null) {
-            if (moreAbstractAttributeValuationSet.childAttributeValuationSets == null) {
-                return true
-            } else {
-                return false
-            }
+        if (childAttributeValuationSetIds.isEmpty() && !abstractAttributeValuationSet.childAttributeValuationSetIds.isEmpty()) {
+            return false
         }
-        if (moreAbstractAttributeValuationSet.childAttributeValuationSets == null)
-            return true
-        if (!moreAbstractAttributeValuationSet.childAttributeValuationSets.isEmpty()) {
-            moreAbstractAttributeValuationSet.childAttributeValuationSets.forEach { moreAbstractChildAVS ->
-                if (!childAttributeValuationSets.any { it.isDerivedFrom(moreAbstractChildAVS) }) {
+        if (!abstractAttributeValuationSet.childAttributeValuationSetIds.isEmpty()) {
+            val childAttributeValuationSet = childAttributeValuationSetIds.map { allAttributeValuationSet[activity]!!.get(it)!! }
+            abstractAttributeValuationSet.childAttributeValuationSetIds.map { allAttributeValuationSet[activity]!!.get(it)!! }. forEach { moreAbstractChildAVS ->
+                if (!childAttributeValuationSet.any { it.isDerivedFrom(moreAbstractChildAVS) }) {
                     return false
                 }
             }
         }
-
+        if (parentAttributeValuationSetId!= emptyUUID && abstractAttributeValuationSet.parentAttributeValuationSetId!= emptyUUID) {
+            val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(parentAttributeValuationSetId)
+            if (parentAttributeValuationSet == null) {
+                throw Exception("Cannot find attributeValuationSet $parentAttributeValuationSetId")
+                return false
+            }
+            val abstractParentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(abstractAttributeValuationSet.parentAttributeValuationSetId)
+            if (abstractParentAttributeValuationSet == null) {
+                throw Exception("Cannot find attributeValuationSet $parentAttributeValuationSetId")
+                return false
+            }
+            if (!parentAttributeValuationSet.isDerivedFrom(abstractParentAttributeValuationSet)) {
+                return false
+            }
+        }
         return true
     }
 
@@ -432,41 +431,107 @@ class AttributeValuationSet (attributePath: AttributePath, var cardinality: Card
     }
 
     fun fullAttributeValuationMap(): String {
-        return parentAttributeValuationSet.toString() + localAttributes.toString() + childAttributeValuationSets.toString() + cardinality.toString()
+        val s =  listOf<String>(parentAttributeValuationSetId.toString(),localAttributes.toSortedMap().toString(),childAttributeValuationSetIds.toString(),cardinality.toString(),activity).joinToString("<;>")
+        return s
     }
     /**
      * Write in csv
      */
     fun dump(abstractState: AbstractState): String {
+        testReloadAttributes()
         return "${avsId};${getClassName()};${getResourceId()};" +
                 "\"${localAttributes.get(AttributeType.contentDesc)}\";\"${localAttributes.get(AttributeType.text)}\";${isEnable()};" +
-                "${isSelected()};${isCheckable()};${isInputField()};" +
+                "${localAttributes.get(AttributeType.selected)};${isCheckable()};${isInputField()};" +
                 "${isClickable()};${isLongClickable()};${isScrollable()};" +
                 "${localAttributes.get(AttributeType.checked)};${localAttributes.get(AttributeType.isLeaf)};" +
-                "${parentAttributeValuationSet?.avsId};${childAttributeValuationSets?.map { it.avsId }};$cardinality;$captured;" +
-                "\"${abstractState.staticWidgetMapping[this]?.map{it.widgetId}?.joinToString(";")}\""
+                "${dumpParentUUID()};\"${dumpChildrenAVS()}\";$cardinality;$captured;" +
+                "\"${abstractState.EWTGWidgetMapping[this]?.map{it.widgetId}?.joinToString(";")}\""
     }
+
+    private fun dumpChildrenAVS() = childAttributeValuationSetIds?.joinToString(";")
+
+    private fun testReloadAttributes() {
+        val attributes = HashMap<AttributeType,String>()
+
+        val className = getClassName()
+        val resourceId = getResourceId()
+        val contentDesc = localAttributes.get(AttributeType.contentDesc)?:"null"
+        val text = localAttributes.get(AttributeType.text)?:"null"
+        val enabled = isEnable().toString()
+        val selected = localAttributes.get(AttributeType.selected)?:"null".toString()
+        val checkable = isCheckable().toString()
+        val isInputField = isInputField().toString()
+        val clickable = isClickable().toString()
+        val longClickable = isLongClickable().toString()
+        val scrollable = isScrollable().toString()
+        val checked = localAttributes.get(AttributeType.checked)?:"null"
+        val isLeaf = localAttributes.get(AttributeType.isLeaf)?:"null"
+
+        addAttributeIfNotNull(AttributeType.className, className, attributes)
+        addAttributeIfNotNull(AttributeType.resourceId, resourceId, attributes)
+        addAttributeIfNotNull(AttributeType.contentDesc, contentDesc, attributes)
+        addAttributeIfNotNull(AttributeType.text, text, attributes)
+        addAttributeIfNotNull(AttributeType.enabled, enabled, attributes)
+        addAttributeIfNotNull(AttributeType.selected, selected, attributes)
+        addAttributeIfNotNull(AttributeType.checkable, checkable, attributes)
+        addAttributeIfNotNull(AttributeType.isInputField, isInputField, attributes)
+        addAttributeIfNotNull(AttributeType.clickable, clickable, attributes)
+        addAttributeIfNotNull(AttributeType.longClickable, longClickable, attributes)
+        addAttributeIfNotNull(AttributeType.scrollable, scrollable, attributes)
+        addAttributeIfNotNull(AttributeType.checked, checked, attributes)
+        addAttributeIfNotNull(AttributeType.isLeaf, isLeaf, attributes)
+
+        val parentId = if (dumpParentUUID() !="null")
+            UUID.fromString(dumpParentUUID())
+        else
+            emptyUUID
+
+        val childDumped = dumpChildrenAVS()
+        val childAVSIds = AutAutModelLoader.splitCSVLineToField(childDumped)
+        val childAVSs = HashSet<UUID>()
+        if (!(childAVSIds.size==1 && (childAVSIds.single().isBlank() || childAVSIds.single()=="\"\""))) {
+            childAVSIds.forEach { avsId ->
+                childAVSs.add(UUID.fromString(avsId))
+            }
+        }
+
+        val cardinality = Cardinality.values().find { it.name == cardinality.toString() }!!
+        val oldFullAttributeValuationSet = fullAttributeValuationMap()
+        val newFullAttributeValuationSet = listOf<String>(parentId.toString(),attributes.toSortedMap().toString(),childAVSs.toString(),cardinality.toString(),activity).joinToString("<;>")
+        val oldUUID = oldFullAttributeValuationSet.toUUID()
+        val newUUID = newFullAttributeValuationSet.toUUID()
+
+        assert(oldUUID == newUUID)
+    }
+    private fun addAttributeIfNotNull(attributeType: AttributeType, attributeValue: String, attributes: HashMap<AttributeType,String>) {
+        if (attributeValue!= "null" ) {
+            attributes.put(attributeType,attributeValue)
+        }
+    }
+    private fun dumpParentUUID() = if (parentAttributeValuationSetId == emptyUUID) "null" else parentAttributeValuationSetId.toString()
 
     fun dump(bufferedWriter: BufferedWriter, dumpedAttributeValuationSets: ArrayList<UUID>, abstractState: AbstractState ) {
         bufferedWriter.write(this.dump(abstractState))
 
         dumpedAttributeValuationSets.add(this.avsId)
-        if (parentAttributeValuationSet!=null) {
-            if (!dumpedAttributeValuationSets.contains(parentAttributeValuationSet.avsId)) {
+        if (parentAttributeValuationSetId!= emptyUUID) {
+            if (!dumpedAttributeValuationSets.contains(parentAttributeValuationSetId)) {
                 bufferedWriter.newLine()
+                val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(parentAttributeValuationSetId)!!
                 parentAttributeValuationSet.dump(bufferedWriter, dumpedAttributeValuationSets,abstractState)
             }
         }
-        childAttributeValuationSets?.forEach {
-            if (!dumpedAttributeValuationSets.contains(it.avsId)) {
+        childAttributeValuationSetIds.forEach {
+            if (!dumpedAttributeValuationSets.contains(it)) {
+                val childAttributeValuationSet = allAttributeValuationSet[activity]!!.get(it)!!
                 bufferedWriter.newLine()
-                it.dump(bufferedWriter, dumpedAttributeValuationSets,abstractState)
+                childAttributeValuationSet.dump(bufferedWriter, dumpedAttributeValuationSets,abstractState)
             }
         }
     }
 
     companion object {
-       val allAttributeValuationSet: HashMap<UUID,AttributeValuationSet> = HashMap()
+       val allAttributeValuationSet: HashMap<String, HashMap<UUID,AttributeValuationSet>> = HashMap()
         /* fun createOrGetExisitingObject(attributePath: AttributePath, cardinality: Cardinality, activity: String): AttributeValuationSet {
 
         }*/

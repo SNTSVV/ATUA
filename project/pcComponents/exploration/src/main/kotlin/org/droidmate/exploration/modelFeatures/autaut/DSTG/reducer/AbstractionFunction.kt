@@ -8,7 +8,9 @@ import org.droidmate.exploration.modelFeatures.autaut.DSTG.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.reducer.localReducer.LocalReducerLV1
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.reducer.localReducer.LocalReducerLV2
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.reducer.localReducer.LocalReducerLV3
-import org.droidmate.explorationModel.config.ModelConfig
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
+import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
+import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.io.File
@@ -27,23 +29,36 @@ class AbstractionFunction (val root: DecisionNode) {
             attributeValuationSet.isDerivedFrom(it.second)
         }
     }
-    fun reduce(guiWidget: Widget, guiState: State<*>,activity: String, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
+
+    fun reduce(guiWidget: Widget, guiState: State<*>,activity: String, rotation: Rotation, autaut:AutAutMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
     , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
+        val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
+        var isOptionsMenu = if (!Helper.isSameFullScreenDimension(rotation,guiTreeRectangle,autaut))
+                Helper.isOptionsMenuLayout(guiState)
+        else
+            false
         var currentDecisionNode: DecisionNode?=null
         var attributePath: AttributePath
         var level = 0
         do {
             tempWidgetReduceMap.remove(guiWidget)
             //tempChildWidgetAttributePaths.clear()
+            level += 1
             if (currentDecisionNode==null)
                 currentDecisionNode = root
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            level += 1
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         }
         while (currentDecisionNode!!.nextNode!=null
                 && currentDecisionNode.containAttributePath(attributePath,activity))
+        if (level==1 && isOptionsMenu) {
+            if (!currentDecisionNode.attributePaths.containsKey(activity)) {
+                currentDecisionNode.attributePaths.put(activity, arrayListOf())
+            }
+            currentDecisionNode!!.attributePaths.get(activity)!!.add(attributePath)
+            attributePath = currentDecisionNode!!.nextNode!!.reducer.reduce(guiWidget, guiState, activity,rotation,autaut, tempWidgetReduceMap, tempChildWidgetAttributePaths)
+        }
         return attributePath
     }
 
@@ -64,44 +79,33 @@ class AbstractionFunction (val root: DecisionNode) {
             level++
         }while (currentDecisionNode!!.nextNode!=null && currentDecisionNode.containAttributePath(attributePath, activity))
         if (!currentDecisionNode!!.containAttributePath(attributePath, activity)) {
-            currentDecisionNode.attributePaths.add(Pair(attributePath,activity))
+            if (!currentDecisionNode.attributePaths.containsKey(activity)) {
+                currentDecisionNode.attributePaths.put(activity, arrayListOf())
+            }
+            currentDecisionNode.attributePaths.get(activity)!!.add(attributePath)
            /* val newAttributePath = reduce(guiWidget,guiState,activity, hashMapOf(), hashMapOf())
             updateAllAttributePathsHavingParent(attributePath,newAttributePath,activity)*/
             return true
         }
-        else {
-            if (attributePath.parentAttributePath == null)
+        return false
+       /* else {
+            if (attributePath.parentAttributePathId == emptyUUID)
                 return false
-            var parentAttributePath = attributePath.parentAttributePath
+            var parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)
             var parentWidget: Widget? = guiState.widgets.find { it.idHash == guiWidget.parentHash }
-            /*while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
+            *//*while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
                 parentAttributePath = parentAttributePath!!.parentAttributePath
                 parentWidget = guiState.widgets.find { it.id == parentWidget!!.parentId }
-            }*/
+            }*//*
             if (parentWidget!=null) {
                 //increaseReduceLevel for parent
                 val result = increaseReduceLevel(parentAttributePath, activity, false, parentWidget, guiState)
                 return result
             }
             return false
-        }
+        }*/
     }
 
-    private fun updateAllAttributePathsHavingParent(oldParentAttributePath: AttributePath, newParentAttributePath: AttributePath, activity: String) {
-        var currentDecisionNode: DecisionNode? = root
-        do {
-            val oldAttributePaths =currentDecisionNode!!.attributePaths.filter { it.second == activity && it.first.parentAttributePath == oldParentAttributePath }
-            oldAttributePaths.forEach {
-                val newAttributePath = AttributePath(localAttributes = it.first.localAttributes,
-                        parentAttributePath = newParentAttributePath,
-                        childAttributePaths = it.first.childAttributePaths)
-                currentDecisionNode!!.attributePaths.add(Pair(newAttributePath,activity))
-                currentDecisionNode!!.attributePaths.remove(it)
-                updateAllAttributePathsHavingParent(it.first,newAttributePath,activity)
-            }
-            currentDecisionNode = currentDecisionNode.nextNode
-        } while (currentDecisionNode!=null)
-    }
 
     fun dump(dstgFolder: Path) {
         val parentDirectory = Files.createDirectory(dstgFolder.resolve("AbstractionFunction"))
@@ -125,10 +129,15 @@ class AbstractionFunction (val root: DecisionNode) {
     private fun dumpDecisionNode(parentDirectory: Path, level: Int, currentDecisionNode: DecisionNode?) {
         File(parentDirectory.resolve("DecisionNode_LV${level}.csv").toUri()).bufferedWriter().use { all ->
             all.write(header())
-            val dumpedAttributeValuationSet = ArrayList<Pair<UUID, String>>()
+            val dumpedAttributeValuationSet = ArrayList<Pair<String, UUID>>()
             currentDecisionNode!!.attributePaths.forEach {
-                if (!dumpedAttributeValuationSet.contains(Pair(it.first.attributePathId, it.second))) {
-                    it.first.dump(activity = it.second, dumpedAttributeValuationSets = dumpedAttributeValuationSet, bufferedWriter = all)
+                dumpedAttributeValuationSet.clear()
+                val activity = it.key
+                val captured = it.value
+                captured.forEach {
+                    if (!dumpedAttributeValuationSet.contains(Pair(activity,it.attributePathId))) {
+                        it.dump(activity = activity, dumpedAttributeValuationSets = dumpedAttributeValuationSet, bufferedWriter = all,capturedAttributePaths = captured)
+                    }
                 }
             }
         }
@@ -173,9 +182,11 @@ class AbstractionFunction (val root: DecisionNode) {
             var backupDecisionNode: DecisionNode? = backupAbstractionFunction!!.root
             while (decisionNode!=null && backupDecisionNode!=null)
             {
-                backupDecisionNode.attributePaths.addAll(decisionNode.attributePaths)
-                decisionNode = decisionNode!!.nextNode
-                backupDecisionNode = backupDecisionNode!!.nextNode
+                decisionNode.attributePaths.forEach { t, u ->
+                    backupDecisionNode!!.attributePaths.put(t, ArrayList(u))
+                }
+                decisionNode = decisionNode.nextNode
+                backupDecisionNode = backupDecisionNode.nextNode
             }
         }
 

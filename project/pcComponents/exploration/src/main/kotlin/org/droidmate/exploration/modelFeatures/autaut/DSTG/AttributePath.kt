@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.autaut.DSTG
 
+import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.toUUID
 import java.io.BufferedWriter
 import java.util.*
@@ -8,15 +9,28 @@ import kotlin.collections.HashSet
 
 data class AttributePath (
         val localAttributes: HashMap<AttributeType, String> = HashMap(),
-        val parentAttributePath: AttributePath? = null,
-        val childAttributePaths: HashSet<AttributePath>?){
+        val parentAttributePathId: UUID = emptyUUID,
+        val childAttributePathIds: HashSet<UUID> = HashSet(),
+        val activity: String
+        ){
 
     val attributePathId: UUID by lazy { lazyIds.value }
 
     protected open val lazyIds: Lazy<UUID> =
             lazy {
-                listOf<Any>(this.toString()).joinToString(separator = "<;>").toUUID()
+                listOf<Any>(parentAttributePathId,localAttributes.toSortedMap().toString(),childAttributePathIds.sorted().toString()).joinToString(separator = "<;>").toUUID()
             }
+
+    init {
+        if (!allAttributePaths.containsKey(activity)) {
+            allAttributePaths.put(activity, HashMap())
+        }
+        if (!allAttributePaths.get(activity)!!.containsKey(attributePathId)) {
+            allAttributePaths.get(activity)!!.put(attributePathId, this)
+        }
+    }
+
+
     override fun equals(other: Any?): Boolean {
         if (other !is AttributePath)
             return false
@@ -26,18 +40,15 @@ data class AttributePath (
     }
 
     override fun hashCode(): Int {
-        var hashValue: Int=31
-        hashValue = hashValue + this.localAttributes.hashCode()
-        hashValue = hashValue + this.parentAttributePath.hashCode()
-        hashValue = hashValue + this.childAttributePaths.hashCode()
-
-        return hashValue
+        return attributePathId.hashCode()
     }
 
-    fun contains(containedAttributePath: AttributePath): Boolean {
+    fun contains(containedAttributePath: AttributePath, activity: String): Boolean {
         //check parent first
-        if (parentAttributePath!=null && containedAttributePath.parentAttributePath!=null) {
-            if (!parentAttributePath.contains(containedAttributePath.parentAttributePath)) {
+        if (parentAttributePathId!= emptyUUID && containedAttributePath.parentAttributePathId!= emptyUUID) {
+            val parentAttributePath = allAttributePaths.get(activity)!!.get(parentAttributePathId)!!
+            val containedParentAttributePath = allAttributePaths.get(activity)!!.get(containedAttributePath.parentAttributePathId)!!
+            if (!parentAttributePath.contains(containedParentAttributePath,activity)) {
                 return false
             }
         }
@@ -48,20 +59,27 @@ data class AttributePath (
             if (localAttributes[it.key] != it.value)
                 return false
         }
-        if (childAttributePaths == null) {
-            if (containedAttributePath.childAttributePaths == null) {
+
+        if (childAttributePathIds.isEmpty()) {
+            if (containedAttributePath.childAttributePathIds.isEmpty()) {
                 return true
             } else {
                 return false
             }
         }
-        if (containedAttributePath.childAttributePaths == null)
+
+        if (containedAttributePath.childAttributePathIds.isEmpty())
             return true
-        if (!containedAttributePath.childAttributePaths.isEmpty()) {
-            containedAttributePath.childAttributePaths.forEach { containedChildAttributePath ->
-                if (!childAttributePaths.any { it.contains(containedChildAttributePath) }) {
-                    return false
-                }
+
+        val childAttributePaths = childAttributePathIds.map {
+            allAttributePaths.get(activity)!!.get(it)!!
+        }
+        val containedChildAttributePaths = containedAttributePath.childAttributePathIds.map {
+            allAttributePaths.get(activity)!!.get(it)!!
+        }
+       containedChildAttributePaths.forEach { containedChildAttributePath ->
+            if (!childAttributePaths.any { it.contains(containedChildAttributePath,activity) }) {
+                return false
             }
         }
 
@@ -69,18 +87,25 @@ data class AttributePath (
 
     }
 
-    fun dump(activity: String, dumpedAttributeValuationSets: ArrayList<Pair<UUID, String>>, bufferedWriter: BufferedWriter) {
-        dumpedAttributeValuationSets.add(Pair(attributePathId,activity))
-        if (parentAttributePath!=null && !dumpedAttributeValuationSets.contains(Pair(parentAttributePath.attributePathId,activity))) {
-            parentAttributePath.dump(activity, dumpedAttributeValuationSets, bufferedWriter)
+    fun dump(activity: String, dumpedAttributeValuationSets: ArrayList<Pair<String, UUID>>, bufferedWriter: BufferedWriter,capturedAttributePaths: List<AttributePath>) {
+        dumpedAttributeValuationSets.add(Pair(activity,attributePathId))
+        if (parentAttributePathId!= emptyUUID && !dumpedAttributeValuationSets.contains(Pair(activity,parentAttributePathId))) {
+            val parentAttributePath = allAttributePaths.get(activity)!!.get(parentAttributePathId)!!
+            parentAttributePath.dump(activity, dumpedAttributeValuationSets, bufferedWriter,capturedAttributePaths)
         }
         bufferedWriter.newLine()
         bufferedWriter.write("$activity;")
         bufferedWriter.write(dump())
-        if (childAttributePaths!=null) {
-            childAttributePaths.forEach {
-                if (!dumpedAttributeValuationSets.contains(Pair(it.attributePathId,activity))) {
-                    it.dump(activity,dumpedAttributeValuationSets,bufferedWriter)
+        if(capturedAttributePaths.contains(this)) {
+            bufferedWriter.write(";TRUE")
+        } else {
+            bufferedWriter.write(";FALSE")
+        }
+        if (childAttributePathIds.isNotEmpty()) {
+            childAttributePathIds.forEach {
+                if (!dumpedAttributeValuationSets.contains(Pair(activity,it))) {
+                    val childAttributePath = allAttributePaths.get(activity)!!.get(it)!!
+                    childAttributePath.dump(activity,dumpedAttributeValuationSets,bufferedWriter,capturedAttributePaths)
                 }
             }
         }
@@ -95,7 +120,16 @@ data class AttributePath (
                 "${localAttributes.get(AttributeType.selected)};${localAttributes.get(AttributeType.checked)!=null};${localAttributes.get(AttributeType.isInputField)};" +
                 "${localAttributes.get(AttributeType.clickable)};${localAttributes.get(AttributeType.longClickable)};${localAttributes.get(AttributeType.scrollable)};" +
                 "${localAttributes.get(AttributeType.checked)};${localAttributes.get(AttributeType.isLeaf)};" +
-                "${parentAttributePath?.attributePathId};${childAttributePaths?.map { it.attributePathId }};"
+                "${if(parentAttributePathId== emptyUUID)"null" else parentAttributePathId};\"${childAttributePathIds.joinToString(";")}\""
     }
 
+    companion object {
+        val allAttributePaths = HashMap<String, HashMap<UUID, AttributePath>>()
+
+        fun getAttributePathById(uuid: UUID, activity: String): AttributePath {
+            if (!allAttributePaths.get(activity)!!.containsKey(uuid))
+                throw Exception("Cannot find attributePath $uuid")
+            return allAttributePaths.get(activity)!!.get(uuid)!!
+        }
+    }
 }

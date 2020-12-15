@@ -2,7 +2,7 @@ package org.droidmate.exploration.modelFeatures.autaut.DSTG
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
-import org.droidmate.exploration.modelFeatures.autaut.WTG.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.WTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.autaut.WTG.*
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Activity
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
@@ -13,6 +13,7 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.toUUID
 import java.io.File
 import java.nio.file.Path
 import java.util.*
@@ -22,12 +23,12 @@ import kotlin.collections.HashSet
 
 open class AbstractState(
         val activity: String,
-        val attributeValuationSets: ArrayList<AttributeValuationSet> = ArrayList(),
+        val attributeValuationSets: List<AttributeValuationSet> = emptyList(),
         val guiStates: ArrayList<State<*>> = ArrayList(),
         var window: Window,
-        val staticWidgetMapping: HashMap<AttributeValuationSet, ArrayList<StaticWidget>> = HashMap(),
+        val EWTGWidgetMapping: HashMap<AttributeValuationSet, ArrayList<EWTGWidget>> = HashMap(),
         val abstractTransitions: ArrayList<AbstractTransition> = ArrayList(),
-        val inputMapping: HashMap<AbstractAction, ArrayList<Input>> = HashMap(),
+        val inputMappings: HashMap<AbstractAction, ArrayList<Input>> = HashMap(),
         val isHomeScreen: Boolean = false,
         val isOpeningKeyboard: Boolean = false,
         val isRequestRuntimePermissionDialogBox: Boolean = false,
@@ -35,12 +36,14 @@ open class AbstractState(
         val isOutOfApplication: Boolean = false,
         var hasOptionsMenu: Boolean = true,
         var rotation: Rotation,
-        var internet: InternetStatus
+        var internet: InternetStatus,
+        var loaded: Boolean = false
 ) {
     val actionCount = HashMap<AbstractAction, Int>()
     val targetActions = HashSet<AbstractAction>()
 
     val abstractStateId: UUID by lazy { lazyIds.value }
+
 
     init {
 
@@ -48,11 +51,33 @@ open class AbstractState(
         attributeValuationSets.forEach {
             it.captured = true
         }
+
+        if (!AbstractStateManager.instance.attrValSetsFrequency.containsKey(window)) {
+            AbstractStateManager.instance.attrValSetsFrequency.put(window, HashMap())
+        }
+        val widgetGroupFrequency = AbstractStateManager.instance.attrValSetsFrequency[window]!!
+        attributeValuationSets.forEach {
+            if (!widgetGroupFrequency.containsKey(it)) {
+                widgetGroupFrequency.put(it, 1)
+            } else {
+                widgetGroupFrequency[it] = widgetGroupFrequency[it]!! + 1
+            }
+        }
+    }
+
+    protected open val lazyIds: Lazy<UUID> =
+            lazy {
+                computeAbstractStateId(attributeValuationSets,activity, rotation, internet)
+            }
+
+
+
+    fun initAction(){
         val pressBackAction = AbstractAction(
                 actionType = AbstractActionType.PRESS_BACK
         )
         actionCount.put(pressBackAction, 0)
-        if (window !is OptionsMenu && window !is Dialog) {
+        if (window !is OptionsMenu && window !is Dialog && !this.isOpeningKeyboard) {
             val pressMenuAction = AbstractAction(
                     actionType = AbstractActionType.PRESS_MENU
             )
@@ -82,46 +107,20 @@ open class AbstractState(
             )
             actionCount.put(closeKeyboardAction, 0)
         }
-        if (!AbstractStateManager.instance.attrValSetsFrequency.containsKey(window)) {
-            AbstractStateManager.instance.attrValSetsFrequency.put(window, HashMap())
-        }
-        val widgetGroupFrequency = AbstractStateManager.instance.attrValSetsFrequency[window]!!
         attributeValuationSets.forEach {
-            if (!widgetGroupFrequency.containsKey(it)) {
-                widgetGroupFrequency.put(it, 1)
-            } else {
-                widgetGroupFrequency[it] = widgetGroupFrequency[it]!! + 1
-            }
+            it.initActions()
         }
     }
 
-    protected open val lazyIds: Lazy<UUID> =
-            lazy {
-                attributeValuationSets.fold(emptyUUID) { id, avs ->
-                    /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
-                    // however different selectable auto-completion proposes are only 'rendered'
-                    // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/
-
-                    //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
-                    id + avs.avsId
-
-                }
-            }
-
-    internal operator fun UUID.plus(uuid: UUID?): UUID {
-        return if (uuid == null) this
-        else UUID(this.mostSignificantBits + uuid.mostSignificantBits, this.leastSignificantBits + uuid.mostSignificantBits)
-    }
-
+    @Suppress
     fun addAttributeValuationSet(attributeValuationSet: AttributeValuationSet) {
         if (attributeValuationSets.contains(attributeValuationSet)) {
             return
         }
-        attributeValuationSets.add(attributeValuationSet)
+        //attributeValuationSets.add(attributeValuationSet)
         attributeValuationSet.captured = true
         val attrValSetsFrequency = AbstractStateManager.instance.attrValSetsFrequency[window]!!
         attrValSetsFrequency[attributeValuationSet] = 1
-
     }
 
     fun addAction(action: AbstractAction) {
@@ -167,7 +166,7 @@ open class AbstractState(
         //use hashmap to optimize the performance of finding widget
         val widget_WidgetGroupMap = HashMap<Widget, AttributeValuationSet>()
         if (currentState != null) {
-            Helper.getVisibleWidgetsForAbstraction(currentState, AbstractStateManager.instance.autautMF.packageName).forEach { w ->
+            Helper.getVisibleWidgetsForAbstraction(currentState).forEach { w ->
                 val wg = this.getAttributeValuationSet(w, currentState)
                 if (wg != null)
                     widget_WidgetGroupMap.put(w, wg)
@@ -367,6 +366,10 @@ open class AbstractState(
             else
                 localScore += actionScore
         }
+        localScore += this.getActionCountMap().map { it.value }.sum()
+        this.guiStates.forEach {
+            localScore += autautMF.getUnexploredWidget(it).size
+        }
 
         val actions = getAvailableActions()
         var potentialActionCount = 0.0
@@ -416,6 +419,25 @@ open class AbstractState(
 
     fun belongToAUT(): Boolean {
         return !this.isHomeScreen && !this.isOutOfApplication && !this.isRequestRuntimePermissionDialogBox && !this.isAppHasStoppedDialogBox
+    }
+
+    companion object {
+        fun computeAbstractStateId(attributeValuationSets: List<AttributeValuationSet>, activity: String, rotation: Rotation, internet: InternetStatus): UUID {
+            return attributeValuationSets.sortedBy { it.avsId }.fold(emptyUUID) { id, avs ->
+                /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
+                // however different selectable auto-completion proposes are only 'rendered'
+                // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/
+
+                //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
+                id + avs.avsId
+            }.plus(listOf<String>(rotation.toString(),internet.toString(),activity).joinToString("<;>").toUUID())
+        }
+
+        internal operator fun UUID.plus(uuid: UUID?): UUID {
+            return if (uuid == null) this
+            else UUID(this.mostSignificantBits + uuid.mostSignificantBits, this.leastSignificantBits + uuid.mostSignificantBits)
+        }
+
     }
 }
 

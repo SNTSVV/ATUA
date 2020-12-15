@@ -4,7 +4,7 @@ import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.autaut.WTG.Input
-import org.droidmate.exploration.modelFeatures.autaut.WTG.StaticWidget
+import org.droidmate.exploration.modelFeatures.autaut.WTG.EWTGWidget
 import org.droidmate.explorationModel.emptyUUID
 import java.io.File
 import java.nio.file.Path
@@ -14,9 +14,9 @@ abstract class Window(val classType: String,
                       val fromModel: Boolean)
 {
     var activityClass = ""
-    val widgets = arrayListOf<StaticWidget>()
-    val events = arrayListOf<Input>()
-    val widgetState = HashMap<StaticWidget, Boolean>()
+    val widgets = arrayListOf<EWTGWidget>()
+    val inputs = arrayListOf<Input>()
+    val widgetState = HashMap<EWTGWidget, Boolean>()
     val mappedStates = arrayListOf<AbstractState>()
     var portraitDimension: Rectangle = Rectangle.empty()
     var landscapeDimension: Rectangle = Rectangle.empty()
@@ -24,13 +24,13 @@ abstract class Window(val classType: String,
     var landscapeKeyboardDimension: Rectangle = Rectangle.empty()
 
     open fun isStatic() = false
-    open fun addWidget(staticWidget: StaticWidget): StaticWidget {
-        if (widgets.contains(staticWidget))
-            return staticWidget
-        widgets.add(staticWidget)
-        staticWidget.activity = classType
-        staticWidget.wtgNode = this
-        return staticWidget
+    open fun addWidget(EWTGWidget: EWTGWidget): EWTGWidget {
+        if (widgets.contains(EWTGWidget))
+            return EWTGWidget
+        widgets.add(EWTGWidget)
+        EWTGWidget.activity = classType
+        EWTGWidget.wtgNode = this
+        return EWTGWidget
     }
 
     override fun toString(): String {
@@ -47,7 +47,7 @@ abstract class Window(val classType: String,
         }
     }
 
-    private fun getAttributeValuationSetOrNull(it: StaticWidget) =
+    private fun getAttributeValuationSetOrNull(it: EWTGWidget) =
             if (it.attributeValuationSetId == emptyUUID)
                 null
             else
@@ -56,7 +56,7 @@ abstract class Window(val classType: String,
     fun dumpEvents(windowsFolder: Path,autAutMF: AutAutMF) {
         File(windowsFolder.resolve("Events_$windowId.csv").toUri()).bufferedWriter().use { all ->
             all.write(eventHeader())
-            events.forEach {
+            inputs.forEach {
                 all.newLine()
                 all.write("${it.eventType};${it.widget?.widgetId};${it.sourceWindow.windowId};${it.createdAtRuntime};" +
                         "\"${it.eventHandlers.map { autAutMF.statementMF!!.getMethodName(it) }.joinToString(";")}\";" +

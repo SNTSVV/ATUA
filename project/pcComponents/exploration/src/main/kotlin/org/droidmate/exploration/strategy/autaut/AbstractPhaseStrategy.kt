@@ -36,10 +36,7 @@ abstract class AbstractPhaseStrategy(
     abstract fun getPathsToTargetWindows(currentState: State<*>, includePressbackEvent: Boolean): List<TransitionPath>
 
     fun hasUnexploreWidgets(currentState: State<*>): Boolean {
-        return Helper.getVisibleInteractableWidgets(currentState)
-                .filterNot { it.isInputField || it.checked.isEnabled()  }.any {
-                    runBlocking { autAutTestingStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
-                }
+        return autautMF.getUnexploredWidget(currentState).isNotEmpty()
     }
     open fun getPathsToWindowToExplore(currentState: State<*>, targetWindow: Window, usingPressback: Boolean, includeReset: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
@@ -56,7 +53,8 @@ abstract class AbstractPhaseStrategy(
         }
         if (stateByActionCount.isEmpty()) {
             targetStates.forEach {
-                stateByActionCount.put(it,1.0)
+                if (stateByActionCount.get(it)!!>0)
+                    stateByActionCount.put(it,1.0)
             }
         }
         getPathToStates(

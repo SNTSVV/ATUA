@@ -92,7 +92,7 @@ class PathFindingHelper {
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = false,
                         includeImplicitInteraction = !forcingExplicit,
-                        includeLaunchAction = true)
+                        includeLaunchAction = includeBackEvent)
             }
             if (allPaths.isEmpty() && includeReset) {
                 // consider reset actions
@@ -114,7 +114,7 @@ class PathFindingHelper {
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = true,
                         includeImplicitInteraction = false,
-                        includeLaunchAction = true)
+                        includeLaunchAction = includeBackEvent)
             }
             if (allPaths.isEmpty() && includingWTG && !forcingExplicit) {
                 childParentMap.clear()
@@ -135,7 +135,7 @@ class PathFindingHelper {
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = false,
                         includeImplicitInteraction = !forcingExplicit,
-                        includeLaunchAction = false)
+                        includeLaunchAction = includeBackEvent)
             }
             if (allPaths.isEmpty() && includingWTG && includeReset && forcingExplicit) {
                 childParentMap.clear()
@@ -156,7 +156,7 @@ class PathFindingHelper {
                         pathCountLimitation = pathCountLimitation,
                         considerResetOrLaunchAction = includeReset,
                         includeImplicitInteraction = false,
-                        includeLaunchAction = true)
+                        includeLaunchAction = includeBackEvent)
             }
 
         }
@@ -284,19 +284,23 @@ class PathFindingHelper {
                 }
 
                 processingBackEdges.forEach { edge ->
-                    val backEvent = edge.label
+                    val backTransition = edge.label
                     val backState = edge.destination!!.data
                     val edgeCondition = graph.edgeConditions[edge]!!
-                    childParentMap.put(backState, Triple(source, backEvent,edgeCondition))
-                    if (isArrived(edge.label, backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
-                        val fullPath = createTransitionPath(autautMF, backState, root, childParentMap)
-                        if (!isDisablePath(fullPath)) {
-                            allPaths.add(fullPath)
-                            registerTransitionPath(root, backState, fullPath)
+                    childParentMap.put(backState, Triple(source, backTransition,edgeCondition))
+                    val fullGraph = createTransitionPath(autautMF, backState, root, childParentMap)
+                    if (!isDisablePath(fullGraph)) {
+                        if (isArrived(backTransition, backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
+                            allPaths.add(fullGraph)
+                            registerTransitionPath(root, backState, fullGraph)
                         }
+                        val nextWindowStack = if (backTransition.abstractAction.isLaunchOrReset()) {
+                            Stack<Window>().also { it.push(Launcher.getOrCreateNode()) }
+                        } else {
+                            createWindowStackForNext(windowStack, source, backState)
+                        }
+                        nextLevelNodes.add(Pair(first = nextWindowStack, second = backState))
                     }
-                    val nextWindowStack = createWindowStackForNext(windowStack, source, backState)
-                    nextLevelNodes.add(Pair(first = nextWindowStack, second = backState))
                 }
             }
 
@@ -317,36 +321,28 @@ class PathFindingHelper {
             forwardTransitions.groupBy { it.label.abstractAction }.forEach { action, edges ->
                 if (action.isLaunchOrReset()) {
                     possibleTransitions.addAll(edges)
-                } else if (edges.groupBy { it.destination }.size > 1) {
-                    // check if the same prev but differ destination
-                    if (edges.groupBy { it.label.prevWindow }.size > 1) {
-                        edges.groupBy { it.label.prevWindow }.forEach { prevWindow, edges ->
+                } else {
+                    val groupByDestination = edges.groupBy { it.destination }
+                    if (groupByDestination.size > 1) {
+                        val groupByPreWindow = edges.groupBy { it.label.prevWindow }
+                        groupByPreWindow.forEach { prevWindow, edges ->
                             if (prevWindow == null && includeWTG){
                                 possibleTransitions.addAll(edges)
-                            } else if (edges.groupBy { it.destination }.size > 1) {
-                                possibleTransitions.addAll(edges)
-                            } else {
-                                var count = 0
+                            } else if (prevWindow != null){
                                 edges.forEach {
                                     if (isTheSamePrevWindow(windowStack.peek(),it)) {
                                         possibleTransitions.add(it)
-                                        count++
                                     }
-                                }
-                                if (count == 0) {
-                                    possibleTransitions.addAll(edges)
                                 }
                             }
                         }
-                     } else {
+                    }else {
+                        // different prevWindow but the same destination
                         possibleTransitions.addAll(edges)
                     }
-                } else {
-                    // different prevWindow but the same destination
-                    possibleTransitions.addAll(edges)
                 }
-
             }
+
             val processedTransition = ArrayList<Edge<AbstractState, AbstractTransition>>()
             possibleTransitions.groupBy({ it.label.abstractAction }, { it })
                     .forEach { interaction, u ->
@@ -361,6 +357,10 @@ class PathFindingHelper {
                                     processedTransition.addAll(implicitTransitions)
                                 else if (includeWTG)
                                     processedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
+                                else if (depth == 0) {
+                                    val loadedAbstractTransitions = implicitTransitions.filter { it.label.dest.loaded }
+                                    processedTransition.addAll(loadedAbstractTransitions)
+                                }
                             }
                             processedTransition.addAll(reliableTransition)
                         }
@@ -582,23 +582,47 @@ class PathFindingHelper {
 
         fun isDisablePath(path: TransitionPath): Boolean {
             disablePaths.forEach {
-                var matched = false
-                if (path.edges().any { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }) {
-                    matched = path.edges().filterNot { it.label.abstractAction.actionType == AbstractActionType.RESET_APP }.containsAll(it)
-                } else
-                    matched = path.edges().containsAll(it)
-                if (matched)
-                    return true
-            }
-            disableEdges.forEach {
-                var matched = false
-                matched = path.edges().contains(it)
+                var matched = samePrefix(it, path)
                 if (matched)
                     return true
             }
             /*if (path.edges().any { disableEdges.contains(it) }) {
                 return true
             }*/
+            return false
+        }
+
+        private fun samePrefix(edges: List<Edge<AbstractState, AbstractTransition>>, path: TransitionPath): Boolean {
+            val iterator = edges.iterator()
+            var pathNode: AbstractState? = path.root.data
+            //find the node after the RESET action
+            while (pathNode!=null) {
+                val edge = path.edges(pathNode).firstOrNull()
+                if (edge != null) {
+                    if (edge.label.abstractAction.actionType == AbstractActionType.RESET_APP) {
+                        break
+                    }
+                    pathNode = edge.destination?.data
+                } else {
+                    pathNode = null
+                }
+            }
+            if (pathNode != null) {
+                pathNode = path.edges(pathNode).single().destination?.data
+            } else {
+                pathNode = path.root.data
+            }
+            while (iterator.hasNext() && pathNode != null) {
+                val edge1 = iterator.next()
+                val edge2 = path.edges(pathNode).firstOrNull()
+                if (edge2 == null)
+                    return false
+                if (edge1 != edge2)
+                    return false
+                pathNode = edge2.destination?.data
+            }
+            if (!iterator.hasNext())
+                return true
             return false
         }
     }

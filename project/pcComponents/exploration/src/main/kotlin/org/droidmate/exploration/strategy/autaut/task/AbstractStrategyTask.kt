@@ -45,7 +45,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         return widgets
                 .let { filteredCandidates ->
                     // for each widget in this state the number of interactions
-                    counter.numExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    autautMF.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
                             .groupBy { it.key.packageName }.flatMap { (pkgName, countEntry) ->
                                 if (pkgName != autautStrategy.eContext.apk.packageName) {
                                     val pkgActions = counter.pkgCount(pkgName)
@@ -355,7 +355,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
                 "SwipeRight" -> chosenWidget.swipeRight()
                  "SwipeTillEnd" -> doDeepSwipeUp(chosenWidget,currentState).also {
                      if (abstractAction!=null)
-                        currentAbstractState.increaseActionCount(abstractAction)
+                        currentAbstractState.increaseActionCount(abstractAction,true)
                  }
                 else -> {
                     if (data.isNotBlank()) {
@@ -466,7 +466,12 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             return randomAction ?: ExplorationAction.pressBack().also { log.info("Action null -> PressBack") }
         } else {
             ExplorationTrace.widgetTargets.clear()
-            return autautStrategy.eContext.navigateTo(chosenWidget, { it.click() }) ?: ExplorationAction.pressBack()
+            if (!chosenWidget.hasClickableDescendant && chosenWidget.selected.isEnabled()) {
+                return chosenWidget.longClick()
+            } else {
+                return ExplorationAction.pressBack()
+            }
+
         }
     }
 
@@ -494,7 +499,8 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
         }
         ExplorationTrace.widgetTargets.clear()
-        ExplorationTrace.widgetTargets.add(chosenWidget)
+        if (actionList.isNotEmpty())
+            ExplorationTrace.widgetTargets.add(chosenWidget)
         return actionList
     }
 

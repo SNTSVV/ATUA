@@ -119,6 +119,9 @@ open class GoToAnotherWindow constructor(
                 if (expectedNextAbState == currentPath!!.getFinalDestination()) {
                     return true
                 }
+                if (destWindow == null && autautMF.getUnexploredWidget(currentState).isNotEmpty()) {
+                    return true
+                }
                 return false
             }
         } else {
@@ -195,9 +198,9 @@ open class GoToAnotherWindow constructor(
                  reached = true
                  break
              }
-             val staticWidget = expectedAbstractState.staticWidgetMapping[widget]
+             val staticWidget = expectedAbstractState.EWTGWidgetMapping[widget]
              if (staticWidget != null) {
-                 val availableWidgets = currentAbState.staticWidgetMapping.filter { it.value.intersect(staticWidget).isNotEmpty() }
+                 val availableWidgets = currentAbState.EWTGWidgetMapping.filter { it.value.intersect(staticWidget).isNotEmpty() }
                  if (availableWidgets.isNotEmpty()) {
                      reached = true
                      break
@@ -233,7 +236,7 @@ open class GoToAnotherWindow constructor(
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
-        reset()
+         reset()
         initPossiblePaths(currentState)
         if (possiblePaths.size > 0) {
             return true
@@ -296,10 +299,10 @@ open class GoToAnotherWindow constructor(
             val currentAbstractState = autautMF.getAbstractState(currentState)!!
             val widgets = autautMF.getRuntimeWidgets(widgetGroup,currentAbstractState ,currentState)
             if (widgets.isEmpty()) {
-                val staticWidget = prevAbState!!.staticWidgetMapping[widgetGroup]
+                val staticWidget = prevAbState!!.EWTGWidgetMapping[widgetGroup]
                 if (staticWidget == null)
                     return emptyList()
-                val correspondentWidgetGroups = currentAbstractState.staticWidgetMapping.filter { it.value.intersect(staticWidget).isNotEmpty() }
+                val correspondentWidgetGroups = currentAbstractState.EWTGWidgetMapping.filter { it.value.intersect(staticWidget).isNotEmpty() }
                 return correspondentWidgetGroups.map { autautMF.getRuntimeWidgets(it.key,currentAbstractState,currentState) }.flatten()
             }
             return widgets
@@ -402,7 +405,7 @@ open class GoToAnotherWindow constructor(
                 val candidates = runBlocking { getCandidates(widgets) }
                 val chosenWidget = candidates[random.nextInt(candidates.size)]
                 val actionName = currentEdge!!.label.abstractAction.actionType
-                val actionData = if (currentEdge!!.label.data != null || currentEdge!!.label.data != "") {
+                val actionData = if (currentEdge!!.label.data != null && currentEdge!!.label.data != "") {
                     currentEdge!!.label.data
                 } else {
                     currentEdge!!.label.abstractAction.extra

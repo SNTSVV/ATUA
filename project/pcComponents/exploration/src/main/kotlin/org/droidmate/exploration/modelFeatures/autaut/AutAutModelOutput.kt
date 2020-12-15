@@ -24,7 +24,7 @@ class AutAutModelOutput {
             AutAutMF.log.info("Dumping abstract states...")
             AbstractStateManager.instance.dump(dstgFolder)
             AutAutMF.log.info("Dumping abstract states transition graph...")
-            File(config.baseDir.resolve("DSTG.csv").toUri()).bufferedWriter().use { all ->
+            File(dstgFolder.resolve("DSTG.csv").toUri()).bufferedWriter().use { all ->
                 autautMF.abstractTransitionGraph.dump(autautMF.statementMF!!, all)
             }
         }
@@ -32,7 +32,7 @@ class AutAutModelOutput {
         private fun produceWindowTransition(config:ModelConfig, autautMF: AutAutMF) {
             val outputFile = config.baseDir.resolve("TargetInputs.txt")
             val sb = StringBuilder()
-            autautMF.allTargetStaticEvents.forEach { event ->
+            autautMF.allTargetInputs.forEach { event ->
                 sb.appendln("*")
                 sb.appendln(event.toString())
                 event.coverage.toSortedMap().forEach { tms, c ->

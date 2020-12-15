@@ -120,22 +120,28 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
             val newModifiedMethod = HashSet<String>()
             readStatements
                     .forEach { statement ->
+                        //goto [?= staticinvoke <org.droidmate.runtime.Runtime: void statementPoint(java.lang.String,java.lang.String,int)>(\"$z0 = interfaceinvoke $r5.<java.util.Iterator: boolean hasNext()>() methodId=03e25164-164b-4836-9ea3-6ea4cb01d87d uuid=20986538-c7d0-4b28-8e3b-959a1affcbf9\", \"/data/local/tmp/coverage_port.tmp\", 0)] methodId=03e25164-164b-4836-9ea3-6ea4cb01d87d uuid=1477a349-7f31-45c7-8597-976aec10e111"
                         val timestamp = statement[0]
                         val tms = dateFormat.parse(timestamp)
                         //NGO
-                        val parts = statement[1].toString().split(" uuid=".toRegex(), 2).toTypedArray()
-                        val statementId = parts.last()
+                        val uuidIndex = statement[1].toString().lastIndexOf(" uuid=")
+                        //val parts = statement[1].toString().split(" uuid=".toRegex()).toTypedArray()
+                        val statementId = statement[1].toString().substring(uuidIndex+" uuid=".length)
+
                         recentExecutedStatements.add(statementId)
                         var found = executedStatementsMap.containsKey(statementId)
                         if (!found /*&& instrumentationMap.containsKey(id)*/) {
                             executedStatementsMap[statementId] = tms
                             newExecutedStatements.add(statementId)
                         }
-                        val parts2 = parts[0].split(" methodId=".toRegex(),2)
-                        if (parts2.size > 1)
+                        //val parts2 = parts[0].split(" methodId=".toRegex())
+                        val fullStatement = statement[1].toString().substring(0,uuidIndex)
+                        if (/*parts2.size > 1*/ true)
                         {
                             // val l = "9946a686-9ef6-494f-b893-ac8b78efb667"
-                            val methodId = parts2.last()
+                            val methodIdIndex = fullStatement.lastIndexOf(" methodId=")
+                            //val methodId = parts2.last()
+                            val methodId = fullStatement.substring(methodIdIndex+" methodId=".length)
                             // Add the statement if it wasn't executed before
                             recentExecutedMethods.add(methodId)
                             found = executedMethodsMap.containsKey(methodId)
@@ -296,11 +302,14 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                 .forEach { key ->
                     val keyId = key.toLong()
                     val statement = jMap[key]
-                    val parts = statement.toString().split(" uuid=".toRegex(), 2).toTypedArray()
+                    val parts = statement.toString().split(" uuid=".toRegex()).toTypedArray()
                     val uuid = parts.last()
                     assert(uuid.length == l, { "Invalid UUID $uuid $statement" })
                     statementInstrumentationMap[uuid] = statement.toString()
-                    val parts2 = parts[0].split(" methodId=".toRegex(),2)
+                    val uuidIndex = statement.toString().lastIndexOf(" uuid=")
+                    //val parts = statement[1].toString().split(" uuid=".toRegex()).toTypedArray()
+                    val fullStatement = statement.toString().substring(0,uuidIndex)
+                    val parts2 = fullStatement.split(" methodId=".toRegex())
                     if (parts2.size > 1)
                     {
                         // val l = "9946a686-9ef6-494f-b893-ac8b78efb667"

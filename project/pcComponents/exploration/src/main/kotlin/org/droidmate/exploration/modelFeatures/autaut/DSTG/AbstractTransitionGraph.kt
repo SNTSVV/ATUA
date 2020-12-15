@@ -62,10 +62,14 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
     
     fun dump(statementCoverageMF: StatementCoverageMF, bufferedWriter: BufferedWriter) {
         bufferedWriter.write(header())
-        val fromResetState = AbstractStateManager.instance.launchAbstractStates.get(AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH)!!
-        val fromResetAbstractState = AbstractStateManager.instance.getAbstractState(fromResetState)!!
+        //val fromResetState = AbstractStateManager.instance.launchAbstractStates.get(AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH)!!
+        //val fromResetAbstractState = AbstractStateManager.instance.getAbstractState(fromResetState)!!
         val dumpedSourceStates = ArrayList<AbstractState>()
-        recursiveDump(fromResetAbstractState,statementCoverageMF,dumpedSourceStates, bufferedWriter)
+        this.getVertices().forEach {
+            recursiveDump(it.data,statementCoverageMF,dumpedSourceStates, bufferedWriter)
+        }
+
+
                 
     }
 
@@ -85,7 +89,7 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.destination!!.data.abstractStateId};" +
                     "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationSet?.avsId};${edge.label.data};" +
-                    "${edge.label.prevWindow};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
+                    "${edge.label.prevWindow?.windowId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
                     "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\""
             bufferedWriter.write(abstractTransitionInfo)
 

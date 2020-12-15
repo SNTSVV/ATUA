@@ -12,29 +12,24 @@ class LocalReducerLV1: AbstractLocalReducer() {
         reducedAttributes.put(AttributeType.className,guiWidget.className)
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())
-        reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
         reducedAttributes.put(AttributeType.checkable,guiWidget.checked.isEnabled().toString())
         reducedAttributes.put(AttributeType.isInputField, guiWidget.isInputField.toString())
-        if (guiWidget.className != "android.webkit.WebView" ) {
+
+        if (guiWidget.className != "android.webkit.WebView") {
             reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
             reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
-            if (Helper.isScrollableWidget(guiWidget)) {
-                reducedAttributes.put(AttributeType.scrollable, guiWidget.scrollable.toString())
-                reducedAttributes.put(AttributeType.scrollDirection, Helper.getViewsChildrenLayout(guiWidget,guiState).toString())
-            }
-
-
-        } else if(guiWidget.resourceId.isNotBlank()) {
+            reducedAttributes.put(AttributeType.scrollable, Helper.isScrollableWidget(guiWidget).toString())
+        } else {
             if (Helper.haveClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.clickable, true.toString())
             }
             if (Helper.haveLongClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.longClickable, true.toString())
             }
-            if (Helper.haveScrollableChild(guiState.widgets,guiWidget)) {
-                reducedAttributes.put(AttributeType.scrollable, true.toString())
-            }
+            reducedAttributes.put(AttributeType.scrollable, Helper.haveScrollableChild(guiState.widgets,guiWidget).toString())
         }
+        if (guiWidget.selected.isEnabled())
+            reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
         return reducedAttributes
     }
 }

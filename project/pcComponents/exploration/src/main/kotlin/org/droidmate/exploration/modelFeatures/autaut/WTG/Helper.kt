@@ -4,6 +4,7 @@ import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AttributeValuationSet
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
@@ -18,8 +19,8 @@ class Helper {
             var shouldMerge = false
             var containsOptionMenuWidgets = false
             var containsActivityWidgets = false
-            var optionsMenuWidgets = ArrayList<StaticWidget>()
-            var activityWidgets = ArrayList<StaticWidget>()
+            var optionsMenuWidgets = ArrayList<EWTGWidget>()
+            var activityWidgets = ArrayList<EWTGWidget>()
             newState.widgets.filter { widget_AttributeValuationSetHashMap.containsKey(it) }.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
@@ -71,13 +72,13 @@ class Helper {
             return false
         }
 
-        fun calculateMatchScoreForEachNode(guiState: State<*>, allPossibleNodes: List<Window>, appName: String,
+        fun calculateMatchScoreForEachNode(guiState: State<*>, allPossibleNodes: List<Window>, appName: String, activity: String, widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>,
                                            autAutMF: AutAutMF): HashMap<Window, Double> {
-            val matchWidgets = HashMap<Window, HashMap<Widget, HashSet<StaticWidget>>>()
+            val matchWidgets = HashMap<Window, HashMap<Widget, HashSet<EWTGWidget>>>()
             val missWidgets = HashMap<Window, HashSet<Widget>>()
             val propertyChangedWidgets = HashMap<Window, HashSet<Widget>>()
             val visibleWidgets = ArrayList<Widget>()
-            visibleWidgets.addAll(getVisibleWidgetsForAbstraction(guiState, autAutMF.packageName))
+            visibleWidgets.addAll(getVisibleWidgetsForAbstraction(guiState))
             if (visibleWidgets.isEmpty()) {
                 visibleWidgets.addAll(guiState.widgets.filterNot { it.isVisible && it.isKeyboard })
             }
@@ -89,9 +90,12 @@ class Helper {
             visibleWidgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    if (autAutMF.getAbstractState(guiState) == null)
+                    /*  if (autAutMF.getAbstractState(guiState) == null)
+                          continue*/
+                    //val attributeValuationSet = autAutMF.getAbstractState(guiState)!!.getAttributeValuationSet(widget, guiState)!!
+                    if (!widget_AttributeValuationSetHashMap.containsKey(widget))
                         continue
-                    val attributeValuationSet = autAutMF.getAbstractState(guiState)!!.getAttributeValuationSet(widget, guiState)!!
+                    val attributeValuationSet = widget_AttributeValuationSetHashMap.get(widget)!!
                     allPossibleNodes.forEach {
                         val matchingWidget = getStaticWidgets(widget, guiState, attributeValuationSet, it, false, autAutMF)
                         if (matchingWidget.isNotEmpty()) {
@@ -126,12 +130,12 @@ class Helper {
             return scores
         }
 
-        fun getVisibleInteractableWidgets(newState: State<*>): List<Widget> {
+        fun getVisibleInteractableWidgetsWithoutKeyboard(newState: State<*>): List<Widget> {
             val result = getVisibleWidgets(newState).filter {
-                isInteractiveWidget(it)
+                isInteractiveWidgetButNotKeyboard(it)
             }
             if (result.isEmpty()) {
-                return newState.widgets.filter { isInteractiveWidget(it) }
+                return newState.widgets.filter { isInteractiveWidgetButNotKeyboard(it) }
             }
             return result
         }
@@ -142,36 +146,22 @@ class Helper {
         private fun isVisibleWidget(it: Widget) =
                 it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty()) && !it.isKeyboard
 
-        fun getVisibleWidgetsForAbstraction(state: State<*>, packageName: String): List<Widget> {
-            val result = state.widgets.filter {
-                it.enabled
-                        && it.isVisible
-                        && it.visibleAreas.isNotEmpty()
-                        && !it.isKeyboard
-                        //&& !hasParentWithType(it, state, "WebView")
-                        && isInteractiveWidget(it)
-                //&& it.packageName == packageName
-            }
-            if (result.isEmpty()) {
-                return state.widgets.filter {
-                    !it.isKeyboard && isInteractiveWidget(it)
-                }
-            }
+        fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
+            val result = getVisibleInteractableWidgetsWithoutKeyboard(state)
             return result
         }
 
         fun getInputFields(state: State<*>) =
                 Helper.getVisibleWidgets(state).filter { it.isInputField || it.checked.isEnabled() }
 
-        fun  getStaticWidgets(originalWidget: Widget, state: State<*>, attributeValuationSet: AttributeValuationSet, wtgNode: Window, updateModel: Boolean,
-                              autAutMF: AutAutMF): List<StaticWidget> {
-            var matchedStaticWidgets: ArrayList<StaticWidget> = ArrayList()
-            val appName = autAutMF.getAppName()
+        fun getStaticWidgets(originalWidget: Widget, state: State<*>, attributeValuationSet: AttributeValuationSet, wtgNode: Window, updateModel: Boolean,
+                             autAutMF: AutAutMF): List<EWTGWidget> {
+            var matchedEWTGWidgets: ArrayList<EWTGWidget> = ArrayList()
             var widget = originalWidget
             if (widget.resourceId.isNotBlank()) {
                 val unqualifiedResourceId = getUnqualifiedResourceId(widget)
 
-                matchedStaticWidgets.addAll(wtgNode.widgets.filter {
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter {
                     if (widget.resourceId == "android:id/title" || widget.resourceId == "android:id/alertTitle") {
                         it.resourceIdName == unqualifiedResourceId && it.text == widget.text
                     } else {
@@ -179,19 +169,19 @@ class Helper {
                     }
                 })
             }
-            if (matchedStaticWidgets.isEmpty() && widget.contentDesc.isNotBlank()) {
-                matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
+            if (matchedEWTGWidgets.isEmpty() && widget.contentDesc.isNotBlank()) {
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { w ->
                     widget.contentDesc == w.contentDesc
                 })
             }
-            if (matchedStaticWidgets.isEmpty() && !widget.isInputField && widget.text.isNotBlank()) {
-                matchedStaticWidgets.addAll(wtgNode.widgets.filter { w ->
+            if (matchedEWTGWidgets.isEmpty() && !widget.isInputField && widget.text.isNotBlank()) {
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { w ->
                     w.possibleTexts.contains(widget.text)
                 })
             }
-            if (matchedStaticWidgets.isEmpty()) {
-                matchedStaticWidgets.addAll(wtgNode.widgets.filter {it.attributeValuationSetId!= emptyUUID }. filter { w ->
-                    val attributeValuationSet_w = AttributeValuationSet.allAttributeValuationSet.get(w.attributeValuationSetId)
+            if (matchedEWTGWidgets.isEmpty()) {
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { it.attributeValuationSetId != emptyUUID }.filter { w ->
+                    val attributeValuationSet_w = AttributeValuationSet.allAttributeValuationSet[wtgNode.activityClass]!!.get(w.attributeValuationSetId)
                     if (attributeValuationSet_w != null) {
                         attributeValuationSet.isDerivedFrom(attributeValuationSet_w)
                     } else
@@ -211,20 +201,20 @@ class Helper {
 
             }*/
             if (updateModel) {
-                matchedStaticWidgets.forEach {
+                matchedEWTGWidgets.forEach {
                     if (originalWidget.isInputField && originalWidget.text.isNotBlank()) {
                         it.textInputHistory.add(originalWidget.text)
                     }
                 }
-                if (matchedStaticWidgets.isEmpty()) {
+                if (matchedEWTGWidgets.isEmpty()) {
                     if (originalWidget.resourceId == "android:id/content") {
-                        return matchedStaticWidgets
+                        return matchedEWTGWidgets
                     }
                     val attributeValuationSetId = if (getUnqualifiedResourceId(originalWidget.resourceId).isBlank())
                         emptyUUID
                     else
                         attributeValuationSet.avsId
-                    val newWidget = StaticWidget.getOrCreateStaticWidget(
+                    val newWidget = EWTGWidget.getOrCreateStaticWidget(
                             widgetId = attributeValuationSet.avsId.toString(),
                             resourceIdName = getUnqualifiedResourceId(originalWidget.resourceId),
                             className = originalWidget.className,
@@ -239,29 +229,27 @@ class Helper {
                         newWidget.text = originalWidget.text
                     }
                     wtgNode.addWidget(newWidget)
-                    matchedStaticWidgets.add(newWidget)
+                    matchedEWTGWidgets.add(newWidget)
 
                 }
             }
-            return matchedStaticWidgets
+            return matchedEWTGWidgets
         }
-
-
 
 
         internal var changeRatioCriteria: Double = 0.05
 
-        fun isInteractiveWidget(widget: Widget): Boolean =
-                widget.enabled && ( widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || isScrollableWidget(widget) || (!widget.hasClickableDescendant && widget.selected.isEnabled() && widget.selected == true) )
+        fun isInteractiveWidgetButNotKeyboard(widget: Widget): Boolean =
+                !widget.isKeyboard && (widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || isScrollableWidget(widget) || (!widget.hasClickableDescendant && widget.selected.isEnabled()))
 
-         fun isScrollableWidget(widget: Widget): Boolean {
+        fun isScrollableWidget(widget: Widget): Boolean {
             if (widget.visibleBounds.width > 200 && widget.visibleBounds.height > 200) {
                 return widget.scrollable
             } else
                 return false
         }
 
-        fun getViewsChildrenLayout(widget: Widget,state: State<*>): DescendantLayoutDirection {
+        fun getViewsChildrenLayout(widget: Widget, state: State<*>): DescendantLayoutDirection {
             val childWidgets = state.widgets.filter { it.isVisible && widget.childHashes.contains(it.idHash) }
             if (childWidgets.size == 1) {
                 return DescendantLayoutDirection.UNKNOWN
@@ -275,10 +263,10 @@ class Helper {
             if (avgDistantX < 200 && avgDistantY < 200) {
                 return DescendantLayoutDirection.UNKNOWN
             }
-            if (avgDistantX >= avgDistantY*0.9 && avgDistantX <= avgDistantY*1.1) {
+            if (avgDistantX >= avgDistantY * 0.9 && avgDistantX <= avgDistantY * 1.1) {
                 return DescendantLayoutDirection.UNKNOWN
             }
-            if (avgDistantX > avgDistantY*0.9) {
+            if (avgDistantX > avgDistantY * 0.9) {
                 return DescendantLayoutDirection.HORIZONTAL
             }
             return DescendantLayoutDirection.VERTICAL
@@ -351,7 +339,7 @@ class Helper {
                 }
             }
             allChildren.forEach {
-                if (haveClickableChild(allWidgets,it)) {
+                if (haveClickableChild(allWidgets, it)) {
                     return true
                 }
             }
@@ -361,7 +349,7 @@ class Helper {
         fun haveLongClickableChild(allWidgets: List<Widget>, parent: Widget): Boolean {
             val allChildren = ArrayList<Widget>()
             parent.childHashes.forEach {
-                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it && w.isVisible}
+                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it && w.isVisible }
                 if (childWidget != null) {
                     allChildren.add(childWidget)
                     if (childWidget.longClickable) {
@@ -370,7 +358,7 @@ class Helper {
                 }
             }
             allChildren.forEach {
-                if (haveClickableChild(allWidgets,it)) {
+                if (haveClickableChild(allWidgets, it)) {
                     return true
                 }
             }
@@ -389,7 +377,7 @@ class Helper {
                 }
             }
             allChildren.forEach {
-                if (haveClickableChild(allWidgets,it)) {
+                if (haveClickableChild(allWidgets, it)) {
                     return true
                 }
             }
@@ -399,9 +387,9 @@ class Helper {
         fun getAllInteractiveChild(allWidgets: List<Widget>, parent: Widget): List<Widget> {
             val interactiveWidgets = arrayListOf<Widget>()
             parent.childHashes.forEach {
-                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it && w.isVisible}
+                val childWidget = allWidgets.firstOrNull { w -> w.idHash == it && w.isVisible }
                 if (childWidget != null) {
-                    if (isInteractiveWidget(childWidget) && isVisibleWidget(childWidget)) {
+                    if (isInteractiveWidgetButNotKeyboard(childWidget) && isVisibleWidget(childWidget)) {
                         interactiveWidgets.add(childWidget)
                     }
                     interactiveWidgets.addAll(getAllInteractiveChild(allWidgets, childWidget))
@@ -444,7 +432,7 @@ class Helper {
         fun computeGuiTreeDimension(guiState: State<*>): Rectangle {
             val outboundViews = guiState.widgets.filter { !it.hasParent && !it.isKeyboard }
             if (outboundViews.isNotEmpty()) {
-                val outBound = outboundViews.maxBy { it.boundaries.height+it.boundaries.width }!!.boundaries
+                val outBound = outboundViews.maxBy { it.boundaries.height + it.boundaries.width }!!.boundaries
                 return outBound
             }
             val bound = guiState.widgets.sortedBy { it.boundaries.width + it.boundaries.height }.last().boundaries
@@ -454,38 +442,55 @@ class Helper {
         fun computeGuiTreeVisibleDimension(guiState: State<*>): Rectangle {
             val outboundViews = guiState.widgets.filter { !it.hasParent && !it.isKeyboard }
             if (outboundViews.isNotEmpty()) {
-                val outBound = outboundViews.maxBy { it.visibleBounds.height+it.visibleBounds.width }!!.visibleBounds
+                val outBound = outboundViews.maxBy { it.visibleBounds.height + it.visibleBounds.width }!!.visibleBounds
                 return outBound
             }
             val bound = guiState.widgets.sortedBy { it.visibleBounds.width + it.visibleBounds.height }.last().visibleBounds
             return bound
         }
 
-         fun parseSwipeData(data: String): List<Pair<Int, Int>> {
+        fun isSameFullScreenDimension(rotation: Rotation, guiTreeDimension: Rectangle, autautMF: AutAutMF): Boolean {
+            if (rotation == Rotation.PORTRAIT) {
+                if (guiTreeDimension.leftX == 0 && guiTreeDimension.width >= autautMF.portraitScreenSurface.width) {
+                    if (guiTreeDimension.height / autautMF.portraitScreenSurface.height.toDouble() > 0.9) {
+                        return true
+                    }
+                }
+                return false
+            }
+            if (guiTreeDimension.leftX == 0 && guiTreeDimension.width > 0.9 * autautMF.portraitScreenSurface.height) {
+                if (guiTreeDimension.height / autautMF.portraitScreenSurface.width.toDouble() > 0.9) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun parseSwipeData(data: String): List<Pair<Int, Int>> {
             val splitData = data.split(" TO ")
             if (splitData.size != 2) {
                 return emptyList()
             }
-            val first = splitData[0].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
-            val second = splitData[1].split(",").let { Pair(first = it[0].toInt(),second = it[1].toInt())}
-            return arrayListOf(first,second)
+            val first = splitData[0].split(",").let { Pair(first = it[0].toInt(), second = it[1].toInt()) }
+            val second = splitData[1].split(",").let { Pair(first = it[0].toInt(), second = it[1].toInt()) }
+            return arrayListOf(first, second)
         }
 
         fun computeStep(swipeInfo: List<Pair<Int, Int>>): Int {
-            val dx = abs(swipeInfo[0].first-swipeInfo[1].first)
-            val dy = abs(swipeInfo[0].second-swipeInfo[1].second)
-            return (dx+dy)/2
+            val dx = abs(swipeInfo[0].first - swipeInfo[1].first)
+            val dy = abs(swipeInfo[0].second - swipeInfo[1].second)
+            return (dx + dy) / 2
         }
 
-        fun parseCoordinationData(data: String): Pair<Int,Int> {
+        fun parseCoordinationData(data: String): Pair<Int, Int> {
             val splitData = data.split(",")
             if (splitData.size == 2) {
-                return Pair(splitData[0].toInt(),splitData[1].toInt())
+                return Pair(splitData[0].toInt(), splitData[1].toInt())
             }
-            return Pair(0,0)
+            return Pair(0, 0)
         }
 
-        fun extractInputFieldAndCheckableWidget(prevState: State<*>): Map<Widget,String> {
+        fun extractInputFieldAndCheckableWidget(prevState: State<*>): Map<Widget, String> {
             val condition = HashMap<Widget, String>()
             prevState.visibleTargets.filter { it.isInputField }.forEach { widget ->
                 condition.put(widget, widget.text)
@@ -498,8 +503,31 @@ class Helper {
 
         fun parseRectangle(s: String): Rectangle {
             val data = s.split(":")
-            val rectangle = Rectangle.create(data[0].toInt(),data[1].toInt(),data[2].toInt(),data[3].toInt())
+            val rectangle = Rectangle.create(data[0].toInt(), data[1].toInt(), data[2].toInt(), data[3].toInt())
             return rectangle
+        }
+
+        fun isOptionsMenuLayout(currentState: State<*>): Boolean {
+            val root = currentState.widgets.filter { it.isVisible }.find { it.parentId == null }
+            if (root == null)
+            //cannot detect
+                return false
+            var hasMultipleChilds = root
+            while (hasMultipleChilds != null) {
+                if (hasMultipleChilds.childHashes.size > 1)
+                    break
+                if (hasMultipleChilds.childHashes.isEmpty()) {
+                    hasMultipleChilds = null
+                    break
+                }
+                hasMultipleChilds = currentState.widgets.find { it.idHash == hasMultipleChilds!!.childHashes.single() }
+            }
+            if (hasMultipleChilds == null)
+                return false
+            if (hasMultipleChilds.className == "android.widget.ListView") {
+                return true
+            }
+            return false
         }
 
     }

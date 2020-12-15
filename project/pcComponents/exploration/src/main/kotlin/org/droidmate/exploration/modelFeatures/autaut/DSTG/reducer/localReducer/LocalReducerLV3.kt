@@ -12,14 +12,13 @@ class LocalReducerLV3: AbstractLocalReducer() {
         reducedAttributes.put(AttributeType.className,guiWidget.className)
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())
-        reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
         reducedAttributes.put(AttributeType.checkable,guiWidget.checked.isEnabled().toString())
         reducedAttributes.put(AttributeType.isInputField, guiWidget.isInputField.toString())
+
         if (guiWidget.className != "android.webkit.WebView") {
             reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
             reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
-            if (guiWidget.visibleBounds.height>200 && guiWidget.visibleBounds.width>200)
-                reducedAttributes.put(AttributeType.scrollable, guiWidget.scrollable.toString())
+            reducedAttributes.put(AttributeType.scrollable, Helper.isScrollableWidget(guiWidget).toString())
         } else {
             if (Helper.haveClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.clickable, true.toString())
@@ -27,14 +26,15 @@ class LocalReducerLV3: AbstractLocalReducer() {
             if (Helper.haveLongClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.longClickable, true.toString())
             }
-            if (Helper.haveScrollableChild(guiState.widgets,guiWidget)) {
-                reducedAttributes.put(AttributeType.scrollable, true.toString())
-            }
+            reducedAttributes.put(AttributeType.scrollable, Helper.haveScrollableChild(guiState.widgets,guiWidget).toString())
         }
-        reducedAttributes.put(AttributeType.text,guiWidget.text)
-        reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
         if (guiWidget.checked.isEnabled())
             reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
+        if (guiWidget.selected.isEnabled())
+            reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
+
+        reducedAttributes.put(AttributeType.text,guiWidget.text)
+        reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
         reducedAttributes.put(AttributeType.isLeaf,guiWidget.childHashes.isEmpty().toString())
         return reducedAttributes
     }

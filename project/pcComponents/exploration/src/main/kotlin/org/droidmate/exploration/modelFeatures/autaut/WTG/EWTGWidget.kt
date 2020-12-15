@@ -6,16 +6,16 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random
 
-open class StaticWidget constructor(val widgetId: String,//sootandroid id
-                                    val resourceIdName: String,
-                                    @Suppress val resourceId: String,
-                                    val className: String,
-                                    @Suppress var contentDesc: String,
-                                    var text: String, //usefull for mapping menu item
-                                    var activity: String,
-                                    var wtgNode: Window,
-                                    val createdAtRuntime: Boolean = false,
-                                    val attributeValuationSetId: UUID = emptyUUID
+open class EWTGWidget constructor(val widgetId: String,//sootandroid id
+                                  val resourceIdName: String,
+                                  @Suppress val resourceId: String,
+                                  val className: String,
+                                  @Suppress var contentDesc: String,
+                                  var text: String, //usefull for mapping menu item
+                                  var activity: String,
+                                  var wtgNode: Window,
+                                  val createdAtRuntime: Boolean = false,
+                                  val attributeValuationSetId: UUID = emptyUUID
                                     ){
     var possibleTexts= ArrayList<String>()
     var exercised: Boolean = false
@@ -31,7 +31,7 @@ open class StaticWidget constructor(val widgetId: String,//sootandroid id
     }
 
 
-    fun clone(newNode: Window): StaticWidget {
+    fun clone(newNode: Window): EWTGWidget {
         val newStaticWidget = getOrCreateStaticWidget(
                 widgetId = this.widgetId,
                 resourceId = this.resourceId,
@@ -52,17 +52,17 @@ open class StaticWidget constructor(val widgetId: String,//sootandroid id
 
 
     companion object{
-        val allStaticWidgets= ArrayList<StaticWidget>()
+        val allStaticWidgets= ArrayList<EWTGWidget>()
         fun getOrCreateStaticWidget(widgetId: String,
                                     resourceIdName: String = "",
                                     resourceId: String = "",
                                     className: String,
                                     activity: String,
                                     wtgNode: Window,
-                                    attributeValuationSetId: UUID = emptyUUID): StaticWidget {
+                                    attributeValuationSetId: UUID = emptyUUID): EWTGWidget {
             val returnWidget = allStaticWidgets.find{ it.widgetId==widgetId && it.activity == activity}
             if ( returnWidget == null) {
-                var staticWidget = StaticWidget(widgetId = widgetId, resourceIdName = resourceIdName,
+                var staticWidget = EWTGWidget(widgetId = widgetId, resourceIdName = resourceIdName,
                         resourceId = resourceId, wtgNode = wtgNode, className = className, text = "", contentDesc = "",
                         activity = activity, attributeValuationSetId = attributeValuationSetId)
                 return staticWidget

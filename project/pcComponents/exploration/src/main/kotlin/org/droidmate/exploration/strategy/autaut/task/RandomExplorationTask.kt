@@ -14,6 +14,7 @@ import org.droidmate.exploration.modelFeatures.autaut.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
@@ -90,9 +91,9 @@ class RandomExplorationTask constructor(
     override fun isTaskEnd(currentState: State<*>): Boolean {
         if (isCameraOpening(currentState))
             return false
-        if (fillingData == true) {
+/*        if (fillingData == true) {
             return false
-        }
+        }*/
         if (attemptCount >= maximumAttempt)
         {
             return true
@@ -122,7 +123,6 @@ class RandomExplorationTask constructor(
     }
 
     fun setMaxiumAttempt(currentState: State<*>, attempt: Int){
-        val inputFieldCount = currentState.widgets.filter { it.isInputField }.size
         val actionBasedAttempt = (autautMF.getAbstractState(currentState)?.getUnExercisedActions(currentState)?.size?:1)
         maximumAttempt = min(actionBasedAttempt,attempt)
     }
@@ -169,7 +169,7 @@ class RandomExplorationTask constructor(
             }
         }*/
         val visibleWidgets: List<Widget>
-        visibleWidgets = Helper.getVisibleInteractableWidgets(currentState)
+        visibleWidgets = Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState)
         if (currentState.widgets.filter { it.className == "android.webkit.WebView" }.isNotEmpty())
         {
             return ArrayList(currentState.widgets.filter { it.className == "android.webkit.WebView"}).also {it.addAll(visibleWidgets) }
@@ -196,12 +196,7 @@ class RandomExplorationTask constructor(
 
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
-        if (reset) {
-            reset = false
-            return autautStrategy.eContext.resetApp()
-        }
-         val currentAbstractState = autautMF.getAbstractState(currentState)!!
-        val prevState = autautMF.appPrevState!!
+        val currentAbstractState = autautMF.getAbstractState(currentState)!!
         val prevAbstractState = if (autautMF.appPrevState!=null)
             autautMF.getAbstractState(autautMF.appPrevState!!)?:
                     currentAbstractState
@@ -239,7 +234,7 @@ class RandomExplorationTask constructor(
                 }
             } else {
 
-                if (currentAbstractState.window !is Dialog) {
+                if (currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu) {
                     dataFilled = false
                     goToLockedWindowTask = GoToAnotherWindow(autAutTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
                     if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true,false)) {
@@ -253,12 +248,8 @@ class RandomExplorationTask constructor(
 
         if (!triedRandomKeyboard) {
             if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty()
-                    && Helper.getVisibleInteractableWidgets(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty()) {
+                    && Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty()) {
                 val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
-                if (random.nextBoolean()) {
-                    triedRandomKeyboard = true
-                    return chooseActionWithName(AbstractActionType.RANDOM_KEYBOARD, "", null, currentState, null)!!
-                }
                 if (searchButtons.isNotEmpty()) {
                     if (random.nextBoolean()) {
                         dataFilled = false
@@ -268,8 +259,6 @@ class RandomExplorationTask constructor(
                     } else {
                         return GlobalAction(actionType = ActionType.CloseKeyboard)
                     }
-                } else {
-                    return GlobalAction(actionType = ActionType.CloseKeyboard)
                 }
             }
 
@@ -284,7 +273,7 @@ class RandomExplorationTask constructor(
         }
 
         if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty() &&
-                Helper.getVisibleInteractableWidgets(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty() ) {
+                Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty() ) {
             return GlobalAction(actionType = ActionType.CloseKeyboard)
         }
 
@@ -333,7 +322,7 @@ class RandomExplorationTask constructor(
             }*/
         }
 
-//        if (currentAbstractState.window is WTGActivityNode) {
+//      if (currentAbstractState.window is WTGActivityNode) {
 //            if (!regressionTestingMF.openNavigationCheck.contains(currentAbstractState)
 //                    && openNavigationBarTask.isAvailable(currentState)) {
 //                regressionTestingMF.openNavigationCheck.add(currentAbstractState)
@@ -341,9 +330,14 @@ class RandomExplorationTask constructor(
 //            }
 //        }
         if (!dataFilled && !fillingData) {
-            if (fillDataTask.isAvailable(currentState,alwaysUseRandomInput)) {
-                fillDataTask.initialize(currentState)
-                fillingData = true
+            val lastAction = autautStrategy.eContext.getLastAction()
+            if (!lastAction.actionType.isTextInsert()) {
+                if (fillDataTask.isAvailable(currentState, alwaysUseRandomInput)) {
+                    fillDataTask.initialize(currentState)
+                    fillingData = true
+                }
+            } else {
+                dataFilled = true
             }
         }
         if (fillingData && !fillDataTask.isTaskEnd(currentState))
@@ -354,7 +348,7 @@ class RandomExplorationTask constructor(
             /*if (fillDataTask.fillActions.isNotEmpty()  ) {
                 dataFilled = false
             } else
-                dataFilled = true*/
+                dataFilled = true */
         }
         attemptCount++
         var randomAction: AbstractAction? = null
@@ -410,21 +404,24 @@ class RandomExplorationTask constructor(
                         randomAction = abstractActions.random()
                     }
                 } else {
-                    val visibleTargets = ArrayList(Helper.getVisibleInteractableWidgets(currentState)
-                            .filterNot { it.isInputField || it.checked.isEnabled() })
-                    val unexploredWidgets = runBlocking { autautStrategy.getActionCounter().unexplored(currentState) }
-                    val unexploredVisibleTarget = visibleTargets.filter{unexploredWidgets.contains(it)}
-                    val scrollableWidgets = visibleTargets.filter { Helper.isScrollableWidget(it) }
-                    val candidates = if (unexploredVisibleTarget.isEmpty() && scrollableWidgets.isNotEmpty()) {
-                        if (random.nextBoolean()) {
+                    val visibleTargets = ArrayList(Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState))
+                            /*.filterNot { it.isInputField || it.checked.isEnabled() })*/
+                    val notSelectOnlyWidgets =   visibleTargets.filter {
+                        it.clickable || it.longClickable || it.scrollable || it.isInputField
+                    }
+                    val candidates = if(autautMF.getUnexploredWidget(currentState).any { notSelectOnlyWidgets.contains(it) }) {
+                        val scrollableWidgets = visibleTargets.filter { Helper.isScrollableWidget(it) }
+                        if (scrollableWidgets.isNotEmpty() && random.nextBoolean()) {
                             scrollableWidgets
                         } else {
-                            visibleTargets
+                            notSelectOnlyWidgets
                         }
-                    }else {
-                        visibleTargets
+                    } else {
+                        if (random.nextBoolean()) {
+                            visibleTargets
+                        } else
+                            notSelectOnlyWidgets
                     }
-                        // find scrollable widget to explore new widgets
 
                     val lessExercisedWidgets = runBlocking {
                         ArrayList(getCandidates(candidates
@@ -539,7 +536,7 @@ class RandomExplorationTask constructor(
             var chosenWidget: Widget? = null
             var isValidAction = true
             if (randomAction.attributeValuationSet != null) {
-                val chosenWidgets = randomAction!!.attributeValuationSet!!.getGUIWidgets(currentState)
+                val chosenWidgets = randomAction.attributeValuationSet!!.getGUIWidgets(currentState)
                 if (chosenWidgets.isEmpty()) {
                     chosenWidget = null
                 } else {
@@ -553,7 +550,7 @@ class RandomExplorationTask constructor(
                 if (chosenWidget == null) {
                     log.debug("No widget found")
                     // remove action
-                    randomAction!!.attributeValuationSet!!.actionCount.remove(randomAction)
+                    randomAction.attributeValuationSet!!.actionCount.remove(randomAction)
                     isValidAction = false
                 } else {
                     log.info(" widget: $chosenWidget")

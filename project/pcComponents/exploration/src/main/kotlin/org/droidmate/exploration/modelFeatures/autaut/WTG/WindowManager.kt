@@ -20,9 +20,9 @@ class WindowManager {
         return allWindows.find { it.mappedStates.find { it.equals(state)}!=null }
     }
     fun dump(config: ModelConfig, autAutMF: AutAutMF) {
-        val wtgFolder = config.baseDir.resolve("WTG")
+        val wtgFolder = config.baseDir.resolve("EWTG")
         Files.createDirectory(wtgFolder)
-        File(wtgFolder.resolve("WTG_WindowList.csv").toUri()).bufferedWriter().use { all ->
+        File(wtgFolder.resolve("EWTG_WindowList.csv").toUri()).bufferedWriter().use { all ->
             all.write(header())
             allWindows.forEach {
                 all.newLine()

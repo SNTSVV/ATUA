@@ -163,11 +163,6 @@ class ExerciseTargetComponentTask private constructor(
         if (isCameraOpening(currentState)) {
             randomExplorationTask.chooseAction(currentState)
         }
-        if (!fillingData && random.nextBoolean()) {
-            //reset input
-            fillingData = false
-            dataFilled = false
-        }
         randomExplorationTask.isClickedShutterButton = false
         if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
             if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
@@ -190,9 +185,14 @@ class ExerciseTargetComponentTask private constructor(
         }
 
         if (!dataFilled && !fillingData) {
-            if (fillDataTask.isAvailable(currentState,alwaysUseRandomInput)) {
-                fillDataTask.initialize(currentState)
-                fillingData = true
+            val lastAction = autautStrategy.eContext.getLastAction()
+            if (!lastAction.actionType.isTextInsert()) {
+                if (fillDataTask.isAvailable(currentState, alwaysUseRandomInput)) {
+                    fillDataTask.initialize(currentState)
+                    fillingData = true
+                }
+            } else {
+                dataFilled = true
             }
         }
         if (fillingData && !fillDataTask.isTaskEnd(currentState))

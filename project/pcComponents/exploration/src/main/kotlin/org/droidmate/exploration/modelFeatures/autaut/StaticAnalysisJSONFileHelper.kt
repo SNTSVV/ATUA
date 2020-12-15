@@ -93,7 +93,7 @@ class StaticAnalysisJSONFileHelper() {
                     val widgetInfoJson = widgetListJson[it].toString()
                     val widgetInfo = widgetParser(widgetInfoJson)
                     if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
-                        StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                        EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                 resourceId = widgetInfo["resourceId"]!!,
                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                 className = widgetInfo["className"]!!,
@@ -116,7 +116,7 @@ class StaticAnalysisJSONFileHelper() {
                 val widgetListJson = jsonObj[key] as JSONObject
                 widgetListJson.keys().asSequence().forEach {
                     val widgetInfoJson = it
-                    var staticWidget: StaticWidget? = null
+                    var ewtgWidget: EWTGWidget? = null
                     val eventListJsons = widgetListJson[it]!! as JSONArray
                     eventListJsons.forEach { eventJson ->
                         val eventJsonObject = eventJson as JSONObject
@@ -124,42 +124,42 @@ class StaticAnalysisJSONFileHelper() {
                         val jsonEventType = eventJsonObject["action"] as String
                         if (!Input.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
                             if (Input.isNoWidgetEvent(jsonEventType)) {
-                                staticWidget = null
+                                ewtgWidget = null
                             } else {
                                 try {
                                     val widgetInfo = widgetParser(widgetInfoJson)
                                     if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
-                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                        ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 resourceId = widgetInfo["resourceId"]!!,
                                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                                 className = widgetInfo["className"]!!,
                                                 wtgNode = wtgNode,
                                                 activity = wtgNode.classType)
                                     } else {
-                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                        ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 className = widgetInfo["className"]!!,
                                                 wtgNode = wtgNode,
                                                 activity = wtgNode.classType)
                                     }
 
                                 } catch (e: Exception) {
-                                    staticWidget = null
+                                    ewtgWidget = null
                                 }
 
                             }
                             if (Input.isNoWidgetEvent(jsonEventType) ||
                                     (!Input.isNoWidgetEvent(jsonEventType) &&
-                                            staticWidget != null)) {
+                                            ewtgWidget != null)) {
                                 val event = getOrCreateTargetEvent(
                                         eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
-                                        widget = staticWidget,
+                                        widget = ewtgWidget,
                                         activity = wtgNode.classType,
                                         sourceWindow = wtgNode,
                                         allTargetInputs = HashSet())
                                 allEventHandlers.addAll(event.eventHandlers)
 
-                                if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                                if (ewtgWidget!=null && ewtgWidget!!.className.contains("Layout")) {
                                     var createItemClick = false
                                     var createItemLongClick = false
                                     /*when (jsonEventType) {
@@ -179,7 +179,7 @@ class StaticAnalysisJSONFileHelper() {
                                         val itemClick = getOrCreateTargetEvent(
                                                 eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_click",
-                                                widget = staticWidget,
+                                                widget = ewtgWidget,
                                                 activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
                                                 allTargetInputs = HashSet())
@@ -191,7 +191,7 @@ class StaticAnalysisJSONFileHelper() {
                                         val itemLongClick = getOrCreateTargetEvent(
                                                 eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_long_click",
-                                                widget = staticWidget,
+                                                widget = ewtgWidget,
                                                 activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
                                                 allTargetInputs = HashSet())
@@ -209,7 +209,7 @@ class StaticAnalysisJSONFileHelper() {
 
         fun readModifiedMethodInvocation(jsonObj: JSONObject,
                                          wtg: WindowTransitionGraph,
-                                         allTargetStaticWidgets: HashSet<StaticWidget>,
+                                         allTargetEWTGWidgets: HashSet<EWTGWidget>,
                                          allTargetInputs: HashSet<Input>,
                                          statementCoverageMF: StatementCoverageMF
         ) {
@@ -231,16 +231,16 @@ class StaticAnalysisJSONFileHelper() {
                             jsonEventType = "click"
                         else
                             jsonEventType = jsonEvent["eventType"] as String
-                        var staticWidget: StaticWidget?
+                        var ewtgWidget: EWTGWidget?
                         if (!Input.isIgnoreEvent(jsonEventType) && jsonEventType != EventType.implicit_back_event.name) {
                             if (Input.isNoWidgetEvent(jsonEventType)
                             ) {
-                                staticWidget = null
+                                ewtgWidget = null
                             } else {
                                 try {
                                     val widgetInfo = widgetParser(w)
                                     if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
-                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                        ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 resourceId = widgetInfo["resourceId"]!!,
                                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                                 className = widgetInfo["className"]!!,
@@ -248,27 +248,27 @@ class StaticAnalysisJSONFileHelper() {
                                                 activity = sourceNode.classType)
 
                                     } else {
-                                        staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                        ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 className = widgetInfo["className"]!!,
                                                 wtgNode = sourceNode,
                                                 activity = sourceNode.classType)
                                     }
-                                    if (!allTargetStaticWidgets.contains(staticWidget)) {
-                                        allTargetStaticWidgets.add(staticWidget)
+                                    if (!allTargetEWTGWidgets.contains(ewtgWidget)) {
+                                        allTargetEWTGWidgets.add(ewtgWidget)
                                     }
                                 } catch (e: Exception) {
-                                    staticWidget = null
+                                    ewtgWidget = null
                                 }
 
                             }
                             if (Input.isNoWidgetEvent(jsonEventType) ||
                                     (!Input.isNoWidgetEvent(jsonEventType) &&
-                                            staticWidget != null)) {
+                                            ewtgWidget != null)) {
                                 val jsonEventHandler = jsonEvent["eventHandlers"] as JSONArray
                                 val event = getOrCreateTargetEvent(
                                         eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
-                                        widget = staticWidget,
+                                        widget = ewtgWidget,
                                         activity = sourceNode.classType,
                                         sourceWindow = sourceNode,
                                         allTargetInputs = allTargetInputs)
@@ -277,7 +277,7 @@ class StaticAnalysisJSONFileHelper() {
                                     //let's create new edge
                                     wtg.add(sourceNode, sourceNode, event)
                                 }
-                                if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                                if (ewtgWidget!=null && ewtgWidget!!.className.contains("Layout")) {
                                     var createItemClick = false
                                     var createItemLongClick = false
 
@@ -299,7 +299,7 @@ class StaticAnalysisJSONFileHelper() {
                                         val itemClick = getOrCreateTargetEvent(
                                                 eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_click",
-                                                widget = staticWidget,
+                                                widget = ewtgWidget,
                                                 activity = sourceNode.classType,
                                                 sourceWindow = sourceNode,
                                                 allTargetInputs = HashSet())
@@ -315,7 +315,7 @@ class StaticAnalysisJSONFileHelper() {
                                         val itemLongClick = getOrCreateTargetEvent(
                                                 eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_long_click",
-                                                widget = staticWidget,
+                                                widget = ewtgWidget,
                                                 activity = sourceNode.classType,
                                                 sourceWindow = sourceNode,
                                                 allTargetInputs = HashSet())
@@ -369,7 +369,7 @@ class StaticAnalysisJSONFileHelper() {
 
         fun getOrCreateTargetEvent(eventHandlers: Set<String>,
                                    eventTypeString: String,
-                                   widget: StaticWidget?,
+                                   widget: EWTGWidget?,
                                    @Suppress activity: String,
                                    sourceWindow: Window,
                                    allTargetInputs: HashSet<Input>): Input {
@@ -532,30 +532,30 @@ class StaticAnalysisJSONFileHelper() {
                     var eventType: String = jsonEventCorrelation["eventType"] as String
                     if (eventType == "touch")
                         eventType = "click"
-                    var staticWidget: StaticWidget? = null
+                    var ewtgWidget: EWTGWidget? = null
                     if (!Input.isIgnoreEvent(eventType) && eventType != EventType.implicit_back_event.name) {
                         if (Input.isNoWidgetEvent(eventType)) {
-                            staticWidget = null
+                            ewtgWidget = null
                         } else {
                             try {
                                 val jsonTargetWidget = jsonEventCorrelation["targetWidget"] as String
                                 val widgetInfo = widgetParser(jsonTargetWidget)
-                                staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                         resourceId = widgetInfo["resourceId"]!!,
                                         resourceIdName = widgetInfo["resourceIdName"]!!,
                                         className = widgetInfo["className"]!!,
                                         wtgNode = sourceNode,
                                         activity = sourceNode.classType)
                             } catch (e: Exception) {
-                                staticWidget = null
+                                ewtgWidget = null
                             }
                         }
-                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == staticWidget && it.eventType.name == eventType }
+                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == ewtgWidget && it.eventType.name == eventType }
                         if (event == null) {
                             event = Input(
                                     eventType = EventType.valueOf(eventType),
                                     eventHandlers = HashSet(),
-                                    widget = staticWidget,
+                                    widget = ewtgWidget,
                                     sourceWindow = sourceNode
                             )
                         }

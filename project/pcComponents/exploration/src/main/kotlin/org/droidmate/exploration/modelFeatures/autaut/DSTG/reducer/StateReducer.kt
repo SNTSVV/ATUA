@@ -1,64 +1,70 @@
 package org.droidmate.exploration.modelFeatures.autaut.DSTG.reducer
 
+import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AttributePath
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.Cardinality
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AttributeValuationSet
+import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class StateReducer
 {
     companion object{
-        fun reduce(guiState: State<*>, activity: String, packageName: String): HashMap<Widget, AttributeValuationSet>{
+        fun reduce(guiState: State<*>, activity: String, packageName: String,rotation: Rotation,autAutMF: AutAutMF): HashMap<Widget, AttributeValuationSet>{
             val widgetReduceMap = HashMap<Widget,AttributePath>()
-            val attributePaths = HashMap<AttributePath,Int>()
+            val attributePath_Cardinalitys = HashMap<UUID,Cardinality>()
+            val capturedAttributePaths = ArrayList<AttributePath>()
             val tempFullAttrPaths = HashMap<Widget,AttributePath>()
             val tempRelativeAttrPaths = HashMap<Widget,AttributePath>()
             //TODO: Save all computed attributePath to prevent from recomputing
-            val toReduceWidgets = if (activity.startsWith("com.oath.mobile.platform.phoenix.core.")) {
+            val capturedWidgets = if (activity.startsWith("com.oath.mobile.platform.phoenix.core.")) {
                 Helper.getVisibleWidgets(guiState)
             } else {
-                Helper.getVisibleWidgetsForAbstraction(guiState,packageName = packageName)
+                Helper.getVisibleWidgetsForAbstraction(guiState)
+            }
+            val toReduceWidgets = ArrayList(Helper.getVisibleWidgets(guiState))
+            if (toReduceWidgets.isEmpty()) {
+                toReduceWidgets.addAll(guiState.widgets.filter { !it.isKeyboard })
             }
             //val toReduceWidgets = Helper.getVisibleWidgetsForAbstraction(guiState)
-            toReduceWidgets.forEach {
+            toReduceWidgets .forEach {
                 val widgetAttributePath = if (tempFullAttrPaths.containsKey(it))
                 {
                     tempFullAttrPaths[it]!!
                 }
                 else
                 {
-                    WidgetReducer.reduce(it,guiState,activity,tempFullAttrPaths,tempRelativeAttrPaths)
+                    WidgetReducer.reduce(it,guiState,activity,rotation,autAutMF, tempFullAttrPaths,tempRelativeAttrPaths)
                 }
-                widgetReduceMap.put(it,widgetAttributePath)
-                if (attributePaths.containsKey(widgetAttributePath)){
-                    val count = attributePaths[widgetAttributePath]!! + 1
-                    attributePaths.put(widgetAttributePath,count)
+                if (capturedWidgets.contains(it)) {
+                    widgetReduceMap.put(it, widgetAttributePath)
+                    if (!capturedAttributePaths.contains(widgetAttributePath)) {
+                        capturedAttributePaths.add(widgetAttributePath)
+                    }
+                }
+                if (attributePath_Cardinalitys.contains(widgetAttributePath.attributePathId)){
+                    attributePath_Cardinalitys[widgetAttributePath.attributePathId] = Cardinality.MANY
                 }
                 else
                 {
-                    attributePaths.put(widgetAttributePath,1)
+                    attributePath_Cardinalitys[widgetAttributePath.attributePathId] = Cardinality.ONE
                 }
-
             }
             val widgetList = HashMap<Widget, AttributeValuationSet>()
-            val attributeValuationSets = ArrayList<AttributeValuationSet>()
-            attributePaths.forEach { a, c ->
-                val cardinality: Cardinality = when (c)
-                {
-                    0 -> Cardinality.ZERO
-                    1 -> Cardinality.ONE
-                    else -> Cardinality.MANY
-                }
-                var attributeValuationSet = attributeValuationSets.find { it.haveTheSameAttributePath(a) }
+            if (!AttributeValuationSet.allAttributeValuationSet.containsKey(activity)) {
+                AttributeValuationSet.allAttributeValuationSet.put(activity,HashMap())
+            }
+            capturedAttributePaths.forEach { a ->
+                var attributeValuationSet =  AttributeValuationSet.allAttributeValuationSet[activity]!!.map { it.value }. find { it.haveTheSameAttributePath(a) }
                 if (attributeValuationSet == null) {
-                    attributeValuationSet =  AttributeValuationSet(a,cardinality,activity,attributeValuationSets)
-
-                } else {
-                    attributeValuationSet.cardinality = cardinality
+                    attributeValuationSet =  AttributeValuationSet(a,attributePath_Cardinalitys[a.attributePathId]!!,activity,attributePath_Cardinalitys)
                 }
-                widgetReduceMap.filter { it.value == a }.forEach { w,_ ->
+                widgetReduceMap.filter { it.value.equals(a)}.forEach { w,_ ->
                     widgetList.put(w,attributeValuationSet)
                 }
 

@@ -7,7 +7,7 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 open class Input (
         val eventType: EventType,
         val eventHandlers: HashSet<String>,
-        val widget: StaticWidget?,
+        val widget: EWTGWidget?,
         var sourceWindow: Window,
         val createdAtRuntime: Boolean = false
 )
@@ -23,7 +23,7 @@ open class Input (
 
     init {
         allStaticEvents.add(this)
-        sourceWindow.events.add(this)
+        sourceWindow.inputs.add(this)
     }
 
     fun convertToExplorationActionName(): AbstractActionType{
@@ -122,7 +122,7 @@ open class Input (
 
         fun getOrCreateEvent(eventHandlers: Set<String>,
                              eventTypeString: String,
-                             widget: StaticWidget?,
+                             widget: EWTGWidget?,
                              @Suppress activity: String,
                              sourceWindow: Window): Input {
             var event = Input.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }

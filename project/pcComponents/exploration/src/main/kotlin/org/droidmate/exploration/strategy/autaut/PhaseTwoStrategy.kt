@@ -89,10 +89,10 @@ class PhaseTwoStrategy (
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
-        if (!abstractState.inputMapping.containsKey(abstractAction)) {
+        if (!abstractState.inputMappings.containsKey(abstractAction)) {
             return
         }
-        val staticEvents = abstractState.inputMapping[abstractAction]!!
+        val staticEvents = abstractState.inputMappings[abstractAction]!!
         if (staticEvents!=null) {
             staticEvents.forEach {
                 if (phase2TargetEvents.containsKey(it)) {
@@ -251,7 +251,7 @@ class PhaseTwoStrategy (
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow)
         {
-            val availableEvents = abstractState.inputMapping.map { it.value }.flatten()
+            val availableEvents = abstractState.inputMappings.map { it.value }.flatten()
             val events = HashMap(phase2TargetEvents.filter {
                 availableEvents.contains(it.key)
             })
@@ -339,7 +339,7 @@ class PhaseTwoStrategy (
     }
 
     private fun nextActionOnInitial(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToTargetNodeTask: GoToTargetWindowTask, goToAnotherNode: GoToAnotherWindow) {
-        randomInputInTarget = false
+        randomInputInTarget = true
         if (currentAppState.window == targetWindow) {
             if (randomInputInTarget) {
                 if (exerciseTargetComponentTask.isAvailable(currentState)) {
@@ -630,7 +630,7 @@ class PhaseTwoStrategy (
             it.environmentChange = true
             it.alwaysUseRandomInput = true
             it.setMaxiumAttempt((5*budgetScale).toInt())
-            if (lockWindow) {
+            if (lockWindow && currentAbstractState.belongToAUT()) {
                 it.lockTargetWindow(currentAbstractState.window)
             }
             it.stopWhenHavingTestPath = stopWhenTestPathIdentified
@@ -643,7 +643,7 @@ class PhaseTwoStrategy (
     private fun setRandomExplorationInTargetWindow(randomExplorationTask: RandomExplorationTask, currentState: State<*>) {
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
-            it.setMaxiumAttempt((5*budgetScale).toInt())
+            it.setMaxiumAttempt((2*budgetScale).toInt())
             it.isFullyExploration = true
             it.environmentChange = true
             it.lockTargetWindow(targetWindow!!)
@@ -694,6 +694,7 @@ class PhaseTwoStrategy (
          modifiedMethodTriggerCount.clear()
          appStateModifiedMethodMap.clear()
          modifiedMethodWeights.clear()
+         val allTargetInputs = ArrayList(autautMF.allTargetInputs)
 
          val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {
@@ -706,7 +707,11 @@ class PhaseTwoStrategy (
                 modifiedMethodMissingStatements.put(it,HashSet(missingStatements))
             }
         }
-
+         allTargetInputs.removeIf {
+             it.modifiedMethods.map { it.key }.all {
+                  modifiedMethodMissingStatements.containsKey(it) && modifiedMethodMissingStatements[it]!!.size==0
+             }
+         }
         //get all AppState
         val appStateList = ArrayList<AbstractState>()
         AbstractStateManager.instance.getPotentialAbstractStates().forEach { appStateList.add(it) }
@@ -794,7 +799,7 @@ class PhaseTwoStrategy (
                     }
                 }
             }*/
-            autautMF.allTargetStaticEvents.filter { it.sourceWindow == n }. forEach {
+            allTargetInputs.filter { it.sourceWindow == n }. forEach {
                 modifiedMethods.addAll(it.modifiedMethods.map { it.key })
 
             }
@@ -816,8 +821,8 @@ class PhaseTwoStrategy (
                 staticNodeScores.put(n, weight)
                 staticNodeTotalScore+=weight
 
-                appStateList.map { it.inputMapping }.map { it.values }.flatten().flatten().filter{
-                    autautMF.allTargetStaticEvents.contains(it)
+                appStateList.map { it.inputMappings }.map { it.values }.flatten().flatten().filter{
+                    allTargetInputs.contains(it)
                 }.forEach {
                     if (it.eventType != EventType.resetApp
                             && it.eventType != EventType.implicit_launch_event

@@ -25,7 +25,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                                       labelComparison = { a, b ->
                                           a == b
                                       })) : IGraph<Window, Input> by graph {
-    val edgeConditions: HashMap<Edge<*, *>, HashMap<StaticWidget, String>> = HashMap()
+    val edgeConditions: HashMap<Edge<*, *>, HashMap<EWTGWidget, String>> = HashMap()
     val edgeProved: HashMap<Edge<*, *>, Int> = HashMap()
     val statementCoverageInfo: HashMap<Edge<*, *>, ArrayList<String>> = HashMap()
     val methodCoverageInfo: HashMap<Edge<*, *>, ArrayList<String>> = HashMap()
@@ -70,35 +70,35 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                     if (targetNode is OptionsMenu || sourceNode is Launcher) {
                         ignoreWidget = true
                     }
-                    val staticWidget: StaticWidget?
+                    val ewtgWidget: EWTGWidget?
 
                     if (ignoreWidget == false) {
                         val targetView = transition["widget"] as String
                         log.info("parsing widget: $targetView")
                         val widgetInfo = StaticAnalysisJSONFileHelper.widgetParser(targetView)
                         if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
-                            staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                            ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                     resourceId = widgetInfo["resourceId"]!!,
                                     resourceIdName = widgetInfo["resourceIdName"]!!,
                                     className = widgetInfo["className"]!!,
                                     wtgNode = sourceNode,
                                     activity = sourceNode.classType)
                         } else if (widgetInfo.containsKey("className") && widgetInfo.containsKey("id")) {
-                            staticWidget = StaticWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                            ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                     className = widgetInfo["className"]!!,
                                     wtgNode = sourceNode,
                                     activity = sourceNode.classType)
                         } else {
-                            staticWidget = null
+                            ewtgWidget = null
                         }
                     } else {
-                        staticWidget = null
+                        ewtgWidget = null
                     }
-                    if (Input.isNoWidgetEvent(action) || (!Input.isNoWidgetEvent(action) && staticWidget!=null) ) {
+                    if (Input.isNoWidgetEvent(action) || (!Input.isNoWidgetEvent(action) && ewtgWidget!=null) ) {
                             val event = Input.getOrCreateEvent(
                                     eventTypeString = action,
                                     eventHandlers = emptySet(),
-                                    widget = staticWidget,
+                                    widget = ewtgWidget,
                                     activity = sourceNode.classType,
                                     sourceWindow = sourceNode
 
@@ -106,7 +106,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                             //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
                             edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
 
-                            if (staticWidget!=null && staticWidget!!.className.contains("Layout")) {
+                            if (ewtgWidget!=null && ewtgWidget!!.className.contains("Layout")) {
                                 var createItemClick = false
                                 var createItemLongClick = false
                                 /*when (action) {
@@ -126,7 +126,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                                     val itemClick = Input.getOrCreateEvent(
                                             eventHandlers = emptySet(),
                                             eventTypeString = "item_click",
-                                            widget = staticWidget,
+                                            widget = ewtgWidget,
                                             activity = sourceNode.classType,
                                             sourceWindow = sourceNode)
 
@@ -137,7 +137,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                                     val itemLongClick = Input.getOrCreateEvent(
                                             eventHandlers = emptySet(),
                                             eventTypeString = "item_long_click",
-                                            widget = staticWidget,
+                                            widget = ewtgWidget,
                                             activity = sourceNode.classType,
                                             sourceWindow = sourceNode)
                                     this.add(sourceNode, targetNode, itemLongClick  )

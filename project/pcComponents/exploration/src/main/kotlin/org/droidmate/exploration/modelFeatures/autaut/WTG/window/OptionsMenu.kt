@@ -10,6 +10,7 @@ class OptionsMenu (classType: String,
     }
 
     init {
+        activityClass = classType
         allNodes.add(this)
         WindowManager.instance.allWindows.add(this)
         counter++

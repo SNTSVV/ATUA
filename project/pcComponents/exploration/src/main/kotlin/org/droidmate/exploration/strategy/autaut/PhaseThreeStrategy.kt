@@ -91,7 +91,7 @@ class PhaseThreeStrategy(
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
-        val staticEvents = abstractState.inputMapping[abstractAction]
+        val staticEvents = abstractState.inputMappings[abstractAction]
         if (staticEvents!=null) {
             staticEvents.forEach {
                 if (it == targetEvent) {
@@ -220,7 +220,7 @@ class PhaseThreeStrategy(
             return emptyList()
         val targetScores = HashMap<AbstractState,Double>()
         appStateProbability[targetWindow]!!.filter {
-            it.first.inputMapping.filter { it.value.contains(targetEvent) }.isNotEmpty()
+            it.first.inputMappings.filter { it.value.contains(targetEvent) }.isNotEmpty()
         }.forEach {
             targetScores.put(it.first,it.second)
         }
@@ -796,7 +796,7 @@ class PhaseThreeStrategy(
         appStateProbability.clear()
         windowScores.clear()
         windowsProbability.clear()
-
+        val allTargetInputs = ArrayList(autautMF.allTargetInputs)
         val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {
             val methodName = statementMF!!.getMethodName(it)
@@ -808,7 +808,11 @@ class PhaseThreeStrategy(
                 modifiedMethodMissingStatements.put(it,missingStatements)
             }
         }
-
+        allTargetInputs.removeIf {
+            it.modifiedMethods.map { it.key }.all {
+                modifiedMethodMissingStatements.containsKey(it) && modifiedMethodMissingStatements[it]!!.size==0
+            }
+        }
         //get all AppState
         val appStateList = ArrayList<AbstractState>()
         AbstractStateManager.instance.getPotentialAbstractStates().forEach { appStateList.add(it) }
@@ -896,7 +900,7 @@ class PhaseThreeStrategy(
                     }
                 }
             }*/
-            autautMF.allTargetStaticEvents.filter { it.sourceWindow == n }. forEach {
+            allTargetInputs.filter { it.sourceWindow == n }. forEach {
                 modifiedMethods.addAll(it.modifiedMethods.map { it.key })
 
             }
@@ -918,8 +922,8 @@ class PhaseThreeStrategy(
                 windowScores.put(n, weight)
                 staticNodeTotalScore+=weight
 
-                appStateList.map { it.inputMapping }.map { it.values }.flatten().flatten().filter{
-                    autautMF.allTargetStaticEvents.contains(it)
+                appStateList.map { it.inputMappings }.map { it.values }.flatten().flatten().filter{
+                    allTargetInputs.contains(it)
                 }.forEach {
                     if (it.eventType != EventType.resetApp
                             && it.eventType != EventType.implicit_launch_event
@@ -932,174 +936,6 @@ class PhaseThreeStrategy(
 
         }
         windowsProbability.clear()
-        //calculate staticNode probability
-        windowScores.forEach { n, s ->
-            val pb = s/staticNodeTotalScore
-            windowsProbability.put(n,pb)
-        }
-    }
-    fun computeScore(){
-        modifiedMethodMissingStatements.clear()
-        modifiedMethodTriggerCount.clear()
-        modifiedMethodWeights.clear()
-        appStateModifiedMethodMap.clear()
-        windowModifiedMethodMap.clear()
-        appStatesScores.clear()
-        appStateProbability.clear()
-        windowScores.clear()
-        windowsProbability.clear()
-        //Initiate reachable modified methods list
-        val triggeredStatements = statementMF.getAllExecutedStatements()
-        statementMF.getAllModifiedMethodsId().forEach {
-            val methodName = statementMF!!.getMethodName(it)
-            if (!autautMF.unreachableModifiedMethods.contains(methodName))
-            {
-                modifiedMethodTriggerCount.put(it,0)
-                val statements = statementMF!!.getMethodStatements(it)
-                val missingStatements = statements.filter { !triggeredStatements.contains(it) }
-                modifiedMethodMissingStatements.put(it,missingStatements)
-            }
-        }
-
-        //get all AppState
-        val appStateList = ArrayList<AbstractState>()
-        AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it is VirtualAbstractState
-                || it.window is Launcher
-                || it.window is OutOfApp
-        }.forEach { appStateList.add(it) }
-
-        //get all AppState's edges and appState's modified method
-        val edges = ArrayList<Edge<*, *>>()
-        appStateList.forEach {appState ->
-            edges.addAll(autautMF.abstractTransitionGraph.edges(appState))
-            appStateModifiedMethodMap.put(appState, ArrayList())
-            appState.abstractTransitions.map { it.modifiedMethods }.forEach { hmap ->
-                hmap.forEach { m, _ ->
-                    if (!appStateModifiedMethodMap[appState]!!.contains(m)) {
-                        appStateModifiedMethodMap[appState]!!.add(m)
-                    }
-                }
-            }
-
-        }
-
-        //for each edge, count modified method appearing
-        edges.forEach {
-            val coveredMethods = autautMF.abstractTransitionGraph.methodCoverageInfo[it]
-            if (coveredMethods!=null)
-                coveredMethods.forEach {
-                    if (modifiedMethodTriggerCount.containsKey(it))
-                    {
-                        modifiedMethodTriggerCount[it] = modifiedMethodTriggerCount[it]!! + 1
-                    }
-                }
-
-        }
-
-        //calculate modified method score
-        val totalAppStateCount = edges.size
-        modifiedMethodTriggerCount.forEach { m, c ->
-            val score = 1-c/totalAppStateCount.toDouble()
-            modifiedMethodWeights.put(m,score)
-        }
-
-        //
-
-
-
-        //calculate appState score
-        appStateList.forEach {
-            var appStateScore:Double = 0.0
-            if (appStateModifiedMethodMap.containsKey(it))
-            {
-                appStateModifiedMethodMap[it]!!.forEach {
-                    if (!modifiedMethodWeights.containsKey(it))
-                        modifiedMethodWeights.put(it,1.0)
-                    val methodWeight = modifiedMethodWeights[it]!!
-                    if (modifiedMethodMissingStatements.containsKey(it))
-                    {
-                        val missingStatementNumber = modifiedMethodMissingStatements[it]!!.size
-                        appStateScore += (methodWeight * missingStatementNumber)
-                    }
-                }
-                appStateScore += 1
-                appStatesScores.put(it,appStateScore)
-            }
-        }
-
-        //calculate appState probability
-        appStateList.groupBy { it.window }.forEach { static, appStateList ->
-            var totalScore = 0.0
-            appStateList.forEach {
-                totalScore += appStatesScores[it]!!
-            }
-
-            val appStatesProbab = ArrayList<Pair<AbstractState,Double>>()
-            appStateProbability.put(static, appStatesProbab )
-            appStateList.forEach {
-                val pb = appStatesScores[it]!!/totalScore
-                appStatesProbab.add(Pair(it,pb))
-            }
-        }
-
-        //calculate staticNode score
-        var staticNodeTotalScore = 0.0
-        targetWindowsCount.forEach { n, _ ->
-            var weight: Double = 0.0
-            val targetEvents = ArrayList<Input>()
-            val modifiedMethods = HashSet<String>()
-            autautMF.allTargetStaticEvents.filter { it.sourceWindow == n }. forEach {
-                modifiedMethods.addAll(it.modifiedMethods.map { it.key })
-            }
-            if (autautMF.windowHandlersHashMap.containsKey(n)) {
-                autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
-                    val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
-                    modifiedMethods.addAll(methods)
-                }
-                val optionsMenu = autautMF.wtg.getOptionsMenu(n)
-                val optionMenusModifiedMethods = HashSet<String>()
-                if (optionsMenu != null) {
-                    autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
-                        val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
-                        optionMenusModifiedMethods.addAll(methods)
-                    }
-                    windowModifiedMethodMap.put(optionsMenu,optionMenusModifiedMethods)
-                }
-                val dialogs = autautMF.wtg.getDialogs(n)
-                dialogs.forEach { d ->
-                    val dialogModifiedMethods = HashSet<String>()
-                    autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
-                        val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
-                        dialogModifiedMethods.addAll(methods)
-                    }
-                    windowModifiedMethodMap.put(d,dialogModifiedMethods)
-                }
-            }
-            windowModifiedMethodMap.put(n,modifiedMethods)
-            modifiedMethods.forEach {
-                if (modifiedMethodWeights.containsKey(it)) {
-                    val methodWeight = modifiedMethodWeights[it]!!
-                    val missingStatementsNumber = modifiedMethodMissingStatements[it]?.size ?: 0
-                    weight += (methodWeight * missingStatementsNumber)
-                } else if (modifiedMethodMissingStatements.containsKey(it)) {
-                    val methodWeight = 1
-                    val missingStatementsNumber = modifiedMethodMissingStatements[it]?.size ?: 0
-                    weight += (methodWeight * missingStatementsNumber)
-                }
-            }
-            weight+=1
-            windowScores.put(n, weight)
-            staticNodeTotalScore+=weight
-            autautMF.wtg.edges(n).map { it.label }.distinct().filter{
-                autautMF.allTargetStaticEvents.contains(it)
-            }.forEach {
-                allTargetEvents.put(it,0)
-            }
-        }
-
-        //TODO remove target window that doesn't contain nay target events
-
-
         //calculate staticNode probability
         windowScores.forEach { n, s ->
             val pb = s/staticNodeTotalScore
