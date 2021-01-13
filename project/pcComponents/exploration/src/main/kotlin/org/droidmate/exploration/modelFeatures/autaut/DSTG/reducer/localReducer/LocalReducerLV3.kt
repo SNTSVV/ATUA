@@ -19,6 +19,8 @@ class LocalReducerLV3: AbstractLocalReducer() {
             reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
             reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
             reducedAttributes.put(AttributeType.scrollable, Helper.isScrollableWidget(guiWidget).toString())
+            if (reducedAttributes.get(AttributeType.scrollable) == "TRUE")
+                reducedAttributes.put(AttributeType.scrollDirection, Helper.getViewsChildrenLayout(guiWidget,guiState).toString())
         } else {
             if (Helper.haveClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.clickable, true.toString())
@@ -30,9 +32,6 @@ class LocalReducerLV3: AbstractLocalReducer() {
         }
         if (guiWidget.checked.isEnabled())
             reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
-        if (guiWidget.selected.isEnabled())
-            reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
-
         reducedAttributes.put(AttributeType.text,guiWidget.text)
         reducedAttributes.put(AttributeType.contentDesc,guiWidget.contentDesc)
         reducedAttributes.put(AttributeType.isLeaf,guiWidget.childHashes.isEmpty().toString())

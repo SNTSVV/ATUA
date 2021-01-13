@@ -69,7 +69,8 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
                         actionType = AbstractActionType.ITEM_CLICK,
                         attributeValuationSet = this
                 )
-                actionCount.put(itemAbstractAction,0)
+                if (!actionCount.containsKey(itemAbstractAction))
+                    actionCount.put(itemAbstractAction,0)
                 val itemLongClickAbstractAction = AbstractAction(
                         actionType = AbstractActionType.ITEM_LONGCLICK,
                         attributeValuationSet = this
@@ -231,6 +232,13 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
         }
         return false
     }
+    fun isUserLikeInput(): Boolean {
+        val className = getClassName()
+        return when (className) {
+            "android.widget.RadioButton", "android.widget.CheckBox", "android.widget.Switch", "android.widget.ToggleButton" -> true
+            else -> isInputField()
+        }
+    }
     fun isCheckable(): Boolean{
         if (localAttributes[AttributeType.checkable]!!.equals("true"))
         {
@@ -260,14 +268,21 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
     fun getGUIWidgets (guiState: State<*>): List<Widget>{
         val selectedGuiWidgets = ArrayList<Widget>()
         Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
-            if (isAbstractRepresentationOf(it,guiState)) {
+            if (isAbstractRepresentationOf(it,guiState,false)) {
                 selectedGuiWidgets.add(it)
+            }
+        }
+        if (selectedGuiWidgets.isEmpty()) {
+            Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
+                if (isAbstractRepresentationOf(it,guiState,true)) {
+                    selectedGuiWidgets.add(it)
+                }
             }
         }
         return selectedGuiWidgets
     }
 
-    fun isAbstractRepresentationOf(widget: Widget, guiState: State<*>): Boolean
+    fun isAbstractRepresentationOf(widget: Widget, guiState: State<*>, compareDerived: Boolean): Boolean
     {
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
         if (abstractState == null)
@@ -282,6 +297,11 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
         if (this.avsId == derivedAttributeValuationSet.avsId)
         {
             return true
+        }
+        if (compareDerived) {
+            if (derivedAttributeValuationSet.isDerivedFrom(this)) {
+                return true
+            }
         }
         return false
     }
@@ -343,30 +363,6 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
     }
 
     fun haveTheSameAttributePath(cmpAttributeValuationSet: AttributeValuationSet): Boolean {
-       /* if (parentAttributeValuationSetId != emptyUUID && cmpAttributeValuationSet.parentAttributeValuationSetId == emptyUUID)
-            return false
-        if (parentAttributeValuationSetId == emptyUUID && cmpAttributeValuationSet.parentAttributeValuationSetId != emptyUUID)
-            return false
-        if (parentAttributeValuationSetId != emptyUUID) {
-            val parentAttributeValuationSet = allAttributeValuationSet.get(parentAttributeValuationSetId)!!
-            val cmpParentAttributeValuationSet = allAttributeValuationSet.get(cmpAttributeValuationSet.parentAttributeValuationSetId)!!
-            if (!parentAttributeValuationSet.haveTheSameAttributePath(cmpParentAttributeValuationSet)) {
-                return false
-            }
-        }
-        if (!localAttributes.equals(cmpAttributeValuationSet.localAttributes)) {
-            return false
-        }
-        if (childAttributeValuationSetIds == null) {
-            if (cmpAttributeValuationSet.childAttributeValuationSetIds == null)
-                return true
-            return false
-        }
-        if (cmpAttributeValuationSet.childAttributeValuationSetIds == null)
-            return false
-        if (childAttributeValuationSetIds.any { childAttributeValuationSet -> cmpAttributeValuationSet.childAttributeValuationSetIds.all { !childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
-            return false
-        }*/
         if (avsId != cmpAttributeValuationSet.avsId)
             return false
         return true

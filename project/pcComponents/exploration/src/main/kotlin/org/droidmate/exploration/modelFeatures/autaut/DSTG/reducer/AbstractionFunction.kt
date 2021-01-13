@@ -88,7 +88,7 @@ class AbstractionFunction (val root: DecisionNode) {
             return true
         }
         return false
-       /* else {
+/*       else {
             if (attributePath.parentAttributePathId == emptyUUID)
                 return false
             var parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)

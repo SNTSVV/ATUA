@@ -1,6 +1,7 @@
 package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
@@ -16,7 +17,20 @@ class GoToTargetWindowTask (
     }
 
     override fun initPossiblePaths(currentState: State<*>) {
-        possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,usingPressback))
+        possiblePaths.clear()
+        var nextPathType = if (currentPath == null)
+            PathFindingHelper.PathType.INCLUDE_INFERED
+        else
+            computeNextPathType(currentPath!!.pathType,includeReset)
+        while (possiblePaths.isEmpty()) {
+            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
+            if (nextPathType == PathFindingHelper.PathType.WTG ||
+                    (!includeReset && nextPathType == PathFindingHelper.PathType.FOLLOW_TRACE)) {
+                break
+            }else {
+                nextPathType = computeNextPathType(nextPathType,includeReset)
+            }
+        }
     }
 
     companion object {

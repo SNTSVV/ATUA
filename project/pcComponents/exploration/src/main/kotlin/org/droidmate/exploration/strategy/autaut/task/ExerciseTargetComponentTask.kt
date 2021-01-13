@@ -49,6 +49,8 @@ class ExerciseTargetComponentTask private constructor(
         }
         if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
             return true
+        eventList.clear()
+        eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         if (eventList.isNotEmpty()) {
             return false
         }
@@ -138,8 +140,9 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseWidgets(currentState: State<*>): List<Widget> {
         //check if we can encounter any target component in current state
+        val currentAbstractState = autautMF.getAbstractState(currentState)!!
         var candidates= ArrayList<Widget>()
-        candidates.addAll(autautMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationSet!!,currentAbstractState!!, currentState))
+        candidates.addAll(autautMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationSet!!,currentAbstractState, currentState))
         if (candidates.isNotEmpty())
         {
             return candidates
@@ -159,11 +162,13 @@ class ExerciseTargetComponentTask private constructor(
         if (currentAbstractState != null) {
             prevAbstractState = currentAbstractState
         }
-        val prevState = autautMF.appPrevState!!
         if (isCameraOpening(currentState)) {
             randomExplorationTask.chooseAction(currentState)
         }
         randomExplorationTask.isClickedShutterButton = false
+        if (currentAbstractState.window != targetWindow) {
+            randomExplorationTask.chooseAction(currentState)
+        }
         if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
             if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
                 recentChangedSystemConfiguration = true

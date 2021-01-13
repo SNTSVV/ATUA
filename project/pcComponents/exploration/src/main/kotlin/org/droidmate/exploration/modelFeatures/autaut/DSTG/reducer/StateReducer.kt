@@ -9,6 +9,7 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
+import java.util.logging.Logger
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -63,6 +64,9 @@ class StateReducer
                 var attributeValuationSet =  AttributeValuationSet.allAttributeValuationSet[activity]!!.map { it.value }. find { it.haveTheSameAttributePath(a) }
                 if (attributeValuationSet == null) {
                     attributeValuationSet =  AttributeValuationSet(a,attributePath_Cardinalitys[a.attributePathId]!!,activity,attributePath_Cardinalitys)
+                    attributeValuationSet!!.initActions()
+                } else {
+                    val a = 1
                 }
                 widgetReduceMap.filter { it.value.equals(a)}.forEach { w,_ ->
                     widgetList.put(w,attributeValuationSet)

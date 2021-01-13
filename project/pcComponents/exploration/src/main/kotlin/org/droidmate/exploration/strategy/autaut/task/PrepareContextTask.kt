@@ -17,6 +17,8 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
+import kotlin.collections.HashMap
 
 class PrepareContextTask private constructor(
         regressionWatcher: AutAutMF,
@@ -24,7 +26,7 @@ class PrepareContextTask private constructor(
         delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
-        val availableWidgets = fillActions.map { it.key }.filter { currentState.widgets.contains(it) }
+        val availableWidgets = currentState.widgets.filter { fillActions.containsKey(it.uid) }
         if (availableWidgets.isNotEmpty())
             return false
         var isEnd = true
@@ -40,7 +42,7 @@ class PrepareContextTask private constructor(
 
     var fillDataMode: FillDataMode = FillDataMode.SIMPLE
     protected val filledData = HashMap<DataField, Boolean>()
-    val fillActions = HashMap<Widget,ExplorationAction>()
+    val fillActions = HashMap<UUID,ExplorationAction>()
     override fun initialize(currentState: State<*>) {
         reset()
         prepareFillActions(currentState)
@@ -59,16 +61,16 @@ class PrepareContextTask private constructor(
             val inputValue = TextInput.getSetTextInputValue(widget,currentState,randomInput)
             if (widget.checked.isEnabled()) {
                 if(widget.checked.toString() != inputValue) {
-                    fillActions[widget] = widget.click()
+                    fillActions[widget.uid] = widget.click()
                     ExplorationTrace.widgetTargets.removeLast()
                 }
             } else {
                 val inputAction = if (allInputWidgets.size == 1)
-                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
+                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                 else
-                    widget.setText(inputValue,sendEnter = true ,enableValidation = false)
+                    widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                 ExplorationTrace.widgetTargets.removeLast()
-                fillActions[widget] = inputAction
+                fillActions[widget.uid] = inputAction
             }
         }
 
@@ -112,16 +114,16 @@ class PrepareContextTask private constructor(
 }
 
     internal fun randomlyFill(currentState: State<*>): ExplorationAction {
-        val availableWidgets = fillActions.map { it.key }.filter { currentState.widgets.contains(it) }
+        val availableWidgets = currentState.widgets.filter { w->fillActions.containsKey(w.uid)}
         if (availableWidgets.isEmpty()) {
             log.debug("No more filling data. Press back.")
             return ExplorationAction.pressBack()
         }
-        val toFillWidget = availableWidgets.first()
+        val toFillWidget = availableWidgets.random()
         log.debug("Selected widget: ${toFillWidget}")
         ExplorationTrace.widgetTargets.add(toFillWidget)
-        val action = fillActions[toFillWidget]!!
-        fillActions.remove(toFillWidget)
+        val action = fillActions[toFillWidget.uid]!!
+        fillActions.remove(toFillWidget.uid)
         return action
     }
 

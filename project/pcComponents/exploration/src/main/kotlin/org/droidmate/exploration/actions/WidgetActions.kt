@@ -102,7 +102,7 @@ fun Widget.availableActions(delay: Long, useCoordinateClicks:Boolean): List<Expl
 		if(useCoordinateClicks) actionList.add(this.longClick(delay))
 		else actionList.add(this.longClickEvent(delay))
 	}
-	if (this.clickable||this.selected.isEnabled()){
+	if (this.clickable ||this.selected.isEnabled()){
 		if(useCoordinateClicks) actionList.add(this.click(delay))
 		else actionList.add(this.clickEvent(delay))
 	}

@@ -13,6 +13,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.ExplorationContext
+import org.droidmate.exploration.actions.pressBack
+import org.droidmate.exploration.actions.rotate
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.exploration.modelFeatures.explorationWatchers.CrashListMF
 import org.droidmate.exploration.modelFeatures.graph.Edge
@@ -34,6 +36,7 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.autaut.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
@@ -54,6 +57,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 class AutAutMF(private val appName: String,
@@ -127,17 +131,26 @@ class AutAutMF(private val appName: String,
     var internetStatus = true
     val abstractStateVisitCount = HashMap<AbstractState, Int>()
     val windowVisitCount = HashMap<Window, Int>()
+    val stateVisitCount = HashMap<State<*>,Int>()
     var appPrevState: State<*>? =null
     var windowStack: Stack<Window> = Stack<Window>()
     val stateList: ArrayList<State<*>> = ArrayList()
+
     val guiState_AbstractStateMap = HashMap<State<*>,AbstractState>()
     // records how often a specific widget was selected and from which activity-eContext (widget.uid -> Map<activity -> numActions>)
     private val wCnt = HashMap<UUID, MutableMap<String, Int>>()
+    private val actionScore = HashMap<Pair<UUID?,AbstractActionType>, MutableMap<UUID, Double>>()
+
+    private var traceId = 0
+    private var transitionId = 0
+
+     val interactionsTracing = HashMap<List<Interaction<*>>, Pair<Int,Int>>()
+
     fun getUnexploredWidget(guiState: State<Widget>): List<Widget> {
         val unexploredWidget = ArrayList<Widget>()
         val abstractState = getAbstractState(guiState)!!
         val activity = abstractState.activity
-        Helper.getVisibleInteractableWidgetsWithoutKeyboard(guiState).forEach {
+        Helper.getActionableWidgetsWithoutKeyboard(guiState).forEach {
             val widgetUid = it.uid
             if (wCnt.containsKey(widgetUid)) {
                 if (wCnt.get(widgetUid)!!.containsKey(activity)) {
@@ -157,6 +170,7 @@ class AutAutMF(private val appName: String,
         }.toMap()
     }
 
+
     var prevWindowState: State<*>? = null
 
     var lastOpeningAnotherAppInteraction: Interaction<Widget>? = null
@@ -168,7 +182,6 @@ class AutAutMF(private val appName: String,
     var lastUpdatedMethodCoverage: Double = 0.0
     var lastMethodCoverage: Double = 0.0
     var lastUpdatedStatementCoverage: Double = 0.0
-
 
 
     val unreachableModifiedMethods = ArrayList<String>()
@@ -231,6 +244,7 @@ class AutAutMF(private val appName: String,
      */
     val mutex = Mutex()
     private var trace: ExplorationTrace<*,*>? = null
+    private var eContext: ExplorationContext<*,*,*>? = null
     var fromLaunch = true
     var firstRun = true
 
@@ -242,6 +256,7 @@ class AutAutMF(private val appName: String,
     }
 
     override fun onAppExplorationStarted(context: ExplorationContext<*, *, *>) {
+        this.eContext = context
         this.trace = context.explorationTrace
         this.stateGraph = context.getOrCreateWatcher<StateGraphMF>()
         this.statementMF = context.getOrCreateWatcher<StatementCoverageMF>()
@@ -365,8 +380,8 @@ class AutAutMF(private val appName: String,
 
 
                 updateAppModel(prevState, newState, interactions,context)
-                //initwidgetCounter for newState
-                initWidgetActionCounterForNewState(newState)
+
+
 
                 //validateModel(newState)
             }
@@ -378,13 +393,15 @@ class AutAutMF(private val appName: String,
 
     private fun initWidgetActionCounterForNewState(newState: State<*>) {
         val newAbstractState: AbstractState = getAbstractState(newState)!!
-        Helper.getVisibleInteractableWidgetsWithoutKeyboard(newState).forEach {
+        Helper.getActionableWidgetsWithoutKeyboard(newState).forEach {
             val widgetUid = it.uid
             if (!wCnt.containsKey(widgetUid)) {
                 wCnt.put(widgetUid, HashMap())
             }
             if (!wCnt.get(widgetUid)!!.containsKey(newAbstractState.activity)) {
                 wCnt.get(widgetUid)!!.put(newAbstractState.activity, 0)
+
+
             }
         }
     }
@@ -404,15 +421,12 @@ class AutAutMF(private val appName: String,
                     autautMF = this,
                     currentState = currentState,
                     root = currentAbstractState,
-                    includingWTG = false,
-                    stopWhenHavingUnexercisedAction = false,
                     allPaths = paths,
                     finalTarget = dest,
-                    includeBackEvent = true,
-                    includeReset = true,
-                    pathCountLimitation = 10,
+                    pathCountLimitation = 1,
                     shortest = true,
-                    traversingNodes = listOf(Pair(windowStack.clone() as Stack<Window>, currentAbstractState))
+                    lastTransitions = listOf(Triple(windowStack.clone() as Stack<Window>, currentAbstractState,null)),
+                    pathType = PathFindingHelper.PathType.FOLLOW_TRACE
             )
             if (paths.size > 0)
                 pathStatus.put(dest,true)
@@ -532,6 +546,8 @@ class AutAutMF(private val appName: String,
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         if (prevAbstractState == null)
             return
+        transitionId++
+        interactionsTracing.put(interactions,Pair(traceId,transitionId))
         if (interactions.size == 1) {
             val interaction = interactions.first()
             computeSingleInteraction(prevAbstractState, interaction, currentAbstractState, prevState, currentState)
@@ -555,7 +571,7 @@ class AutAutMF(private val appName: String,
             )
             val abstractInteraction = AbstractTransition(
                     abstractAction = abstractAction,
-                    interactions = ArrayList(),
+                    interactions = HashSet(),
                     isImplicit = false,
                     prevWindow = windowStack.peek(),
                     data = data,
@@ -607,29 +623,25 @@ class AutAutMF(private val appName: String,
             }
             isRecentPressMenu = false
         }
-        var actionType: AbstractActionType = normalizeActionType(interaction.actionType)
+        var actionType: AbstractActionType = normalizeActionType(interaction,prevState)
         val actionData = AbstractAction.computeAbstractActionExtraData(actionType, interaction)
-        if (actionType == AbstractActionType.CLICK && interaction.targetWidget == null) {
-            val guiDimension = Helper.computeGuiTreeDimension(prevState)
-            val clickCoordination = Helper.parseCoordinationData(interaction.data)
-            if (clickCoordination.first<guiDimension.leftX || clickCoordination.second < guiDimension.topY) {
-                actionType = AbstractActionType.CLICK_OUTBOUND
-            }
-        }
+
         when (actionType) {
             AbstractActionType.LAUNCH_APP -> {
                 AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] = currentState
             }
             AbstractActionType.RESET_APP -> {
                 AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH] = currentState
-                AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] = currentState
+                if (AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] == null) {
+                    AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] = currentState
+                }
             }
         }
-
-
+        updateActionScore(currentState, prevState, interaction)
         if (interaction.targetWidget == null) {
             val allAbstractTransitions = abstractTransitionGraph.edges(prevAbstractState)
             if (actionType == AbstractActionType.RESET_APP || actionType == AbstractActionType.LAUNCH_APP) {
+                setNewTrace()
                 processLaunchOrResetInteraction(allAbstractTransitions, actionType, actionData, currentAbstractState, interaction, prevAbstractState)
             } else {
                 processNonLaunchAndResetNullTargetInteraction(allAbstractTransitions, actionType, actionData, currentAbstractState, interaction, prevAbstractState)
@@ -651,6 +663,7 @@ class AutAutMF(private val appName: String,
                 if (existingTransition != null) {
                     lastExecutedTransition = existingTransition
                     lastExecutedTransition!!.interactions.add(interaction)
+                    lastExecutedTransition!!.tracing.add(Pair(traceId,transitionId))
                 } else {
                     //No recored abstract interaction before
                     //Or the abstractInteraction is implicit
@@ -661,6 +674,108 @@ class AutAutMF(private val appName: String,
         }
         if (lastExecutedTransition!=null)
             prevAbstractState.increaseActionCount(lastExecutedTransition!!.abstractAction,true)
+    }
+
+    private fun setNewTrace() {
+        traceId++
+        transitionId = 0
+    }
+
+    var newWidgetScore = 1000.00
+    var newActivityScore = 10000.00
+    var coverageIncreaseScore = 1000.00
+    private fun updateActionScore(currentState: State<*>, prevState: State<*>, interaction: Interaction<Widget>) {
+        //newWidgetScore+=10
+        val coverageIncreased = statementMF!!.executedStatementsMap.size - statementMF!!.prevCoverage
+        val currentAbstractState = getAbstractState(currentState)
+        if (currentAbstractState == null) {
+            return
+        }
+        val unexercisedWidgetCnt = getUnexploredWidget(currentState)
+        var reward = 0.0
+        if (!windowVisitCount.containsKey(currentAbstractState.window)) {
+            return
+        }
+        if (windowVisitCount[currentAbstractState.window] == 1 && currentAbstractState.window is Activity) {
+            reward+=newActivityScore
+            newActivityScore*=1.1
+        }
+
+        if (coverageIncreased > 0) {
+            reward+=coverageIncreaseScore
+        }
+        //init score for new state
+        var newWidgetCount = 0
+        val actionableWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState).filter { !Helper.isUserLikeInput(it) }
+        if (eContext!!.explorationCanMoveOn()) {
+
+
+            actionableWidgets.groupBy { it.uid }.forEach { uid, w ->
+                val actions = Helper.getAvailableActionsForWidget(w.first(), currentState, 0, false)
+                actions.forEach { action ->
+                    val widget_action = Pair(uid, normalizeActionType(action.name))
+                    actionScore.putIfAbsent(widget_action, HashMap())
+                    /*if (unexercisedWidgetCnt.contains(w)) {
+                    reward += 10
+                }*/
+                    if (actionScore[widget_action]!!.values.isNotEmpty()) {
+                        val avgScore = actionScore[widget_action]!!.values.average()
+                        actionScore[widget_action]!!.putIfAbsent(currentState.uid, avgScore)
+                    } else {
+                        val score = if (normalizeActionType(action.name) == AbstractActionType.LONGCLICK) {
+                            0.0
+                        } else {
+                            newWidgetScore
+                        }
+                        actionScore[widget_action]!!.putIfAbsent(currentState.uid, score)
+                        if (!currentAbstractState!!.isOutOfApplication) {
+                            reward += score
+                            newWidgetCount++
+                        }
+                    }
+                }
+            }
+        }
+        if (newWidgetCount == 0)
+            reward -=100
+        if (!isScoreAction(interaction, prevState)) {
+            return
+        }
+        val widget = interaction.targetWidget
+
+        val prevAbstractState = getAbstractState(prevState)
+        if (prevAbstractState == null) {
+            return
+        }
+        val actionType = interaction.actionType
+        if (normalizeActionType(interaction, prevState) == AbstractActionType.TEXT_INSERT)
+            return
+        val widget_action = Pair(widget?.uid?:null,normalizeActionType(interaction, prevState))
+        actionScore.putIfAbsent(widget_action, HashMap())
+        actionScore[widget_action]!!.putIfAbsent(prevState.uid,newWidgetScore)
+        val currentScore = actionScore[widget_action]!![prevState.uid]!!
+        val maxCurrentStateScore = if (stateVisitCount[currentState]==1 && coverageIncreased ==0) {
+            0.0
+        } else {
+            val currentStateWidgetScores = actionScore.filter { (actionableWidgets.any { w -> w.uid == it.key.first } || it.key.first==null) && it.value.containsKey(currentState.uid) }
+           if (currentStateWidgetScores.isNotEmpty())
+                currentStateWidgetScores.map { it.value.get(currentState.uid)!! }.max()!!
+            else
+                0.0
+        }
+        val newScore = currentScore + 0.5*(reward+0.9*maxCurrentStateScore-currentScore)
+        actionScore[widget_action]!![prevState.uid] = newScore
+    }
+
+    private fun isScoreAction(interaction: Interaction<Widget>, prevState: State<*>): Boolean {
+        if (interaction.targetWidget!=null)
+            return true
+        val actionType = normalizeActionType(interaction,prevState)
+        return when (actionType) {
+            AbstractActionType.PRESS_MENU, AbstractActionType.MINIMIZE_MAXIMIZE, AbstractActionType.CLOSE_KEYBOARD,AbstractActionType.PRESS_BACK,AbstractActionType.ROTATE_UI -> true
+            else -> false
+        }
+
     }
 
     private fun updateWidgetActionCounter(prevAbstractState: AbstractState, interaction: Interaction<Widget>) {
@@ -675,6 +790,8 @@ class AutAutMF(private val appName: String,
         }
         val currentCnt = wCnt.get(widgetUid)!!.get(prevActivity)!!
         wCnt.get(widgetUid)!!.put(prevActivity, currentCnt + 1)
+
+
     }
 
     private fun processNonLaunchAndResetNullTargetInteraction(allAbstractTransitions: List<Edge<AbstractState, AbstractTransition>>, actionType: AbstractActionType, actionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, prevAbstractState: AbstractState) {
@@ -689,6 +806,7 @@ class AutAutMF(private val appName: String,
         if (abstractTransition!=null) {
             lastExecutedTransition = abstractTransition.label
             lastExecutedTransition!!.interactions.add(interaction)
+            lastExecutedTransition!!.tracing.add(Pair(traceId,transitionId))
 
         } else {
             createNewAbstractTransition(actionType, interaction, prevAbstractState, null, actionData, currentAbstractState)
@@ -718,13 +836,14 @@ class AutAutMF(private val appName: String,
 
         val newAbstractInteraction = AbstractTransition(
                 abstractAction = lastExecutedAction,
-                interactions = ArrayList(),
+                interactions = HashSet(),
                 isImplicit = false,
                 prevWindow = windowStack.peek(),
                 data = actionData,
                 source = prevAbstractState,
                 dest = currentAbstractState)
         newAbstractInteraction.interactions.add(interaction)
+        newAbstractInteraction.tracing.add(Pair(traceId,transitionId))
         abstractTransitionGraph.add(prevAbstractState, currentAbstractState, newAbstractInteraction)
         lastExecutedTransition = newAbstractInteraction
     }
@@ -752,12 +871,24 @@ class AutAutMF(private val appName: String,
         return abstractAction
     }
 
-    private fun normalizeActionType(actionType: String): AbstractActionType {
-        val abstractActionType = when (actionType) {
+    private fun normalizeActionType(interaction: Interaction<Widget>,prevState: State<*>): AbstractActionType {
+        val actionType = interaction.actionType
+        var abstractActionType = when (actionType) {
             "Tick" -> AbstractActionType.CLICK
             "ClickEvent" -> AbstractActionType.CLICK
             "LongClickEvent" -> AbstractActionType.LONGCLICK
             else -> AbstractActionType.values().find { it.actionName.equals(actionType)}
+        }
+        if (abstractActionType == AbstractActionType.CLICK && interaction.targetWidget == null) {
+            if (interaction.data.isBlank()) {
+                abstractActionType = AbstractActionType.CLICK_OUTBOUND
+            } else {
+                val guiDimension = Helper.computeGuiTreeDimension(prevState)
+                val clickCoordination = Helper.parseCoordinationData(interaction.data)
+                if (clickCoordination.first < guiDimension.leftX || clickCoordination.second < guiDimension.topY) {
+                    abstractActionType = AbstractActionType.CLICK_OUTBOUND
+                }
+            }
         }
         if (abstractActionType == null) {
              throw Exception("No abstractActionType for $actionType")
@@ -765,6 +896,19 @@ class AutAutMF(private val appName: String,
         return abstractActionType
     }
 
+    private fun normalizeActionType(actionName: String): AbstractActionType {
+        val actionType = actionName
+        var abstractActionType = when (actionType) {
+            "Tick" -> AbstractActionType.CLICK
+            "ClickEvent" -> AbstractActionType.CLICK
+            "LongClickEvent" -> AbstractActionType.LONGCLICK
+            else -> AbstractActionType.values().find { it.actionName.equals(actionType)}
+        }
+        if (abstractActionType == null) {
+            throw Exception("No abstractActionType for $actionType")
+        }
+        return abstractActionType
+    }
     private fun compareDataOrNot(abstractTransition: AbstractTransition, actionType: AbstractActionType, actionData: Any?): Boolean {
         if (actionType == AbstractActionType.SEND_INTENT || actionType == AbstractActionType.SWIPE) {
             return abstractTransition.data == actionType
@@ -884,7 +1028,10 @@ class AutAutMF(private val appName: String,
             statementMF!!.statementRead = false
             val currentAbstractState = computeAbstractState(newState, lastInteractions, context)
             stateList.add(newState)
+            stateVisitCount.putIfAbsent(newState,0)
+            stateVisitCount[newState]= stateVisitCount[newState]!!+1
             guiState_AbstractStateMap.put(newState,currentAbstractState)
+            initWidgetActionCounterForNewState(newState)
             var prevAbstractState = getAbstractState(prevState)
             if (prevAbstractState == null && prevState != context.model.emptyState) {
                 prevAbstractState = computeAbstractState(prevState, emptyList(),context)
@@ -896,8 +1043,6 @@ class AutAutMF(private val appName: String,
                 AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] = newState
                 firstRun = false
             }
-
-
             if (lastInteractions.isNotEmpty()) {
                 lastExecutedTransition = null
                 computeAbstractInteraction(ArrayList(lastInteractions), prevState, newState, windowStack.peek())
@@ -1978,8 +2123,71 @@ class AutAutMF(private val appName: String,
         return false
     }
 
+    fun getCandidateAction(currentState: State<*>,delay:Long, useCoordinator: Boolean): Pair<ExplorationAction,Widget?> {
+        val currentAbstractState = getAbstractState(currentState)!!
+        val actionableWidget =  Helper.getActionableWidgetsWithoutKeyboard(currentState)
+        val currentStateActionScores = actionScore.filter { actionableWidget.any { w -> w.uid == it.key.first } && it.value.containsKey(currentState.uid) }
+                .map {Pair(it.key,it.value.get(currentState.uid)!!)}.toMap()
+        if (currentStateActionScores.isEmpty())
+            return  Pair(ExplorationAction.pressBack(),null)
+        var candidateAction: ExplorationAction? = null
+        var candidateWidget: Widget? = null
+        val excludedActions = ArrayList<Pair<UUID?,AbstractActionType>>()
+        while (candidateAction == null) {
+            val availableCurrentStateScores = currentStateActionScores.filter { !excludedActions.contains(it.key) }
+            if (availableCurrentStateScores.isEmpty()) {
+                break
+            }
+            val maxCurrentStateScore = if (Random.nextDouble()<0.5) {
+                 availableCurrentStateScores.maxBy { it.value }!!.key
+            } else {
+                val pb = ProbabilityDistribution<Pair<UUID?,AbstractActionType>>(availableCurrentStateScores)
+                pb.getRandomVariable()
+            }
+            if (maxCurrentStateScore.first!=null) {
+                val candidateWidgets = actionableWidget.filter { it.uid == maxCurrentStateScore.first }
+                if (candidateWidgets.isEmpty())
+                    return Pair(ExplorationAction.pressBack(), null)
+                val widgetActions = candidateWidgets.map { w ->
+                    Pair<Widget, List<ExplorationAction>>(w,
+                            Helper.getAvailableActionsForWidget(w, currentState, delay, useCoordinator)
+                                    .filter { normalizeActionType(it.name) == maxCurrentStateScore.second })
+                }
+                val candidateActions = widgetActions.filter { it.second.isNotEmpty() }
+                if (candidateActions.isNotEmpty()) {
+                    val candidate = candidateActions.random()
+                    candidateWidget = candidate.first
+                    candidateAction = candidate.second.random()
+                    ExplorationTrace.widgetTargets.clear()
+                    ExplorationTrace.widgetTargets.add(candidateWidget)
+                } else
+                    excludedActions.add(maxCurrentStateScore)
+            } else {
+                val action: ExplorationAction = when (maxCurrentStateScore.second) {
+                    AbstractActionType.ROTATE_UI -> rotateUI(currentAbstractState)
+                    AbstractActionType.PRESS_BACK -> ExplorationAction.pressBack()
+                    AbstractActionType.CLOSE_KEYBOARD -> GlobalAction(ActionType.CloseKeyboard)
+                    AbstractActionType.MINIMIZE_MAXIMIZE -> GlobalAction(ActionType.MinimizeMaximize)
+                    AbstractActionType.PRESS_MENU -> GlobalAction(ActionType.PressMenu)
+                    else -> ExplorationAction.pressBack()
+                }
+                return Pair(action,null)
+            }
+        }
+        if (candidateAction == null) {
+            return  Pair(ExplorationAction.pressBack(),null)
+        }
+        //check candidate action
+        return Pair(candidateAction,candidateWidget)
+    }
 
-
+    private fun rotateUI(currentAbstractState: AbstractState): ExplorationAction {
+        if (currentAbstractState.rotation == Rotation.PORTRAIT) {
+            return ExplorationAction.rotate(90)
+        } else {
+            return ExplorationAction.rotate(-90)
+        }
+    }
 
 
     companion object {

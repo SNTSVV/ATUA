@@ -6,7 +6,7 @@ import org.droidmate.explorationModel.interaction.Interaction
 
 class AbstractTransition(
         val abstractAction: AbstractAction,
-        val interactions: ArrayList<Interaction<*>> = ArrayList(),
+        val interactions: HashSet<Interaction<*>> = HashSet(),
         val isImplicit: Boolean,
         val prevWindow: Window?,
         val data: Any? =null,
@@ -20,6 +20,7 @@ class AbstractTransition(
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,
     val handlers = HashMap<String,Boolean>() // handler method id
+    val tracing = HashSet<Pair<Int,Int>>() // list of traceId-transitionId
 
     fun isExplicit() = !isImplicit
     fun updateUpdateStatementCoverage(statement: String, autautMF: AutAutMF) {

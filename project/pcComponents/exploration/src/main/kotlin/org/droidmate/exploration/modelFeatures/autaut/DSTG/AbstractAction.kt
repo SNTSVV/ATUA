@@ -27,10 +27,14 @@ data class AbstractAction (
     fun isCheckableOrTextInput(): Boolean {
         if (attributeValuationSet == null)
             return false
-        if (attributeValuationSet.isInputField() || attributeValuationSet.isCheckable()) {
+        if (attributeValuationSet.isInputField()) {
             return true
         }
-        return false
+        val className = attributeValuationSet.getClassName()
+        return when(className) {
+            "android.widget.RadioButton", "android.widget.CheckBox", "android.widget.Switch", "android.widget.ToggleButton" -> true
+            else -> false
+        }
     }
 
     fun isActionQueue(): Boolean {
@@ -40,8 +44,9 @@ data class AbstractAction (
     fun getScore(): Double {
         var actionScore = when(actionType) {
             AbstractActionType.PRESS_BACK -> 0.5
-            AbstractActionType.SWIPE, AbstractActionType.LONGCLICK -> 1.0
+            AbstractActionType.LONGCLICK -> 1.0
             AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 2.0
+            AbstractActionType.SWIPE -> 2.0
             AbstractActionType.ITEM_CLICK -> 4.0
             else -> 1.0
         }

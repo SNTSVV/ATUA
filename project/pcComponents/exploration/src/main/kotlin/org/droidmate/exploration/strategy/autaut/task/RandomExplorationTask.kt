@@ -18,7 +18,6 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
-import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -98,11 +97,6 @@ class RandomExplorationTask constructor(
         {
             return true
         }
-        val prevState = autautMF.appPrevState
-        val prevAppState = autautMF.getAbstractState(prevState!!)!!
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
-        if (prevAppState.window != currentAbstractState.window && !currentAbstractState.isOutOfApplication && !prevAppState.isOutOfApplication && lockedWindow == null)
-            return true
         /*if (isFullyExploration)
             return false
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
@@ -169,7 +163,7 @@ class RandomExplorationTask constructor(
             }
         }*/
         val visibleWidgets: List<Widget>
-        visibleWidgets = Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState)
+        visibleWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
         if (currentState.widgets.filter { it.className == "android.webkit.WebView" }.isNotEmpty())
         {
             return ArrayList(currentState.widgets.filter { it.className == "android.webkit.WebView"}).also {it.addAll(visibleWidgets) }
@@ -207,24 +201,7 @@ class RandomExplorationTask constructor(
             return dealWithCamera(currentState)
         }
         isClickedShutterButton = false
-        if (currentAbstractState.isOutOfApplication
-                || Helper.getVisibleWidgets(currentState).find { it.resourceId == "android:id/floating_toolbar_menu_item_text" } != null) {
-
-            // Some apps will pop up library activity. Press back is not enough.
-            // give a chance to try random
-            if (!currentState.widgets.any { it.packageName == autautMF.packageName }) {
-                log.info("App goes to an out of scope node.")
-                if (autautMF.abstractTransitionGraph.edges(currentAbstractState).any {
-                            it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK
-                                    && !(it.destination?.data?.isOutOfApplication?:false)
-                        }) {
-                    log.info("Try press back.")
-                    return ExplorationAction.pressBack()
-                }
-            }
-        }
-
-        if (lockedWindow != null && lockedWindow != currentAbstractState.window) {
+        if (lockedWindow != null && lockedWindow!!.activityClass != currentAbstractState.activity) {
             if (goToLockedWindowTask != null) {
                 // should go back to target Window
                 //reset data filling
@@ -233,11 +210,10 @@ class RandomExplorationTask constructor(
                     return goToLockedWindowTask!!.chooseAction(currentState)
                 }
             } else {
-
                 if (currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu) {
                     dataFilled = false
                     goToLockedWindowTask = GoToAnotherWindow(autAutTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
-                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true,false)) {
+                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true,false,false)) {
                         goToLockedWindowTask!!.initialize(currentState)
                         return goToLockedWindowTask!!.chooseAction(currentState)
                     }
@@ -245,36 +221,44 @@ class RandomExplorationTask constructor(
             }
         }
         goToLockedWindowTask = null
-
-        if (!triedRandomKeyboard) {
-            if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty()
-                    && Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty()) {
+        val lastActionType = autautStrategy.eContext.getLastActionType()
+        if (lastActionType != "ResetApp" && lastActionType != "LaunchApp") {
+            val allActions = autautStrategy.eContext.explorationTrace.getActions()
+            val distantFromLaunch = allActions.size - allActions
+                    .indexOfLast { it.actionType == "ResetApp" || it.actionType == "LaunchApp" }
+            if (distantFromLaunch > 50*autautStrategy.budgetScale) {
+                return autautStrategy.eContext.launchApp()
+            }
+        }
+        if (currentState.widgets.any { it.isKeyboard }) {
+            val actionableWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
+            if (actionableWidgets.isEmpty()) {
+                 //if keyboard is openning but there 's no special actions
+                //give a 50/50 chance to do a random click on keyboard
+                if (random.nextBoolean()) {
+                    return doRandomKeyboard(currentState)!!
+                }
+                //find search button
                 val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
                 if (searchButtons.isNotEmpty()) {
+                    //Give a 50/50 chance to click on the search button
                     if (random.nextBoolean()) {
                         dataFilled = false
                         val randomButton = searchButtons.random()
                         log.info("Widget: $random")
                         return randomButton.click()
-                    } else {
-                        return GlobalAction(actionType = ActionType.CloseKeyboard)
                     }
                 }
+                return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
-
-            if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty()) {
-                // Need return to portrait
+            //check if the action widgets are explored
+            val unexploredWidgets = autautMF.getUnexploredWidget(currentState)
+            if (unexploredWidgets.isEmpty()) {
+                //give a 50/50 chance to try again
                 if (random.nextBoolean()) {
-                    triedRandomKeyboard = true
-                    return chooseActionWithName(AbstractActionType.RANDOM_KEYBOARD, "", null, currentState, null)!!
+                    return GlobalAction(actionType = ActionType.CloseKeyboard)
                 }
-
             }
-        }
-
-        if (currentState.widgets.filter { it.isKeyboard }.isNotEmpty() &&
-                Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState).filter { it.packageName == autautStrategy.eContext.apk.packageName }.isEmpty() ) {
-            return GlobalAction(actionType = ActionType.CloseKeyboard)
         }
 
        /* if (currentAbstractState.window.activityClass == "com.oath.mobile.platform.phoenix.core.TrapActivity") {
@@ -335,6 +319,8 @@ class RandomExplorationTask constructor(
                 if (fillDataTask.isAvailable(currentState, alwaysUseRandomInput)) {
                     fillDataTask.initialize(currentState)
                     fillingData = true
+                } else {
+                    dataFilled = true
                 }
             } else {
                 dataFilled = true
@@ -345,10 +331,6 @@ class RandomExplorationTask constructor(
         if (fillingData) {
             fillingData = false
             dataFilled = true
-            /*if (fillDataTask.fillActions.isNotEmpty()  ) {
-                dataFilled = false
-            } else
-                dataFilled = true */
         }
         attemptCount++
         var randomAction: AbstractAction? = null
@@ -381,15 +363,6 @@ class RandomExplorationTask constructor(
                     // Swipe on widget should be executed by last
                     val widgetActions = unexercisedActions.filter { it.attributeValuationSet != null }
                     widgetActions.random()
-                    /*if (widgetActions.any { it.actionName != "Swipe" }) {
-                                if (widgetActions.any { it.actionName == "Click" }) {
-                                    widgetActions.filter {it.actionName == "Click"}.random()
-                                } else {
-                                    widgetActions.filterNot { it.actionName == "Swipe" }.random()
-                                }
-                            } else {
-                                widgetActions.random()
-                            }*/
                 } else {
                     unexercisedActions.random()
                 }
@@ -404,35 +377,45 @@ class RandomExplorationTask constructor(
                         randomAction = abstractActions.random()
                     }
                 } else {
-                    val visibleTargets = ArrayList(Helper.getVisibleInteractableWidgetsWithoutKeyboard(currentState))
-                            /*.filterNot { it.isInputField || it.checked.isEnabled() })*/
-                    val notSelectOnlyWidgets =   visibleTargets.filter {
-                        it.clickable || it.longClickable || it.scrollable || it.isInputField
-                    }
-                    val candidates = if(autautMF.getUnexploredWidget(currentState).any { notSelectOnlyWidgets.contains(it) }) {
-                        val scrollableWidgets = visibleTargets.filter { Helper.isScrollableWidget(it) }
-                        if (scrollableWidgets.isNotEmpty() && random.nextBoolean()) {
-                            scrollableWidgets
+                    val visibleTargets = ArrayList(Helper.getActionableWidgetsWithoutKeyboard(currentState))
+
+                    val unexploredWidgets = autautMF.getUnexploredWidget(currentState).filter {
+                        it.clickable || it.scrollable || (!it.clickable && it.longClickable)
+                    }.filterNot { Helper.isUserLikeInput(it) }
+                    if (unexploredWidgets.isNotEmpty()) {
+
+                        val candidates = if (unexploredWidgets.isNotEmpty()) {
+                            unexploredWidgets
+                            /*val scrollableWidgets = visibleTargets.filter { Helper.isScrollableWidget(it) }
+                            if (scrollableWidgets.isNotEmpty() && random.nextBoolean()) {
+                                scrollableWidgets
+                            } else {
+                                unexploredWidgets
+                            }*/
                         } else {
-                            notSelectOnlyWidgets
+                            val notUserlikeInputs = visibleTargets.filter {
+                                it.clickable || it.longClickable || it.scrollable
+                            }.filterNot { Helper.isUserLikeInput(it) }
+
+                            if (notUserlikeInputs.isNotEmpty() && random.nextBoolean()) {
+                                notUserlikeInputs
+                            } else {
+                                visibleTargets
+                            }
                         }
+                        val lessExercisedWidgets = runBlocking {
+                            ArrayList(getCandidates(candidates
+                            ))
+                        }
+                        val chosenWidget = lessExercisedWidgets.random()
+                        log.info("Widget: $chosenWidget")
+                        return doRandomActionOnWidget(chosenWidget, currentState)
                     } else {
-                        if (random.nextBoolean()) {
-                            visibleTargets
-                        } else
-                            notSelectOnlyWidgets
+                        val bestCandidate = autautMF.getCandidateAction(currentState,delay,useCoordinateClicks)
+                        log.info("Widget: ${bestCandidate.second}")
+                        return bestCandidate.first
                     }
 
-                    val lessExercisedWidgets = runBlocking {
-                        ArrayList(getCandidates(candidates
-                        ))
-                    }
-                    if (lessExercisedWidgets.any { it.className=="android.widget.Button" }) {
-                        lessExercisedWidgets.removeIf { it.className!="android.widget.Button" }
-                    }
-                    val chosenWidget = lessExercisedWidgets.random()
-                    log.info("Widget: $chosenWidget")
-                    return doRandomActionOnWidget(chosenWidget, currentState)
                     /*val attributeValuationSet = currentAbstractState.getAttributeValuationSet(chosenWidget, currentState)
                     if (attributeValuationSet == null) {
                         return doRandomActionOnWidget(chosenWidget, currentState)
@@ -819,14 +802,6 @@ class RandomExplorationTask constructor(
     private fun exerciseUnexercisedWidgetAbstractActions(unexercisedActions: List<AbstractAction>, randomAction: AbstractAction?, currentAbstractState: AbstractState): AbstractAction? {
         var randomAction1 = randomAction
         randomAction1 = if (unexercisedActions.any { it.attributeValuationSet != null }) {
-            //Test: prioritize swipe action to show as many as possible widgets
-            /* val widgetActions = toExecuteActions.filter { it.widgetGroup != null }
-                    if (widgetActions.any { it.actionName == "Swipe" }) {
-                        widgetActions.filter { it.actionName == "Swipe" }.random()
-                    } else {
-                        widgetActions.random()
-                    }*/
-
             // Swipe on widget should be executed by last
             val widgetActions = unexercisedActions.filter { it.attributeValuationSet != null }
             val nonWebViewActions = widgetActions.filterNot { it.attributeValuationSet!!.getClassName().contains("WebView") }
@@ -835,11 +810,6 @@ class RandomExplorationTask constructor(
             else
                 ArrayList(nonWebViewActions)
 
-            if (candidateActions.isNotEmpty()) {
-                if (candidateActions.any { it.attributeValuationSet!!.getClassName()=="android.widget.Button" }) {
-                    candidateActions.removeIf { it.attributeValuationSet!!.getClassName()!="android.widget.Button" }
-                }
-            }
             //prioritize the less frequent widget
             val actionByScore = HashMap<AbstractAction, Double>()
             val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[currentAbstractState.window]!!
@@ -847,19 +817,19 @@ class RandomExplorationTask constructor(
                 var actionScore = it.getScore()
                 val widgetGroup = it.attributeValuationSet!!
                 if (windowWidgetFrequency.containsKey(widgetGroup)) {
-                    actionByScore.put(it, actionScore.toDouble() / windowWidgetFrequency[widgetGroup]!!)
+                    actionByScore.put(it, actionScore.toDouble()/windowWidgetFrequency[widgetGroup]!!)
                 } else {
                     actionByScore.put(it, actionScore.toDouble())
                 }
             }
 
             if (actionByScore.isNotEmpty()) {
-                actionByScore.maxBy { it.value }!!.key
+                actionByScore.filter { it.value == actionByScore.map { it.value }. maxBy {it} }.map { it.key }.random()
             } else {
-                candidateActions.first()
+                candidateActions.random()
             }
         } else {
-            unexercisedActions.first()
+            unexercisedActions.random()
         }
         return randomAction1
     }
@@ -869,39 +839,7 @@ class RandomExplorationTask constructor(
        return false
     }
 
-    var isClickedShutterButton = false
-    internal fun dealWithCamera(currentState: State<*>): ExplorationAction {
-        val gotItButton = currentState.widgets.find { it.text.toLowerCase().equals("got it") }
-        if (gotItButton != null) {
-            log.info("Widget: $gotItButton")
-            return gotItButton.click()
-        }
-        if (!isClickedShutterButton){
-            val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
-            if (shutterbutton!=null)
-            {
-                log.info("Widget: $shutterbutton")
-                val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-                if (clickActions.isNotEmpty()) {
-                    isClickedShutterButton = true
-                    return clickActions.random()
-                }
-                ExplorationTrace.widgetTargets.clear()
-            }
-        }
-        val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done_button") }
-        if (doneButton!=null)
-        {
 
-            log.info("Widget: $doneButton")
-            val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
-            if (clickActions.isNotEmpty()) {
-                return clickActions.random()
-            }
-            ExplorationTrace.widgetTargets.clear()
-        }
-        return ExplorationAction.pressBack()
-    }
 
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }

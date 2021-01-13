@@ -69,9 +69,12 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 	val result: Any = when(this) { // REMARK this has to be an assignment for when to check for exhaustiveness
 		is Click -> {
 			env.device.verifyCoordinate(x, y)
-			env.device.click(x, y, interactiveTimeout).apply {
+			env.device.executeShellCommand("input tap $x $y").apply {
 				delay(delay)
 			}
+			/*env.device.click(x, y, interactiveTimeout).apply {
+				delay(delay)
+			}*/
 		}
 		is Tick -> {
 			var success = UiHierarchy.findAndPerform(env, idMatch(idHash)) {

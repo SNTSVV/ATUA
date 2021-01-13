@@ -291,7 +291,9 @@ open class ExploreCommand<M,S,W>(
 
 					// execute action
 					result = action.execute(app, device)
-
+					if (action is ResetApp) {
+						pushSdcardData(device)
+					}
 					if (cfg[ConfigProperties.UiAutomatorServer.delayedImgFetch]) {
 						if (capturedPreviously && action is ActionQueue) {
 							action.actions.forEachIndexed { i, a ->
@@ -355,6 +357,28 @@ open class ExploreCommand<M,S,W>(
 		}
 
 		return FailableExploration(explorationContext, explorationContext.exceptions)
+	}
+
+	private suspend fun pushSdcardData(device: IRobustDevice) {
+		val sdcardFolder = cfg.apksDirPath.resolve("sdcard")
+		if (!Files.exists(sdcardFolder)) {
+			return
+		}
+		val subFiles = Files.list(sdcardFolder)
+		subFiles.forEach {
+			if (!Files.isSymbolicLink(it)) {
+				if (!Files.isDirectory(it)) {
+					runBlocking {
+						device.pushFile(it, "/sdcard/")
+					}
+				} else {
+					val folderName = it.toFile().name
+					runBlocking {
+						device.pushFile(it, "/sdcard/$folderName")
+					}
+				}
+			}
+		}
 	}
 
 	@Throws(DeviceException::class)

@@ -6,9 +6,10 @@ import org.droidmate.exploration.modelFeatures.graph.IGraph
 import org.droidmate.exploration.modelFeatures.graph.Vertex
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
 import org.droidmate.explorationModel.interaction.Widget
 
-class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractState, AbstractTransition> =
+class TransitionPath(root: AbstractState, val pathType: PathFindingHelper.PathType, private val graph: IGraph<AbstractState, AbstractTransition> =
                               Graph(root,
                                       stateComparison = { a, b -> a == b },
                                       labelComparison = { a, b ->
@@ -45,7 +46,8 @@ class TransitionPath(root: AbstractState, private val graph: IGraph<AbstractStat
 
     fun clone(): TransitionPath{
         val newGraph = TransitionPath(
-                root = this.root.data
+                root = this.root.data,
+                pathType = this.pathType
         )
         this.getVertices().forEach { source ->
             this.edges(source).forEach { edge ->

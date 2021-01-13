@@ -471,7 +471,12 @@ Logcat reference:
 		// More information here: http://stackoverflow.com/questions/22611919/why-do-i-get-providermismatchexception-when-i-try-to-relativize-a-path-agains
 		val path = Paths.get(jarFile.toUri())
 		assert(Files.exists(path) && !Files.isDirectory(path))
-
+		val targetPath = Paths.get(targetFileName)
+		val targetString = if (targetPath.isAbsolute) {
+			targetPath.toString()
+		} else {
+			EnvironmentConstants.AVD_dir_for_temp_files + targetFileName
+		}
 		val commandDescription =
 			"Executing adb to push ${jarFile.fileName} on Android Device with s/n $deviceSerialNumber."
 
@@ -486,8 +491,9 @@ Logcat reference:
 				"-s",
 				deviceSerialNumber,
 				"push",
-				jarFile.toAbsolutePath().toString(),
-				EnvironmentConstants.AVD_dir_for_temp_files + targetFileName
+					jarFile.toAbsolutePath().toString(),
+				//jarFile.toAbsolutePath().toString(),
+				targetString
 			)
 
 		} catch (e: SysCmdExecutorException) {

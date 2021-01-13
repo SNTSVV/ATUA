@@ -1,14 +1,27 @@
 package org.droidmate.exploration.modelFeatures.autaut.WTG
 
+import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.Rectangle
+import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.isEnabled
+import org.droidmate.exploration.actions.availableActions
+import org.droidmate.exploration.actions.swipeDown
+import org.droidmate.exploration.actions.swipeLeft
+import org.droidmate.exploration.actions.swipeRight
+import org.droidmate.exploration.actions.swipeUp
 import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.AttributeValuationSet
 import org.droidmate.exploration.modelFeatures.autaut.Rotation
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.math.abs
 
 class Helper {
@@ -130,13 +143,56 @@ class Helper {
             return scores
         }
 
-        fun getVisibleInteractableWidgetsWithoutKeyboard(newState: State<*>): List<Widget> {
-            val result = getVisibleWidgets(newState).filter {
+        val guiState_actionableWidgets = HashMap<State<Widget>,List<Widget>>()
+        fun getActionableWidgetsWithoutKeyboard(guiState: State<*>): List<Widget> {
+            if (guiState_actionableWidgets.containsKey(guiState))
+                return guiState_actionableWidgets[guiState]!!
+            val excludeWidgets = ArrayList<Widget>()
+            val visibleWidgets = getVisibleWidgets(guiState)
+            /*val onTopWidgets = visibleWidgets.filter { it.parentId == null }
+            val toCheckWidgets = LinkedList<Widget>()
+            toCheckWidgets.addAll(onTopWidgets)
+            while (toCheckWidgets.isNotEmpty()) {
+                val widget = toCheckWidgets.last
+                toCheckWidgets.removeLast()
+                val childWidgets = visibleWidgets.filter { it.parentHash == widget.idHash }
+                if (childWidgets.size > 1) {
+
+                }
+            }*/
+            val drawerLayout = visibleWidgets.find { it.className.contains("DrawerLayout") }
+            if (drawerLayout!=null) {
+                val childWidgets = visibleWidgets.filter { it.parentHash == drawerLayout.idHash }
+                if (childWidgets.size > 1) {
+                    val widgetDrawOrders = childWidgets.map { Pair(it, it.metaInfo.find { it.contains("drawingOrder") }!!.split(" = ")[1].toInt()) }
+                    val maxDrawerOrder = widgetDrawOrders.maxBy { it.second}!!.second
+                    excludeWidgets.addAll(widgetDrawOrders.filter { it.second<maxDrawerOrder }.map { it.first }.map { getAllChild(visibleWidgets,it) }.flatten())
+                }
+            }
+            val result = visibleWidgets.filter{!excludeWidgets.contains(it)}.filter {
                 isInteractiveWidgetButNotKeyboard(it)
             }
             if (result.isEmpty()) {
-                return newState.widgets.filter { isInteractiveWidgetButNotKeyboard(it) }
+                if (guiState.widgets.any { it.isKeyboard }) {
+                    val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
+                    if (abstractState!=null) {
+                        val nonKeyboardAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
+                                .filter { it.window == abstractState.window && !it.isOpeningKeyboard }
+                        val nonKeyboardGUIStates = nonKeyboardAbstractStates.map { it.guiStates }.flatten()
+                        val nonKeyboardRelatedWidgets = nonKeyboardGUIStates.map { it.widgets }.flatten().map { it.uid }.distinct()
+                        val result2 = guiState.widgets
+                                .filter { isInteractiveWidgetButNotKeyboard(it) && !nonKeyboardRelatedWidgets.contains(it.uid)}
+                        guiState_actionableWidgets.put(guiState,result2)
+                        return result2
+                    } else {
+                        //this is new state
+                        return guiState.widgets
+                                .filter { isInteractiveWidgetButNotKeyboard(it)}
+                    }
+
+                }
             }
+            guiState_actionableWidgets.put(guiState,result)
             return result
         }
 
@@ -147,12 +203,12 @@ class Helper {
                 it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty()) && !it.isKeyboard
 
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
-            val result = getVisibleInteractableWidgetsWithoutKeyboard(state)
+            val result = getActionableWidgetsWithoutKeyboard(state)
             return result
         }
 
         fun getInputFields(state: State<*>) =
-                Helper.getVisibleWidgets(state).filter { it.isInputField || it.checked.isEnabled() }
+                getVisibleWidgets(state).filter { isUserLikeInput(it) }
 
         fun getStaticWidgets(originalWidget: Widget, state: State<*>, attributeValuationSet: AttributeValuationSet, wtgNode: Window, updateModel: Boolean,
                              autAutMF: AutAutMF): List<EWTGWidget> {
@@ -251,7 +307,7 @@ class Helper {
 
         fun getViewsChildrenLayout(widget: Widget, state: State<*>): DescendantLayoutDirection {
             val childWidgets = state.widgets.filter { it.isVisible && widget.childHashes.contains(it.idHash) }
-            if (childWidgets.size == 1) {
+            if (childWidgets.size < 2) {
                 return DescendantLayoutDirection.UNKNOWN
             }
             val arrayLeft = childWidgets.map { it.visibleBounds.leftX }
@@ -495,7 +551,7 @@ class Helper {
             prevState.visibleTargets.filter { it.isInputField }.forEach { widget ->
                 condition.put(widget, widget.text)
             }
-            prevState.visibleTargets.filter { it.checked.isEnabled() }.forEach { widget ->
+            prevState.visibleTargets.filter { Helper.isUserLikeInput(it) && !it.isInputField }.forEach { widget ->
                 condition.put(widget, widget.checked.toString())
             }
             return condition
@@ -530,6 +586,41 @@ class Helper {
             return false
         }
 
+        fun isUserLikeInput(guiWidget: Widget): Boolean {
+            return when (guiWidget.className) {
+                "android.widget.RadioButton", "android.widget.CheckBox", "android.widget.Switch", "android.widget.ToggleButton" -> true
+                else -> guiWidget.isInputField
+            }
+        }
+
+         fun getAvailableActionsForWidget(chosenWidget: Widget, currentState: State<*>,delay: Long, useCoordinateClicks:Boolean): ArrayList<ExplorationAction> {
+             val availableActions = ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks))
+             availableActions.removeIf {!chosenWidget.clickable &&
+                             (it.name =="Click" || it.name == "ClickEvent") }
+             availableActions.removeIf { it is Swipe }
+              if (Helper.isScrollableWidget(chosenWidget)) {
+                when (Helper.getViewsChildrenLayout(chosenWidget, currentState)) {
+                    DescendantLayoutDirection.HORIZONTAL -> {
+                        availableActions.add(chosenWidget.swipeLeft())
+                        availableActions.add(chosenWidget.swipeRight())
+                    }
+                    DescendantLayoutDirection.VERTICAL -> {
+                        availableActions.add(chosenWidget.swipeUp())
+                        availableActions.add(chosenWidget.swipeDown())
+                    }
+                    else -> {
+                        availableActions.add(chosenWidget.swipeUp())
+                        availableActions.add(chosenWidget.swipeDown())
+                        availableActions.add(chosenWidget.swipeLeft())
+                        availableActions.add(chosenWidget.swipeRight())
+                    }
+                }
+            }
+            ExplorationTrace.widgetTargets.clear()
+            if (availableActions.isNotEmpty())
+                ExplorationTrace.widgetTargets.add(chosenWidget)
+            return availableActions
+        }
     }
 }
 

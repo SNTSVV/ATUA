@@ -215,7 +215,12 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
 
     private fun doClickOutbound(currentState: State<*>): ExplorationAction? {
         val guiDimension = Helper.computeGuiTreeDimension(currentState)
-        return Click (guiDimension.leftX-100,y=guiDimension.topY-100)
+        if (guiDimension.leftX - 50 < 0) {
+            return Click (guiDimension.leftX,y=guiDimension.topY-50)
+        }
+        if (guiDimension.topY - 50 < 0)
+            return Click (guiDimension.leftX-50,y=guiDimension.topY)
+        return Click (guiDimension.leftX-50,y=guiDimension.topY-50)
     }
 
     private fun doClickWithoutTarget(data: Any?, currentState: State<*>): ExplorationAction? {
@@ -283,7 +288,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         }
     }
 
-    private fun doRandomKeyboard(currentState: State<*>): ExplorationAction? {
+     fun doRandomKeyboard(currentState: State<*>): ExplorationAction? {
         var childWidgets = currentState.widgets.filter { it.isKeyboard }
         val allAvailableActions = childWidgets.map { it.click()}
         return allAvailableActions.random()
@@ -429,7 +434,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             }
             return explorationAction
         }
-        val actionList = getAvailableActionsForWidget(chosenWidget, currentState)
+        val actionList = Helper.getAvailableActionsForWidget(chosenWidget, currentState,delay, useCoordinateClicks)
 
         val widgetActions = actionList.filter {
             when (action) {
@@ -453,7 +458,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
     }
 
     fun doRandomActionOnWidget(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
-        var actionList = getAvailableActionsForWidget(chosenWidget, currentState)
+        var actionList = Helper.getAvailableActionsForWidget(chosenWidget, currentState,delay, useCoordinateClicks)
         if (actionList.isNotEmpty()) {
             val maxVal = actionList.size
 
@@ -475,34 +480,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         }
     }
 
-    private fun getAvailableActionsForWidget(chosenWidget: Widget, currentState: State<*>): ArrayList<ExplorationAction> {
-        var actionList = if (Helper.isScrollableWidget(chosenWidget)) {
-            val availableActions = ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
-            when (Helper.getViewsChildrenLayout(chosenWidget, currentState)) {
-                DescendantLayoutDirection.HORIZONTAL -> {
-                    availableActions.add(chosenWidget.swipeLeft())
-                    availableActions.add(chosenWidget.swipeRight())
-                }
-                DescendantLayoutDirection.VERTICAL -> {
-                    availableActions.add(chosenWidget.swipeUp())
-                    availableActions.add(chosenWidget.swipeDown())
-                }
-                else -> {
-                    availableActions.add(chosenWidget.swipeUp())
-                    availableActions.add(chosenWidget.swipeDown())
-                    availableActions.add(chosenWidget.swipeLeft())
-                    availableActions.add(chosenWidget.swipeRight())
-                }
-            }
-            availableActions
-        } else {
-            ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
-        }
-        ExplorationTrace.widgetTargets.clear()
-        if (actionList.isNotEmpty())
-            ExplorationTrace.widgetTargets.add(chosenWidget)
-        return actionList
-    }
+
 
     private fun doDeepSwipeUp(chosenWidget: Widget,currentState: State<*>): ExplorationAction? {
         val actionList = ArrayList<ExplorationAction>()
@@ -688,21 +666,41 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
 
     internal fun pressMenuOrClickMoreOption(currentState: State<*>): ExplorationAction {
         return ExplorationAction.pressMenu()
-        val moreOptionWidget = autautMF.getToolBarMoreOptions(currentState)
-        if (moreOptionWidget != null) {
-            log.info("Widget: $moreOptionWidget")
-            return moreOptionWidget.click()
-
-        } else {
-            if (haveOpenNavigationBar(currentState))
-            {
-                return clickOnOpenNavigation(currentState)
-            }
-            autautMF.isRecentPressMenu = true
-            return ExplorationAction.pressMenu()
-        }
     }
 
+    var isClickedShutterButton = false
+    internal fun dealWithCamera(currentState: State<*>): ExplorationAction {
+        val gotItButton = currentState.widgets.find { it.text.toLowerCase().equals("got it") }
+        if (gotItButton != null) {
+            log.info("Widget: $gotItButton")
+            return gotItButton.click()
+        }
+        if (!isClickedShutterButton){
+            val shutterbutton = currentState.actionableWidgets.find { it.resourceId.contains("shutter_button") }
+            if (shutterbutton!=null)
+            {
+                log.info("Widget: $shutterbutton")
+                val clickActions = shutterbutton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
+                if (clickActions.isNotEmpty()) {
+                    isClickedShutterButton = true
+                    return clickActions.random()
+                }
+                ExplorationTrace.widgetTargets.clear()
+            }
+        }
+        val doneButton = currentState.actionableWidgets.find { it.resourceId.contains("done")  }
+        if (doneButton!=null)
+        {
+
+            log.info("Widget: $doneButton")
+            val clickActions = doneButton.availableActions(delay, useCoordinateClicks).filter { it.name.isClick()}
+            if (clickActions.isNotEmpty()) {
+                return clickActions.random()
+            }
+            ExplorationTrace.widgetTargets.clear()
+        }
+        return ExplorationAction.pressBack()
+    }
      fun clickOnOpenNavigation(currentState: State<*>): ExplorationAction {
         val openNavigationWidget = currentState.widgets.filter { it.isVisible }.find { it.contentDesc.contains("Open navigation") }!!
          log.info("Widget: $openNavigationWidget")
@@ -710,7 +708,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
     }
 
     fun isCameraOpening(currentState: State<*>): Boolean {
-        return currentState.widgets.any{it.packageName == "com.android.camera2"}
+        return currentState.widgets.any{it.packageName == "com.android.camera2" || it.packageName == "com.android.camera" }
     }
     /** filters out all crashing marked widgets from the actionable widgets of the current state **/
     suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { autautStrategy.eContext.crashlist.isBlacklistedInState(it.uid,autautStrategy.eContext.getCurrentState().uid) }

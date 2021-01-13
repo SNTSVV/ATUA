@@ -48,9 +48,6 @@ private suspend fun performAction(action: ExplorationAction, app: IApk, device: 
 			device.forceStop(app)
 			defaultExecution(action, device)
 		}
-
-
-
 		else -> debugT("perform $action on average ${performT / max(performN, 1)} ms", {
 			if(action is ActionQueue) check(action.actions.isNotEmpty()) {"ERROR your strategy should never decide for EMPTY ActionQueue"}
 			defaultExecution(action, device)

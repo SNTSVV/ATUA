@@ -39,8 +39,8 @@ open class GoToAnotherWindow constructor(
     var isFillingText: Boolean = false
     protected var currentEdge: Edge<AbstractState, AbstractTransition>?=null
     protected var expectedNextAbState: AbstractState?=null
-    protected var currentPath: TransitionPath? = null
-    protected val possiblePaths = ArrayList<TransitionPath>()
+    var currentPath: TransitionPath? = null
+    val possiblePaths = ArrayList<TransitionPath>()
 
     var destWindow: Window? = null
     var useInputTargetWindow: Boolean = false
@@ -102,12 +102,10 @@ open class GoToAnotherWindow constructor(
                         addIncorrectPath(currentAppState)
                     }
                 }*/
-                if (retryTimes < 5*autautStrategy.budgetScale) {
+                if (retryTimes <= 3*autautStrategy.budgetScale) {
                     retryTimes += 1
-                    if (!useInputTargetWindow && isAvailable(currentState)) {
-                        initialize(currentState)
-                        return false
-                    } else if (destWindow != null && isAvailable(currentState, destWindow!!,usingPressback,includeReset)) {
+                    initPossiblePaths(currentState)
+                    if (possiblePaths.isNotEmpty()) {
                         initialize(currentState)
                         return false
                     }
@@ -156,12 +154,18 @@ open class GoToAnotherWindow constructor(
 
              if (expectedAbstractState!!.window != currentAbState!!.window)
                  continue
-
              // The expected abstract state is the same window with current abstract state
              if (expectedAbstractState == currentAbState) {
                  reached = true
                  break
              }
+             if (lastTraverseEdge!=null && lastTraverseEdge.label.isExplicit()) {
+                 continue
+             }
+             if(expectedAbstractState!!.rotation != currentAbState.rotation)
+                 continue
+             if(expectedAbstractState!!.isOpeningKeyboard != currentAbState.isOpeningKeyboard)
+                 continue
              /*  if (expectedNextAbState is VirtualAbstractState && expectedNextAbState!!.window == currentAbState.window)
          return true*/
              //if next action is feasible
@@ -233,10 +237,14 @@ open class GoToAnotherWindow constructor(
         possiblePaths.clear()
         usingPressback = true
         destWindow = null
+        currentPath = null
+        useInputTargetWindow = false
+        includeReset = false
+        isExploration = false
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
-         reset()
+        reset()
         initPossiblePaths(currentState)
         if (possiblePaths.size > 0) {
             return true
@@ -244,13 +252,14 @@ open class GoToAnotherWindow constructor(
         return false
     }
 
-    open fun isAvailable(currentState: State<*>, destWindow: Window, usingPressback: Boolean, includeResetApp: Boolean): Boolean {
+    open fun isAvailable(currentState: State<*>, destWindow: Window, usingPressback: Boolean, includeResetApp: Boolean, isExploration: Boolean): Boolean {
         log.info("Checking if there is any path to $destWindow")
         reset()
         this.usingPressback = usingPressback
         this.destWindow = destWindow
         this.useInputTargetWindow = true
-        this.includeReset = includeReset
+        this.includeReset = includeResetApp
+        this.isExploration = isExploration
         initPossiblePaths(currentState)
         if (possiblePaths.size > 0) {
             return true
@@ -274,17 +283,50 @@ open class GoToAnotherWindow constructor(
 
     var usingPressback = true
     var includeReset = true
-
+    var isExploration = true
     open protected fun initPossiblePaths(currentState: State<*>) {
         possiblePaths.clear()
+        var nextPathType = if (currentPath == null)
+            PathFindingHelper.PathType.INCLUDE_INFERED
+        else
+                computeNextPathType(currentPath!!.pathType,includeReset)
         if (useInputTargetWindow && destWindow!=null) {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,usingPressback,includeReset))
+            while (possiblePaths.isEmpty()) {
+                possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,nextPathType,isExploration))
+                if (nextPathType == PathFindingHelper.PathType.WTG ||
+                        (!includeReset && nextPathType == PathFindingHelper.PathType.FOLLOW_TRACE)) {
+                    break
+                } else {
+                    nextPathType = computeNextPathType(nextPathType,includeReset)
+                }
+            }
+
         } else {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToOtherWindows(currentState))
+            while (possiblePaths.isEmpty()) {
+                possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToVisitedStates(currentState,nextPathType))
+                if (nextPathType == PathFindingHelper.PathType.WTG ||
+                        (!includeReset && nextPathType == PathFindingHelper.PathType.FOLLOW_TRACE)) {
+                    break
+                }else {
+                    nextPathType = computeNextPathType(nextPathType,includeReset)
+                }
+            }
+
            /* if (possiblePaths.isEmpty()) {
                 possiblePaths.addAll(autautStrategy.phaseStrategy.getPathToUnexploredState(currentState))
             }*/
 
+        }
+    }
+
+     fun computeNextPathType(pathType: PathFindingHelper.PathType, includeResetApp: Boolean): PathFindingHelper.PathType {
+        return when (pathType) {
+            PathFindingHelper.PathType.INCLUDE_INFERED -> PathFindingHelper.PathType.FOLLOW_TRACE
+            PathFindingHelper.PathType.FOLLOW_TRACE ->
+                if (includeResetApp) PathFindingHelper.PathType.RESET else PathFindingHelper.PathType.INCLUDE_INFERED
+            PathFindingHelper.PathType.RESET -> PathFindingHelper.PathType.WTG
+            PathFindingHelper.PathType.WTG -> PathFindingHelper.PathType.INCLUDE_INFERED
+            else -> PathFindingHelper.PathType.ANY
         }
     }
 
@@ -360,7 +402,7 @@ open class GoToAnotherWindow constructor(
                         if (inputWidget != null) {
                             if (inputWidget.isInputField) {
                                 if (inputWidget.text != it.value) {
-                                    fillingDataActionList.add(inputWidget.setText(it.value))
+                                    fillingDataActionList.add(inputWidget.setText(it.value,sendEnter = false))
                                 }
                             } else if (inputWidget.checked.isEnabled()) {
                                 if (inputWidget.checked.toString()!= it.value) {

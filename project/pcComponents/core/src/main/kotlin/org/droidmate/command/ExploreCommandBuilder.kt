@@ -80,7 +80,7 @@ open class ExploreCommandBuilder(
         conditionalEnable(cfg[ConfigProperties.Strategies.denyRuntimeDialog]) { denyRuntimePermissions() }
         loginWithGoogle()
         pressBackOnAds()
-        dealWithAndroidDialog()
+        //dealWithAndroidDialog()
         resetOnInvalidState()
 
         conditionalEnable(cfg[resetEvery] > 0, cfg) { resetOnIntervals(cfg) }

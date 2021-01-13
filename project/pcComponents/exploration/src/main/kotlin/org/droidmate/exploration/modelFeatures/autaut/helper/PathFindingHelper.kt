@@ -12,7 +12,6 @@ import org.droidmate.exploration.modelFeatures.autaut.WTG.window.FakeWindow
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -26,22 +25,17 @@ class PathFindingHelper {
         private val disableEdges = HashSet<Edge<AbstractState, AbstractTransition>>()
         private val disablePaths = HashSet<List<Edge<AbstractState,AbstractTransition>>>()
 
-        fun findPathToTargetComponent(autautMF: AutAutMF, currentState: State<*>, root: AbstractState, traversingNodes: List<Pair<Stack<Window>, AbstractState>>, finalTarget: AbstractState
+        fun findPathToTargetComponent(autautMF: AutAutMF, currentState: State<*>, root: AbstractState, lastTransitions: List<Triple<Stack<Window>,AbstractState, AbstractTransition?>>, finalTarget: AbstractState
                                       , allPaths: ArrayList<TransitionPath>
-                                      , includeBackEvent: Boolean
-                                      , includingWTG: Boolean
-                                      , stopWhenHavingUnexercisedAction: Boolean = false
-                                      , includeReset: Boolean = true
                                       , shortest: Boolean = true
                                       , pathCountLimitation: Int = 1
-                                      , forcingExplicit: Boolean = false) {
+                                      , pathType: PathType) {
             val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
             if (existingPaths!= null && existingPaths.isNotEmpty()) {
                val satisfiedPaths = existingPaths.filter {
-                   (includeBackEvent || it.edges().all { it.label.abstractAction.actionType!=AbstractActionType.PRESS_BACK })
-                           && (!forcingExplicit || it.edges().all { it.label.isExplicit() })
-                           && (includeReset || it.edges().all { it.label.abstractAction.actionType != AbstractActionType.RESET_APP })
-                           && (includingWTG || it.edges().all { !it.label.fromWTG })
+                           (pathType == PathType.INCLUDE_INFERED || it.edges().all { it.label.isExplicit() })
+                           && (pathType == PathType.RESET || it.edges().all { it.label.abstractAction.actionType != AbstractActionType.RESET_APP })
+                           && (pathType == PathType.WTG || it.edges().all { !it.label.fromWTG })
                }
                 if (satisfiedPaths.isNotEmpty()) {
                     allPaths.addAll(satisfiedPaths)
@@ -55,137 +49,107 @@ class PathFindingHelper {
                             >?
                     >()
             childParentMap.put(root, null)
-            findPathToTargetComponentByBFS(
-                    autautMF = autautMF,
-                    currentState = currentState,
-                    root = root,
-                    traversingNodes =  traversingNodes,
-                    finalTarget =  finalTarget,
-                    allPaths =  allPaths,
-                    includeBackEvent =  includeBackEvent,
-                    childParentMap =  childParentMap,
-                    depth = 0,
-                    useVirtualAbstractState =  false,
-                    stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
-                    shortest = shortest,
-                    pathCountLimitation = pathCountLimitation,
-                    considerResetOrLaunchAction = false,
-                    includeImplicitInteraction = !forcingExplicit,
-                    includeLaunchAction = false)
-            if (allPaths.isEmpty()) {
-                // consider Launch Action
-                childParentMap.clear()
-                childParentMap.put(root, null)
-                findPathToTargetComponentByBFS(
+            when (pathType) {
+                PathType.INCLUDE_INFERED ->  findPathToTargetComponentByBFS(
                         autautMF = autautMF,
                         currentState = currentState,
                         root = root,
-                        traversingNodes =  traversingNodes,
+                        lastTransitions =  lastTransitions,
                         finalTarget =  finalTarget,
                         allPaths =  allPaths,
-                        includeBackEvent =  includeBackEvent,
+                        includeBackEvent =  true,
                         childParentMap =  childParentMap,
                         depth = 0,
-                        useVirtualAbstractState =  false,
-                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
+                        includeWTG =  false,
+                        stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
-                        considerResetOrLaunchAction = false,
-                        includeImplicitInteraction = !forcingExplicit,
-                        includeLaunchAction = includeBackEvent)
-            }
-            if (allPaths.isEmpty() && includeReset) {
-                // consider reset actions
-                childParentMap.clear()
-                childParentMap.put(root, null)
-                findPathToTargetComponentByBFS(
+                        includeResetAction = false,
+                        includeImplicitInteraction = true,
+                        includeLaunchAction = false,
+                        pathType = pathType)
+                PathType.FOLLOW_TRACE -> findPathToTargetComponentByBFS(
                         autautMF = autautMF,
                         currentState = currentState,
                         root = root,
-                        traversingNodes =  traversingNodes,
+                        lastTransitions =  lastTransitions,
                         finalTarget =  finalTarget,
                         allPaths =  allPaths,
-                        includeBackEvent =  includeBackEvent,
+                        includeBackEvent =  true,
                         childParentMap =  childParentMap,
                         depth = 0,
-                        useVirtualAbstractState =  false,
-                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
+                        includeWTG =  false,
+                        stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
-                        considerResetOrLaunchAction = true,
+                        includeResetAction = false,
                         includeImplicitInteraction = false,
-                        includeLaunchAction = includeBackEvent)
-            }
-            if (allPaths.isEmpty() && includingWTG && !forcingExplicit) {
-                childParentMap.clear()
-                childParentMap.put(root, null)
-                findPathToTargetComponentByBFS(
+                        includeLaunchAction = true,
+                        pathType = pathType)
+                PathType.RESET -> findPathToTargetComponentByBFS(
                         autautMF = autautMF,
                         currentState = currentState,
                         root = root,
-                        traversingNodes =  traversingNodes,
+                        lastTransitions =  lastTransitions,
                         finalTarget =  finalTarget,
                         allPaths =  allPaths,
-                        includeBackEvent =  includeBackEvent,
+                        includeBackEvent =  true,
                         childParentMap =  childParentMap,
                         depth = 0,
-                        useVirtualAbstractState =  true,
-                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
+                        includeWTG =  false,
+                        stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
-                        considerResetOrLaunchAction = false,
-                        includeImplicitInteraction = !forcingExplicit,
-                        includeLaunchAction = includeBackEvent)
-            }
-            if (allPaths.isEmpty() && includingWTG && includeReset && forcingExplicit) {
-                childParentMap.clear()
-                childParentMap.put(root, null)
-                findPathToTargetComponentByBFS(
-                        autautMF = autautMF,
-                        currentState = currentState,
-                        root = root,
-                        traversingNodes =  traversingNodes,
-                        finalTarget =  finalTarget,
-                        allPaths =  allPaths,
-                        includeBackEvent =  includeBackEvent,
-                        childParentMap =  childParentMap,
-                        depth = 0,
-                        useVirtualAbstractState =  true,
-                        stopWhenHavingUnexercisedAction = stopWhenHavingUnexercisedAction,
-                        shortest = shortest,
-                        pathCountLimitation = pathCountLimitation,
-                        considerResetOrLaunchAction = includeReset,
+                        includeResetAction = true,
                         includeImplicitInteraction = false,
-                        includeLaunchAction = includeBackEvent)
+                        includeLaunchAction = false,
+                        pathType = pathType)
+                PathType.WTG -> findPathToTargetComponentByBFS(
+                        autautMF = autautMF,
+                        currentState = currentState,
+                        root = root,
+                        lastTransitions =  lastTransitions,
+                        finalTarget =  finalTarget,
+                        allPaths =  allPaths,
+                        includeBackEvent =  true,
+                        childParentMap =  childParentMap,
+                        depth = 0,
+                        includeWTG =  true,
+                        stopWhenHavingUnexercisedAction = false,
+                        shortest = shortest,
+                        pathCountLimitation = pathCountLimitation,
+                        includeResetAction = true,
+                        includeImplicitInteraction = false,
+                        includeLaunchAction = true,
+                        pathType = pathType)
             }
-
         }
 
         fun findPathToTargetComponentByBFS(autautMF: AutAutMF, currentState: State<*>, root: AbstractState,
-                                           traversingNodes: List<Pair<Stack<Window>, AbstractState>>,
+                                           lastTransitions: List<Triple<Stack<Window>, AbstractState, AbstractTransition?>>,
                                            finalTarget: AbstractState, allPaths: ArrayList<TransitionPath>,
                                            childParentMap: HashMap<AbstractState,Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>,
                                            depth: Int,
-                                           useVirtualAbstractState: Boolean,
+                                           includeWTG: Boolean,
                                            stopWhenHavingUnexercisedAction: Boolean = false,
                                            shortest: Boolean = true,
                                            pathCountLimitation: Int = 1,
-                                           considerResetOrLaunchAction: Boolean,//TODO rename
+                                           includeResetAction: Boolean,//TODO rename
                                            includeBackEvent: Boolean,
                                            includeImplicitInteraction: Boolean,
-                                           includeLaunchAction: Boolean
+                                           includeLaunchAction: Boolean,
+                                           pathType: PathType
         ) {
-            if (traversingNodes.isEmpty())
+            if (lastTransitions.isEmpty())
                 return
             val graph = autautMF.abstractTransitionGraph
-            val nextLevelNodes = ArrayList<Pair<Stack<Window>,AbstractState>>()
-            for (traversing in traversingNodes)
+            val nextTransitions = ArrayList<Triple<Stack<Window>,AbstractState, AbstractTransition>>()
+            for (traversing in lastTransitions)
             {
-
                 val source = traversing.second
                 if (source.window is Launcher)
                     continue
-                if (source is VirtualAbstractState && !useVirtualAbstractState) {
+                if (source is VirtualAbstractState && !includeWTG) {
                     continue
                 }
                 val windowStack = traversing.first
@@ -197,20 +161,22 @@ class PathFindingHelper {
                         windowStack =  windowStack,
                         graph =  graph,
                         source =  source,
+                        lastTransition = traversing.third,
                         depth =  depth,
                         childParentMap =  childParentMap,
                         finalTarget =  finalTarget,
                         root =  root,
                         allPaths =  allPaths,
-                        nextLevelNodes =  nextLevelNodes,
+                        nextTransitions =  nextTransitions,
                         stopWhenHavingUnexercisedAction =  stopWhenHavingUnexercisedAction,
-                        includeWTG =  useVirtualAbstractState,
-                        includeResetAction =  considerResetOrLaunchAction,
+                        includeWTG =  includeWTG,
+                        includeResetAction =  includeResetAction,
                         includeImplicitInteraction = includeImplicitInteraction,
-                        includeLauchAction = includeLaunchAction)
+                        includeLauchAction = includeLaunchAction,
+                        pathType = pathType)
             }
-            /*if (nextLevelNodes.isEmpty() && !useVirtualAbstractState) {
-                for (traversing in traversingNodes)
+            /*if (nextLevelNodes.isEmpty() && !includeWTG) {
+                for (traversing in lastTransitions)
                 {
                     val source = traversing.second
                     val windowStack = traversing.first
@@ -227,34 +193,39 @@ class PathFindingHelper {
                         autautMF = autautMF,
                         currentState = currentState,
                         root = root,
-                        traversingNodes =  nextLevelNodes,
+                        lastTransitions =  nextTransitions,
                         finalTarget =  finalTarget,
                         allPaths =  allPaths,
                         includeBackEvent = includeBackEvent,
                         childParentMap =  childParentMap,
                         depth =  depth+1,
-                        useVirtualAbstractState =  useVirtualAbstractState,
+                        includeWTG =  includeWTG,
                         stopWhenHavingUnexercisedAction =  stopWhenHavingUnexercisedAction,
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
-                        considerResetOrLaunchAction = considerResetOrLaunchAction,
+                        includeResetAction = includeResetAction,
                         includeImplicitInteraction = includeImplicitInteraction,
-                        includeLaunchAction = includeLaunchAction)
+                        includeLaunchAction = includeLaunchAction,
+                        pathType = pathType)
         }
 
         private fun getNextTraversingNodes(autautMF: AutAutMF, windowStack: Stack<Window>, graph: AbstractTransitionGraph, source: AbstractState,
+                                           lastTransition: AbstractTransition?,
                                            depth: Int,
                                            childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>,
                                            finalTarget: AbstractState, root: AbstractState,
-                                           allPaths: ArrayList<TransitionPath>, nextLevelNodes: ArrayList<Pair<Stack<Window>, AbstractState>>,
+                                           allPaths: ArrayList<TransitionPath>,
+                                           nextTransitions: ArrayList<Triple<Stack<Window>, AbstractState, AbstractTransition>>,
                                            includeWTG: Boolean,
                                            stopWhenHavingUnexercisedAction: Boolean,
                                            includeImplicitInteraction: Boolean,
                                            includeResetAction: Boolean,
                                            includeBackEvent: Boolean,
-                                           includeLauchAction: Boolean) {
+                                           includeLauchAction: Boolean,
+                                           pathType: PathType
+                                           ) {
 
-            if (includeBackEvent && windowStack.isNotEmpty()) {
+        /*    if (includeBackEvent && windowStack.isNotEmpty()) {
                 val processingBackEdges = ArrayList<Edge<AbstractState, AbstractTransition>>()
                 val backEdges = graph.edges(source).filter {
                     it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK
@@ -288,7 +259,7 @@ class PathFindingHelper {
                     val backState = edge.destination!!.data
                     val edgeCondition = graph.edgeConditions[edge]!!
                     childParentMap.put(backState, Triple(source, backTransition,edgeCondition))
-                    val fullGraph = createTransitionPath(autautMF, backState, root, childParentMap)
+                    val fullGraph = createTransitionPath(autautMF, pathType, backState, root, childParentMap)
                     if (!isDisablePath(fullGraph)) {
                         if (isArrived(backTransition, backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
                             allPaths.add(fullGraph)
@@ -299,28 +270,32 @@ class PathFindingHelper {
                         } else {
                             createWindowStackForNext(windowStack, source, backState)
                         }
-                        nextLevelNodes.add(Pair(first = nextWindowStack, second = backState))
+                        nextTransitions.add(Pair(first = nextWindowStack, second = backState))
                     }
                 }
-            }
+            }*/
 
-            val edgesFromSource = graph.edges(source).filter { it.destination!=null && it.source != it.destination }
+            val edgesFromSource = graph.edges(source).filter { it.destination!=null
+            }
             val forwardTransitions = edgesFromSource.filter {
                 it.destination != null
                         //&& it.source != it.destination
                         && it.destination!!.data.window !is FakeWindow
-                        && it.label.abstractAction.actionType != AbstractActionType.PRESS_BACK
+                        && includingBackEventOrNot(it,includeBackEvent)
                         && includingRotateUIOrNot(autautMF, it)
                         && includingResetOrNot(it, includeResetAction,depth)
                         && includingWTGOrNot(it, includeWTG)
                         && includingLaunchOrNot(it, includeLauchAction,depth)
+                        && followTrace(it,lastTransition?.tracing?:emptySet<Pair<Int,Int>>(),pathType)
                 /*&& isTheSamePrevWindow(windowStack.peek(), it)*/
             }
 
             val possibleTransitions = ArrayList<Edge<AbstractState, AbstractTransition>>()
+
             forwardTransitions.groupBy { it.label.abstractAction }.forEach { action, edges ->
                 if (action.isLaunchOrReset()) {
-                    possibleTransitions.addAll(edges)
+                    if (depth == 0)
+                        possibleTransitions.addAll(edges)
                 } else {
                     val groupByDestination = edges.groupBy { it.destination }
                     if (groupByDestination.size > 1) {
@@ -353,7 +328,10 @@ class PathFindingHelper {
                             val implicitTransitions = u.filter { it.label.isImplicit }
                             if (reliableTransition.isEmpty()) {
                                 //        if (reliableTransition.isEmpty()) {
-                                if (includeImplicitInteraction == true && depth == 0)
+                                if (implicitTransitions.any { it.label.abstractAction.actionType == AbstractActionType.ROTATE_UI }) {
+                                    processedTransition.addAll(implicitTransitions)
+                                }
+                                else if (includeImplicitInteraction == true && depth == 0)
                                     processedTransition.addAll(implicitTransitions)
                                 else if (includeWTG)
                                     processedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
@@ -373,9 +351,10 @@ class PathFindingHelper {
                     val event = it.label
                     val edgeCondition = graph.edgeConditions[it]!!
                     childParentMap.put(nextState, Triple(source, event, edgeCondition))
-                    val fullGraph = createTransitionPath(autautMF, nextState, root, childParentMap)
+                    val fullGraph = createTransitionPath(autautMF,pathType, nextState, root, childParentMap)
                     var foundPath = false
-                    if (!isDisablePath(fullGraph)) {
+                    val checkTrace = (pathType == PathType.RESET)
+                    if (!isDisablePath(fullGraph,checkTrace)) {
                         if (isArrived(it.label, nextState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
                             allPaths.add(fullGraph)
                             registerTransitionPath(root, nextState, fullGraph)
@@ -386,10 +365,37 @@ class PathFindingHelper {
                         } else {
                             createWindowStackForNext(windowStack, source, nextState)
                         }
-                        nextLevelNodes.add(Pair(first = nextWindowStack, second = nextState))
+                        nextTransitions.add(Triple(first = nextWindowStack, second = it.destination!!.data,third = it.label))
                     }
                 }
             }
+        }
+
+        private fun followTrace(edge: Edge<AbstractState, AbstractTransition>, tracingList: Set<Pair<Int,Int>>, pathType: PathType): Boolean {
+            if (pathType!=PathType.FOLLOW_TRACE && pathType != PathType.RESET) {
+                if (edge.source == edge.destination)
+                    return false
+                return true
+            }
+            if (tracingList.isEmpty()) {
+                if (edge.source == edge.destination)
+                    return false
+                return true
+            }
+
+            if (tracingList.any {trace ->
+                edge.label.tracing.any { it.first == trace.first && it.second == trace.second+1 }
+            })
+                return true
+            return false
+        }
+
+        private fun includingBackEventOrNot(it: Edge<AbstractState, AbstractTransition>, includeBackEvent: Boolean): Boolean {
+            if (includeBackEvent)
+                return true
+            if (it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK)
+                return false
+            return true
         }
 
         private fun includingWTGOrNot(edge: Edge<AbstractState, AbstractTransition>, includeWTG: Boolean): Boolean {
@@ -402,12 +408,8 @@ class PathFindingHelper {
 
         private fun isArrived(abstractTransition: AbstractTransition, nextState: AbstractState, finalTarget: AbstractState, stopWhenHavingUnexercisedAction: Boolean, useVirtualAbstractState: Boolean): Boolean {
             if (nextState == finalTarget){
-                if (abstractTransition.isExplicit())
-                    return true
-                if (useVirtualAbstractState)
-                    return true
+               return true
             }
-
             if (stopWhenHavingUnexercisedAction &&
                     nextState !is VirtualAbstractState &&
                     nextState.getUnExercisedActions(null).isNotEmpty())
@@ -471,8 +473,8 @@ class PathFindingHelper {
                             || prevWindow == null || it.label.prevWindow == null)
         }
 
-        private fun createTransitionPath(autautMF: AutAutMF, finalTarget: AbstractState, startingNode: AbstractState, childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>): TransitionPath {
-            val fullPath = TransitionPath(startingNode)
+        private fun createTransitionPath(autautMF: AutAutMF, pathType: PathType, finalTarget: AbstractState, startingNode: AbstractState, childParentMap: HashMap<AbstractState, Triple<AbstractState, AbstractTransition,ArrayList<HashMap<Widget,String>>>?>): TransitionPath {
+            val fullPath = TransitionPath(startingNode,pathType)
             var backwardNode = finalTarget
             while (backwardNode!=startingNode)
             {
@@ -580,15 +582,70 @@ class PathFindingHelper {
                 return false
         }
 
-        fun isDisablePath(path: TransitionPath): Boolean {
+        fun isDisablePath(path: TransitionPath, checkTrace:Boolean): Boolean {
+            if (checkTrace) {
+                if (!isFollowingTrace(path)) {
+                    return true
+                }
+            }
             disablePaths.forEach {
                 var matched = samePrefix(it, path)
                 if (matched)
                     return true
             }
+
             /*if (path.edges().any { disableEdges.contains(it) }) {
                 return true
             }*/
+            return false
+        }
+
+        private fun isFollowingTrace(path: TransitionPath): Boolean {
+            var pathNode: AbstractState? = path.root.data
+            //find the node after the RESET action
+            while (pathNode!=null) {
+                val edge = path.edges(pathNode).firstOrNull()
+                if (edge != null) {
+                    if (edge.label.abstractAction.actionType == AbstractActionType.RESET_APP || edge.label.abstractAction.actionType == AbstractActionType.LAUNCH_APP) {
+                        break
+                    }
+                    pathNode = edge.destination?.data
+                } else {
+                    pathNode = null
+                }
+            }
+            val nodeAfterReset = if (pathNode == null)
+                path.root.data
+            else
+                path.edges(pathNode).single().destination?.data!!
+            pathNode = nodeAfterReset
+            if (path.edges(pathNode).isEmpty())
+                return true
+            val tracing = arrayListOf<Pair<Int,Int>>()
+            while (pathNode!=null) {
+                val nextEdge = path.edges(pathNode).singleOrNull()
+                if (nextEdge == null) {
+                    pathNode = null
+                } else {
+                    if (pathNode == nodeAfterReset) {
+                        tracing.addAll(nextEdge.label.tracing)
+                    } else {
+                        if (tracing.isEmpty())
+                            break
+                        val nextTraces = ArrayList<Pair<Int,Int>>()
+                        nextEdge.label.tracing.forEach {trace ->
+                            if (tracing.any { trace.first == it.first && trace.second == it.second+1 }) {
+                                nextTraces.add(trace)
+                            }
+                        }
+                        tracing.clear()
+                        tracing.addAll(nextTraces)
+                    }
+                    pathNode = nextEdge.label.dest
+                }
+            }
+            if (tracing.isNotEmpty())
+                return true
             return false
         }
 
@@ -599,7 +656,7 @@ class PathFindingHelper {
             while (pathNode!=null) {
                 val edge = path.edges(pathNode).firstOrNull()
                 if (edge != null) {
-                    if (edge.label.abstractAction.actionType == AbstractActionType.RESET_APP) {
+                    if (edge.label.abstractAction.actionType == AbstractActionType.RESET_APP || edge.label.abstractAction.actionType == AbstractActionType.LAUNCH_APP) {
                         break
                     }
                     pathNode = edge.destination?.data
@@ -625,5 +682,13 @@ class PathFindingHelper {
                 return true
             return false
         }
+    }
+
+    enum class PathType {
+        INCLUDE_INFERED,
+        FOLLOW_TRACE,
+        RESET,
+        WTG,
+        ANY
     }
 }

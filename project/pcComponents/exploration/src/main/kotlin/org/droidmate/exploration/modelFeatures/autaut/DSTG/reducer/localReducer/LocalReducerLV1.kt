@@ -19,6 +19,8 @@ class LocalReducerLV1: AbstractLocalReducer() {
             reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
             reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
             reducedAttributes.put(AttributeType.scrollable, Helper.isScrollableWidget(guiWidget).toString())
+            if (reducedAttributes.get(AttributeType.scrollable) == "TRUE")
+                reducedAttributes.put(AttributeType.scrollDirection, Helper.getViewsChildrenLayout(guiWidget,guiState).toString())
         } else {
             if (Helper.haveClickableChild(guiState.widgets,guiWidget)) {
                 reducedAttributes.put(AttributeType.clickable, true.toString())

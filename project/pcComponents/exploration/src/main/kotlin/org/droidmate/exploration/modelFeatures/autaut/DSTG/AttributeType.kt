@@ -18,6 +18,7 @@ enum class AttributeType {
     scrollable,
     scrollDirection,
     checked,
-    isLeaf
+    isLeaf,
+    childrenInfo
 
 }

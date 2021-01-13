@@ -90,6 +90,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     val actionIncreaseCoverage = HashMap<Int,Int>()
 
     var prevUpdateCoverage: Int = 0
+    var prevCoverage: Int = 0
     var statementRead:Boolean = false
     //private val instrumentationMap = getInstrumentation(appName)
     val mutex = Mutex()
@@ -112,6 +113,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         statementRead = false
         val newExecutedStatements = HashSet<String>()
         prevUpdateCoverage = executedModifiedMethodStatementsMap.size
+        prevCoverage = executedStatementsMap.size
         mutex.withLock {
             // Fetch the statement data from the device
             recentExecutedMethods.clear()
