@@ -14,14 +14,23 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String> = HashMap(),
-                             var parentAttributeValuationSetId: UUID = emptyUUID,
-                             var childAttributeValuationSetIds: HashSet<UUID> = HashSet(),
+                             var parentAttributeValuationSetId: String = "",
+                             var childAttributeValuationSetIds: HashSet<String> = HashSet(),
                              val cardinality: Cardinality,
                              val activity: String) {
 
     var exerciseCount: Int = 0
     val actionCount = HashMap<AbstractAction, Int>()
     var captured = false
+    var hashCode: Int = 0
+    val avsId: String
+
+    init {
+        avmIdByActivity.putIfAbsent(activity,0)
+        val maxId = avmIdByActivity[activity]!!
+        avsId = "${activity}_${maxId+1}"
+        avmIdByActivity.put(activity,maxId+1)
+    }
 
     constructor(attributePath: AttributePath,  cardinality: Cardinality,  activity: String, attributPath_cardinality: HashMap<UUID,Cardinality>): this(cardinality = cardinality,activity = activity) {
         if (!allAttributeValuationSet.containsKey(activity)) {
@@ -29,13 +38,13 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
         }
         localAttributes.putAll(attributePath.localAttributes)
         if (attributePath.parentAttributePathId == emptyUUID) {
-            parentAttributeValuationSetId = emptyUUID
+            parentAttributeValuationSetId = ""
         } else {
             val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)
             if (allAttributeValuationSet[activity]!!.any { it.value.haveTheSameAttributePath(parentAttributePath) }) {
                 parentAttributeValuationSetId = allAttributeValuationSet[activity]!!.map {it.value}.find{ it.haveTheSameAttributePath(parentAttributePath) }!!.avsId
             } else {
-                val parentCardinality = if (attributPath_cardinality.containsKey(parentAttributeValuationSetId))
+                val parentCardinality = if (attributPath_cardinality.containsKey(parentAttributePath.attributePathId))
                         attributPath_cardinality[attributePath.parentAttributePathId]!!
                 else
                     Cardinality.ONE
@@ -52,14 +61,18 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
             }
         }
         //TODO
+
+
         if (avsId == parentAttributeValuationSetId) {
             allAttributeValuationSet[activity]!!.put(avsId,this)
         } else {
             allAttributeValuationSet[activity]!!.put(avsId, this)
         }
+        hashCode = this.fullAttributeValuationMap().hashCode()
+
     }
 
-    val avsId: UUID by lazy {  this.fullAttributeValuationMap().toUUID()}
+
     fun initActions() {
         /*if (!AbstractStateManager.instance.activity_attrValSetsMap.containsKey(activity))
             AbstractStateManager.instance.activity_attrValSetsMap.put(activity, ArrayList())*/
@@ -323,7 +336,7 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
     }
 
      fun isParent(attributeValuationSet: AttributeValuationSet): Boolean {
-        if (attributeValuationSet.parentAttributeValuationSetId== emptyUUID)
+        if (attributeValuationSet.parentAttributeValuationSetId== "")
             return false
          val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(attributeValuationSet.parentAttributeValuationSetId)!!
         if (haveTheSameAttributePath(parentAttributeValuationSet))
@@ -345,11 +358,11 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
         if (!childAttributeValuationSets.all { childAttributeValuationSet -> childAttributePaths.any { childAttributeValuationSet.haveTheSameAttributePath(it) } }) {
             return false
         }
-        if (parentAttributeValuationSetId != emptyUUID && attributePath.parentAttributePathId == emptyUUID)
+        if (parentAttributeValuationSetId != "" && attributePath.parentAttributePathId == emptyUUID)
             return false
-        if (parentAttributeValuationSetId == emptyUUID && attributePath.parentAttributePathId != emptyUUID)
+        if (parentAttributeValuationSetId == "" && attributePath.parentAttributePathId != emptyUUID)
             return false
-        if (parentAttributeValuationSetId != emptyUUID) {
+        if (parentAttributeValuationSetId != "") {
             if (attributePath.parentAttributePathId == emptyUUID) {
                 return false
             }
@@ -387,7 +400,7 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
                 }
             }
         }
-        if (parentAttributeValuationSetId!= emptyUUID && abstractAttributeValuationSet.parentAttributeValuationSetId!= emptyUUID) {
+        if (parentAttributeValuationSetId!= "" && abstractAttributeValuationSet.parentAttributeValuationSetId!= "") {
             val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(parentAttributeValuationSetId)
             if (parentAttributeValuationSet == null) {
                 throw Exception("Cannot find attributeValuationSet $parentAttributeValuationSetId")
@@ -504,13 +517,13 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
             attributes.put(attributeType,attributeValue)
         }
     }
-    private fun dumpParentUUID() = if (parentAttributeValuationSetId == emptyUUID) "null" else parentAttributeValuationSetId.toString()
+    private fun dumpParentUUID() = if (parentAttributeValuationSetId == "") "null" else parentAttributeValuationSetId.toString()
 
-    fun dump(bufferedWriter: BufferedWriter, dumpedAttributeValuationSets: ArrayList<UUID>, abstractState: AbstractState ) {
+    fun dump(bufferedWriter: BufferedWriter, dumpedAttributeValuationSets: ArrayList<String>, abstractState: AbstractState ) {
         bufferedWriter.write(this.dump(abstractState))
 
         dumpedAttributeValuationSets.add(this.avsId)
-        if (parentAttributeValuationSetId!= emptyUUID) {
+        if (parentAttributeValuationSetId!= "") {
             if (!dumpedAttributeValuationSets.contains(parentAttributeValuationSetId)) {
                 bufferedWriter.newLine()
                 val parentAttributeValuationSet = allAttributeValuationSet[activity]!!.get(parentAttributeValuationSetId)!!
@@ -527,7 +540,8 @@ class AttributeValuationSet (val localAttributes: HashMap<AttributeType, String>
     }
 
     companion object {
-       val allAttributeValuationSet: HashMap<String, HashMap<UUID,AttributeValuationSet>> = HashMap()
+       val allAttributeValuationSet: HashMap<String, HashMap<String,AttributeValuationSet>> = HashMap()
+        val avmIdByActivity = HashMap<String, Int> ()
         /* fun createOrGetExisitingObject(attributePath: AttributePath, cardinality: Cardinality, activity: String): AttributeValuationSet {
 
         }*/

@@ -19,6 +19,8 @@ enum class AttributeType {
     scrollDirection,
     checked,
     isLeaf,
-    childrenInfo
+    childrenStructure,
+    childrenText,
+    siblingsInfo
 
 }

@@ -42,11 +42,14 @@ open class AbstractState(
     val actionCount = HashMap<AbstractAction, Int>()
     val targetActions = HashSet<AbstractAction>()
 
-    val abstractStateId: UUID by lazy { lazyIds.value }
-
+    val abstractStateId: String
+    var hashCode: Int = 0
 
     init {
-
+        abstractStateIdByWindow.putIfAbsent(window,0)
+        val maxId = abstractStateIdByWindow[window]!!
+        abstractStateId = "${window}_${maxId+1}"
+        abstractStateIdByWindow.put(window,maxId+1)
         window.mappedStates.add(this)
         attributeValuationSets.forEach {
             it.captured = true
@@ -63,14 +66,8 @@ open class AbstractState(
                 widgetGroupFrequency[it] = widgetGroupFrequency[it]!! + 1
             }
         }
+        hashCode = computeAbstractStateHashCode(attributeValuationSets,activity, rotation, internet)
     }
-
-    protected open val lazyIds: Lazy<UUID> =
-            lazy {
-                computeAbstractStateId(attributeValuationSets,activity, rotation, internet)
-            }
-
-
 
     fun initAction(){
         val resetAction = AbstractAction(
@@ -217,6 +214,7 @@ open class AbstractState(
         return "AbstractState[${this.abstractStateId}]-${window}-Rotation:$rotation"
     }
 
+
     fun setActionCount(action: AbstractAction, count: Int) {
         if (action.attributeValuationSet == null) {
             if (actionCount.containsKey(action)) {
@@ -334,7 +332,7 @@ open class AbstractState(
      * uuid -> AbstractState_[uuid]
      */
     open fun dump(parentDirectory: Path) {
-        val dumpedAttributeValuationSet = ArrayList<UUID>()
+        val dumpedAttributeValuationSet = ArrayList<String>()
         File(parentDirectory.resolve("AbstractState_" + abstractStateId.toString() + ".csv").toUri()).bufferedWriter().use { all ->
             all.write(header())
             attributeValuationSets.forEach {
@@ -355,15 +353,16 @@ open class AbstractState(
     }
 
     companion object {
-        fun computeAbstractStateId(attributeValuationSets: List<AttributeValuationSet>, activity: String, rotation: Rotation, internet: InternetStatus): UUID {
+        val abstractStateIdByWindow = HashMap<Window, Int>()
+        fun computeAbstractStateHashCode(attributeValuationSets: List<AttributeValuationSet>, activity: String, rotation: Rotation, internet: InternetStatus): Int {
             return attributeValuationSets.sortedBy { it.avsId }.fold(emptyUUID) { id, avs ->
                 /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
                 // however different selectable auto-completion proposes are only 'rendered'
                 // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/
 
                 //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
-                id + avs.avsId
-            }.plus(listOf<String>(rotation.toString(),internet.toString(),activity).joinToString("<;>").toUUID())
+                id + avs.hashCode.toUUID()
+            }.plus(listOf<String>(rotation.toString(),internet.toString(),activity).joinToString("<;>").toUUID()).hashCode()
         }
 
         internal operator fun UUID.plus(uuid: UUID?): UUID {

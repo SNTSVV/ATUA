@@ -193,7 +193,7 @@ class PhaseTwoStrategy (
         return transitionPaths
     }
 
-    override fun getPathsToVisitedStates(currentState: State<*>,pathType: PathFindingHelper.PathType): List<TransitionPath>{
+    override fun getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath>{
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
@@ -227,6 +227,9 @@ class PhaseTwoStrategy (
         if (abstractState!!.window == targetWindow)
         {
             val availableEvents = abstractState.inputMappings.map { it.value }.flatten()
+            val targetWindowEvents = phase2TargetEvents.filter {
+                it.key.sourceWindow == targetWindow!!
+            }
             val events = HashMap(phase2TargetEvents.filter {
                 availableEvents.contains(it.key)
             })
@@ -366,7 +369,7 @@ class PhaseTwoStrategy (
             return
         budgetType = 2
         val inputWidgetCount = Helper.getInputFields(currentState).size
-        val baseActionCount = log2(Helper.getActionableWidgetsWithoutKeyboard(currentState).size*2.toDouble())
+        val baseActionCount = log2((Helper.getActionableWidgetsWithoutKeyboard(currentState).size-inputWidgetCount)*2.toDouble())
         randomBudgetLeft = (baseActionCount * scaleFactor).toInt()
     }
 
@@ -390,11 +393,9 @@ class PhaseTwoStrategy (
         if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu || currentAppState.window is OutOfApp) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
         }
-        if (alreadyRandomInputInTarget) {
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
-                setGoToTarget(goToTargetNodeTask, currentState)
-                return
-            }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
         }
         if (currentAppState.window == targetWindow) {
             alreadyRandomInputInTarget = false
@@ -438,7 +439,7 @@ class PhaseTwoStrategy (
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
             return
         }
-        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)
             return
         }
@@ -798,8 +799,7 @@ class PhaseTwoStrategy (
         }
          allTargetInputs.forEach {
              if (it.eventType != EventType.resetApp
-                     && it.eventType != EventType.implicit_launch_event
-                     && it.eventType != EventType.implicit_back_event) {
+                     && it.eventType != EventType.implicit_launch_event) {
                  phase2TargetEvents.put(it,0)
              }
          }

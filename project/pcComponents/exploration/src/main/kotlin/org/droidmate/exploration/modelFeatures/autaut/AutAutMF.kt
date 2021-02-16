@@ -44,6 +44,7 @@ import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+import org.droidmate.explorationModel.toUUID
 import org.json.JSONArray
 import org.json.JSONObject
 import org.slf4j.Logger
@@ -93,8 +94,7 @@ class AutAutMF(private val appName: String,
     var phase: Int = 1
     private val widgetProbability = mutableMapOf<UUID, Double>() // probability of each widget invoking modified methods
     private val runtimeWidgetInfos = mutableMapOf<Pair<Window,UUID>, Triple<State<*>, EWTGWidget,HashMap<String, Any>>>()//Key: widget id
-    private val widgets_modMethodInvocation = mutableMapOf<String, Widget_MethodInvocations>()
-    private val allDialogOwners = mutableMapOf<String, ArrayList<String>>() // window -> listof (Dialog)
+
     private val allMeaningfulWidgets = hashSetOf<EWTGWidget>() //widgetId -> idWidget
     val allTargetStaticWidgets = hashSetOf<EWTGWidget>() //widgetId -> idWidget
     val allTargetInputs = hashSetOf<Input>()
@@ -102,6 +102,8 @@ class AutAutMF(private val appName: String,
     val allTargetHandlers = hashSetOf<String>()
     val allEventHandlers = hashSetOf<String>()
     val allModifiedMethod = hashMapOf<String,Boolean>()
+    val widgets_modMethodInvocation = mutableMapOf<String, Widget_MethodInvocations>()
+    val allDialogOwners = hashMapOf<String, ArrayList<String>>() // window -> listof (Dialog)
 
     private val allActivityOptionMenuItems = mutableMapOf<String,ArrayList<EWTGWidget> >()  //idWidget
     private val allContextMenuItems = arrayListOf<EWTGWidget>()
@@ -191,7 +193,7 @@ class AutAutMF(private val appName: String,
     var inputConfiguration: InputConfiguration?=null
     var deviceEnvironmentConfiguration: DeviceEnvironmentConfiguration? = null
 
-    val staticEventWindowCorrelation = HashMap<Input, HashMap<Window,Double>>()
+    val inputWindowCorrelation = HashMap<Input, HashMap<Window,Double>>()
     val untriggeredTargetHandlers = hashSetOf<String>()
 
 
@@ -261,7 +263,8 @@ class AutAutMF(private val appName: String,
         this.stateGraph = context.getOrCreateWatcher<StateGraphMF>()
         this.statementMF = context.getOrCreateWatcher<StatementCoverageMF>()
         this.crashlist = context.getOrCreateWatcher<CrashListMF>()
-        readAppModel()
+
+        StaticAnalysisJSONParser.readAppModel(getAppModelFile()!!,this,manualIntent,manualInput)
         AbstractStateManager.instance.init(this, appName)
         AutAutModelLoader.loadModel(resourceDir.resolve(appName),this)
         appPrevState = null
@@ -1135,11 +1138,12 @@ class AutAutMF(private val appName: String,
         if (event != null) {
             event.forEach {
                 if (it.eventType != EventType.resetApp) {
+                    updateStaticEventHandlersAndModifiedMethods(it, abstractTransition, coverageIncreased)
                     if (abstractTransition.modifiedMethods.isNotEmpty()) {
                         if (!allTargetInputs.contains(it))
                             allTargetInputs.add(it)
                     }
-                    updateStaticEventHandlersAndModifiedMethods(it, abstractTransition, coverageIncreased)
+
                 }
             }
         }
@@ -1198,7 +1202,7 @@ class AutAutMF(private val appName: String,
             val attributeValuationSet = abstractTransition.abstractAction.attributeValuationSet
             if (!prevAbstractState.EWTGWidgetMapping.containsKey(attributeValuationSet)){
                 val attributeValuationSetId = if (attributeValuationSet.getResourceId().isBlank())
-                    emptyUUID
+                    ""
                 else
                     attributeValuationSet.avsId
                 // create new static widget and add to the abstract state
@@ -1305,7 +1309,8 @@ class AutAutMF(private val appName: String,
                     {
                         unreachableModifiedMethods.remove(methodName)
                     }
-                    if (allEventHandlers.contains(methodId) || modifiedMethodTopCallersMap.filter { it.value.contains(methodId) }.isNotEmpty())
+                    val isATopCallerOfModifiedMethods = modifiedMethodTopCallersMap.filter { it.value.contains(methodId) }.isNotEmpty()
+                    if (allEventHandlers.contains(methodId) || isATopCallerOfModifiedMethods)
                     {
 
                         if (sourceAbsState.isOutOfApplication && currentAbsState.belongToAUT() && lastOpeningAnotherAppAbstractInteraction != null) {
@@ -1316,6 +1321,10 @@ class AutAutMF(private val appName: String,
                             {
                                 lastOpeningAnotherAppAbstractInteraction.handlers.put(methodId,true)
                             }
+                            if(isATopCallerOfModifiedMethods) {
+                                val invokableModifiedMethods = modifiedMethodTopCallersMap.filter{ it.value.contains(methodId) }.keys
+                                lastOpeningAnotherAppAbstractInteraction.modifiedMethods.putIfAbsent(methodId,false)
+                            }
                         } else {
                             if (abstractTransition.handlers.containsKey(methodId)){
                                 abstractTransition.handlers[methodId] = true
@@ -1323,6 +1332,10 @@ class AutAutMF(private val appName: String,
                             else
                             {
                                 abstractTransition.handlers.put(methodId,true)
+                            }
+                            if(isATopCallerOfModifiedMethods) {
+                                val invokableModifiedMethods = modifiedMethodTopCallersMap.filter{ it.value.contains(methodId) }.keys
+                                abstractTransition.modifiedMethods.putIfAbsent(methodId,false)
                             }
                         }
                     }
@@ -1349,6 +1362,11 @@ class AutAutMF(private val appName: String,
     }
 
     private fun updateStaticEventHandlersAndModifiedMethods(input: Input, abstractTransition: AbstractTransition, coverageIncreased: Int) {
+        //update ewtg transition
+        val existingTransition = wtg.edge(abstractTransition.source.window,abstractTransition.dest.window,input)
+        if (existingTransition == null) {
+            wtg.add(abstractTransition.source.window,abstractTransition.dest.window,input)
+        }
         abstractTransition.modifiedMethods.filter { it.value == true }. forEach {
             input.modifiedMethods[it.key] = it.value
         }
@@ -1367,6 +1385,7 @@ class AutAutMF(private val appName: String,
         }
         input.coverage.put(dateFormater.format(System.currentTimeMillis()), input.modifiedMethodStatement.filterValues { it == true }.size)
         abstractTransition.handlers.filter { it.value == true }. forEach {
+            val handler = statementMF!!.getMethodName(it.key)
             input.verifiedEventHandlers.add(it.key)
             input.eventHandlers.add(it.key)
         }
@@ -1630,263 +1649,15 @@ class AutAutMF(private val appName: String,
 
 
 
-    fun readAppModel() {
-        val appModelFile = getAppModelFile()
-        if (appModelFile != null) {
-            //val activityEventList = List<ActivityEvent>()
-            val jsonData = String(Files.readAllBytes(appModelFile))
-            val jObj = JSONObject(jsonData)
-            log.debug("Reading Window Transition Graph")
-            wtg.constructFromJson(jObj)
-            readActivityAlias(jObj)
-            readWindowWidgets(jObj)
-            readMenuItemTexts(jObj)
-            readActivityDialogs(jObj)
-            readWindowHandlers(jObj)
-            log.debug("Reading modified method invocation")
-            readModifiedMethodTopCallers(jObj)
-            readModifiedMethodInvocation(jObj)
-            readUnreachableModfiedMethods(jObj)
-            //log.debug("Reading all strings")
-            //readAllStrings(jObj)
-            readEventCorrelation(jObj)
-            readMethodDependency(jObj)
-            readWindowDependency(jObj)
-            if (manualIntent) {
-                readIntentModel()
-            }
-            if (manualInput) {
-                val textInputFile = getTextInputFile()
-                if (textInputFile != null) {
-                    inputConfiguration = InputConfigurationFileHelper.readInputConfigurationFile(textInputFile)
-                    TextInput.inputConfiguration = inputConfiguration
 
-                }
-            }
-            val deviceConfigurationFile = getDeviceConfigurationFile()
-            if (deviceConfigurationFile != null) {
-                deviceEnvironmentConfiguration = DeviceEnvironmentConfigurationFileHelper.readInputConfigurationFile(deviceConfigurationFile)
-
-            }
-        }
-
-    }
 
     val methodTermsHashMap = HashMap<String, HashMap<String, Long>>()
     val windowTermsHashMap = HashMap<Window, HashMap<String,Long>>()
     val windowHandlersHashMap = HashMap<Window, Set<String>>()
     val activityAlias = HashMap<String, String> ()
-
-    private fun readActivityAlias (jObj: JSONObject) {
-        val jsonActivityAlias = jObj.getJSONObject("activityAlias")
-        if (jsonActivityAlias != null) {
-            activityAlias.putAll(StaticAnalysisJSONFileHelper.readActivityAlias(jsonActivityAlias,this))
-        }
-    }
-
-    private fun readWindowDependency(jObj: JSONObject) {
-        val jsonWindowTerm = jObj.getJSONObject("windowsDependency")
-        if (jsonWindowTerm != null)
-        {
-            windowTermsHashMap.putAll(StaticAnalysisJSONFileHelper.readWindowTerms(jsonWindowTerm, wtg))
-        }
-    }
-
-    private fun readWindowHandlers (jObj: JSONObject) {
-        val jsonWindowHandlers = jObj.getJSONObject("windowHandlers")
-        if (jsonWindowHandlers != null) {
-            windowHandlersHashMap.putAll(StaticAnalysisJSONFileHelper.readWindowHandlers(jsonWindowHandlers,wtg, statementMF!!))
-        }
-    }
-
-    private fun readMethodDependency(jObj: JSONObject) {
-        var jsonMethodDepedency = jObj.getJSONObject("methodDependency")
-        if (jsonMethodDepedency != null)
-        {
-            methodTermsHashMap.putAll(StaticAnalysisJSONFileHelper.readMethodTerms(jsonMethodDepedency,statementMF!!))
-        }
-    }
-    private fun readEventCorrelation(jObj: JSONObject) {
-        var eventCorrelationJson = jObj.getJSONObject("event_window_Correlation")
-        if (eventCorrelationJson!=null)
-        {
-            staticEventWindowCorrelation.putAll(StaticAnalysisJSONFileHelper.readEventWindowCorrelation(eventCorrelationJson,wtg))
-        }
-    }
-
-    private fun readIntentModel() {
-        val intentModelFile = getIntentModelFile()
-        if (intentModelFile != null) {
-            val jsonData = String(Files.readAllBytes(intentModelFile))
-            val jObj = JSONObject(jsonData)
-            val activitiesJson = jObj.getJSONArray("activities")
-            activitiesJson.forEach {
-                StaticAnalysisJSONFileHelper.readActivityIntentFilter(it as JSONObject, intentFilters, appName)
-            }
-            intentFilters.forEach { t, u ->
-                val activityName = t
-                val qualifiedActivityName = activityName
-                var intentActivityNode = WindowManager.instance.allWindows.find { it.classType == qualifiedActivityName }
-                if (intentActivityNode == null) {
-                    intentActivityNode = Activity.getOrCreateNode(Activity.getNodeId(), qualifiedActivityName)
-                }
-                u.forEach {
-                    for (meaningNode in WindowManager.instance.allMeaningWindows) {
-                        val intentEvent = Input(eventType = EventType.callIntent,
-                                eventHandlers = HashSet(), widget = null,sourceWindow = meaningNode)
-                        intentEvent.data = it
-                        wtg.add(meaningNode, intentActivityNode!!, intentEvent)
-                    }
-
-                }
-
-                if (allTargetInputs.filter {
-                            it.sourceWindow.activityClass.contains(activityName)
-                                    && (it.eventType == EventType.implicit_rotate_event
-                                    || it.eventType == EventType.implicit_lifecycle_event
-                                    || it.eventType == EventType.implicit_power_event)
-                        }.isNotEmpty()) {
-                    u.forEach {
-                        targetIntFilters.put(it, 0)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getIntentModelFile(): Path? {
-        if (!Files.exists(resourceDir)) {
-            AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
-            return null
-
-        } else {
-            val intentModelFile = getIntentModelFile(appName, resourceDir)
-            if (intentModelFile != null)
-                return intentModelFile
-            else {
-                AutAutMF.log.warn("Provided directory ($resourceDir) does not contain " +
-                        "the corresponding intent model file.")
-                return null
-            }
-        }
-    }
-
-    private fun getIntentModelFile(apkName: String, targetDir: Path): Path? {
-        return Files.list(targetDir)
-                .filter {
-                    it.fileName.toString().contains(apkName)
-                            && it.fileName.toString().endsWith("-intent.json")
-                }
-                .findFirst()
-                .orElse(null)
-    }
-
-    private fun readMenuItemTexts(jObj: JSONObject) {
-        var jMap = jObj.getJSONObject("menuItemTexts")
-        StaticAnalysisJSONFileHelper.readMenuItemText(jMap, OptionsMenu.allNodes)
-    }
-
-/*    private fun readAllStrings(jObj: JSONObject) {
-        var jMap = jObj.getJSONArray("allStrings")
-        StaticAnalysisJSONFileHelper.readAllStrings(jMap,generalDictionary)
-    }*/
-
-    private fun readUnreachableModfiedMethods(jObj: JSONObject) {
-        var jMap = jObj.getJSONArray("unreachableModifiedMethods")
-        StaticAnalysisJSONFileHelper.readUnreachableModifiedMethods(jsonArray = jMap, methodList = unreachableModifiedMethods)
-    }
-
-    private fun readWindowWidgets(jObj: JSONObject) {
-        //var jMap = jObj.getJSONObject("allWindow_Widgets")
-        var jMap = jObj.getJSONObject("allWidgetEvent")
-        StaticAnalysisJSONFileHelper.readAllWidgetEvents(jMap, wtg, allEventHandlers, statementMF!!)
-
-    }
-
     val modifiedMethodTopCallersMap = HashMap<String, Set<String>>()
 
-    private fun readModifiedMethodTopCallers(jObj: JSONObject){
-        var jMap = jObj.getJSONObject("modiMethodTopCaller")
-        StaticAnalysisJSONFileHelper.readModifiedMethodTopCallers(jMap,modifiedMethodTopCallersMap,statementMF!!)
 
-        //Add windows containing top caller to allTargetWindows list
-        modifiedMethodTopCallersMap.forEach { modMethod, topCallers ->
-            allTargetHandlers.addAll(topCallers)
-            topCallers.forEach { caller ->
-                val windows = windowHandlersHashMap.filter { it.value.contains(caller) }.map { it.key }
-                if (windows.isNotEmpty()) {
-                    windows.forEach {w ->
-                        if (!allTargetWindow_ModifiedMethods.contains(w)) {
-                            allTargetWindow_ModifiedMethods.put(w, hashSetOf())
-                        }
-                        allTargetWindow_ModifiedMethods[w]!!.add(modMethod)
-                    }
-                }
-            }
-        }
-
-        untriggeredTargetHandlers.addAll(allTargetHandlers)
-    }
-
-    private fun readModifiedMethodInvocation(jObj: JSONObject) {
-        var jMap = jObj.getJSONObject("modiMethodInvocation")
-        StaticAnalysisJSONFileHelper.readModifiedMethodInvocation(jsonObj = jMap,
-                wtg = wtg,
-                allTargetInputs = allTargetInputs,
-                allTargetEWTGWidgets = allTargetStaticWidgets,
-                statementCoverageMF = statementMF!!)
-        allTargetInputs.forEach {
-            val sourceWindow = it.sourceWindow
-            if (!allTargetWindow_ModifiedMethods.contains(sourceWindow) && sourceWindow !is OutOfApp) {
-                allTargetWindow_ModifiedMethods.put(sourceWindow, hashSetOf())
-            }
-            allTargetWindow_ModifiedMethods[sourceWindow]!!.addAll(it.modifiedMethods.keys)
-        }
-
-        allTargetInputs.filter { listOf<EventType>(EventType.item_click, EventType.item_long_click,
-                EventType.item_selected).contains(it.eventType)}.forEach {
-            val eventInfo = HashMap<String,Int>()
-            targetItemEvents.put(it,eventInfo)
-            eventInfo["max"] = 3
-            eventInfo["count"] = 0
-        }
-
-    }
-
-
-    fun readActivityDialogs(jObj: JSONObject) {
-        val jMap = jObj.getJSONObject("allActivityDialogs")
-        //for each Activity transition
-        jMap.keys().asSequence().forEach { key ->
-            val activity = key as String
-            if (!allDialogOwners.containsKey(activity)) {
-                allDialogOwners[activity] = ArrayList()
-            }
-            val dialogs = jMap[key] as JSONArray
-            dialogs.forEach {
-                allDialogOwners[activity]!!.add(it as String)
-            }
-        }
-    }
-
-    fun readActivityOptionMenuItem(jObj: JSONObject){
-        val jMap = jObj.getJSONObject("allActivityOptionMenuItems")
-        //for each Activity transition
-        jMap.keys().asSequence().forEach { key ->
-            val activity = key as String
-            if (!allActivityOptionMenuItems.contains(activity))
-            {
-                allActivityOptionMenuItems[activity] = ArrayList()
-            }
-//            val menuItemsJson = jMap[key] as JSONArray
-//            menuItemsJson.forEach {
-//                val widgetInfo = StaticAnalysisJSONFileHelper.widgetParser(it as String)
-//                val menuItemWidget = StaticWidget.getOrCreateStaticWidget(widgetInfo["id"]!!,"android.view.menu",false)
-//                allActivityOptionMenuItems[activity]!!.add(menuItemWidget)
-//            }
-
-        }
-    }
 
 
     fun getAppModelFile(): Path? {
@@ -1916,7 +1687,7 @@ class AutAutMF(private val appName: String,
                 .orElse(null)
     }
 
-    private fun getTextInputFile(): Path?{
+     fun getTextInputFile(): Path?{
         if (!Files.exists(resourceDir)) {
             AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
             return null
@@ -1942,7 +1713,7 @@ class AutAutMF(private val appName: String,
                 .orElse(null)
     }
 
-    private fun getDeviceConfigurationFile(): Path? {
+    fun getDeviceConfigurationFile(): Path? {
         if (!Files.exists(resourceDir)) {
             AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
             return null
@@ -1969,6 +1740,32 @@ class AutAutMF(private val appName: String,
                 .orElse(null)
     }
 
+    fun getIntentModelFile(): Path? {
+        if (!Files.exists(resourceDir)) {
+            AutAutMF.log.warn("Provided Dir does not exist: $resourceDir.")
+            return null
+
+        } else {
+            val intentModelFile = getIntentModelFile(appName, resourceDir)
+            if (intentModelFile != null)
+                return intentModelFile
+            else {
+                AutAutMF.log.warn("Provided directory ($resourceDir) does not contain " +
+                        "the corresponding intent model file.")
+                return null
+            }
+        }
+    }
+
+    private fun getIntentModelFile(apkName: String, targetDir: Path): Path? {
+        return Files.list(targetDir)
+                .filter {
+                    it.fileName.toString().contains(apkName)
+                            && it.fileName.toString().endsWith("-intent.json")
+                }
+                .findFirst()
+                .orElse(null)
+    }
     private fun addWidgetToActivtity_TargetWidget_Map(activity: String, event: Input) {
         if (!activity_TargetComponent_Map.containsKey(activity)) {
             activity_TargetComponent_Map[activity] = ArrayList()

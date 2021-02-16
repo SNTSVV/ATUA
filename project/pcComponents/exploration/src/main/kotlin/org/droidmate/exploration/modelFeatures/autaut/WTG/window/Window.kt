@@ -48,7 +48,7 @@ abstract class Window(val classType: String,
     }
 
     private fun getAttributeValuationSetOrNull(it: EWTGWidget) =
-            if (it.attributeValuationSetId == emptyUUID)
+            if (it.attributeValuationSetId == "")
                 null
             else
                 it.attributeValuationSetId

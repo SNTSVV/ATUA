@@ -90,13 +90,11 @@ open class AutAutTestingStrategy @JvmOverloads constructor(priority: Int,
                     regressionWatcher.updateStage1Info(eContext)
                     return eContext.resetApp()
                 }
-              /*      phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
-                    regressionWatcher.updateStage2Info(eContext)
-                    return eContext.resetApp()*/
+                    /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
+                    regressionWatcher.updateStage2Info(eContext)*/
             } else if (phaseStrategy is PhaseTwoStrategy) {
                 phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
-                return eContext.resetApp()
             } else if (phaseStrategy is PhaseThreeStrategy) {
                 return ExplorationAction.terminateApp()
             }

@@ -187,16 +187,29 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 				} }
 		is RotateUI -> env.device.rotate(rotation, env.automation)
 		is LaunchApp -> {
+
+			//reset wifi
+			val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+			wfm.setWifiEnabled(true).also {
+				if (!it) Log.w(logTag, "Failed to ensure WiFi is enabled!")
+			}
+			//launch app
 			env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
+			//reset rotaion
+			env.automation.setRotation(0)
 		}
 		is ResetApp -> {
+			//reset wifi
             val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
             wfm.setWifiEnabled(true).also {
                 if (!it) Log.w(logTag, "Failed to ensure WiFi is enabled!")
             }
+			//launch app
             env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
+			//reset rotaion
+			env.automation.setRotation(0)
 		}
 		is Swipe -> env.device.twoPointAction(start,end){
 			x0, y0, x1, y1 ->  env.device.swipe(x0, y0, x1, y1, stepSize)

@@ -160,6 +160,8 @@ class AbstractionFunction (val root: DecisionNode) {
             lv3Node.nextNode = lv4Node
             val lv5Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
             lv4Node.nextNode = lv5Node
+            val lv6Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
+            lv5Node.nextNode = lv6Node
             INSTANCE = AbstractionFunction(root)
         }
         private var backupAbstractionFunction: AbstractionFunction? = null
@@ -177,6 +179,8 @@ class AbstractionFunction (val root: DecisionNode) {
             lv3Node.nextNode = lv4Node
             val lv5Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
             lv4Node.nextNode = lv5Node
+            val lv6Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
+            lv5Node.nextNode = lv6Node
             backupAbstractionFunction = AbstractionFunction(root)
             var decisionNode: DecisionNode? = INSTANCE.root
             var backupDecisionNode: DecisionNode? = backupAbstractionFunction!!.root

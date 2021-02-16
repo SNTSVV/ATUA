@@ -49,8 +49,11 @@ class ExerciseTargetComponentTask private constructor(
         }
         if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
             return true
-        eventList.clear()
-        eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
+        val abstractState = autautMF.getAbstractState(currentState)!!
+        eventList.removeIf {
+            it.isWidgetAction() &&
+                    !abstractState.attributeValuationSets.contains(it.attributeValuationSet)
+        }
         if (eventList.isNotEmpty()) {
             return false
         }

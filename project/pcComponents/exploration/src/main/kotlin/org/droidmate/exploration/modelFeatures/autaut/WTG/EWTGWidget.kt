@@ -15,12 +15,22 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                   var activity: String,
                                   var wtgNode: Window,
                                   val createdAtRuntime: Boolean = false,
-                                  val attributeValuationSetId: UUID = emptyUUID
+                                  val attributeValuationSetId: String = ""
                                     ){
     var possibleTexts= ArrayList<String>()
     var exercised: Boolean = false
     var exerciseCount: Int = 0
     var textInputHistory: ArrayList<String> = ArrayList()
+    var parent: EWTGWidget? = null
+        set(value) {
+            if (value==null)
+                return
+            field = value
+            if (!value.children.contains(this)) {
+                value.children.add(this)
+            }
+        }
+    val children: ArrayList<EWTGWidget> = ArrayList()
 
     init {
         wtgNode.widgets.add(this)
@@ -59,7 +69,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                     className: String,
                                     activity: String,
                                     wtgNode: Window,
-                                    attributeValuationSetId: UUID = emptyUUID): EWTGWidget {
+                                    attributeValuationSetId: String = ""): EWTGWidget {
             val returnWidget = allStaticWidgets.find{ it.widgetId==widgetId && it.activity == activity}
             if ( returnWidget == null) {
                 var staticWidget = EWTGWidget(widgetId = widgetId, resourceIdName = resourceIdName,

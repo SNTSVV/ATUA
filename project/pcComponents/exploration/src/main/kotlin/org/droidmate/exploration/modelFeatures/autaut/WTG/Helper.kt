@@ -34,38 +34,26 @@ class Helper {
             var containsActivityWidgets = false
             var optionsMenuWidgets = ArrayList<EWTGWidget>()
             var activityWidgets = ArrayList<EWTGWidget>()
-            newState.widgets.filter { widget_AttributeValuationSetHashMap.containsKey(it) }.iterator().also {
-                while (it.hasNext()) {
-                    val widget = it.next()
-                    if (autAutMF.getAbstractState(newState) == null)
-                        continue
-                    val attributeValuationSet = widget_AttributeValuationSetHashMap[widget]!!
 
-                    optionsMenuWidgets.addAll(getStaticWidgets(widget, newState, attributeValuationSet, optionsMenuNode, false, autAutMF))
-                    if (optionsMenuWidgets.isEmpty()) {
-                        containsOptionMenuWidgets = false
-                    } else {
-                        containsOptionMenuWidgets = true
-                    }
-                    if (containsOptionMenuWidgets)
-                        break
-                }
+            val avms = widget_AttributeValuationSetHashMap.values.distinct()
+            avms.forEach {
+                val attributeValuationSet = it
+                optionsMenuWidgets.addAll(getStaticWidgets(attributeValuationSet, optionsMenuNode, false))
+
             }
-            newState.widgets.filter { widget_AttributeValuationSetHashMap.containsKey(it) }.iterator().also {
-                while (it.hasNext()) {
-                    val widget = it.next()
-                    if (autAutMF.getAbstractState(newState) == null)
-                        continue
-                    val attributeValuationSet = widget_AttributeValuationSetHashMap[widget]!!
+            if (optionsMenuWidgets.isEmpty()) {
+                containsOptionMenuWidgets = false
+            } else {
+                containsOptionMenuWidgets = true
+            }
 
-                    activityWidgets.addAll(getStaticWidgets(widget, newState, attributeValuationSet, activityNode, false, autAutMF))
-                    if (activityWidgets.isEmpty()) {
-                        containsActivityWidgets = false
-                    } else {
-                        containsActivityWidgets = true
-                    }
-                    if (containsActivityWidgets)
-                        break
+            avms.forEach {
+                val attributeValuationSet = it
+                activityWidgets.addAll(getStaticWidgets(attributeValuationSet, activityNode, false))
+                if (activityWidgets.isEmpty()) {
+                    containsActivityWidgets = false
+                } else {
+                    containsActivityWidgets = true
                 }
             }
             if (containsActivityWidgets && containsOptionMenuWidgets) {
@@ -87,9 +75,9 @@ class Helper {
 
         fun calculateMatchScoreForEachNode(guiState: State<*>, allPossibleNodes: List<Window>, appName: String, activity: String, widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>,
                                            autAutMF: AutAutMF): HashMap<Window, Double> {
-            val matchWidgets = HashMap<Window, HashMap<Widget, HashSet<EWTGWidget>>>()
-            val missWidgets = HashMap<Window, HashSet<Widget>>()
-            val propertyChangedWidgets = HashMap<Window, HashSet<Widget>>()
+            val matchWidgets = HashMap<Window, HashMap<AttributeValuationSet, HashSet<EWTGWidget>>>()
+            val missWidgets = HashMap<Window, HashSet<AttributeValuationSet>>()
+            //val propertyChangedWidgets = HashMap<Window, HashSet<Widget>>()
             val visibleWidgets = ArrayList<Widget>()
             visibleWidgets.addAll(getVisibleWidgetsForAbstraction(guiState))
             if (visibleWidgets.isEmpty()) {
@@ -98,13 +86,29 @@ class Helper {
             allPossibleNodes.forEach {
                 matchWidgets[it] = HashMap()
                 missWidgets[it] = HashSet()
-                propertyChangedWidgets[it] = HashSet()
+                //propertyChangedWidgets[it] = HashSet()
             }
-            visibleWidgets.iterator().also {
+            val avms = widget_AttributeValuationSetHashMap.values.distinct()
+            avms.forEach {
+                val attributeValuationSet = it
+                allPossibleNodes.forEach {
+                    val matchingWidget = getStaticWidgets(attributeValuationSet, it, false)
+                    if (matchingWidget.isNotEmpty()) {
+                        if (matchWidgets.containsKey(it)) {
+                            matchWidgets[it]!!.put(attributeValuationSet, HashSet(matchingWidget))
+                        }
+                    } else {
+                        if (missWidgets.contains(it) && attributeValuationSet.getResourceId().isNotBlank()) {
+                            missWidgets[it]!!.add(attributeValuationSet)
+                        }
+                    }
+                }
+            }
+/*            visibleWidgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
-                    /*  if (autAutMF.getAbstractState(guiState) == null)
-                          continue*/
+                    *//*  if (autAutMF.getAbstractState(guiState) == null)
+                          continue*//*
                     //val attributeValuationSet = autAutMF.getAbstractState(guiState)!!.getAttributeValuationSet(widget, guiState)!!
                     if (!widget_AttributeValuationSetHashMap.containsKey(widget))
                         continue
@@ -122,7 +126,7 @@ class Helper {
                         }
                     }
                 }
-            }
+            }*/
             val scores = HashMap<Window, Double>()
             allPossibleNodes.forEach { window ->
                 val missStaticWidgets = window.widgets.filterNot { staticWidget -> matchWidgets[window]!!.values.any { it.contains(staticWidget) } }
@@ -210,39 +214,62 @@ class Helper {
         fun getInputFields(state: State<*>) =
                 getVisibleWidgets(state).filter { isUserLikeInput(it) }
 
-        fun getStaticWidgets(originalWidget: Widget, state: State<*>, attributeValuationSet: AttributeValuationSet, wtgNode: Window, updateModel: Boolean,
-                             autAutMF: AutAutMF): List<EWTGWidget> {
+        fun getStaticWidgets( attributeValuationSet: AttributeValuationSet, wtgNode: Window, updateModel: Boolean,
+                             avm_ewtgWidgets: HashMap<String, ArrayList<EWTGWidget>> = HashMap()): List<EWTGWidget> {
+
             var matchedEWTGWidgets: ArrayList<EWTGWidget> = ArrayList()
-            var widget = originalWidget
-            if (widget.resourceId.isNotBlank()) {
-                val unqualifiedResourceId = getUnqualifiedResourceId(widget)
+            if (attributeValuationSet.getResourceId().isNotBlank()) {
+                val unqualifiedResourceId = getUnqualifiedResourceId(attributeValuationSet.getResourceId())
 
                 matchedEWTGWidgets.addAll(wtgNode.widgets.filter {
-                    if (widget.resourceId == "android:id/title" || widget.resourceId == "android:id/alertTitle") {
-                        it.resourceIdName == unqualifiedResourceId && it.text == widget.text
+                    if (attributeValuationSet.getResourceId() == "android:id/title" || attributeValuationSet.getResourceId() == "android:id/alertTitle") {
+                        it.resourceIdName == unqualifiedResourceId && it.text == attributeValuationSet.getText()
                     } else {
                         it.resourceIdName == unqualifiedResourceId
                     }
                 })
             }
-            if (matchedEWTGWidgets.isEmpty() && widget.contentDesc.isNotBlank()) {
+            if (matchedEWTGWidgets.isEmpty() && attributeValuationSet.getContentDesc().isNotBlank()) {
                 matchedEWTGWidgets.addAll(wtgNode.widgets.filter { w ->
-                    widget.contentDesc == w.contentDesc
+                    attributeValuationSet.getContentDesc() == w.contentDesc
                 })
             }
-            if (matchedEWTGWidgets.isEmpty() && !widget.isInputField && widget.text.isNotBlank()) {
-                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { w ->
-                    w.possibleTexts.contains(widget.text)
-                })
+            if (matchedEWTGWidgets.isEmpty() && !attributeValuationSet.isInputField() && attributeValuationSet.getText().isNotBlank()) {
+                val candidates = wtgNode.widgets.filter { w ->
+                    w.possibleTexts.contains(attributeValuationSet.getText())
+                }
+                matchedEWTGWidgets.addAll(candidates)
             }
             if (matchedEWTGWidgets.isEmpty()) {
-                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { it.attributeValuationSetId != emptyUUID }.filter { w ->
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { it.attributeValuationSetId != "" }.filter { w ->
                     val attributeValuationSet_w = AttributeValuationSet.allAttributeValuationSet[wtgNode.activityClass]!!.get(w.attributeValuationSetId)
                     if (attributeValuationSet_w != null) {
                         attributeValuationSet.isDerivedFrom(attributeValuationSet_w)
                     } else
                         false
                 })
+            }
+            if (matchedEWTGWidgets.isEmpty() && attributeValuationSet.getResourceId().isBlank()) {
+                matchedEWTGWidgets.addAll(wtgNode.widgets.filter { it.resourceIdName.isBlank() && it.className == attributeValuationSet.getClassName() })
+            }
+            if (matchedEWTGWidgets.isNotEmpty()) {
+                val matchingScores = HashMap<EWTGWidget,Double>()
+                matchedEWTGWidgets.forEach {
+                    val hierarchyMatchingScore: Double = verifyMatchingHierchyWindowLayout(attributeValuationSet, it, wtgNode, avm_ewtgWidgets)
+                    if (hierarchyMatchingScore != Double.POSITIVE_INFINITY){
+                        matchingScores.put(it,hierarchyMatchingScore)
+                    }
+                }
+                if (matchingScores.isEmpty()){
+                    matchedEWTGWidgets.clear()
+                } else {
+                    val maxScore = matchingScores.minBy { it.value }!!.value
+                    matchedEWTGWidgets.removeIf { matchingScores[it] != maxScore }
+                }
+
+            }
+            if (avm_ewtgWidgets.isNotEmpty()) {
+                avm_ewtgWidgets[attributeValuationSet.avsId]!!.addAll(matchedEWTGWidgets)
             }
             /*if (matchedStaticWidgets.isEmpty()
                     && (widget.className == "android.widget.RelativeLayout" || widget.className.contains("ListView") ||  widget.className.contains("RecycleView" ) ||  widget.className == "android.widget.LinearLayout"))
@@ -258,40 +285,94 @@ class Helper {
             }*/
             if (updateModel) {
                 matchedEWTGWidgets.forEach {
-                    if (originalWidget.isInputField && originalWidget.text.isNotBlank()) {
-                        it.textInputHistory.add(originalWidget.text)
+                    if (attributeValuationSet.isInputField() && attributeValuationSet.getText().isNotBlank()) {
+                        it.textInputHistory.add(attributeValuationSet.getText())
                     }
                 }
                 if (matchedEWTGWidgets.isEmpty()) {
-                    if (originalWidget.resourceId == "android:id/content") {
-                        return matchedEWTGWidgets
-                    }
-                    val attributeValuationSetId = if (getUnqualifiedResourceId(originalWidget.resourceId).isBlank())
-                        emptyUUID
+                    val attributeValuationSetId = if (getUnqualifiedResourceId(attributeValuationSet.getResourceId()).isBlank())
+                        ""
                     else
                         attributeValuationSet.avsId
                     val newWidget = EWTGWidget.getOrCreateStaticWidget(
                             widgetId = attributeValuationSet.avsId.toString(),
-                            resourceIdName = getUnqualifiedResourceId(originalWidget.resourceId),
-                            className = originalWidget.className,
+                            resourceIdName = getUnqualifiedResourceId(attributeValuationSet.getResourceId()),
+                            className = attributeValuationSet.getClassName(),
                             wtgNode = wtgNode,
                             resourceId = "",
                             activity = wtgNode.activityClass,
                             attributeValuationSetId = attributeValuationSetId
                     )
+                    val ancestorAVMWithMatchedEWTGWidget: AttributeValuationSet? = findAncestorAVMHavingMatchedEWTGWidget(attributeValuationSet.parentAttributeValuationSetId,
+                            avm_ewtgWidgets,wtgNode.activityClass)
+                    if (ancestorAVMWithMatchedEWTGWidget!=null) {
+                        val matchedAncestorEWTGWidgets = avm_ewtgWidgets.get(ancestorAVMWithMatchedEWTGWidget.avsId)!!
+                        matchedAncestorEWTGWidgets.forEach {
+                            newWidget.parent = it
+                        }
+                    } else {
+                        val layoutRoots = wtgNode.widgets.filter { it.parent == null && it != newWidget}
+                        layoutRoots.forEach {
+                            it.parent = newWidget
+                        }
+                    }
                     //newWidget.contentDesc = originalWidget.contentDesc
 
-                    if (originalWidget.resourceId == "android:id/title") {
-                        newWidget.text = originalWidget.text
+                    if (attributeValuationSet.getResourceId() == "android:id/title") {
+                        newWidget.text = attributeValuationSet.getText()
                     }
                     wtgNode.addWidget(newWidget)
                     matchedEWTGWidgets.add(newWidget)
-
+                    avm_ewtgWidgets[attributeValuationSet.avsId]!!.add(newWidget)
                 }
             }
             return matchedEWTGWidgets
         }
 
+        private fun findAncestorAVMHavingMatchedEWTGWidget(parentAvmId: String, avmEwtgwidgets: HashMap<String,ArrayList<EWTGWidget>>,activity: String): AttributeValuationSet? {
+            if (parentAvmId == "")
+                return null
+            val parentAVM = AttributeValuationSet.allAttributeValuationSet[activity]!!.get(parentAvmId)!!
+            if (avmEwtgwidgets.containsKey(parentAvmId)) {
+                if (avmEwtgwidgets.get(parentAvmId)!!.isNotEmpty()) {
+                    return parentAVM
+                }
+            }
+            return findAncestorAVMHavingMatchedEWTGWidget(parentAVM.parentAttributeValuationSetId,avmEwtgwidgets,activity)
+        }
+
+        private fun verifyMatchingHierchyWindowLayout(avm: AttributeValuationSet, ewtgWidget: EWTGWidget, wtgNode: Window, avmEwtgwidgets: HashMap<String, ArrayList<EWTGWidget>>): Double {
+            if (avm.parentAttributeValuationSetId == "" && ewtgWidget.parent == null)
+                return 1.0
+            var traversingAVM: AttributeValuationSet = avm
+            while (traversingAVM.parentAttributeValuationSetId!= "" && ewtgWidget.parent != null) {
+                if (!avmEwtgwidgets.containsKey(traversingAVM.parentAttributeValuationSetId)) {
+                    traversingAVM = AttributeValuationSet.allAttributeValuationSet[wtgNode.activityClass]!!.get(traversingAVM.parentAttributeValuationSetId)!!
+                    continue
+                }
+                val matchingParentWidgets = avmEwtgwidgets.get(traversingAVM.parentAttributeValuationSetId)!!
+                var totalCorrectnessDistance = 0.0
+                matchingParentWidgets.forEach {
+                    val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it)
+                    totalCorrectnessDistance += correctnessDistance
+                }
+                val averageCorrectness = totalCorrectnessDistance/matchingParentWidgets.size
+                return averageCorrectness
+            }
+            return Double.POSITIVE_INFINITY
+        }
+
+        private fun calculateEWTGWidgetAncestorCorrectness(ewtgWidget: EWTGWidget?, ancestor: EWTGWidget): Double {
+            if (ewtgWidget == null)
+                return Double.POSITIVE_INFINITY
+            if (ewtgWidget == ancestor)
+                return 1.0
+            var distance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent, ancestor)
+            if (distance == Double.POSITIVE_INFINITY && ancestor.parent!=null) {
+                distance = calculateEWTGWidgetAncestorCorrectness(ancestor.parent,ewtgWidget)
+            }
+            return 1.0+distance
+        }
 
         internal var changeRatioCriteria: Double = 0.05
 

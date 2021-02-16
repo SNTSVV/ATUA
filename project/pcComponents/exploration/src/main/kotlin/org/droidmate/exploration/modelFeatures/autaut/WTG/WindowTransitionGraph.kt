@@ -36,7 +36,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
     fun constructFromJson(jObj: JSONObject) {
         var jMap = jObj.getJSONObject("allActivityNodes")
         jMap.keys().asSequence().forEach { key ->
-            val windowInfo = StaticAnalysisJSONFileHelper.windowParser(jMap[key]!! as String)
+            val windowInfo = StaticAnalysisJSONParser.windowParser(jMap[key]!! as String)
             //val sourceNode = getOrCreateWTGNode(windowInfo)
         }
 
@@ -45,7 +45,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         jMap.keys().asSequence().forEach { key ->
             val source = key as String
             log.debug("source: $source")
-            val windowInfo = StaticAnalysisJSONFileHelper.windowParser(source)
+            val windowInfo = StaticAnalysisJSONParser.windowParser(source)
             val sourceNode = getOrCreateWTGNode(windowInfo)
             if (sourceNode is Launcher) {
                 this.add(root.data, sourceNode, LaunchAppEvent(sourceNode))
@@ -65,7 +65,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                     val target = transition["target"] as String
                     log.debug("action: $action")
                     log.debug("target: $target")
-                    val targetInfo = StaticAnalysisJSONFileHelper.windowParser(target)
+                    val targetInfo = StaticAnalysisJSONParser.windowParser(target)
                     val targetNode = getOrCreateWTGNode(targetInfo)
                     if (targetNode is OptionsMenu || sourceNode is Launcher) {
                         ignoreWidget = true
@@ -75,7 +75,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                     if (ignoreWidget == false) {
                         val targetView = transition["widget"] as String
                         log.info("parsing widget: $targetView")
-                        val widgetInfo = StaticAnalysisJSONFileHelper.widgetParser(targetView)
+                        val widgetInfo = StaticAnalysisJSONParser.widgetParser(targetView)
                         if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
                             ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                     resourceId = widgetInfo["resourceId"]!!,

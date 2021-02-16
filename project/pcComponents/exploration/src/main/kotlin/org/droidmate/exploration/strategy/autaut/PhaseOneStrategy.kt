@@ -1,12 +1,10 @@
 package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
-import org.droidmate.exploration.actions.launchApp
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.autaut.DSTG.*
 import org.droidmate.exploration.modelFeatures.autaut.WTG.*
@@ -307,21 +305,10 @@ class PhaseOneStrategy(
                 stopWhenHavingUnexercisedAction = false,
                 currentState = currentState,
                 currentAbstractState = currentAbstractState,
-                shortest = true,
-                pathCountLimitation = 1,
+                shortest = false,
+                pathCountLimitation = 10,
                 pathType = PathFindingHelper.PathType.RESET
                 )
-        if (transitionPath.isEmpty()) {
-            getPathToStates(transitionPaths=transitionPath,
-                    stateByScore = abstractStates,
-                    stopWhenHavingUnexercisedAction = false,
-                    currentState = currentState,
-                    currentAbstractState = currentAbstractState,
-                    shortest = true,
-                    pathCountLimitation = 1,
-                    pathType = PathFindingHelper.PathType.RESET)
-            return true
-        }
 
         return false
     }
@@ -338,8 +325,6 @@ class PhaseOneStrategy(
         if (flaggedWindows.contains(targetWindow)) {
             targetWindow = null
         }
-        if (unreachableWindows.contains(targetWindow))
-            targetWindow = null
 
         if (targetWindow != currentAppState.window) {
             if (isTargetWindow(currentAppState)) {
@@ -469,7 +454,7 @@ class PhaseOneStrategy(
 
     }
 
-    private fun nextActionWithoutTargetWindow(currentState: State<*>, currentAppState: AbstractState, randomExplorationTask: RandomExplorationTask, goToAnotherNode: GoToAnotherWindow) {
+    private fun nextActionWithoutTargetWindow(currentState: State<*>, currentAppState: AbstractState, randomExplorationTask: RandomExplorationTask, goToExploreWindows: GoToAnotherWindow) {
         if (strategyTask != null) {
             if (continueOrEndCurrentTask(currentState)) return
         }
@@ -478,21 +463,13 @@ class PhaseOneStrategy(
             setRandomExploration(randomExplorationTask, currentState, false,true)
             return
         }
-        if (goToWindowToExploreOrRandomExploration(currentAppState, goToAnotherNode, currentState, randomExplorationTask)) return
-        if (strategyTask is GoToAnotherWindow) {
-            setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        if (goToWindowToExploreOrRandomExploration(currentAppState, goToExploreWindows, currentState, randomExplorationTask)) return
+        //Current window has no more random exploration budget
+        if (goToExploreWindows.isAvailable(currentState)) {
+            setGoToExploreState(goToExploreWindows, currentState)
             return
         }
-        if (strategyTask is RandomExplorationTask
-                && randomExplorationTask.isFullyExploration) {
-            forceEnd = true
-            return
-        }
-        if (goToAnotherNode.isAvailable(currentState)) {
-            setGoToExploreState(goToAnotherNode, currentState)
-            return
-        }
-        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        forceEnd = true
         return
     }
 
@@ -893,7 +870,7 @@ class PhaseOneStrategy(
     private fun isCandidateWindow(it: Map.Entry<Window, Int>) =
             !flaggedWindows.contains(it.key) && !fullyCoveredWindows.contains(it.key)
 
-    override fun  getPathsToVisitedStates(currentState: State<*>,pathType: PathFindingHelper.PathType): List<TransitionPath> {
+    override fun  getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)

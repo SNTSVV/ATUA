@@ -32,7 +32,7 @@ abstract class AbstractPhaseStrategy(
     abstract fun isTargetState(currentState: State<*>): Boolean
     abstract fun isTargetWindow(window: Window): Boolean
 
-    abstract fun getPathsToVisitedStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath>
+    abstract fun getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath>
     abstract fun getPathsToTargetWindows(currentState: State<*> ,pathType: PathFindingHelper.PathType): List<TransitionPath>
 
     fun hasUnexploreWidgets(currentState: State<*>): Boolean {
@@ -75,8 +75,8 @@ abstract class AbstractPhaseStrategy(
                     currentState = currentState,
                     stopWhenHavingUnexercisedAction = false,
                     pathType = pathType,
-                    shortest = false,
-                    pathCountLimitation = 10)
+                    shortest = true,
+                    pathCountLimitation = 1)
         else {
             getPathToStates(
                     transitionPaths = transitionPaths,
@@ -85,8 +85,8 @@ abstract class AbstractPhaseStrategy(
                     currentState = currentState,
                     stopWhenHavingUnexercisedAction = false,
                     pathType = PathFindingHelper.PathType.INCLUDE_INFERED,
-                    shortest = false,
-                    pathCountLimitation = 10)
+                    shortest = true,
+                    pathCountLimitation = 1)
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
                         transitionPaths = transitionPaths,
@@ -95,8 +95,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.FOLLOW_TRACE,
-                        shortest = false,
-                        pathCountLimitation = 10)
+                        shortest = true,
+                        pathCountLimitation = 1)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -106,8 +106,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.RESET,
-                        shortest = false,
-                        pathCountLimitation = 10)
+                        shortest = true,
+                        pathCountLimitation = 1)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -117,8 +117,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.WTG,
-                        shortest = false,
-                        pathCountLimitation = 10)
+                        shortest = true,
+                        pathCountLimitation = 1)
             }
         }
     }

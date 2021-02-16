@@ -247,13 +247,13 @@ class AbstractStateManager() {
                                   rotation: Rotation,
                                   isOpeningKeyboard: Boolean,
                                   internetStatus: InternetStatus): AbstractState? {
-        val predictedAbstractStateId =   AbstractState.computeAbstractStateId(guiReducedAttributeValuationSet,activity,rotation,internetStatus)
+        val predictedAbstractStateId =   AbstractState.computeAbstractStateHashCode(guiReducedAttributeValuationSet,activity,rotation,internetStatus)
         return abstractStateList.filter {   it !is VirtualAbstractState
                 && it.activity == activity
                 &&  rotation == it.rotation
                 && it.isOpeningKeyboard == isOpeningKeyboard
                 && it.internet == internetStatus }. find {
-            it.abstractStateId == predictedAbstractStateId
+            it.hashCode == predictedAbstractStateId
             //hasSameAVS(guiReducedAttributeValuationSet.toSet(), it.attributeValuationSets.toSet())
         }
     }
@@ -724,7 +724,7 @@ class AbstractStateManager() {
         if (isDimensionEmpty(bestMatchedNode!!, rotation, isOpeningKeyboard)) {
             setDimension(bestMatchedNode, rotation, guiTreeDimension, isOpeningKeyboard)
         }
-        val widgetGroup_staticWidgetHashMap = getStaticWidgets(widget_AttributeValuationSetHashMap, guiState, bestMatchedNode!!)
+        val widgetGroup_staticWidgetHashMap = ewtg_avm_matching(widget_AttributeValuationSetHashMap, guiState, bestMatchedNode!!)
         return Pair(first = bestMatchedNode, second = widgetGroup_staticWidgetHashMap)
     }
 
@@ -792,7 +792,7 @@ class AbstractStateManager() {
 
 
     fun getMatchingStaticWidgets(widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>, guiState: State<*>, window: Window): Pair<Window, HashMap<AttributeValuationSet, ArrayList<EWTGWidget>>> {
-        val widgetGroup_staticWidgetHashMap = getStaticWidgets(widget_AttributeValuationSetHashMap, guiState, window)
+        val widgetGroup_staticWidgetHashMap = ewtg_avm_matching(widget_AttributeValuationSetHashMap, guiState, window)
         return Pair(first = window, second = widgetGroup_staticWidgetHashMap)
     }
     val REFINEMENT_MAX = 25
@@ -908,9 +908,6 @@ class AbstractStateManager() {
         }
         if (abstractEdge.label.abstractAction.attributeValuationSet == null)
             return true
-        if (abstractEdge.label.abstractAction.actionType != AbstractActionType.CLICK)
-            return true
-
         /*val abstractStates = if (guiInteraction.targetWidget == null) {
             ABSTRACT_STATES.filterNot{ it is VirtualAbstractState}. filter { it.window == actionAbstractState.window}
         } else {
@@ -920,7 +917,7 @@ class AbstractStateManager() {
         }*/
         val edgeCondition = autautMF.abstractTransitionGraph.edgeConditions[abstractEdge]!!
         val abstractStates = arrayListOf(actionAbstractState)
-        //abstractStates.addAll(getSimilarAbstractStates(actionAbstractState).filter { it.attributeValuationSets.contains(abstractEdge.label.abstractAction.attributeValuationSet!!) })
+        abstractStates.addAll(getSimilarAbstractStates(actionAbstractState).filter { it.attributeValuationSets.contains(abstractEdge.label.abstractAction.attributeValuationSet!!) })
         //val abstractStates = arrayListOf<AbstractState>(actionAbstractState)
         val abstractEdges = ArrayList<Edge<AbstractState, AbstractTransition>>()
         abstractEdges.add(abstractEdge)
@@ -947,8 +944,9 @@ class AbstractStateManager() {
         if (distinctAbstractInteractions1.size > 1) {
             return false
         }
-
+        abstractStates.clear()
         abstractEdges.clear()
+        abstractStates.add(actionAbstractState)
         abstractStates.forEach {
             val similarExplicitEdges = autautMF.abstractTransitionGraph.edges(it).filter {
                 it != abstractEdge
@@ -1520,7 +1518,7 @@ class AbstractStateManager() {
 
     val widget_StaticWidget = HashMap<Window,HashMap<ConcreteId,ArrayList<EWTGWidget>>>()
 
-    private fun getStaticWidgets(widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>, guiState: State<*>, staticNode: Window): HashMap<AttributeValuationSet, ArrayList<EWTGWidget>> {
+    private fun ewtg_avm_matching(widget_AttributeValuationSetHashMap: HashMap<Widget, AttributeValuationSet>, guiState: State<*>, wtgWindow: Window): HashMap<AttributeValuationSet, ArrayList<EWTGWidget>> {
         val result: HashMap<AttributeValuationSet, ArrayList<EWTGWidget>> = HashMap()
         val actionableWidgets = ArrayList<Widget>()
         actionableWidgets.addAll(Helper.getVisibleWidgets(guiState))
@@ -1529,14 +1527,40 @@ class AbstractStateManager() {
         }
         val unmappedWidgets = actionableWidgets
 
-        if (!widget_StaticWidget.containsKey(staticNode)) {
-            widget_StaticWidget.put(staticNode, HashMap())
-        }
-        val mappedStaticWidgets = widget_StaticWidget.get(staticNode)!!
-
-        unmappedWidgets.groupBy { widget_AttributeValuationSetHashMap[it] }
+        val avm_widgets_map = unmappedWidgets.groupBy { widget_AttributeValuationSetHashMap[it] }
                 .filter { it.key != null }
-                .forEach {
+
+        val workingList: LinkedList<AttributeValuationSet> = LinkedList<AttributeValuationSet>()
+        avm_widgets_map.keys.forEach {
+            workingList.add(it!!)
+        }
+
+        val avmId_ewtgWidgets = HashMap<String, ArrayList<EWTGWidget>>()
+        while (workingList.isNotEmpty()) {
+            val avm = workingList.first
+            if (avm.parentAttributeValuationSetId!= "" && !avmId_ewtgWidgets.containsKey(avm.parentAttributeValuationSetId)) {
+                val parentAVM = AttributeValuationSet.allAttributeValuationSet[wtgWindow.activityClass]!!.get(avm.parentAttributeValuationSetId)
+                workingList.addFirst(parentAVM)
+                continue
+            }
+            workingList.removeFirst()
+            avmId_ewtgWidgets.putIfAbsent(avm.avsId, ArrayList())
+            if (!result.containsKey(avm)) {
+              /*  val staticWidgets =  if (avm_widgets_map.containsKey(avm)) {
+                    Helper.getStaticWidgets(avm, wtgWindow, true, avmId_ewtgWidgets)
+                } else {
+                    Helper.getStaticWidgets(avm, wtgWindow, false, avmId_ewtgWidgets)
+                }*/
+
+                val staticWidgets =  Helper.getStaticWidgets(avm, wtgWindow, true, avmId_ewtgWidgets)
+                //if a widgetGroup has more
+                if (staticWidgets.isNotEmpty()) {
+                    result.put(avm, ArrayList(staticWidgets))
+                }
+            }
+        }
+
+     /*   avm_widgets_map.forEach {
                     val attributeValuationSet = it.key!!
 
                     it.value.forEach { w ->
@@ -1544,7 +1568,7 @@ class AbstractStateManager() {
                             if (mappedStaticWidgets.containsKey(w.id)) {
                                 result.put(it.key!!, ArrayList(mappedStaticWidgets.get(w.id)!!))
                             } else {
-                                val staticWidgets = Helper.getStaticWidgets(w, guiState, attributeValuationSet, staticNode, true, autautMF)
+                                val staticWidgets = Helper.getStaticWidgets(w, guiState, attributeValuationSet, wtgWindow, true, autautMF,avm_ewtgWidgets)
                                 //if a widgetGroup has more
                                 if (staticWidgets.isNotEmpty()) {
                                     mappedStaticWidgets.put(w.id, ArrayList(staticWidgets))
@@ -1553,7 +1577,7 @@ class AbstractStateManager() {
                             }
                         }
                     }
-                }
+                }*/
         return result
     }
 
@@ -1656,7 +1680,7 @@ class AbstractStateManager() {
         }
         //val parentWidgetGroups = HashSet<WidgetGroup>()
         var parentAttributeValuationSetId = abstractTransition.abstractAction.attributeValuationSet!!.parentAttributeValuationSetId
-        while (parentAttributeValuationSetId != emptyUUID) {
+        while (parentAttributeValuationSetId != "") {
             val parentAVS = AttributeValuationSet.allAttributeValuationSet[prevAbstractState.activity]!!.get(parentAttributeValuationSetId)
             if (parentAVS != null) {
                 if (prevAbstractState.attributeValuationSets.contains(parentAVS)) {
@@ -1689,7 +1713,7 @@ class AbstractStateManager() {
                 }
                 parentAttributeValuationSetId = parentAVS.parentAttributeValuationSetId
             } else {
-                parentAttributeValuationSetId = emptyUUID
+                parentAttributeValuationSetId = ""
             }
 
         }

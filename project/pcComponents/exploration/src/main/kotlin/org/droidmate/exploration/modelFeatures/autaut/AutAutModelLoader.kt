@@ -81,7 +81,7 @@ class AutAutModelLoader {
         private fun parseAbandonedAttributeValuationSet(line: String): AttributeValuationSet {
             val data = splitCSVLineToField(line)
             val activity = data[0]
-            val avsId = UUID.fromString(data[1])
+            val avsId = data[1]
             val actionType = AbstractActionType.values().find { it.toString() == data[2] }!!
             val avs = AttributeValuationSet.allAttributeValuationSet.get(activity)!!.get(avsId)!!
             AbstractionFunction.INSTANCE.abandonedAttributePaths.add(Triple(activity,avs,actionType))
@@ -195,7 +195,7 @@ class AutAutModelLoader {
 
         private fun parseAbstractTransition(line: String, autAutMF: AutAutMF) {
             val data = splitCSVLineToField(line)
-            val sourceStateId = UUID.fromString(data[0])
+            val sourceStateId = data[0]
 
             val sourceState = if(updatedAbstractStateId.containsKey(sourceStateId)) {
                 val newUUID = updatedAbstractStateId.get(sourceStateId)
@@ -204,7 +204,7 @@ class AutAutModelLoader {
                 AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == sourceStateId }!!
             }
 
-            val destStateId = UUID.fromString(data[1])
+            val destStateId = data[0]
             val destState =if(updatedAbstractStateId.containsKey(destStateId)) {
                 val newUUID = updatedAbstractStateId.get(destStateId)
                 AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == newUUID }!!
@@ -214,9 +214,9 @@ class AutAutModelLoader {
 
             val actionType = AbstractActionType.values().first { it.name == data[2] }
             val interactedAVSId = if (data[3] == "null") {
-                emptyUUID
+                ""
             } else {
-                UUID.fromString(data[3])
+                data[3]
             }
             val actionData = if (data[4] == "null") {
                 null
@@ -255,8 +255,8 @@ class AutAutModelLoader {
 
         }
 
-        private fun createAbstractAction(actionType: AbstractActionType, interactedAVSId: UUID, actionData: String?, abstractState: AbstractState): AbstractAction {
-            if (interactedAVSId == emptyUUID) {
+        private fun createAbstractAction(actionType: AbstractActionType, interactedAVSId: String, actionData: String?, abstractState: AbstractState): AbstractAction {
+            if (interactedAVSId == "") {
                 val abstractAction = AbstractAction(
                         actionType = actionType,
                         attributeValuationSet = null,
@@ -291,10 +291,10 @@ class AutAutModelLoader {
             }
         }
 
-        val updatedAbstractStateId = HashMap<UUID, UUID>()
+        val updatedAbstractStateId = HashMap<String, String>()
         private fun loadAbstractState(line: String, dstgFolderPath: Path) {
             val data = splitCSVLineToField(line)
-            val uuid = UUID.fromString(data[0])
+            val uuid = data[0]
             val activity = data[1]
             val windowId = data[2]
             val window = WindowManager.instance.allWindows.find { it.windowId == windowId }
@@ -348,7 +348,7 @@ class AutAutModelLoader {
             AbstractStateManager.instance.initAbstractInteractions(abstractState,null)
         }
 
-        private fun loadAttributeValuationSets(uuid: UUID, dstgFolderPath: Path, widgetMapping: HashMap<AttributeValuationSet, List<String>>, activity: String): List<AttributeValuationSet> {
+        private fun loadAttributeValuationSets(uuid: String, dstgFolderPath: Path, widgetMapping: HashMap<AttributeValuationSet, List<String>>, activity: String): List<AttributeValuationSet> {
             val attributeValuationSets = ArrayList<AttributeValuationSet>()
             val abstractStateFilePath = dstgFolderPath.resolve("AbstractStates").resolve("AbstractState_$uuid.csv")
             if (!Files.exists(abstractStateFilePath)) {
@@ -360,42 +360,42 @@ class AutAutModelLoader {
                     it.lines().skip(1).toList()
                 }
             }
-            val attributeValuationSetRawData = HashMap<UUID, List<String>>()
+            val attributeValuationSetRawData = HashMap<String, List<String>>()
             lines.forEach { line ->
                 val rawData = splitCSVLineToField(line)
-                val avsId = UUID.fromString(rawData[0])
+                val avsId = rawData[0]
                 attributeValuationSetRawData.put(avsId,rawData)
             }
-            for (attributeValuationSetRawDatum in attributeValuationSetRawData) {
-                val uuid = attributeValuationSetRawDatum.key
+            for (attributeValuationSetRecord in attributeValuationSetRawData) {
+                val uuid = attributeValuationSetRecord.key
                 if (attributeValuationSets.any { it.avsId == uuid }) {
                     continue
                 }
-                val attributeValuationSet = createAttributeValuationSet(attributeValuationSetRawDatum.value,attributeValuationSets,activity, widgetMapping)
+                val attributeValuationSet = createAttributeValuationSet(attributeValuationSetRecord.value,attributeValuationSets,activity, widgetMapping)
                 assert(uuid == attributeValuationSet.avsId )
             }
             return attributeValuationSets
         }
 
-       private fun createAttributeValuationSet(attributeValuationSetRawDatum: List<String>,
+       private fun createAttributeValuationSet(attributeValuationSetRawRecord: List<String>,
                                                attributeValuationSets: ArrayList<AttributeValuationSet>,
                                                activity: String,
                                                widgetMapping: HashMap<AttributeValuationSet, List<String>>):AttributeValuationSet {
             //TODO("Not implemented")
-            val parentAVSId = if (attributeValuationSetRawDatum[14] !="null")
-                    UUID.fromString(attributeValuationSetRawDatum[14])
+            val parentAVSId = if (attributeValuationSetRawRecord[14] !="null")
+                attributeValuationSetRawRecord[14]
             else
-                emptyUUID
-           val uuid = UUID.fromString(attributeValuationSetRawDatum[0])
-            val attributes: HashMap<AttributeType,String> = parseAttributes(attributeValuationSetRawDatum)
-            val childAVSIds = splitCSVLineToField(attributeValuationSetRawDatum[15])
-            val childAVSs = HashSet<UUID>()
+                ""
+           val uuid = UUID.fromString(attributeValuationSetRawRecord[0])
+            val attributes: HashMap<AttributeType,String> = parseAttributes(attributeValuationSetRawRecord)
+            val childAVSIds = splitCSVLineToField(attributeValuationSetRawRecord[15])
+            val childAVSs = HashSet<String>()
            if (!(childAVSIds.size==1 && (childAVSIds.single().isBlank() || childAVSIds.single()=="\"\""))) {
                childAVSIds.forEach { avsId ->
-                   childAVSs.add(UUID.fromString(avsId))
+                   childAVSs.add(avsId)
                }
            }
-            val cardinality = Cardinality.values().find { it.name == attributeValuationSetRawDatum[16] }!!
+            val cardinality = Cardinality.values().find { it.name == attributeValuationSetRawRecord[16] }!!
             val attributeValuationSet = AttributeValuationSet(localAttributes = attributes,
                     parentAttributeValuationSetId = parentAVSId,
                     childAttributeValuationSetIds = childAVSs,
@@ -405,11 +405,11 @@ class AutAutModelLoader {
                 AttributeValuationSet.allAttributeValuationSet.put(activity, HashMap())
             }
             AttributeValuationSet.allAttributeValuationSet[activity]!!.put(attributeValuationSet.avsId,attributeValuationSet)
-            val captured = attributeValuationSetRawDatum[17]
+            val captured = attributeValuationSetRawRecord[17]
             if (captured.toBoolean()) {
                 attributeValuationSets.add(attributeValuationSet)
             }
-            val ewtgWidgetIds = splitCSVLineToField(attributeValuationSetRawDatum[18])
+            val ewtgWidgetIds = splitCSVLineToField(attributeValuationSetRawRecord[18])
             if (!(ewtgWidgetIds.size == 1 &&
                             (ewtgWidgetIds.single().isBlank() || ewtgWidgetIds.single() == "null" ))) {
                 widgetMapping.put(attributeValuationSet, ewtgWidgetIds)
@@ -632,9 +632,9 @@ class AutAutModelLoader {
             val activity = data[3]
             val createdAtRuntime = data[4].toBoolean()
             val attributeValuationSetId = if (data[5] == "null") {
-                emptyUUID
+                ""
             } else {
-                UUID.fromString(data[5])
+                data[5]
             }
             val widget = EWTGWidget(
                     widgetId = widgetId,

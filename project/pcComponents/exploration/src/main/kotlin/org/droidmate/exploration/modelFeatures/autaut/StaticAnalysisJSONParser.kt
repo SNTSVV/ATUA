@@ -3,16 +3,286 @@ package org.droidmate.exploration.modelFeatures.autaut
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentData
 import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.autaut.WTG.*
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Activity
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.deviceEnvironment.DeviceEnvironmentConfigurationFileHelper
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.InputConfigurationFileHelper
+import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class StaticAnalysisJSONFileHelper() {
+class StaticAnalysisJSONParser() {
     companion object {
+        fun readAppModel(appModelFile: Path,
+                         autAutMF: AutAutMF,
+                         manualIntent: Boolean,
+                         manualInput: Boolean) {
+            if (appModelFile != null) {
+                //val activityEventList = List<ActivityEvent>()
+                val jsonData = String(Files.readAllBytes(appModelFile))
+                val jObj = JSONObject(jsonData)
+                AutAutMF.log.debug("Reading Window Transition Graph")
+                autAutMF.wtg.constructFromJson(jObj)
+                readActivityAlias(jObj,autAutMF.activityAlias)
+                readWindowWidgets(jObj,autAutMF.allEventHandlers,
+                        autAutMF.wtg, autAutMF.statementMF!!)
+                readMenuItemTexts(jObj)
+                readActivityDialogs(jObj, autAutMF.allDialogOwners)
+                readWindowHandlers(jObj,autAutMF.windowHandlersHashMap,autAutMF.wtg,autAutMF.statementMF!!)
+                AutAutMF.log.debug("Reading modified method invocation")
+                readModifiedMethodTopCallers(jObj, autAutMF.modifiedMethodTopCallersMap,autAutMF.statementMF!!,
+                        autAutMF.allTargetHandlers,autAutMF.windowHandlersHashMap,autAutMF.allTargetWindow_ModifiedMethods,autAutMF.untriggeredTargetHandlers)
+                readModifiedMethodInvocation(jObj, autAutMF.wtg, autAutMF.allTargetInputs,autAutMF.allTargetStaticWidgets,
+                        autAutMF.statementMF!!,autAutMF.allTargetWindow_ModifiedMethods,autAutMF.targetItemEvents)
+                readUnreachableModfiedMethods(jObj, autAutMF.unreachableModifiedMethods )
+                //log.debug("Reading all strings")
+                //readAllStrings(jObj)
+                readEventCorrelation(jObj,autAutMF.inputWindowCorrelation, autAutMF.wtg)
+                readMethodDependency(jObj, autAutMF.methodTermsHashMap, autAutMF.statementMF!!)
+                readWindowDependency(jObj, autAutMF.windowTermsHashMap, autAutMF.wtg )
+                if (manualIntent) {
+                    val intentModelFile = autAutMF.getIntentModelFile()
+                    if (intentModelFile!=null) {
+                        readIntentModel(autAutMF.intentFilters, autAutMF.getAppName(),
+                                autAutMF.wtg, autAutMF.allTargetInputs, autAutMF.targetIntFilters,intentModelFile)
+                    }
+                }
+                if (manualInput) {
+                    val textInputFile = autAutMF.getTextInputFile()
+                    if (textInputFile != null) {
+                        autAutMF.inputConfiguration = InputConfigurationFileHelper.readInputConfigurationFile(textInputFile)
+                        TextInput.inputConfiguration = autAutMF.inputConfiguration
+
+                    }
+                }
+                val deviceConfigurationFile = autAutMF.getDeviceConfigurationFile()
+                if (deviceConfigurationFile != null) {
+                    autAutMF.deviceEnvironmentConfiguration = DeviceEnvironmentConfigurationFileHelper.readInputConfigurationFile(deviceConfigurationFile)
+                }
+            }
+
+        }
+
+        private fun readActivityAlias (jObj: JSONObject, activityAlias: HashMap<String, String>) {
+            val jsonActivityAlias = jObj.getJSONObject("activityAlias")
+            if (jsonActivityAlias != null) {
+                jsonActivityAlias.keys().asSequence().forEach { alias ->
+                    val activity = jsonActivityAlias.get(alias).toString()
+                    activityAlias.put(alias,activity)
+                }
+            }
+        }
+
+        private fun readWindowDependency(jObj: JSONObject,
+                                         windowTermsHashMap: HashMap<Window, HashMap<String,Long>>,
+                                         wtg: WindowTransitionGraph) {
+            val jsonWindowTerm = jObj.getJSONObject("windowsDependency")
+            if (jsonWindowTerm != null)
+            {
+                windowTermsHashMap.putAll(readWindowTerms(jsonWindowTerm, wtg))
+            }
+        }
+
+        private fun readWindowHandlers (jObj: JSONObject, windowHandlersHashMap: HashMap<Window, Set<String>>,
+                                        wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF) {
+            val jsonWindowHandlers = jObj.getJSONObject("windowHandlers")
+            if (jsonWindowHandlers != null) {
+                windowHandlersHashMap.putAll(readWindowHandlers(jsonWindowHandlers,wtg, statementCoverageMF))
+            }
+        }
+
+        private fun readMethodDependency(jObj: JSONObject,
+                                         methodTermsHashMap: HashMap<String, HashMap<String, Long>>,
+                                         statementMF: StatementCoverageMF) {
+            var jsonMethodDepedency = jObj.getJSONObject("methodDependency")
+            if (jsonMethodDepedency != null)
+            {
+                methodTermsHashMap.putAll(StaticAnalysisJSONParser.readMethodTerms(jsonMethodDepedency,statementMF))
+            }
+        }
+        private fun readEventCorrelation(jObj: JSONObject,
+                                         inputWindowCorrelation:  HashMap<Input, HashMap<Window,Double>>,
+                                         wtg: WindowTransitionGraph) {
+            var eventCorrelationJson = jObj.getJSONObject("event_window_Correlation")
+            if (eventCorrelationJson!=null)
+            {
+                inputWindowCorrelation.putAll(readEventWindowCorrelation(eventCorrelationJson,wtg))
+            }
+        }
+
+        private fun readIntentModel(intentFilters: HashMap<String, ArrayList<IntentFilter>>, appName:String,
+                                    wtg: WindowTransitionGraph,
+                                    allTargetInputs: HashSet<Input>,
+                                    targetIntFilters: HashMap<IntentFilter,Int>,
+                                    intentModelFile: Path) {
+            if (intentModelFile != null) {
+                val jsonData = String(Files.readAllBytes(intentModelFile))
+                val jObj = JSONObject(jsonData)
+                val activitiesJson = jObj.getJSONArray("activities")
+                activitiesJson.forEach {
+                    StaticAnalysisJSONParser.readActivityIntentFilter(it as JSONObject, intentFilters, appName)
+                }
+                intentFilters.forEach { t, u ->
+                    val activityName = t
+                    val qualifiedActivityName = activityName
+                    var intentActivityNode = WindowManager.instance.allWindows.find { it.classType == qualifiedActivityName }
+                    if (intentActivityNode == null) {
+                        intentActivityNode = Activity.getOrCreateNode(Activity.getNodeId(), qualifiedActivityName)
+                    }
+                    u.forEach {
+                        for (meaningNode in WindowManager.instance.allMeaningWindows) {
+                            val intentEvent = Input(eventType = EventType.callIntent,
+                                    eventHandlers = HashSet(), widget = null,sourceWindow = meaningNode)
+                            intentEvent.data = it
+                            wtg.add(meaningNode, intentActivityNode!!, intentEvent)
+                        }
+
+                    }
+
+                    if (allTargetInputs.filter {
+                                it.sourceWindow.activityClass.contains(activityName)
+                                        && (it.eventType == EventType.implicit_rotate_event
+                                        || it.eventType == EventType.implicit_lifecycle_event
+                                        || it.eventType == EventType.implicit_power_event)
+                            }.isNotEmpty()) {
+                        u.forEach {
+                            targetIntFilters.put(it, 0)
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+        private fun readMenuItemTexts(jObj: JSONObject) {
+            var jMap = jObj.getJSONObject("menuItemTexts")
+            readMenuItemText(jMap, OptionsMenu.allNodes)
+        }
+
+/*    private fun readAllStrings(jObj: JSONObject) {
+        var jMap = jObj.getJSONArray("allStrings")
+        StaticAnalysisJSONFileHelper.readAllStrings(jMap,generalDictionary)
+    }*/
+
+        private fun readUnreachableModfiedMethods(jObj: JSONObject, unreachableModifiedMethods:  ArrayList<String> ) {
+            var jMap = jObj.getJSONArray("unreachableModifiedMethods")
+            readUnreachableModifiedMethods(jsonArray = jMap, methodList = unreachableModifiedMethods)
+        }
+
+        private fun readWindowWidgets(jObj: JSONObject, allEventHandlers: HashSet<String>,
+                                      wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF) {
+            var jMap1 = jObj.getJSONObject("allWindow_Widgets")
+            StaticAnalysisJSONParser.readWindowWidgets(jMap1,wtg)
+            var jMap2 = jObj.getJSONObject("allWidgetEvent")
+            StaticAnalysisJSONParser.readAllWidgetEvents(jMap2, wtg, allEventHandlers, statementCoverageMF)
+
+        }
+
+        private fun readModifiedMethodTopCallers(jObj: JSONObject,
+                                                 modifiedMethodTopCallersMap:HashMap<String, Set<String>>,
+                                                 statementCoverageMF: StatementCoverageMF,
+                                                 allTargetHandlers: HashSet<String>,
+                                                 windowHandlersHashMap: HashMap<Window, Set<String>>,
+                                                 allTargetWindow_ModifiedMethods: HashMap<Window,HashSet<String>>,
+                                                 untriggeredTargetHandlers: HashSet<String>){
+            var jMap = jObj.getJSONObject("modiMethodTopCaller")
+            readModifiedMethodTopCallers(jMap,modifiedMethodTopCallersMap,statementCoverageMF)
+
+            //Add windows containing top caller to allTargetWindows list
+            modifiedMethodTopCallersMap.forEach { modMethod, topCallers ->
+                allTargetHandlers.addAll(topCallers)
+                topCallers.forEach { caller ->
+                    val windows = windowHandlersHashMap.filter { it.value.contains(caller) }.map { it.key }
+                    if (windows.isNotEmpty()) {
+                        windows.forEach {w ->
+                            if (!allTargetWindow_ModifiedMethods.contains(w)) {
+                                allTargetWindow_ModifiedMethods.put(w, hashSetOf())
+                            }
+                            allTargetWindow_ModifiedMethods[w]!!.add(modMethod)
+                        }
+                    }
+                }
+            }
+
+            untriggeredTargetHandlers.addAll(allTargetHandlers)
+        }
+
+        private fun readModifiedMethodInvocation(jObj: JSONObject,
+                                                 wtg: WindowTransitionGraph,
+                                                 allTargetInputs: HashSet<Input>,
+                                                 allTargetStaticWidgets: HashSet<EWTGWidget>,
+                                                 statementCoverageMF: StatementCoverageMF,
+                                                 allTargetWindow_ModifiedMethods: HashMap<Window, HashSet<String>>,
+                                                 targetItemEvents: HashMap<Input, HashMap<String,Int>>) {
+            var jMap = jObj.getJSONObject("modiMethodInvocation")
+            readModifiedMethodInvocation(jsonObj = jMap,
+                    wtg = wtg,
+                    allTargetInputs = allTargetInputs,
+                    allTargetEWTGWidgets = allTargetStaticWidgets,
+                    statementCoverageMF =statementCoverageMF)
+            allTargetInputs.forEach {
+                val sourceWindow = it.sourceWindow
+                if (!allTargetWindow_ModifiedMethods.contains(sourceWindow) && sourceWindow !is OutOfApp) {
+                    allTargetWindow_ModifiedMethods.put(sourceWindow, hashSetOf())
+                }
+                allTargetWindow_ModifiedMethods[sourceWindow]!!.addAll(it.modifiedMethods.keys)
+            }
+
+            allTargetInputs.filter { listOf<EventType>(EventType.item_click, EventType.item_long_click,
+                    EventType.item_selected).contains(it.eventType)}.forEach {
+                val eventInfo = HashMap<String,Int>()
+                targetItemEvents.put(it,eventInfo)
+                eventInfo["max"] = 3
+                eventInfo["count"] = 0
+            }
+
+        }
+
+
+        fun readActivityDialogs(jObj: JSONObject, allDialogOwners: HashMap<String, ArrayList<String>>) {
+            val jMap = jObj.getJSONObject("allActivityDialogs")
+            //for each Activity transition
+            jMap.keys().asSequence().forEach { key ->
+                val activity = key as String
+                if (!allDialogOwners.containsKey(activity)) {
+                    allDialogOwners[activity] = ArrayList()
+                }
+                val dialogs = jMap[key] as JSONArray
+                dialogs.forEach {
+                    allDialogOwners[activity]!!.add(it as String)
+                }
+            }
+        }
+
+        fun readActivityOptionMenuItem(jObj: JSONObject,
+                                       allActivityOptionMenuItems: HashMap<String, ArrayList<String>>){
+            val jMap = jObj.getJSONObject("allActivityOptionMenuItems")
+            //for each Activity transition
+            jMap.keys().asSequence().forEach { key ->
+                val activity = key as String
+                if (!allActivityOptionMenuItems.contains(activity))
+                {
+                    allActivityOptionMenuItems[activity] = ArrayList()
+                }
+//            val menuItemsJson = jMap[key] as JSONArray
+//            menuItemsJson.forEach {
+//                val widgetInfo = StaticAnalysisJSONFileHelper.widgetParser(it as String)
+//                val menuItemWidget = StaticWidget.getOrCreateStaticWidget(widgetInfo["id"]!!,"android.view.menu",false)
+//                allActivityOptionMenuItems[activity]!!.add(menuItemWidget)
+//            }
+
+            }
+        }
+
+
         fun widgetParser(widgetInfo: String): HashMap<String, String> {
             //widgetInfo = "INFL[android.widget.ListView,WID[2131427361|PlaylistsListView]464,7251]7252"
             try {
@@ -90,15 +360,62 @@ class StaticAnalysisJSONFileHelper() {
                 val wtgNode = wtg.getOrCreateWTGNode(windowInfo)
                 val widgetListJson = jsonObj[key] as JSONObject
                 widgetListJson.keys().asSequence().forEach {
-                    val widgetInfoJson = widgetListJson[it].toString()
-                    val widgetInfo = widgetParser(widgetInfoJson)
-                    if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
-                        EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
-                                resourceId = widgetInfo["resourceId"]!!,
-                                resourceIdName = widgetInfo["resourceIdName"]!!,
+                    if (widgetListJson[it]!! is JSONObject) {
+                        val jsonObjectRoot = widgetListJson[it] as JSONObject
+                        val widgetInfoJson = jsonObjectRoot["widget"].toString()
+                        val widgetInfo = widgetParser(widgetInfoJson)
+                        val parent = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                resourceId = widgetInfo["resourceId"]?:"",
+                                resourceIdName = widgetInfo["resourceIdName"]?:"",
                                 className = widgetInfo["className"]!!,
                                 wtgNode = wtgNode,
                                 activity = wtgNode.classType)
+                        val jsonChildren = jsonObjectRoot["children"] as JSONObject
+                        parseWindowWigetsChildren(jsonChildren, parent)
+
+                    } else {
+                        val widgetInfoJson = widgetListJson[it].toString()
+                        val widgetInfo = widgetParser(widgetInfoJson)
+                        if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
+                            EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                    resourceId = widgetInfo["resourceId"]!!,
+                                    resourceIdName = widgetInfo["resourceIdName"]!!,
+                                    className = widgetInfo["className"]!!,
+                                    wtgNode = wtgNode,
+                                    activity = wtgNode.classType)
+                        }
+
+                    }
+                }
+            }
+        }
+
+        private fun parseWindowWigetsChildren(jsonChildren: JSONObject, parent: EWTGWidget ) {
+            jsonChildren.keys().asSequence().forEach {
+                if (jsonChildren[it]!! is JSONObject ) {
+                    val jsonObjectTree = jsonChildren[it] as JSONObject
+                    val widgetInfoJson = jsonObjectTree["widget"].toString()
+                    val widgetInfo = widgetParser(widgetInfoJson)
+                    val widget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                            resourceId = widgetInfo["resourceId"]?:"",
+                            resourceIdName = widgetInfo["resourceIdName"]?:"",
+                            className = widgetInfo["className"]!!,
+                            wtgNode = parent.wtgNode,
+                            activity = parent.wtgNode.classType)
+                    widget.parent = parent
+                    val jsonChildren = jsonObjectTree["children"] as JSONObject
+                    parseWindowWigetsChildren(jsonChildren, widget)
+                } else {
+                    val widgetInfoJson = jsonChildren[it].toString()
+                    val widgetInfo = widgetParser(widgetInfoJson)
+                    if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
+                        val widget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
+                                resourceId = widgetInfo["resourceId"]!!,
+                                resourceIdName = widgetInfo["resourceIdName"]!!,
+                                className = widgetInfo["className"]!!,
+                                wtgNode = parent.wtgNode,
+                                activity = parent.wtgNode.classType)
+                        widget.parent = parent
                     }
 
                 }
@@ -213,6 +530,7 @@ class StaticAnalysisJSONFileHelper() {
                                          allTargetInputs: HashSet<Input>,
                                          statementCoverageMF: StatementCoverageMF
         ) {
+
             jsonObj.keys().asSequence().forEach { key ->
                 val source = key as String
                 val sourceInfo = windowParser(source)
@@ -630,15 +948,6 @@ class StaticAnalysisJSONFileHelper() {
                 }
             }
             return windowHandlers
-        }
-
-        fun readActivityAlias(jsonObj: JSONObject, regressionTestingMF: AutAutMF): HashMap<String, String> {
-            val activityAlias = HashMap<String, String>()
-            jsonObj.keys().asSequence().forEach { alias ->
-                val activity = jsonObj.get(alias).toString()
-                activityAlias.put(alias,activity)
-            }
-            return activityAlias
         }
     }
 }
