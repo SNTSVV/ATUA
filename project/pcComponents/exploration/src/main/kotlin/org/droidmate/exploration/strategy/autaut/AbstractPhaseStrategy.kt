@@ -1,16 +1,14 @@
 package org.droidmate.exploration.strategy.autaut
 
-import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
-import org.droidmate.exploration.modelFeatures.autaut.WTG.*
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
+import org.droidmate.exploration.modelFeatures.atua.EWTG.*
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.explorationModel.interaction.State
 import java.util.*
@@ -18,14 +16,14 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 abstract class AbstractPhaseStrategy(
-        val autAutTestingStrategy: AutAutTestingStrategy,
+        val atuaTestingStrategy: ATUATestingStrategy,
         val scaleFactor: Double,
         val useVirtualAbstractState: Boolean,
         val delay: Long,
         val useCoordinateClicks: Boolean
 ) {
     lateinit var phaseState: PhaseState
-    lateinit var autautMF: AutAutMF
+    lateinit var autautMF: ATUAMF
 
     var strategyTask: AbstractStrategyTask? = null
     abstract fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction
@@ -75,8 +73,8 @@ abstract class AbstractPhaseStrategy(
                     currentState = currentState,
                     stopWhenHavingUnexercisedAction = false,
                     pathType = pathType,
-                    shortest = true,
-                    pathCountLimitation = 1)
+                    shortest = false,
+                    pathCountLimitation = 5)
         else {
             getPathToStates(
                     transitionPaths = transitionPaths,
@@ -85,8 +83,8 @@ abstract class AbstractPhaseStrategy(
                     currentState = currentState,
                     stopWhenHavingUnexercisedAction = false,
                     pathType = PathFindingHelper.PathType.INCLUDE_INFERED,
-                    shortest = true,
-                    pathCountLimitation = 1)
+                    shortest = false,
+                    pathCountLimitation = 5)
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
                         transitionPaths = transitionPaths,
@@ -95,8 +93,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.FOLLOW_TRACE,
-                        shortest = true,
-                        pathCountLimitation = 1)
+                        shortest = false,
+                        pathCountLimitation = 5)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -106,8 +104,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.RESET,
-                        shortest = true,
-                        pathCountLimitation = 1)
+                        shortest = false,
+                        pathCountLimitation = 5)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -117,8 +115,8 @@ abstract class AbstractPhaseStrategy(
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.WTG,
-                        shortest = true,
-                        pathCountLimitation = 1)
+                        shortest = false,
+                        pathCountLimitation = 5)
             }
         }
     }
@@ -143,7 +141,6 @@ abstract class AbstractPhaseStrategy(
                     val abstractState = candidateStates.maxBy { it.value }!!.key
                     PathFindingHelper.findPathToTargetComponent(currentState = currentState
                             , root = currentAbstractState
-                            , lastTransitions = listOf(Triple(autautMF.windowStack.clone() as Stack<Window>, currentAbstractState,null))
                             , finalTarget = abstractState
                             , allPaths = transitionPaths
                             , shortest = shortest

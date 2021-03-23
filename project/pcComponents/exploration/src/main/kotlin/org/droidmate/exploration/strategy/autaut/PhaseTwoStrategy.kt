@@ -4,20 +4,20 @@ import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractTransition
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
-import org.droidmate.exploration.modelFeatures.autaut.helper.ProbabilityDistribution
-import org.droidmate.exploration.modelFeatures.autaut.WTG.*
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
+import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
+import org.droidmate.exploration.modelFeatures.atua.EWTG.*
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
@@ -29,13 +29,13 @@ import kotlin.collections.HashSet
 import kotlin.math.log2
 
 class PhaseTwoStrategy (
-        autAutTestingStrategy: AutAutTestingStrategy,
+        atuaTestingStrategy: ATUATestingStrategy,
         budgetScale: Double,
         delay: Long,
         useCoordinateClicks: Boolean,
         val unreachableWindow: Set<Window>
 ):AbstractPhaseStrategy (
-    autAutTestingStrategy = autAutTestingStrategy,
+    atuaTestingStrategy = atuaTestingStrategy,
         scaleFactor = budgetScale,
     delay = delay,
     useCoordinateClicks = useCoordinateClicks,
@@ -79,8 +79,8 @@ class PhaseTwoStrategy (
 
     init {
         phaseState = PhaseState.P2_INITIAL
-        autautMF = autAutTestingStrategy.eContext.getOrCreateWatcher()
-        statementMF = autAutTestingStrategy.eContext.getOrCreateWatcher()
+        autautMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
+        statementMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         autautMF.updateMethodCovFromLastChangeCount = 0
         autautMF.allTargetWindow_ModifiedMethods.keys.forEach {
             targetWindowsCount.put(it,0)
@@ -116,7 +116,7 @@ class PhaseTwoStrategy (
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
         if (autautMF == null)
         {
-            autautMF = eContext.findWatcher { it is AutAutMF } as AutAutMF
+            autautMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
         }
         var chosenAction:ExplorationAction
 
@@ -258,11 +258,11 @@ class PhaseTwoStrategy (
     private fun chooseTask(eContext: ExplorationContext<*, *, *>, currentState: State<*>) {
         log.debug("Choosing Task")
         //val fillDataTask = FillTextInputTask.getInstance(regressionTestingMF,this,delay, useCoordinateClicks)
-        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, autAutTestingStrategy,delay, useCoordinateClicks)
-        val openNavigationBarTask = OpenNavigationBarTask.getInstance(autautMF,autAutTestingStrategy,delay, useCoordinateClicks)
+        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, atuaTestingStrategy,delay, useCoordinateClicks)
+        val openNavigationBarTask = OpenNavigationBarTask.getInstance(autautMF,atuaTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
         val currentAppState = autautMF.getAbstractState(currentState)!!
         /*if (!setTestBudget && currentAppState.window == targetWindow)
@@ -317,10 +317,10 @@ class PhaseTwoStrategy (
     private fun isBudgetAvailable():Boolean {
     if(budgetType == 0)
         return true
-        if (budgetType == 1)
-            return budgetLeft > 0
-        if (budgetType == 2)
-            return randomBudgetLeft > 0
+    if (budgetType == 1)
+        return budgetLeft > 0
+    if (budgetType == 2)
+        return randomBudgetLeft > 0
         return true
     }
 
@@ -365,7 +365,7 @@ class PhaseTwoStrategy (
     }
 
     private fun setRandomExplorationBudget(currentState: State<*>) {
-        if (budgetType == 2)
+        if (budgetType != 0 )
             return
         budgetType = 2
         val inputWidgetCount = Helper.getInputFields(currentState).size

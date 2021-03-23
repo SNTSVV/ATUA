@@ -7,16 +7,15 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.ActionCounterMF
 import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.Rotation
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
-import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
-import org.droidmate.exploration.modelFeatures.autaut.WTG.DescendantLayoutDirection
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.Rotation
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
@@ -29,8 +28,8 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.random.Random
 
-abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
-                                     val autautMF: AutAutMF,
+abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
+                                     val autautMF: ATUAMF,
                                      val delay: Long,
                                      val useCoordinateClicks: Boolean){
 
@@ -192,7 +191,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
                 AbstractActionType.SWIPE -> doSwipe(currentState,data as String)
                 AbstractActionType.LAUNCH_APP -> autautStrategy.eContext.launchApp()
                 AbstractActionType.RESET_APP -> autautStrategy.eContext.resetApp()
-                AbstractActionType.RANDOM_KEYBOARD -> doRandomKeyboard(currentState)
+                AbstractActionType.RANDOM_KEYBOARD -> doRandomKeyboard(currentState,data)
                 AbstractActionType.CLOSE_KEYBOARD -> GlobalAction(ActionType.CloseKeyboard)
                 AbstractActionType.CLICK_OUTBOUND -> doClickOutbound(currentState)
                 AbstractActionType.ACTION_QUEUE -> doActionQueue(data,currentState)
@@ -288,7 +287,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         }
     }
 
-     fun doRandomKeyboard(currentState: State<*>): ExplorationAction? {
+     fun doRandomKeyboard(currentState: State<*>, data: Any?): ExplorationAction? {
         var childWidgets = currentState.widgets.filter { it.isKeyboard }
         val allAvailableActions = childWidgets.map { it.click()}
         return allAvailableActions.random()
@@ -382,7 +381,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
             val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
             if (childWidgets.isEmpty()) {
                 if (abstractAction!=null) {
-                    abstractAction.attributeValuationSet!!.actionCount.remove(abstractAction)
+                    abstractAction.attributeValuationMap!!.actionCount.remove(abstractAction)
                 }
                 return null
             }
@@ -425,7 +424,7 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
 
             }  else {
                 if (abstractAction!=null) {
-                    abstractAction.attributeValuationSet!!.actionCount.remove(abstractAction)
+                    abstractAction.attributeValuationMap!!.actionCount.remove(abstractAction)
                 }
                 return null
             }
@@ -464,7 +463,6 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
 
             assert(maxVal > 0) { "No actions can be performed on the widget $chosenWidget" }
 
-            val randomIdx = random.nextInt(maxVal)
             //val randomAction = chooseActionWithName(AbstractActionType.values().find { it.actionName.equals(actionList[randomIdx].name) }!!, "", chosenWidget, currentState, null)
             val randomAction =actionList.random()
             log.info("$randomAction")
@@ -520,12 +518,12 @@ abstract class AbstractStrategyTask (val autautStrategy: AutAutTestingStrategy,
         var childWidgets = getChildWidgets(currentState, chosenWidget)
         if (childWidgets.isEmpty()) {
             if (abstractAction!=null) {
-                abstractAction.attributeValuationSet!!.actionCount.remove(abstractAction)
+                abstractAction.attributeValuationMap!!.actionCount.remove(abstractAction)
             }
             return null
         }
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
-        if (abstractAction!=null && action==AbstractActionType.ITEM_CLICK)
+        if (abstractAction!=null)
             abstractState.increaseActionCount(abstractAction,updateSimilarAbstractState = true)
         if (chosenWidget.className == "android.webkit.WebView") {
            val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()

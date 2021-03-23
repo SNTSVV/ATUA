@@ -5,13 +5,13 @@ import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.DataField
-import org.droidmate.exploration.modelFeatures.autaut.WTG.Helper
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
-import org.droidmate.exploration.modelFeatures.autaut.inputRepo.textInput.TextInput
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.DataField
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -21,9 +21,9 @@ import java.util.*
 import kotlin.collections.HashMap
 
 class PrepareContextTask private constructor(
-        regressionWatcher: AutAutMF,
-        autAutTestingStrategy: AutAutTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
+        regressionWatcher: ATUAMF,
+        atuaTestingStrategy: ATUATestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, regressionWatcher,delay,useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         val availableWidgets = currentState.widgets.filter { fillActions.containsKey(it.uid) }
@@ -158,7 +158,7 @@ class PrepareContextTask private constructor(
                                 it.destination!!.data.window != it.source.data.window
                                         && it.label.abstractAction.actionType == AbstractActionType.CLICK
                                         && it.label.abstractAction.isWidgetAction()
-                                        && it.label.abstractAction.attributeValuationSet == widgetGroup
+                                        && it.label.abstractAction.attributeValuationMap == widgetGroup
                                         && it.label.isExplicit()
                             }
                             if (isGoToAnotherWindow) {
@@ -180,12 +180,12 @@ class PrepareContextTask private constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: PrepareContextTask? = null
-        fun getInstance(regressionWatcher: AutAutMF,
-                        autAutTestingStrategy: AutAutTestingStrategy,
+        fun getInstance(regressionWatcher: ATUAMF,
+                        atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): PrepareContextTask {
             if (instance == null) {
-                instance = PrepareContextTask(regressionWatcher, autAutTestingStrategy, delay,useCoordinateClicks)
+                instance = PrepareContextTask(regressionWatcher, atuaTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

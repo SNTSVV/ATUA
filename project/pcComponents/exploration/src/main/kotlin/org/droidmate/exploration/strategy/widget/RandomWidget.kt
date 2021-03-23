@@ -27,7 +27,6 @@ package org.droidmate.exploration.strategy.widget
 
 import com.natpryce.konfig.Configuration
 import org.droidmate.configuration.ConfigProperties
-import org.droidmate.deviceInterface.exploration.ActionQueue
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.exploration.ExplorationContext
@@ -44,7 +43,7 @@ import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.GlobalAction
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import java.util.Random
 import kotlin.streams.asSequence
 
@@ -271,9 +270,9 @@ open class RandomWidget constructor(
 			return GlobalAction(ActionType.FetchGUI)
 		}
 
-		val autAutMF = eContext.findWatcher { it is AutAutMF }
+		val autAutMF = eContext.findWatcher { it is ATUAMF }
 		if (autAutMF!=null) {
-			if ((autAutMF as AutAutMF).portraitScreenSurface.isEmpty()) {
+			if ((autAutMF as ATUAMF).portraitScreenSurface.isEmpty()) {
 				if (eContext.getCurrentState().isHomeScreen)
 					return GlobalAction(ActionType.FetchGUI)
 				else

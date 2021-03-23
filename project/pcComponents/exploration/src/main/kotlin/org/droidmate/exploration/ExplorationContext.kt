@@ -32,7 +32,7 @@ import org.droidmate.device.android_sdk.IApk
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.modelFeatures.ModelFeature
 import org.droidmate.exploration.modelFeatures.explorationWatchers.CrashListMF
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.coverageDir
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF.Companion.StatementCoverage.enableCoverage
@@ -98,10 +98,11 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 			//val resourceDir = Paths.get(cfg[ConfigProperties.Output.outputDir].path).toAbsolutePath().resolve(EnvironmentConstants.dir_name_temp_extracted_resources).toAbsolutePath()
 			val resourceDir = Paths.get(cfg[ConfigProperties.Exploration.apksDir].path).toAbsolutePath()
 			addWatcher(StatementCoverageMF(coverageDir, readDeviceStatements, model.config.appName, resourceDir))
-			if (model.config[AutAutMF.Companion.RegressionStrategy.use]) {
-				val manualInput = model.config[AutAutMF.Companion.RegressionStrategy.manualInput]
-				val manualIntent = model.config[AutAutMF.Companion.RegressionStrategy.manualIntent]
-				addWatcher(AutAutMF(model.config.appName, resourceDir, manualInput, manualIntent, getCurrentActivity, getDeviceRotation, getDeviceScreenSurface))
+			if (model.config[ATUAMF.Companion.RegressionStrategy.use]) {
+				val manualInput = model.config[ATUAMF.Companion.RegressionStrategy.manualInput]
+				val manualIntent = model.config[ATUAMF.Companion.RegressionStrategy.manualIntent]
+				val reuseBaseModel = model.config[ATUAMF.Companion.RegressionStrategy.reuseBaseModel]
+				addWatcher(ATUAMF(model.config.appName, resourceDir, manualInput, manualIntent,reuseBaseModel, getCurrentActivity, getDeviceRotation, getDeviceScreenSurface))
 			}
 		}
 	}

@@ -2,17 +2,17 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class OpenNavigationBarTask constructor(
-        regressionTestingMF: AutAutMF,
-        autAutTestingStrategy: AutAutTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(autAutTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
+        regressionTestingMF: ATUAMF,
+        atuaTestingStrategy: ATUATestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         return true
@@ -62,11 +62,11 @@ class OpenNavigationBarTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass) }
         var executedCount:Int = 0
         var instance: OpenNavigationBarTask? = null
-        fun getInstance(regressionTestingMF: AutAutMF,
-                        autAutTestingStrategy: AutAutTestingStrategy,
+        fun getInstance(regressionTestingMF: ATUAMF,
+                        atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): OpenNavigationBarTask {
             if (instance == null) {
-                instance = OpenNavigationBarTask(regressionTestingMF,autAutTestingStrategy, delay, useCoordinateClicks)
+                instance = OpenNavigationBarTask(regressionTestingMF,atuaTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

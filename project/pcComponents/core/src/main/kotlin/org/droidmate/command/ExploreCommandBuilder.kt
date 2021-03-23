@@ -7,12 +7,12 @@ import org.droidmate.configuration.ConfigProperties.Selectors.resetEvery
 import org.droidmate.configuration.ConfigProperties.Selectors.stopOnExhaustion
 import org.droidmate.configuration.ConfigProperties.Selectors.timeLimit
 import org.droidmate.configuration.ConfigurationWrapper
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.reporter.*
 import org.droidmate.exploration.strategy.*
 import org.droidmate.exploration.strategy.login.LoginWithGoogle
 import org.droidmate.exploration.strategy.playback.Playback
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.exploration.strategy.widget.DFS
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.ModelFeatureI
@@ -92,9 +92,9 @@ open class ExploreCommandBuilder(
 
         conditionalEnable(cfg[ConfigProperties.Strategies.explore], cfg) { addRandomStrategy() }
 
-        conditionalEnable(cfg[AutAutMF.Companion.RegressionStrategy.use]
-                && !cfg[AutAutMF.Companion.RegressionStrategy.budgetScale].isNaN()) {
-            addRegressionTestingStrategy(cfg[AutAutMF.Companion.RegressionStrategy.budgetScale])
+        conditionalEnable(cfg[ATUAMF.Companion.RegressionStrategy.use]
+                && !cfg[ATUAMF.Companion.RegressionStrategy.budgetScale].isNaN()) {
+            addATUATestingStrategy(cfg[ATUAMF.Companion.RegressionStrategy.budgetScale])
         }
 
 
@@ -197,8 +197,8 @@ open class ExploreCommandBuilder(
         return this
     }
 
-    fun addRegressionTestingStrategy(budgetScale: Double): ExploreCommandBuilder{
-        strategies.add(AutAutTestingStrategy(getNextSelectorPriority(),budgetScale))
+    fun addATUATestingStrategy(budgetScale: Double): ExploreCommandBuilder{
+        strategies.add(ATUATestingStrategy(getNextSelectorPriority(),budgetScale))
 
         return this
     }

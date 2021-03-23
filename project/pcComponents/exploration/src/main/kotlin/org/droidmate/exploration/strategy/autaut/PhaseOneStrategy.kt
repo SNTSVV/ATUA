@@ -6,15 +6,15 @@ import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.resetApp
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.*
-import org.droidmate.exploration.modelFeatures.autaut.WTG.*
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Activity
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Launcher
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
-import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
+import org.droidmate.exploration.modelFeatures.atua.DSTG.*
+import org.droidmate.exploration.modelFeatures.atua.EWTG.*
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -26,12 +26,12 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class PhaseOneStrategy(
-        autAutTestingStrategy: AutAutTestingStrategy,
+        atuaTestingStrategy: ATUATestingStrategy,
         budgetScale: Double,
         delay: Long,
         useCoordinateClicks: Boolean
 ):AbstractPhaseStrategy (
-        autAutTestingStrategy = autAutTestingStrategy,
+        atuaTestingStrategy = atuaTestingStrategy,
         scaleFactor = budgetScale,
         delay = delay,
         useCoordinateClicks = useCoordinateClicks,
@@ -62,7 +62,7 @@ class PhaseOneStrategy(
     var delayCheckingBlockStates = 0
     init {
         phaseState = PhaseState.P1_INITIAL
-        autautMF = autAutTestingStrategy.eContext.getOrCreateWatcher()
+        autautMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         attemps = autautMF.allTargetWindow_ModifiedMethods.size
         autautMF.allTargetWindow_ModifiedMethods.keys.forEach {
             targetWindowTryCount.put(it,0)
@@ -72,7 +72,7 @@ class PhaseOneStrategy(
         }
     }
 
-
+    var recentTargetEvent: Input?=null
     override fun registerTriggeredEvents( abstractAction: AbstractAction, guiState: State<*>)
     {
         val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
@@ -81,6 +81,7 @@ class PhaseOneStrategy(
         val staticEvents = abstractState.inputMappings[abstractAction]
         if (staticEvents != null) {
             staticEvents.forEach {
+                recentTargetEvent = it
                 untriggeredTargetEvents.remove(it)
                 /*if (autautMF.targetItemEvents.containsKey(it)) {
                     autautMF.targetItemEvents[it]!!["count"] = autautMF!!.targetItemEvents[it]!!["count"]!! + 1
@@ -103,6 +104,12 @@ class PhaseOneStrategy(
             return true*/
         if (autautMF.lastUpdatedStatementCoverage == 1.0) {
             return false
+        }
+        if (autautMF.appPrevState!!.isRequestRuntimePermissionDialogBox) {
+            if (recentTargetEvent!=null) {
+                untriggeredTargetEvents.add(recentTargetEvent!!)
+                recentTargetEvent = null
+            }
         }
         updateBudgetForWindow(currentState)
         updateTargetWindows()
@@ -328,10 +335,10 @@ class PhaseOneStrategy(
 
         if (targetWindow != currentAppState.window) {
             if (isTargetWindow(currentAppState)) {
+                resetStrategyTask(currentState)
                 val oldTargetWindow = targetWindow
                 targetWindow = currentAppState.window
-                strategyTask = null
-                phaseState = PhaseState.P1_INITIAL
+
                 /*if (getCurrentTargetEvents(currentState).isNotEmpty()) {
                     //if current window is a target window and has target inputs
                     //update targetWindow
@@ -347,16 +354,14 @@ class PhaseOneStrategy(
             //try select a target window
             selectTargetNode(currentState, 0).also {
                 if (targetWindow != null) {
-                    strategyTask = null
-                    phaseState = PhaseState.P1_INITIAL
+                    resetStrategyTask(currentState)
                 }
             }
         } else if (flaggedWindows.contains(targetWindow!!)) {
             //try select another target window
             selectTargetNode(currentState, 0).also {
                 if (targetWindow != null) {
-                    strategyTask = null
-                    phaseState = PhaseState.P1_INITIAL
+                    resetStrategyTask(currentState)
                 }
             }
         } /*else if (currentAppState.window == targetWindow && getCurrentTargetEvents(currentState).isEmpty()) {
@@ -405,14 +410,22 @@ class PhaseOneStrategy(
         return chosenAction
     }
 
+    private fun resetStrategyTask(currentState: State<*>) {
+        if (strategyTask != null && strategyTask is GoToAnotherWindow) {
+            strategyTask!!.isTaskEnd(currentState)
+        }
+        strategyTask = null
+        phaseState = PhaseState.P1_INITIAL
+    }
+
     private fun chooseTask_P1(eContext: ExplorationContext<*, *, *>, currentState: State<*>) {
         log.debug("Choosing Task")
-        val fillDataTask = PrepareContextTask.getInstance(autautMF,autAutTestingStrategy,delay, useCoordinateClicks)
-        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, autAutTestingStrategy, delay, useCoordinateClicks)
-        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, autAutTestingStrategy,delay, useCoordinateClicks)
-        val openNavigationBarTask = OpenNavigationBarTask.getInstance(autautMF,autAutTestingStrategy,delay, useCoordinateClicks)
+        val fillDataTask = PrepareContextTask.getInstance(autautMF,atuaTestingStrategy,delay, useCoordinateClicks)
+        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, atuaTestingStrategy,delay, useCoordinateClicks)
+        val openNavigationBarTask = OpenNavigationBarTask.getInstance(autautMF,atuaTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
         val currentAppState = autautMF.getAbstractState(currentState)!!
 
@@ -579,6 +592,10 @@ class PhaseOneStrategy(
             return
         }
         if (goToWindowToExploreOrRandomExploration(currentAppState, goToAnotherNode, currentState, randomExplorationTask)) return
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
         setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
         return
     }
@@ -626,8 +643,14 @@ class PhaseOneStrategy(
             setGoToTarget(goToTargetNodeTask, currentState)
             return
         }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
+        }
+        forceEnd= true
+        setRandomExploration(randomExplorationTask, currentState)
         //unreachableWindows.add(targetWindow!!)
-        setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
+        //setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
         return
     }
 
@@ -647,11 +670,9 @@ class PhaseOneStrategy(
                 setRandomExploration(randomExplorationTask, currentState)
                 return
             }
-
         }
         if (continueOrEndCurrentTask(currentState)) return
         if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
-
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)
             return
@@ -713,10 +734,6 @@ class PhaseOneStrategy(
             }
         }
         if (continueRandomExplorationIfIsFillingData(randomExplorationTask)) return
-        if (randomExplorationTask.isFullyExploration && !strategyTask!!.isTaskEnd(currentState)) {
-            log.info("Continue ${strategyTask!!}")
-            return
-        }
 
         if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is Dialog && currentAppState.window !is OptionsMenu && currentAppState.window !is OutOfApp) {
             if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
@@ -904,7 +921,6 @@ class PhaseOneStrategy(
 
 
     override fun getPathsToTargetWindows(currentState: State<*>,pathType: PathFindingHelper.PathType): List<TransitionPath> {
-        log.debug("getAllTargetNodePaths")
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (currentAbstractState==null)
@@ -912,8 +928,14 @@ class PhaseOneStrategy(
         val targetStates = getTargetAbstractStates(currentNode = currentAbstractState)
         val stateScores: HashMap<AbstractState,Double> = HashMap<AbstractState,Double>()
         targetStates.filterNot { it == currentState }. forEach {
-            val score =  it.computeScore(autautMF)
-            stateScores.put(it,score)
+            if (it !is VirtualAbstractState ||
+                    ( it is VirtualAbstractState
+                            &&
+                            (pathType==PathFindingHelper.PathType.ANY
+                                    || pathType == PathFindingHelper.PathType.WTG))) {
+                val score = it.computeScore(autautMF)
+                stateScores.put(it, score)
+            }
         }
         getPathToStatesBasedOnPathType(pathType,transitionPaths,stateScores,currentAbstractState,currentState)
         return transitionPaths
@@ -1082,7 +1104,7 @@ class PhaseOneStrategy(
         if (targetWindow == null)
             return ArrayList()
         val candidates = ArrayList<AbstractState>()
-        val excludedNode = currentNode
+        val excludedNodes = arrayListOf<AbstractState>(currentNode)
         if (!AbstractStateManager.instance.ABSTRACT_STATES.any {
                     it !is VirtualAbstractState && it.window == targetWindow
                 }) {
@@ -1100,19 +1122,22 @@ class PhaseOneStrategy(
                     .filter {
                         it !is VirtualAbstractState &&
                         it.window == targetWindow
-                                && it != excludedNode
+                                && !excludedNodes.contains(it)
                     }
                     .forEach {
                         val hasUntriggeredTargetEvent: Boolean
                         hasUntriggeredTargetEvent = isTargetAbstractState(it)
                         if (hasUntriggeredTargetEvent)
                             candidates.add(it)
+                        else
+                            excludedNodes.add(it)
                     }
             if (candidates.isEmpty()) {
                 AbstractStateManager.instance.ABSTRACT_STATES
                         .filter {
                             it.window == targetWindow
-                                    && it != excludedNode
+                                    && it !is VirtualAbstractState
+                                    && !excludedNodes.contains(it)
                         }
                         .forEach {
                                 candidates.add(it)

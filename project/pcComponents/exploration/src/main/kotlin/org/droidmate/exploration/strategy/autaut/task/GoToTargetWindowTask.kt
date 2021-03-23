@@ -1,16 +1,16 @@
 package org.droidmate.exploration.strategy.autaut.task
 
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.helper.PathFindingHelper
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GoToTargetWindowTask (
-        regressionWatcher: AutAutMF,
-        autAutTestingStrategy: AutAutTestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks) {
+        regressionWatcher: ATUAMF,
+        atuaTestingStrategy: ATUATestingStrategy,
+        delay: Long, useCoordinateClicks: Boolean) : GoToAnotherWindow(regressionWatcher, atuaTestingStrategy, delay, useCoordinateClicks) {
 
     override fun increaseExecutedCount() {
         executedCount++
@@ -31,18 +31,21 @@ class GoToTargetWindowTask (
                 nextPathType = computeNextPathType(nextPathType,includeReset)
             }
         }
+        if (possiblePaths.isEmpty()) {
+            log.debug("Cannot identify path to target Window.")
+        }
     }
 
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: GoToTargetWindowTask? = null
-        fun getInstance(regressionWatcher: AutAutMF,
-                        autAutTestingStrategy: AutAutTestingStrategy,
+        fun getInstance(regressionWatcher: ATUAMF,
+                        atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): GoToTargetWindowTask {
             if (instance == null) {
-                instance = GoToTargetWindowTask(regressionWatcher, autAutTestingStrategy, delay,useCoordinateClicks)
+                instance = GoToTargetWindowTask(regressionWatcher, atuaTestingStrategy, delay,useCoordinateClicks)
             }
             return instance!!
         }

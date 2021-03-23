@@ -2,13 +2,13 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.autaut.DSTG.Cardinality
-import org.droidmate.exploration.modelFeatures.autaut.WTG.window.Window
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -17,10 +17,10 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class ExerciseTargetComponentTask private constructor(
-        regressionWatcher: AutAutMF,
-        autAutTestingStrategy: AutAutTestingStrategy,
+        regressionWatcher: ATUAMF,
+        atuaTestingStrategy: ATUATestingStrategy,
         delay: Long, useCoordinateClicks: Boolean)
-    : AbstractStrategyTask(autAutTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
+    : AbstractStrategyTask(atuaTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
 
     private var recentChangedSystemConfiguration: Boolean = false
     var environmentChange: Boolean = false
@@ -33,7 +33,7 @@ class ExerciseTargetComponentTask private constructor(
     var alwaysUseRandomInput = false
     private var prevAbstractState: AbstractState?=null
     var originalEventList: ArrayList<AbstractAction> = ArrayList()
-    private val fillDataTask = PrepareContextTask.getInstance(autautMF,autAutTestingStrategy, delay, useCoordinateClicks)
+    private val fillDataTask = PrepareContextTask.getInstance(autautMF,atuaTestingStrategy, delay, useCoordinateClicks)
     val targetItemEvents = HashMap<AbstractAction, HashMap<String,Int>>()
 
     override fun chooseRandomOption(currentState: State<*>) {
@@ -52,7 +52,7 @@ class ExerciseTargetComponentTask private constructor(
         val abstractState = autautMF.getAbstractState(currentState)!!
         eventList.removeIf {
             it.isWidgetAction() &&
-                    !abstractState.attributeValuationSets.contains(it.attributeValuationSet)
+                    !abstractState.attributeValuationMaps.contains(it.attributeValuationMap)
         }
         if (eventList.isNotEmpty()) {
             return false
@@ -61,9 +61,9 @@ class ExerciseTargetComponentTask private constructor(
     }
 
     private var mainTaskFinished:Boolean = false
-    private val randomExplorationTask = RandomExplorationTask(regressionWatcher,autAutTestingStrategy, delay,useCoordinateClicks,true,3)
+    private val randomExplorationTask = RandomExplorationTask(regressionWatcher,atuaTestingStrategy, delay,useCoordinateClicks,true,3)
     private val candidateWidgetsMap = HashMap<State<*>, List<Widget>>()
-    private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,autAutTestingStrategy,delay, useCoordinateClicks)
+    private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,atuaTestingStrategy,delay, useCoordinateClicks)
     override fun initialize(currentState: State<*>) {
         reset()
         randomExplorationTask.fillingData=false
@@ -73,14 +73,14 @@ class ExerciseTargetComponentTask private constructor(
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         targetWindow = autautMF.getAbstractState(currentState)!!.window
         eventList.filter { it.isItemAction() }.forEach { action ->
-            currentAbstractState!!.attributeValuationSets.filter { action.attributeValuationSet!!.isParent(it) }.forEach { childWidget->
+            currentAbstractState!!.attributeValuationMaps.filter { action.attributeValuationMap!!.isParent(it) }.forEach { childWidget->
                 val childActionType = when (action.actionType) {
                     AbstractActionType.ITEM_CLICK -> AbstractActionType.CLICK
                    AbstractActionType.ITEM_LONGCLICK -> AbstractActionType.LONGCLICK
                     else -> AbstractActionType.CLICK
                 }
-                currentAbstractState!!.getAvailableActions().filter { it.attributeValuationSet == childWidget && it.actionType == childActionType }.forEach {
-                    if (it.attributeValuationSet!!.cardinality == Cardinality.MANY) {
+                currentAbstractState!!.getAvailableActions().filter { it.attributeValuationMap == childWidget && it.actionType == childActionType }.forEach {
+                    if (it.attributeValuationMap!!.cardinality == Cardinality.MANY) {
                         val itemActionAttempt = 3*autautStrategy.budgetScale
                         for (i in 1..itemActionAttempt.toInt()) {
                             eventList.add(it)
@@ -145,17 +145,12 @@ class ExerciseTargetComponentTask private constructor(
         //check if we can encounter any target component in current state
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
         var candidates= ArrayList<Widget>()
-        candidates.addAll(autautMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationSet!!,currentAbstractState, currentState))
+        candidates.addAll(autautMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationMap!!,currentAbstractState, currentState))
         if (candidates.isNotEmpty())
         {
             return candidates
         }
-        //if have target widget
-        if (candidates.isNotEmpty())
-        {
-            return candidates
-        }
-        //autautMF.addUnreachableTargetComponentState(currentState)
+
         return emptyList()
     }
 
@@ -226,8 +221,8 @@ class ExerciseTargetComponentTask private constructor(
             return randomExplorationTask.chooseAction(currentState)
         }
 
-        if (!eventList.any { it.attributeValuationSet!=null && it.attributeValuationSet.isInputField() }) {
-            chosenAbstractAction = eventList.filterNot { it.attributeValuationSet!=null && it.attributeValuationSet.isInputField() }.random()
+        if (!eventList.any { it.attributeValuationMap!=null && it.attributeValuationMap.isInputField() }) {
+            chosenAbstractAction = eventList.filterNot { it.attributeValuationMap!=null && it.attributeValuationMap.isInputField() }.random()
         } else {
             chosenAbstractAction = eventList.random()
         }
@@ -238,7 +233,7 @@ class ExerciseTargetComponentTask private constructor(
         {
             log.info("Exercise Event: ${chosenAbstractAction!!.actionType}")
             var chosenWidget: Widget? = null
-            if (chosenAbstractAction!!.attributeValuationSet!=null)
+            if (chosenAbstractAction!!.attributeValuationMap!=null)
             {
                 val candidates = chooseWidgets(currentState)
                 chosenWidget = candidates.firstOrNull()
@@ -259,6 +254,7 @@ class ExerciseTargetComponentTask private constructor(
             }
             if (chosenAction == null)
             {
+                currentAbstractState.inputMappings.remove(chosenAbstractAction!!)
                 //regressionTestingMF.registerTriggeredEvents(chosenEvent!!)
                 if (eventList.isNotEmpty())
                 {
@@ -284,12 +280,12 @@ class ExerciseTargetComponentTask private constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         private var instance: ExerciseTargetComponentTask? = null
         var executedCount:Int = 0
-        fun getInstance(regressionWatcher: AutAutMF,
-                        autAutTestingStrategy: AutAutTestingStrategy,
+        fun getInstance(regressionWatcher: ATUAMF,
+                        atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): ExerciseTargetComponentTask {
             if (instance == null)
             {
-                instance = ExerciseTargetComponentTask(regressionWatcher, autAutTestingStrategy, delay, useCoordinateClicks)
+                instance = ExerciseTargetComponentTask(regressionWatcher, atuaTestingStrategy, delay, useCoordinateClicks)
             }
             return instance!!
         }

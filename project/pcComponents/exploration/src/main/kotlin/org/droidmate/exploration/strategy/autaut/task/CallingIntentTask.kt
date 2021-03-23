@@ -3,15 +3,15 @@ package org.droidmate.exploration.strategy.autaut.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.callIntent
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.modelFeatures.autaut.AutAutMF
-import org.droidmate.exploration.strategy.autaut.AutAutTestingStrategy
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.exploration.strategy.autaut.model.IntentTestInstance
 import org.droidmate.explorationModel.interaction.State
 
-class CallingIntentTask(regressionTestingMF: AutAutMF,
-                        autAutTestingStrategy: AutAutTestingStrategy,
+class CallingIntentTask(regressionTestingMF: ATUAMF,
+                        atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean):AbstractStrategyTask(autautMF = regressionTestingMF,
-                        autautStrategy = autAutTestingStrategy,
+                        autautStrategy = atuaTestingStrategy,
                         delay = delay,useCoordinateClicks = useCoordinateClicks) {
     val targetIntentTestInstances = ArrayList<IntentTestInstance>()
     override fun isAvailable(currentState: State<*>): Boolean {
