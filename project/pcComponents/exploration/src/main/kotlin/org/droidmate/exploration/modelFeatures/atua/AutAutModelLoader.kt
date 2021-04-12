@@ -81,7 +81,6 @@ class AutAutModelLoader {
             val data = splitCSVLineToField(line)
             val activity = data[0]
             val avsId = data[1]
-            val actionType = AbstractActionType.values().find { it.toString() == data[2] }!!
             val avs = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.get(activity)!!.get(avsId)!!
             //AbstractionFunction.INSTANCE.abandonedAbstractTransitions.add(Triple(activity,avs,actionType))
             return avs
@@ -89,7 +88,6 @@ class AutAutModelLoader {
 
         private fun loadDecisionNodes(abstractionFunctionFolderPath: Path) {
             var currentDecisionNode: DecisionNode?=null
-            var attributePath: AttributePath
             var level = 0
             do {
                 level++
@@ -249,7 +247,6 @@ class AutAutModelLoader {
                         currentState = null,
                         currentAbstractState = destState,
                         prevAbstractState = sourceState,
-                        edgeCondition = hashMapOf() ,
                         prevWindow = null
                 )
             }
@@ -364,12 +361,12 @@ class AutAutModelLoader {
                 attributeValuationSetRawData.put(avsId,rawData)
             }
             for (attributeValuationSetRecord in attributeValuationSetRawData) {
-                val uuid = attributeValuationSetRecord.key
-                if (attributeValuationSets.any { it.avsId == uuid }) {
+                val avmuuid = attributeValuationSetRecord.key
+                if (attributeValuationSets.any { it.avsId == avmuuid }) {
                     continue
                 }
                 val attributeValuationSet = createAttributeValuationSet(attributeValuationSetRecord.value,attributeValuationSets,activity, widgetMapping)
-                assert(uuid == attributeValuationSet.avsId )
+                assert(avmuuid == attributeValuationSet.avsId )
             }
             return attributeValuationSets
         }
@@ -497,7 +494,7 @@ class AutAutModelLoader {
             val windowId = data[0]
             val createdAtRuntime = data[4].toBoolean()
             if (createdAtRuntime) {
-                val newWindow: Window = createNewWindow(data)
+                createNewWindow(data)
             }
             var window = WindowManager.instance.baseModelWindows.find { it.windowId == windowId }
             if (window == null) {
@@ -540,11 +537,11 @@ class AutAutModelLoader {
                     createNewEvent(data,widget,window)
                 } else
                     existingEvent
-                updateHandlerAndModifiedMethods(event, data,widget,window,autautMF)
+                updateHandlerAndModifiedMethods(event, data,window,autautMF)
             }
         }
 
-        private fun updateHandlerAndModifiedMethods(event: Input, data: List<String>, widget: EWTGWidget?, window: Window, autMF: ATUAMF) {
+        private fun updateHandlerAndModifiedMethods(event: Input, data: List<String>, window: Window, autMF: ATUAMF) {
             val eventHandlers = splitCSVLineToField(data[4])
             eventHandlers.filter{it.isNotBlank()}. forEach { handler ->
                 val methodId = autMF.statementMF!!.getMethodId(handler)
@@ -606,7 +603,7 @@ class AutAutModelLoader {
                 val widget = window.widgets.find {it.widgetId == widgetId }
                 if (widget == null) {
                     //create new widget
-                    val newWidget: EWTGWidget = createNewWidget(data, window)
+                    createNewWidget(data, window)
                 }
             }
 

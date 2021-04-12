@@ -25,6 +25,7 @@ class AbstractionFunction (val root: DecisionNode) {
 
     fun isAbandonedAttributePath(activity: String, abstractTransition: AbstractTransition):Boolean {
         return abandonedAbstractTransitions.filter { it.source.activity == activity }.any {
+            abstractTransition.abstractAction == it.abstractAction &&
             abstractTransition.abstractAction.attributeValuationMap?.equals(it.abstractAction.attributeValuationMap!!)?:false
                     && abstractTransition.source.equals(it.source)
                     && abstractTransition.dest.equals(it.dest)

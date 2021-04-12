@@ -30,7 +30,6 @@ class InputConfigurationFileHelper {
                 val dataJson = inputInformationJson.getJSONArray("Instances")
                 val data: ArrayList<InformationInstance> = readInstances(dataJson, informationType)
                 informationType.data.addAll(data)
-
             }
 
         }

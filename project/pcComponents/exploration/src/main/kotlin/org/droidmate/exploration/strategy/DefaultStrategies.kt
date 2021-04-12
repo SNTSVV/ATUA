@@ -172,6 +172,9 @@ object DefaultStrategies: Logging {
 		}
 
 		override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> nextAction(eContext: ExplorationContext<M, S, W>): ExplorationAction {
+			//DEBUG
+			val currentState = eContext.getCurrentState()
+			//END DEBUG
 			val lastActionType = eContext.getLastActionType()
 			val (lastLaunchDistance,secondLast) = with(
 				eContext.explorationTrace.getActions().filterNot {

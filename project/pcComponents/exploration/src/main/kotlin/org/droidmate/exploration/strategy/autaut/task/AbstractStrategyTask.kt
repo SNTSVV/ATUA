@@ -528,10 +528,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         if (chosenWidget.className == "android.webkit.WebView") {
            val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
             if (action==AbstractActionType.ITEM_CLICK) {
-                for (i in 0..10) {
-                    actionList.add(childWidgets.random().click())
-                }
-                return ActionQueue(actionList,50)
+                return childWidgets.random().click()
             }
             if (action == AbstractActionType.ITEM_LONGCLICK)
                 return childWidgets.random().longClick()

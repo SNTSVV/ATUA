@@ -4,6 +4,7 @@ import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransitionGraph
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.EWTG.PathTraverser
@@ -15,7 +16,6 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.explorationModel.interaction.State
-import org.droidmate.legacy.associateMany
 import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
@@ -35,13 +35,13 @@ class PathFindingHelper {
             val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
             if (existingPaths!= null && existingPaths.isNotEmpty()) {
                val satisfiedPaths = existingPaths.filter {
-                           (pathType == PathType.INCLUDE_INFERED && it.path.values.all { !it.fromWTG })
-                                   || (pathType == PathType.RESET && satisfyResetPathType(it))
-                                   || (pathType == PathType.WTG )
+                            it.pathType == pathType
                }
                 if (satisfiedPaths.isNotEmpty()) {
                     allPaths.addAll(satisfiedPaths)
-                    return
+                    if  (shortest || allPaths.size >= pathCountLimitation) {
+                        return
+                    }
                 }
             }
             val pathTracking = HashMap<AbstractTransition,
@@ -50,7 +50,7 @@ class PathFindingHelper {
                             ArrayList<HashMap<UUID,String>>
                             >?
                     >()
-            val targetTraces = if (pathType == PathType.FOLLOW_TRACE || pathType == PathType.RESET) {
+            val targetTraces = if ( pathType == PathType.RESET) {
                 val edgesToTarget = autautMF.abstractTransitionGraph.edges().filter { it.label.dest == finalTarget }
                 edgesToTarget.map { it.label.tracing }.flatten().map { it.first }.distinct()
             } else {
@@ -77,7 +77,7 @@ class PathFindingHelper {
                         includeLaunchAction = false,
                         pathType = pathType,
                         targetTraces = targetTraces)
-                PathType.FOLLOW_TRACE -> findPathToTargetComponentByBFS(
+                PathType.NORMAL -> findPathToTargetComponentByBFS(
                         autautMF = autautMF,
                         currentState = currentState,
                         root = root,
@@ -343,6 +343,8 @@ class PathFindingHelper {
             }*/
 
             val edgesFromSource = graph.edges(source).filter { it.destination!=null
+                    && AbstractStateManager.instance.ABSTRACT_STATES.contains(it.label.dest)
+                    && it.source.data.abstractTransitions.contains(it.label)
             }
             val forwardTransitions = edgesFromSource.filter {
                 it.destination != null
@@ -369,7 +371,7 @@ class PathFindingHelper {
                     } else {
                         val groupByDestination = edges.groupBy { it.destination }
                         if (groupByDestination.size > 1) {
-                            val groupByPreWindow = edges.filterNot { it.label.dest is VirtualAbstractState }.groupBy { it.label.prevWindow }
+                            val groupByPreWindow = edges.groupBy { it.label.prevWindow }
                             groupByPreWindow.forEach { prevWindow, edges ->
                                 if (prevWindow == null && includeWTG) {
                                     possibleTransitions.addAll(edges)
@@ -422,7 +424,7 @@ class PathFindingHelper {
             selectedTransition.forEach {
                 val nextState = it.destination!!.data
                 val transition = it.label
-                val edgeCondition = graph.edgeConditions[it]!!
+                val edgeCondition = it.label.userInputs
                 val traversedNodes = traversedEdges.values.map {  it.first.dest}
                 if (!traversedNodes.contains(it.label.source) && it.label.source!=root) {
                     val strange=""
@@ -460,7 +462,7 @@ class PathFindingHelper {
         }
 
         private fun followTrace(edge: Edge<AbstractState, AbstractTransition>, depth: Int,targetTraces: List<Int>, traversedEdges: HashMap<Int, Pair<AbstractTransition, Stack<Window>>>, prevEdgeId: Int?, pathTracking: HashMap<Int, Int>, pathType: PathType): Boolean {
-            if (pathType!=PathType.FOLLOW_TRACE && pathType != PathType.RESET) {
+            if (pathType != PathType.RESET) {
                 return true
             }
             if (prevEdgeId == null)
@@ -605,10 +607,6 @@ class PathFindingHelper {
                 fullPath.path.put(transitionId,transition)
                 //fullPath.edgeConditions[edge] = pathTracking[backwardNode]!!.third
                 val graphEdge = autautMF.abstractTransitionGraph.edge(source,destination,transition)
-                if (graphEdge!=null && autautMF.abstractTransitionGraph.edgeConditions.containsKey(graphEdge))
-                {
-                    fullPath.edgeConditions.put(transitionId,autautMF.abstractTransitionGraph.edgeConditions[graphEdge]!!)
-                }
                 path.removeFirst()
                 transitionId++
             }
@@ -785,6 +783,7 @@ class PathFindingHelper {
                 //No reset or launch action
                 pathTraverser.reset()
             }
+            var samePrefix = false
             while (iterator.hasNext() && !pathTraverser.finalStateAchieved()) {
                 val edge1 = iterator.next()
                 val edge2 = pathTraverser.getNextTransition()
@@ -792,16 +791,15 @@ class PathFindingHelper {
                     return false
                 if (edge1 != edge2)
                     return false
+                samePrefix = true
             }
-            if (!iterator.hasNext())
-                return true
-            return false
+            return samePrefix
         }
     }
 
     enum class PathType {
         INCLUDE_INFERED,
-        FOLLOW_TRACE,
+        NORMAL,
         RESET,
         WTG,
         ANY

@@ -7,6 +7,9 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
@@ -26,7 +29,6 @@ class ExerciseTargetComponentTask private constructor(
     var environmentChange: Boolean = false
     val eventList:  ArrayList<AbstractAction> = ArrayList()
     var chosenAbstractAction: AbstractAction? = null
-    var currentAbstractState: AbstractState? = null
     var fillingData = false
     var dataFilled = false
     var randomRefillingData = false
@@ -47,8 +49,16 @@ class ExerciseTargetComponentTask private constructor(
         if (isCameraOpening(currentState)) {
             return false
         }
-        if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
+        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        if (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp) {
+            if (isDoingRandomExplorationTask && randomExplorationTask.isTaskEnd(currentState)) {
+                return true
+            }
+                return false
+        }
+        if (currentAbstractState.window != targetWindow) {
             return true
+        }
         val abstractState = autautMF.getAbstractState(currentState)!!
         eventList.removeIf {
             it.isWidgetAction() &&
@@ -62,14 +72,12 @@ class ExerciseTargetComponentTask private constructor(
 
     private var mainTaskFinished:Boolean = false
     private val randomExplorationTask = RandomExplorationTask(regressionWatcher,atuaTestingStrategy, delay,useCoordinateClicks,true,3)
-    private val candidateWidgetsMap = HashMap<State<*>, List<Widget>>()
-    private val openNavigationBar = OpenNavigationBarTask.getInstance(regressionWatcher,atuaTestingStrategy,delay, useCoordinateClicks)
+
     override fun initialize(currentState: State<*>) {
         reset()
         randomExplorationTask.fillingData=false
         mainTaskFinished = false
-        currentAbstractState = autautMF.getAbstractState(currentState)
-        initializeExtraTasks(currentState)
+        val currentAbstractState = autautMF.getAbstractState(currentState)
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         targetWindow = autautMF.getAbstractState(currentState)!!.window
         eventList.filter { it.isItemAction() }.forEach { action ->
@@ -95,21 +103,6 @@ class ExerciseTargetComponentTask private constructor(
         originalEventList.addAll(eventList)
     }
 
-    private fun initializeExtraTasks(currentState: State<*>) {
-        extraTasks.clear()
-//        if (openTargetDialogTask.isAvailable(currentState)) {
-//            extraTasks.add(openTargetDialogTask.also { it.initialize(currentState) })
-//        }
-//        if (openOptionMenuTask.isAvailable(currentState)) {
-//            extraTasks.add(openOptionMenuTask.also { it.initialize(currentState) })
-//        }
-//        if (openContextMenuTask.isAvailable(currentState)) {
-//            extraTasks.add(openContextMenuTask.also { it.initialize(currentState) })
-//        }
-        extraTasks.add(openNavigationBar)
-        extraTasks.add(randomExplorationTask)
-        currentExtraTask = null
-    }
 
     override fun reset() {
         extraTasks.clear()
@@ -153,7 +146,7 @@ class ExerciseTargetComponentTask private constructor(
 
         return emptyList()
     }
-
+    var isDoingRandomExplorationTask: Boolean = false
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
@@ -161,12 +154,18 @@ class ExerciseTargetComponentTask private constructor(
             prevAbstractState = currentAbstractState
         }
         if (isCameraOpening(currentState)) {
-            randomExplorationTask.chooseAction(currentState)
+            if (!isDoingRandomExplorationTask)
+                randomExplorationTask.initialize(currentState)
+            isDoingRandomExplorationTask = true
+            return randomExplorationTask.chooseAction(currentState)
         }
-        randomExplorationTask.isClickedShutterButton = false
-        if (currentAbstractState.window != targetWindow) {
-            randomExplorationTask.chooseAction(currentState)
+        if (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp) {
+            if (!isDoingRandomExplorationTask)
+                randomExplorationTask.initialize(currentState)
+            isDoingRandomExplorationTask = true
+            return randomExplorationTask.chooseAction(currentState)
         }
+        isDoingRandomExplorationTask = false
         if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
             if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
                 recentChangedSystemConfiguration = true
@@ -236,7 +235,9 @@ class ExerciseTargetComponentTask private constructor(
             if (chosenAbstractAction!!.attributeValuationMap!=null)
             {
                 val candidates = chooseWidgets(currentState)
-                chosenWidget = candidates.firstOrNull()
+                if (candidates.isNotEmpty())  {
+                    chosenWidget = candidates.random()
+                }
                 if (chosenWidget==null)
                 {
                     log.debug("No widget found. Choose another Window transition.")

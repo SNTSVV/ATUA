@@ -95,7 +95,7 @@ class RobustDevice : IRobustDevice {
 		var result: String = ""
 		Utils.retryOnException(
 				{
-					result = this.device.executeAdbCommandWithReturn(command, successfulOutput, commandDescription) },
+					result = this.device.	executeAdbCommandWithReturn(command, successfulOutput, commandDescription) },
 				{},
 				deviceOperationAttempts,
 				deviceOperationDelay,

@@ -11,7 +11,6 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.explorationModel.interaction.State
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -92,7 +91,7 @@ abstract class AbstractPhaseStrategy(
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
                         stopWhenHavingUnexercisedAction = false,
-                        pathType = PathFindingHelper.PathType.FOLLOW_TRACE,
+                        pathType = PathFindingHelper.PathType.NORMAL,
                         shortest = false,
                         pathCountLimitation = 5)
             }

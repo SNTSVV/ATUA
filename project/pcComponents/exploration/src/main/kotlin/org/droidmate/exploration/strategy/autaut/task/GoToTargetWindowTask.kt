@@ -1,5 +1,6 @@
 package org.droidmate.exploration.strategy.autaut.task
 
+import jdk.nashorn.internal.ir.ContinueNode
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
@@ -16,16 +17,19 @@ class GoToTargetWindowTask (
         executedCount++
     }
 
-    override fun initPossiblePaths(currentState: State<*>) {
+    override fun initPossiblePaths(currentState: State<*>, continueNode: Boolean) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
             PathFindingHelper.PathType.INCLUDE_INFERED
-        else
+        else if (!continueNode)
             computeNextPathType(currentPath!!.pathType,includeReset)
+        else
+            PathFindingHelper.PathType.NORMAL
+        
         while (possiblePaths.isEmpty()) {
             possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
             if (nextPathType == PathFindingHelper.PathType.WTG ||
-                    (!includeReset && nextPathType == PathFindingHelper.PathType.FOLLOW_TRACE)) {
+                    (!includeReset && nextPathType == PathFindingHelper.PathType.NORMAL)) {
                 break
             }else {
                 nextPathType = computeNextPathType(nextPathType,includeReset)
@@ -35,6 +39,7 @@ class GoToTargetWindowTask (
             log.debug("Cannot identify path to target Window.")
         }
     }
+
 
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }

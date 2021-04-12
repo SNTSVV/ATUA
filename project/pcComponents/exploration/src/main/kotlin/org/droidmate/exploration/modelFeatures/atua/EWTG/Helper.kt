@@ -314,6 +314,7 @@ class Helper {
                             activity = wtgNode.activityClass,
                             attributeValuationSetId = attributeValuationSetId
                     )
+                    newWidget.createdAtRuntime = true
                     val ancestorAVMWithMatchedEWTGWidget: AttributeValuationMap? = findAncestorAVMHavingMatchedEWTGWidget(attributeValuationMap.parentAttributeValuationSetId,
                             avm_ewtgWidgets,wtgNode.activityClass)
                     if (ancestorAVMWithMatchedEWTGWidget!=null) {

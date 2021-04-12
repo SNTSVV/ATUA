@@ -7,10 +7,7 @@ open class DataField (val name: String,
                  val textHintPatterns: ArrayList<String> = ArrayList(),
                  val informationType: InformationType) {
     init {
-        if (!informationType.dataFields.contains(this))
-        {
-            informationType.dataFields.add(this)
-        }
+
     }
 }
 

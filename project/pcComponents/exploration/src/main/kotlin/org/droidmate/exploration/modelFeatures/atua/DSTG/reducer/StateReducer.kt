@@ -69,7 +69,7 @@ class StateReducer
                 var attributeValuationSet =  AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.map { it.value }. find { it.haveTheSameAttributePath(a) }
                 if (attributeValuationSet == null) {
                     attributeValuationSet =  AttributeValuationMap(a,attributePath_Cardinalitys[a]!!,activity,attributePath_Cardinalitys)
-                    attributeValuationSet!!.initActions()
+
                 }
                 widgetReduceMap.filter { it.value.equals(a) }.forEach { w, _ ->
                     if (capturedAttributePaths.contains(a)) {

@@ -2,6 +2,7 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.explorationModel.interaction.Interaction
+import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
 data class AbstractAction (
@@ -9,8 +10,20 @@ data class AbstractAction (
         val attributeValuationMap: AttributeValuationMap?=null,
         var extra: Any?=null
     ) {
-
-
+    override fun hashCode(): Int {
+        var hash = 31
+        hash += actionType.hashCode()
+        if (attributeValuationMap!=null)
+            hash+=attributeValuationMap!!.hashCode
+        if (extra!=null)
+            hash+=extra!!.hashCode()
+        return hash
+    }
+    override fun equals(other: Any?): Boolean {
+        if (other !is AbstractAction)
+            return false
+        return this.hashCode() == other.hashCode()
+    }
     fun isItemAction(): Boolean {
         return when(actionType) {
             AbstractActionType.ITEM_CLICK,AbstractActionType.ITEM_LONGCLICK,AbstractActionType.ITEM_SELECTED -> true
@@ -44,10 +57,8 @@ data class AbstractAction (
     fun getScore(): Double {
         var actionScore = when(actionType) {
             AbstractActionType.PRESS_BACK -> 0.5
-            AbstractActionType.LONGCLICK -> 1.0
-            AbstractActionType.CLICK,AbstractActionType.ITEM_LONGCLICK -> 2.0
-            AbstractActionType.SWIPE -> 2.0
-            AbstractActionType.ITEM_CLICK -> 4.0
+            AbstractActionType.LONGCLICK,AbstractActionType.ITEM_LONGCLICK,AbstractActionType.SWIPE -> 2.0
+            AbstractActionType.CLICK,AbstractActionType.ITEM_CLICK -> 2.0
             else -> 1.0
         }
         if (attributeValuationMap == null)
@@ -61,9 +72,16 @@ data class AbstractAction (
     }
 
     companion object {
-        fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>): Any? {
+        fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState): Any? {
             if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
                 return interaction.targetWidget
+            }
+            if (actionType == AbstractActionType.TEXT_INSERT) {
+                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState)!!
+                if (avm.localAttributes.containsKey(AttributeType.text)) {
+                    return interaction.data
+                }
+                return null
             }
             if (actionType != AbstractActionType.SWIPE) {
                 return null

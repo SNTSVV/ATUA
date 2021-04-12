@@ -69,6 +69,12 @@ open class AbstractState(
         hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other !is AbstractState) {
+            return false
+        }
+        return hashCode == other.hashCode
+    }
     fun initAction(){
         val resetAction = AbstractAction(
                 actionType = AbstractActionType.RESET_APP
@@ -114,9 +120,10 @@ open class AbstractState(
             actionCount.put(clickOutDialog, 0)
         }
 
-        /*attributeValuationSets.forEach {
+        attributeValuationMaps.forEach {
+            //it.actionCount.clear()
             it.initActions()
-        }*/
+        }
     }
 
     @Suppress
@@ -182,7 +189,7 @@ open class AbstractState(
             }
         }
         unexcerisedActions.addAll(actionCount.filter {
-            ( it.value == 0 || (it.key.attributeValuationMap?.cardinality==Cardinality.MANY && it.value < 2))
+            ( it.value == 0 )
                     && it.key.actionType != AbstractActionType.FAKE_ACTION
                     && it.key.actionType != AbstractActionType.LAUNCH_APP
                     && it.key.actionType != AbstractActionType.RESET_APP
@@ -199,7 +206,7 @@ open class AbstractState(
                     .filter { !it.isUserLikeInput() }.map { w -> w.actionCount }
         }
         widgetActionCounts.forEach {
-            val actions = it.filter { it.value == 0 }.map { it.key }
+            val actions = it.filter { it.value == 0 || (it.key.attributeValuationMap?.cardinality==Cardinality.MANY && it.value < 2) }.map { it.key }
             unexcerisedActions.addAll(actions)
 
         }
@@ -256,17 +263,25 @@ open class AbstractState(
                 widgetGroup.actionCount[nonDataAction] = widgetGroup.actionCount[nonDataAction]!! + 1
             }
         }
-        if (updateSimilarAbstractState) {
-            increaseSimilarActionCount(action)
+        if (action.isWidgetAction()) {
+            val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES
+                    .find { it.window == this.window && it is VirtualAbstractState }
+            if (virtualAbstractState!=null) {
+                if (!virtualAbstractState.attributeValuationMaps.contains(action.attributeValuationMap!!)) {
+                    virtualAbstractState.attributeValuationMaps.add(action.attributeValuationMap!!)
+                    virtualAbstractState.addAction(action)
+                }
+            }
         }
+      /*  if (updateSimilarAbstractState && !action.isWidgetAction()) {
+            increaseSimilarActionCount(action)
+        }*/
     }
 
     fun increaseSimilarActionCount(action: AbstractAction) {
         AbstractStateManager.instance.ABSTRACT_STATES
-                .filterNot { it is VirtualAbstractState }
-                .filter { it.window == this.window }
+                .filter { it.window == this.window && it!=this}
                 .forEach {
-
                     if (it.getAvailableActions().contains(action)) {
                         it.increaseActionCount(action)
                     }

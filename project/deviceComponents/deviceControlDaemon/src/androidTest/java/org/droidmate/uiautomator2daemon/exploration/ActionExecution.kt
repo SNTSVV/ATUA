@@ -207,6 +207,7 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
             }
 			//launch app
             env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
+
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
 			//reset rotaion
 			env.automation.setRotation(0)

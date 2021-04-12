@@ -9,6 +9,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
@@ -69,8 +70,8 @@ class PhaseTwoStrategy (
     val modifiedMethodMissingStatements = HashMap<String, HashSet<String>>()
     val appStateModifiedMethodMap = HashMap<AbstractState, HashSet<String>>()
     val modifiedMethodTriggerCount = HashMap<String, Int>()
-    val staticNodeScores = HashMap<Window, Double> ()
-    val staticNodesProbability = HashMap<Window, Double> ()
+    val windowScores = HashMap<Window, Double> ()
+    val windowsProbability = HashMap<Window, Double> ()
     var attempt: Int = 0
     var budgetLeft: Int = 0
     var randomBudgetLeft: Int = 0
@@ -163,13 +164,22 @@ class PhaseTwoStrategy (
     }
 
     private fun budgetConsume() {
-        if (budgetType == 1)
+        if (budgetType == 1) {
             if (strategyTask is ExerciseTargetComponentTask && !(strategyTask as ExerciseTargetComponentTask).fillingData) {
                 budgetLeft--
             }
-        if (budgetType == 2)
+            if (phaseState == PhaseState.P2_RANDOM_IN_EXERCISE_TARGET_NODE) {
+                if (strategyTask is RandomExplorationTask && !(strategyTask as RandomExplorationTask).fillingData) {
+                    // check current Window is also target Window
+                    budgetLeft --
+                }
+            }
+        }
+        if (budgetType == 2){
             if (strategyTask is RandomExplorationTask && !(strategyTask as RandomExplorationTask).fillingData)
                 randomBudgetLeft--
+        }
+
     }
 
     override fun getPathsToTargetWindows(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
@@ -181,13 +191,18 @@ class PhaseTwoStrategy (
             throw Exception("$targetWindow does not have a probability")
         }
 
-        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]!!
+        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]!!.filter { AbstractStateManager.instance.ABSTRACT_STATES.contains( it.first) }
         //targetAbstractStatesProbability.removeIf { it.first == currentAbState }
         val targetAbstractStatesPbMap = HashMap<AbstractState,Double>()
         targetAbstractStatesProbability.forEach {
             targetAbstractStatesPbMap.put(it.first,it.second)
         }
-
+        if (targetAbstractStatesPbMap.isEmpty()) {
+            val windowAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow!! }
+            windowAbstractStates.forEach {
+                targetAbstractStatesPbMap.put(it,1.0)
+            }
+        }
         val transitionPaths = ArrayList<TransitionPath>()
         getPathToStatesBasedOnPathType(pathType,transitionPaths,targetAbstractStatesPbMap,currentAbState,currentState)
         return transitionPaths
@@ -331,17 +346,15 @@ class PhaseTwoStrategy (
             return
         }
         if (currentAppState.window == targetWindow) {
+            setExerciseBudget(currentState)
             if (alreadyRandomInputInTarget) {
                 if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    setExerciseBudget(currentState)
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
-                setRandomExplorationBudget(currentState)
-            } else {
-                setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
-                return
             }
+            setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
+            return
             /*
                     return*/
         }
@@ -365,7 +378,9 @@ class PhaseTwoStrategy (
     }
 
     private fun setRandomExplorationBudget(currentState: State<*>) {
-        if (budgetType != 0 )
+        if (budgetType == 2)
+            return
+        if (randomBudgetLeft > 0 )
             return
         budgetType = 2
         val inputWidgetCount = Helper.getInputFields(currentState).size
@@ -376,8 +391,18 @@ class PhaseTwoStrategy (
     private fun setExerciseBudget(currentState: State<*>) {
         if (budgetType==1)
             return
+        if (budgetLeft > 0)
+            return
         val inputWidgetCount = Helper.getInputFields(currentState).size
-        val targetEventCount = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow }.size
+        val targetEvents = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow }
+        var targetEventCount = targetEvents.size
+        val allInputMappings = AbstractStateManager.instance.ABSTRACT_STATES.map { it.inputMappings }
+        targetEvents.filter{it.key.widget!=null}. forEach { event, _ ->
+            val allAVMs = allInputMappings.filter { it.values.any { it.contains(event) } }.map { it.keys }.flatten().filter { it.isWidgetAction() }.map { it.attributeValuationMap!! }
+            if (allAVMs.any { it.cardinality == Cardinality.MANY }) {
+                targetEventCount+=(5).toInt()
+            }
+        }
         budgetLeft = (targetEventCount * (inputWidgetCount+1) * scaleFactor).toInt()
         budgetType = 1
     }
@@ -427,13 +452,14 @@ class PhaseTwoStrategy (
         }
         alreadyRandomInputInTarget = true
         if (currentAppState.window == targetWindow) {
+            setExerciseBudget(currentState)
             if (alreadyRandomInputInTarget) {
                 if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    setExerciseBudget(currentState)
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
             }
+            setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
         }
         if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu|| currentAppState.window is OutOfApp) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
@@ -459,13 +485,12 @@ class PhaseTwoStrategy (
             return
         }
         if (currentAppState.window == targetWindow) {
+            setExerciseBudget(currentState)
             if (alreadyRandomInputInTarget) {
                 if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    setExerciseBudget(currentState)
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
-                setRandomExplorationBudget(currentState)
             }
             setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
             return
@@ -478,19 +503,16 @@ class PhaseTwoStrategy (
 
     private fun nextActionOnGoToExploreState(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToTargetNodeTask: GoToTargetWindowTask) {
         if (currentAppState.window == targetWindow) {
-
+            setExerciseBudget(currentState)
             if (alreadyRandomInputInTarget) {
                 if (exerciseTargetComponentTask.isAvailable(currentState)) {
-                    setExerciseBudget(currentState)
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
-                setRandomExplorationBudget(currentState)
             } else {
                 setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                 return
             }
-            return
         }
         if (currentAppState.getUnExercisedActions(currentState).isNotEmpty() || hasUnexploreWidgets(currentState)) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState)
@@ -511,7 +533,7 @@ class PhaseTwoStrategy (
     }
 
     private fun nextActionOnRandomExploration(currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, currentState: State<*>, randomExplorationTask: RandomExplorationTask, goToTargetNodeTask: GoToTargetWindowTask, goToAnotherNode: GoToAnotherWindow): Boolean {
-        if (!strategyTask!!.isTaskEnd(currentState)) {
+        if (!strategyTask!!.isTaskEnd(currentState) && !(strategyTask as RandomExplorationTask)!!.stopWhenHavingTestPath) {
             //Keep current task
             log.info("Continue doing random exploration")
             return true
@@ -528,12 +550,13 @@ class PhaseTwoStrategy (
                 return true
             }
         }
-        if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu || currentAppState.window is OutOfApp) {
-            setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
-            return true
-        }
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)
+            return true
+        }
+        if (!strategyTask!!.isTaskEnd(currentState)) {
+            //Keep current task
+            log.info("Continue doing random exploration")
             return true
         }
         if (goToAnotherNode.isAvailable(currentState)) {
@@ -620,7 +643,7 @@ class PhaseTwoStrategy (
             it.setMaxiumAttempt((10*scaleFactor).toInt())
             it.isFullyExploration = true
             it.environmentChange = true
-            //it.lockTargetWindow(targetWindow!!)
+            it.lockTargetWindow(targetWindow!!)
             it.alwaysUseRandomInput = true
         }
         log.info("Random exploration in target window")
@@ -631,8 +654,15 @@ class PhaseTwoStrategy (
 
     fun selectTargetWindow(currentState: State<*>, numberOfTried: Int, in_maxTried: Int = 0){
         computeAppStatesScore()
-        val leastTriedWindows = targetWindowsCount.filter { staticNodeScores.containsKey(it.key) }. map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
-        val leastTriedWindowScore = staticNodeScores.filter {windowScore -> leastTriedWindows.value.any { it.first == windowScore.key } }
+        var leastTriedWindows = targetWindowsCount.filter { windowScores.containsKey(it.key) }. map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.firstOrNull()
+        //debug begin
+        if (leastTriedWindows == null) {
+            computeAppStatesScore()
+            leastTriedWindows = targetWindowsCount.map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
+        }
+        //debug end
+
+        val leastTriedWindowScore = windowScores.filter { windowScore -> leastTriedWindows.value.any { it.first == windowScore.key } }
         val maxTried =
         if (in_maxTried == 0) {
             leastTriedWindowScore.size/2+1
@@ -647,10 +677,10 @@ class PhaseTwoStrategy (
             targetWindow = targetWindowsCount.map { it.key }.random()
         }
         targetWindowsCount[targetWindow!!] = targetWindowsCount[targetWindow!!]!!+1
-       if (numberOfTried< maxTried && getPathsToWindowToExplore(currentState, targetWindow!!,PathFindingHelper.PathType.ANY,false).isEmpty()) {
+       /*if (numberOfTried< maxTried && getPathsToWindowToExplore(currentState, targetWindow!!,PathFindingHelper.PathType.ANY,false).isEmpty()) {
             selectTargetWindow(currentState, numberOfTried+1,maxTried)
             return
-        }
+        }*/
         /*val inputWidgetSize: Int  = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow}.map { it.guiStates }.flatten().map {
             Helper.getVisibleWidgets(it).filter { Helper.isUserLikeInput(it) }.size
         }.max()?:0*/
@@ -708,7 +738,7 @@ class PhaseTwoStrategy (
 
         //for each edge, count modified method appearing
         edges.forEach {edge ->
-            val coveredMethods = autautMF.abstractTransitionGraph.methodCoverageInfo[edge]
+            val coveredMethods = edge.label.methodCoverage
             if (coveredMethods!=null)
                 coveredMethods.forEach {
                     if (autautMF.statementMF!!.isModifiedMethod(it)) {
@@ -762,7 +792,7 @@ class PhaseTwoStrategy (
 
         //calculate staticNode score
         var staticNodeTotalScore = 0.0
-         staticNodeScores.clear()
+         windowScores.clear()
         targetWindowsCount.filter { abstractStateProbabilityByWindow.containsKey(it.key) }. forEach { n, _ ->
             var weight: Double = 0.0
             val modifiedMethods = HashSet<String>()
@@ -793,7 +823,7 @@ class PhaseTwoStrategy (
             }
             if (weight>0.0)
             {
-                staticNodeScores.put(n, weight)
+                windowScores.put(n, weight)
                 staticNodeTotalScore+=weight
             }
         }
@@ -803,11 +833,11 @@ class PhaseTwoStrategy (
                  phase2TargetEvents.put(it,0)
              }
          }
-        staticNodesProbability.clear()
+        windowsProbability.clear()
         //calculate staticNode probability
-        staticNodeScores.forEach { n, s ->
+        windowScores.forEach { n, s ->
             val pb = s/staticNodeTotalScore
-            staticNodesProbability.put(n,pb)
+            windowsProbability.put(n,pb)
         }
     }
 

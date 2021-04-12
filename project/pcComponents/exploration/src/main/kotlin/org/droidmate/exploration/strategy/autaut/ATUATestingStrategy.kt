@@ -88,7 +88,6 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
                 if (regressionWatcher.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
-                    return eContext.resetApp()
                 }
                     /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                     regressionWatcher.updateStage2Info(eContext)*/

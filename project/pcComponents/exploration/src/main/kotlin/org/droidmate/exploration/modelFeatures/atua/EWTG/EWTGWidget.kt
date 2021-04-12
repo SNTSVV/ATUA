@@ -12,7 +12,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                   var text: String, //usefull for mapping menu item
                                   var activity: String,
                                   var window: Window,
-                                  val createdAtRuntime: Boolean = false,
+                                  var createdAtRuntime: Boolean = false,
                                   val attributeValuationSetId: String = ""
                                     ){
     var possibleTexts= ArrayList<String>()

@@ -193,8 +193,16 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 
 		//FIXBUG daemonUI could not extract correct information of widgets
 	fun explorationCanMoveOn() = isEmpty() || // we are starting the app -> no terminate yet
-			getCurrentState().isRequestRuntimePermissionDialogBox || isOpenWithDialog() ||  // FIXME what if we currently have isHomeScreen?
-				(!getCurrentState().isHomeScreen && belongsToApp(getCurrentState()) && getCurrentState().actionableWidgets.any { it.clickable })
+			getCurrentState().isRequestRuntimePermissionDialogBox || isOpenWithDialog() || isActivityChooser(getCurrentState()) || // FIXME what if we currently have isHomeScreen?
+				(!getCurrentState().isHomeScreen
+						&& belongsToApp(getCurrentState())
+						&& getCurrentState().actionableWidgets.any { it.clickable }
+						)
+
+	private fun isActivityChooser(currentState: S): Boolean {
+		return currentState.widgets.any{
+			it.packageName == "android" && it.resourceId == "android:id/resolver_list"}
+	}
 
 	fun isOpenWithDialog() = getCurrentState().widgets.any { it.text == "JUST ONCE" || it.text == "ALWAYS" }
 	suspend fun assertLastGuiSnapshotIsHomeOrResultIsFailure() {

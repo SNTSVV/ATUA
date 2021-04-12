@@ -76,19 +76,19 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                         actionType = AbstractActionType.ITEM_CLICK,
                         attributeValuationMap = this
                 )
-                if (!actionCount.containsKey(itemAbstractAction))
-                    actionCount.put(itemAbstractAction,0)
+                actionCount.putIfAbsent(itemAbstractAction,0)
                 val itemLongClickAbstractAction = AbstractAction(
                         actionType = AbstractActionType.ITEM_LONGCLICK,
                         attributeValuationMap = this
                 )
-                actionCount.put(itemLongClickAbstractAction,0)
+                actionCount.putIfAbsent(itemLongClickAbstractAction,0)
+
             } else {
                 val abstractAction = AbstractAction(
                         actionType = AbstractActionType.CLICK,
                         attributeValuationMap = this
                 )
-                actionCount.put(abstractAction, 0)
+                actionCount.putIfAbsent(abstractAction, 0)
             }
         }
         if (isLongClickable() && !isInputField()) {
@@ -96,7 +96,7 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                     actionType = AbstractActionType.LONGCLICK,
                     attributeValuationMap = this
             )
-            actionCount.put(abstractAction, 0)
+            actionCount.putIfAbsent(abstractAction, 0)
         }
         if (isScrollable()) {
             if (localAttributes[AttributeType.scrollDirection]== DescendantLayoutDirection.HORIZONTAL.toString()) {
@@ -110,8 +110,8 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                         attributeValuationMap = this,
                         extra = "SwipeRight"
                 )
-                actionCount.put(abstractActionSwipeLeft, 0)
-                actionCount.put(abstractActionSwipeRight, 0)
+                actionCount.putIfAbsent(abstractActionSwipeLeft, 0)
+                actionCount.putIfAbsent(abstractActionSwipeRight, 0)
             } else if (localAttributes[AttributeType.scrollDirection]== DescendantLayoutDirection.VERTICAL.toString()) {
                 val abstractActionSwipeUp = AbstractAction(
                         actionType = AbstractActionType.SWIPE,
@@ -123,8 +123,8 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                         attributeValuationMap = this,
                         extra = "SwipeDown"
                 )
-                actionCount.put(abstractActionSwipeUp, 0)
-                actionCount.put(abstractActionSwipeDown, 0)
+                actionCount.putIfAbsent(abstractActionSwipeUp, 0)
+                actionCount.putIfAbsent(abstractActionSwipeDown, 0)
 
             } else {
                 val abstractActionSwipeUp = AbstractAction(
@@ -147,10 +147,10 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                         attributeValuationMap = this,
                         extra = "SwipeRight"
                 )
-                actionCount.put(abstractActionSwipeUp, 0)
-                actionCount.put(abstractActionSwipeDown, 0)
-                actionCount.put(abstractActionSwipeLeft, 0)
-                actionCount.put(abstractActionSwipeRight, 0)
+                actionCount.putIfAbsent(abstractActionSwipeUp, 0)
+                actionCount.putIfAbsent(abstractActionSwipeDown, 0)
+                actionCount.putIfAbsent(abstractActionSwipeLeft, 0)
+                actionCount.putIfAbsent(abstractActionSwipeRight, 0)
             }
 
             /*if (attributePath.getClassName().contains("RecyclerView")
@@ -169,7 +169,7 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
                     actionType = AbstractActionType.TEXT_INSERT,
                     attributeValuationMap = this
             )
-            actionCount.put(abstractAction, 0)
+            actionCount.putIfAbsent(abstractAction, 0)
         }
         //Item-containing Widget
         /* if (attributePath.getClassName().equals("android.webkit.WebView")) {
@@ -419,7 +419,7 @@ class AttributeValuationMap (val localAttributes: HashMap<AttributeType, String>
     override fun equals(other: Any?): Boolean {
         if (other !is AttributeValuationMap)
             return false
-        return this.avsId==other.avsId
+        return this.hashCode==other.hashCode
     }
 
     override fun toString(): String {

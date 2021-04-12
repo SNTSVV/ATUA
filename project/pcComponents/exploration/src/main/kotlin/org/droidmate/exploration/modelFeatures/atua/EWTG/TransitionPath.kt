@@ -9,8 +9,6 @@ import kotlin.collections.HashMap
 
 class TransitionPath(val root: AbstractState, val pathType: PathFindingHelper.PathType, val destination: AbstractState) {
     val path: HashMap<Int, AbstractTransition> = HashMap()
-    // val edgeConditions: HashMap<Edge<*,*>,HashMap<WidgetGroup,String>> = HashMap()
-    val edgeConditions: HashMap<Int,ArrayList<HashMap<UUID,String>>> = HashMap()
 
     fun getFinalDestination(): AbstractState{
         return destination
