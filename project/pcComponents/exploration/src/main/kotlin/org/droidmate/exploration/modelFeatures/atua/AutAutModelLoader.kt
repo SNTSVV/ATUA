@@ -26,6 +26,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.FakeWindow
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.emptyUUID
 import java.io.BufferedReader
 import java.io.FileReader
@@ -114,56 +115,27 @@ class AutAutModelLoader {
             val data = splitCSVLineToField(line)
             val activity = data[0]
             val attributPathUid = UUID.fromString(data[1])
-            val className = data[2]
-            val resourceId = data[3]
-            val contentDesc = data[4]
-            val text = data[5]
-            val enable = data[6]
-            val selected =data[7]
-            val checkable = data[8]
-            val isInputField = data[9]
-            val clickable = data[10]
-            val longClickable = data[11]
-            val scrollable = data[12]
-            val checked = data[13]
-            val isLeaf = data[14]
-
-            val attributes = HashMap<AttributeType,String>()
-            addAttributeIfNotNull(AttributeType.className,className,attributes)
-            addAttributeIfNotNull(AttributeType.resourceId,resourceId,attributes)
-            addAttributeIfNotNull(AttributeType.contentDesc,contentDesc,attributes)
-            addAttributeIfNotNull(AttributeType.text,text,attributes)
-            addAttributeIfNotNull(AttributeType.enabled,enable,attributes)
-            addAttributeIfNotNull(AttributeType.selected,selected,attributes)
-            addAttributeIfNotNull(AttributeType.checkable,checkable,attributes)
-            addAttributeIfNotNull(AttributeType.isInputField,isInputField,attributes)
-            addAttributeIfNotNull(AttributeType.clickable,clickable,attributes)
-            addAttributeIfNotNull(AttributeType.longClickable,longClickable,attributes)
-            addAttributeIfNotNull(AttributeType.scrollable,scrollable,attributes)
-            addAttributeIfNotNull(AttributeType.checked,checked,attributes)
-            addAttributeIfNotNull(AttributeType.isLeaf,isLeaf,attributes)
-
-            val parentId = if (data[15] == "null") {
+            val parentId = if (data[2] == "null") {
                 emptyUUID
             } else {
-                UUID.fromString(data[15])
+                UUID.fromString(data[2])
             }
-            val childIdStrings = splitCSVLineToField(data[16])
-            val childIds = if (childIdStrings.isEmpty() ||
-                    (childIdStrings.size == 1 && childIdStrings.single().isBlank())) {
-                emptyList<UUID>()
-            } else {
-                childIdStrings.map { UUID.fromString(it) }
+            val attributes = HashMap<AttributeType,String>()
+            var index = 3
+            AttributeType.values().toSortedSet().forEach { attributeType ->
+                val value = data[index]!!
+                addAttributeIfNotNull(attributeType,value,attributes)
+                index++
             }
+
             val attributePath = AttributePath(
                    localAttributes = attributes,
                     parentAttributePathId = parentId,
-                    childAttributePathIds = childIds.toHashSet(),
                     activity = activity
             )
             //val child
-            val captured = if (data[17].isNotBlank()) {
-                data[17].toBoolean()
+            val captured = if (data[index]!!.isNotBlank()) {
+                data[index].toBoolean()
             } else {
                 false
             }
@@ -239,15 +211,14 @@ class AutAutModelLoader {
                         fromWTG = false,
                         prevWindow = prevWindow,
                         isImplicit = false,
-                        abstractAction = abstractAction
+                        abstractAction = abstractAction,
+                        modelVersion = ModelVersion.BASE
                 )
                 autAutMF.abstractTransitionGraph.add(sourceState,destState,newAbstractTransition)
+                createStaticEventFromAbstractInteraction(newAbstractTransition,autAutMF)
                AbstractStateManager.instance.addImplicitAbstractInteraction(
                         abstractTransition = newAbstractTransition,
-                        currentState = null,
-                        currentAbstractState = destState,
-                        prevAbstractState = sourceState,
-                        prevWindow = null
+                        currentState = null
                 )
             }
 
@@ -262,13 +233,115 @@ class AutAutModelLoader {
                 )
                 return abstractAction
             }
-            val avs = abstractState.attributeValuationMaps.firstOrNull() { it.avsId == interactedAVSId }
+            val avs = abstractState.attributeValuationMaps.firstOrNull() { it.avmId == interactedAVSId }
             val abstractAction = AbstractAction(
                     actionType = actionType,
                     attributeValuationMap = avs,
                     extra = actionData
             )
             return abstractAction
+        }
+
+        private fun createStaticEventFromAbstractInteraction(abstractTransition: AbstractTransition, atuaMF: ATUAMF) {
+            val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
+            if (eventType == EventType.fake_action || eventType == EventType.resetApp || eventType == EventType.implicit_launch_event)
+                return
+            val inputs = if (abstractTransition.source.inputMappings.containsKey(abstractTransition.abstractAction))
+                abstractTransition.source.inputMappings.get(abstractTransition.abstractAction)!!
+            else
+                createNewInput(abstractTransition,atuaMF)
+            inputs.forEach { input ->
+                atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window,input)
+            }
+
+        }
+
+        private fun createNewInput(abstractTransition: AbstractTransition, atuaMF: ATUAMF): ArrayList<Input> {
+            val result = ArrayList<Input>()
+            val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
+            val sourceAbstractState = abstractTransition.source
+            val destAbstractState = abstractTransition.dest
+            if (abstractTransition.abstractAction.attributeValuationMap == null)
+            {
+                var newInput = Input(
+                        eventType = eventType,
+                        widget = null,
+                        sourceWindow = sourceAbstractState.window,
+                        eventHandlers = HashSet(),
+                        createdAtRuntime = true
+                )
+                result.add(newInput)
+                newInput.data = abstractTransition.abstractAction.extra
+                newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
+                if (newInput.eventHandlers.intersect(atuaMF.allTargetHandlers).isNotEmpty()) {
+                    atuaMF.allTargetInputs.add(newInput)
+                }
+                sourceAbstractState.inputMappings.putIfAbsent(abstractTransition.abstractAction, arrayListOf())
+                sourceAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
+                AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == sourceAbstractState }. filter { it.window == sourceAbstractState.window }.forEach {
+                    val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
+                    if (similarAbstractAction != null) {
+                        it.inputMappings.put(similarAbstractAction, arrayListOf(newInput!!))
+                    }
+                }
+            }
+            else
+            {
+                val attributeValuationSet = abstractTransition.abstractAction.attributeValuationMap
+                if (!sourceAbstractState.EWTGWidgetMapping.containsKey(attributeValuationSet)){
+                    val attributeValuationSetId = if (attributeValuationSet.getResourceId().isBlank())
+                        ""
+                    else
+                        attributeValuationSet.avmId
+                    // create new static widget and add to the abstract state
+                    val ewtgWidget = EWTGWidget(
+                            widgetId = attributeValuationSet.avmId.toString(),
+                            resourceIdName = attributeValuationSet.getResourceId(),
+                            resourceId = "",
+                            activity = sourceAbstractState.activity,
+                            window = sourceAbstractState.window,
+                            className = attributeValuationSet.getClassName(),
+                            contentDesc = attributeValuationSet.getContentDesc(),
+                            text = attributeValuationSet.getText(),
+                            createdAtRuntime = true,
+                            attributeValuationSetId = attributeValuationSetId
+                    )
+                    ewtgWidget.modelVersion = ModelVersion.BASE
+                    sourceAbstractState.EWTGWidgetMapping.put(attributeValuationSet, ewtgWidget)
+                    AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == sourceAbstractState }. filter { it.window == sourceAbstractState.window }.forEach {
+                        val similarWidget = it.attributeValuationMaps.find { it == attributeValuationSet }
+                        if (similarWidget != null ) {
+                            it.EWTGWidgetMapping.put(similarWidget,ewtgWidget)
+                        }
+                    }
+                }
+                if (sourceAbstractState.EWTGWidgetMapping.contains(attributeValuationSet))
+                {
+                    val staticWidget = sourceAbstractState.EWTGWidgetMapping[attributeValuationSet]!!
+                    atuaMF.allTargetStaticWidgets.add(staticWidget)
+                    val newInput = Input(
+                            eventType = eventType,
+                            widget = staticWidget,
+                            sourceWindow = sourceAbstractState.window,
+                            eventHandlers = HashSet(),
+                            createdAtRuntime = true
+                    )
+                    result.add(newInput)
+                    newInput.data = abstractTransition.abstractAction.extra
+                    newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
+                    if (!sourceAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
+                        sourceAbstractState.inputMappings.put(abstractTransition.abstractAction, arrayListOf())
+                    }
+                    sourceAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
+                    AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == sourceAbstractState }. filter { it.window == sourceAbstractState.window }.forEach {
+                        val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
+                        if (similarAbstractAction != null) {
+                            it.inputMappings.put(similarAbstractAction, arrayListOf(newInput))
+                        }
+                    }
+                }
+            }
+            return result
         }
 
         private fun readAllLines(dstgFilePath: Path): List<String> {
@@ -308,6 +381,8 @@ class AutAutModelLoader {
             val isOpenningKeyboard = data[9].toBoolean()
             val hasOptionsMenu = data[10].toBoolean()
             val guiStates = data[11]
+            val hashcode = data[12].toInt()
+            val isInitalState = data[13].toBoolean()
             val widgetIdMapping: HashMap<AttributeValuationMap,String> = HashMap()
             val attributeValuationSets = loadAttributeValuationSets(uuid, dstgFolderPath,widgetIdMapping, activity)
             val widgetMapping = HashMap<AttributeValuationMap,EWTGWidget>()
@@ -318,10 +393,9 @@ class AutAutModelLoader {
                 } else {
                     ATUAMF.log.debug("Cannot find WidgetId $widgetId in $window")
                 }
-
-
             }
             val abstractState = AbstractState(
+                    id = uuid,
                     activity = activity,
                     isOutOfApplication = isOutOfApp,
                     isHomeScreen = isHomeScreen,
@@ -334,14 +408,23 @@ class AutAutModelLoader {
                     EWTGWidgetMapping = widgetMapping,
                     hasOptionsMenu = hasOptionsMenu,
                     window = window,
-                    loaded = true
+                    loadedFromModel = true,
+                    modelVersion = ModelVersion.BASE
             )
+
+            abstractState.updateHashCode()
+            assert(abstractState.hashCode == hashcode)
             if (abstractState.abstractStateId != uuid) {
                 updatedAbstractStateId.put(uuid,abstractState.abstractStateId)
             }
             AbstractStateManager.instance.ABSTRACT_STATES.add(abstractState)
             AbstractStateManager.instance.initAbstractInteractions(abstractState,null)
+            if (isInitalState) {
+                abstractState.isInitalState = true
+            }
         }
+
+
         private fun loadAttributeValuationSets(uuid: String, dstgFolderPath: Path, widgetMapping: HashMap<AttributeValuationMap, String>, activity: String): List<AttributeValuationMap> {
             val attributeValuationSets = ArrayList<AttributeValuationMap>()
             val abstractStateFilePath = dstgFolderPath.resolve("AbstractStates").resolve("AbstractState_$uuid.csv")
@@ -362,11 +445,11 @@ class AutAutModelLoader {
             }
             for (attributeValuationSetRecord in attributeValuationSetRawData) {
                 val avmuuid = attributeValuationSetRecord.key
-                if (attributeValuationSets.any { it.avsId == avmuuid }) {
+                if (attributeValuationSets.any { it.avmId == avmuuid }) {
                     continue
                 }
                 val attributeValuationSet = createAttributeValuationSet(attributeValuationSetRecord.value,attributeValuationSets,activity, widgetMapping)
-                assert(avmuuid == attributeValuationSet.avsId )
+                assert(avmuuid == attributeValuationSet.avmId )
             }
             return attributeValuationSets
         }
@@ -375,37 +458,40 @@ class AutAutModelLoader {
                                                activity: String,
                                                widgetMapping: HashMap<AttributeValuationMap, String>):AttributeValuationMap {
             //TODO("Not implemented")
-            val parentAVSId = if (attributeValuationSetRawRecord[14] !="null")
-                attributeValuationSetRawRecord[14]
+            val parentAVSId = if (attributeValuationSetRawRecord[1] !="null")
+                attributeValuationSetRawRecord[1]
             else
                 ""
-            val attributes: HashMap<AttributeType,String> = parseAttributes(attributeValuationSetRawRecord)
-          /*  val childAVSIds = splitCSVLineToField(attributeValuationSetRawRecord[15])
-            val childAVSs = HashSet<String>()
-           if (!(childAVSIds.size==1 && (childAVSIds.single().isBlank() || childAVSIds.single()=="\"\""))) {
-               childAVSIds.forEach { avsId ->
-                   childAVSs.add(avsId)
-               }
-           }*/
-            val cardinality = Cardinality.values().find { it.name == attributeValuationSetRawRecord[18] }!!
-            val attributeValuationSet = AttributeValuationMap(localAttributes = attributes,
-                    parentAttributeValuationSetId = parentAVSId,
+            var index = 2
+            val attributes = HashMap<AttributeType,String>()
+            AttributeType.values().toSortedSet().forEach { attributeType ->
+                val value = attributeValuationSetRawRecord[index]!!
+                addAttributeIfNotNull(attributeType,value,attributes)
+                index++
+            }
+            val cardinality = Cardinality.values().find { it.name == attributeValuationSetRawRecord[index] }!!
+            val captured = attributeValuationSetRawRecord[index+1]
+            val ewtgWidgetIds = splitCSVLineToField(attributeValuationSetRawRecord[index+2])
+            val attributeValuationSet = AttributeValuationMap(
+                    avmId = attributeValuationSetRawRecord[0],
+                    localAttributes = attributes,
+                    parentAVMId = parentAVSId,
                     cardinality = cardinality,
                     activity = activity)
-           attributeValuationSet.avsId = attributeValuationSetRawRecord[0]
             if (!AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.containsKey(activity)) {
                 AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.put(activity, HashMap())
             }
-            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.put(attributeValuationSet.avsId,attributeValuationSet)
-            val captured = attributeValuationSetRawRecord[19]
+            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.put(attributeValuationSet.avmId,attributeValuationSet)
+
             if (captured.toBoolean()) {
                 attributeValuationMaps.add(attributeValuationSet)
             }
-            val ewtgWidgetIds = splitCSVLineToField(attributeValuationSetRawRecord[20])
             if (!(ewtgWidgetIds.size == 1 &&
                             (ewtgWidgetIds.single().isBlank() || ewtgWidgetIds.single() == "null" ))) {
                 widgetMapping.put(attributeValuationSet, ewtgWidgetIds.first())
             }
+            val hashcode =  (attributeValuationSetRawRecord[index+3]).toInt()
+            assert(hashcode == attributeValuationSet.hashCode)
            return attributeValuationSet
         }
 
@@ -425,9 +511,9 @@ class AutAutModelLoader {
             val scrollable = attributeValuationSetRawDatum[11]
             val checked = attributeValuationSetRawDatum[12]
             val isLeaf = attributeValuationSetRawDatum[13]
-            val childrenStructure = attributeValuationSetRawDatum[15]
-            val childrenText = attributeValuationSetRawDatum[16]
-            val siblingInfo = attributeValuationSetRawDatum[17]
+            val childrenStructure = attributeValuationSetRawDatum[14]
+            val childrenText = attributeValuationSetRawDatum[15]
+            val siblingInfo = attributeValuationSetRawDatum[16]
 
             addAttributeIfNotNull(AttributeType.className, className,attributes)
             addAttributeIfNotNull(AttributeType.resourceId, resourceId,attributes)
@@ -521,6 +607,7 @@ class AutAutModelLoader {
                 val data = splitCSVLineToField(line)
                 val eventType = data[0]
                 val widgetId = data[1]
+                val createdAtRuntime = data[3].toBoolean()
                 val widget = if (widgetId != "null") {
                     window.widgets.find { it.widgetId == widgetId}
                 } else
@@ -534,7 +621,7 @@ class AutAutModelLoader {
                     window.inputs.find { it.eventType.toString() == eventType && it.widget == widget }
                 }
                 val event = if (existingEvent == null) {
-                    createNewEvent(data,widget,window)
+                    createNewEvent(data,widget,window,createdAtRuntime)
                 } else
                     existingEvent
                 updateHandlerAndModifiedMethods(event, data,window,autautMF)
@@ -545,11 +632,23 @@ class AutAutModelLoader {
             val eventHandlers = splitCSVLineToField(data[4])
             eventHandlers.filter{it.isNotBlank()}. forEach { handler ->
                 val methodId = autMF.statementMF!!.getMethodId(handler)
-                if (!event.eventHandlers.contains(methodId)) {
-                    event.eventHandlers.add(methodId)
+                if (methodId.isNotBlank()) {
+                    if (!event.eventHandlers.contains(methodId)) {
+                        autMF.modifiedMethodTopCallersMap.filter { it.value.contains(methodId) }.forEach { updatedMethod, callers ->
+                            if (!event.modifiedMethods.containsKey(updatedMethod)) {
+                                event.modifiedMethods.putIfAbsent(updatedMethod, false)
+                                val updatedStatements = autMF.statementMF!!.getMethodStatements(methodId)
+                                updatedStatements.forEach {
+                                    event.modifiedMethodStatement.put(it, false)
+                                }
+                            }
+
+                        }
+                        event.eventHandlers.add(methodId)
+                    }
                 }
             }
-            val modifiedMethods = splitCSVLineToField(data[5])
+/*            val modifiedMethods = splitCSVLineToField(data[5])
             modifiedMethods.filter { it.isNotBlank() }. forEach { method ->
                 val methodId = autMF.statementMF!!.getMethodId(method)
                 if (!event.modifiedMethods.contains(methodId)) {
@@ -560,27 +659,15 @@ class AutAutModelLoader {
                     }
 
                 }
-            }
-            if(event.modifiedMethods.isNotEmpty() && !autMF.allTargetInputs.contains(event)) {
-                autMF.allTargetInputs.add(event)
-                if (window !is Launcher && window !is OutOfApp) {
-                    if (!autMF.allTargetWindow_ModifiedMethods.containsKey(window)) {
-                        autMF.allTargetWindow_ModifiedMethods.put(window, hashSetOf())
-                    }
-                    val window_ModifiedMethods = autMF.allTargetWindow_ModifiedMethods.get(window)!!
-                    event.modifiedMethods.forEach { m, _ ->
-                        window_ModifiedMethods.add(m)
-                    }
-                }
-            }
+            }*/
         }
 
-        private fun createNewEvent(data: List<String>, widget: EWTGWidget?, window: Window): Input {
+        private fun createNewEvent(data: List<String>, widget: EWTGWidget?, window: Window,createdAtRuntime: Boolean): Input {
             val eventType = EventType.values().find { it.name == data[0] }
             if (eventType == null) {
                 throw Exception("Not supported eventType ${data[0]}")
             }
-            val input = Input(eventType = eventType,widget = widget,sourceWindow = window,createdAtRuntime = true,eventHandlers = HashSet())
+            val input = Input(eventType = eventType,widget = widget,sourceWindow = window,createdAtRuntime = createdAtRuntime,eventHandlers = HashSet())
             return input
 
         }
@@ -610,6 +697,8 @@ class AutAutModelLoader {
         }
 
         fun splitCSVLineToField(line: String): List<String> {
+            // TODO too slow, reimplement without regex
+
             val data = ArrayList(line.split(";(?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()))
             val result = ArrayList<String>()
             data.forEach {
@@ -627,12 +716,12 @@ class AutAutModelLoader {
             val widgetId = data[0]
             val resourceIdName = data[1]
             val className = data[2]
-            val activity = data[3]
-            val createdAtRuntime = data[4].toBoolean()
-            val attributeValuationSetId = if (data[5] == "null") {
+            val activity = data[4]
+            val createdAtRuntime = data[5].toBoolean()
+            val attributeValuationSetId = if (data[6] == "null") {
                 ""
             } else {
-                data[5]
+                data[6]
             }
             val widget = EWTGWidget(
                     widgetId = widgetId,
@@ -646,7 +735,7 @@ class AutAutModelLoader {
                     resourceId = "",
                     attributeValuationSetId = attributeValuationSetId
             )
-
+            widget.modelVersion = ModelVersion.BASE
             return widget
         }
 

@@ -72,8 +72,8 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
             return eContext.resetApp()
         }
 
-        if ((AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
-                || AbstractStateManager.instance.launchAbstractStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
+        if ((AbstractStateManager.instance.launchStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
+                || AbstractStateManager.instance.launchStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
                 && currentAbstractState.rotation == Rotation.LANDSCAPE) {
             return ExplorationAction.rotate(-90)
         }

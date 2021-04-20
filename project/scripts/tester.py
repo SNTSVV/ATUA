@@ -28,7 +28,8 @@ from test_device import *
 
 TESTING_REPO_CLONE_DIR = "APKResources"
 TMP_APK_DIR = "tmp"
-COVERAGE_SUFFIX = "-coverage.txt"
+COVERAGE_SUFFIX = "-
+coverage.txt"
 ARGS_SUFFIX = ".txt"
 
 DEVICES = [Emulator("emu23"), Emulator("emu24"), Emulator("emu27")]

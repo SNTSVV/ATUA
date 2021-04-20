@@ -14,6 +14,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.BufferedWriter
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -32,6 +33,9 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
 
     init {
         Launcher.getOrCreateNode()
+    }
+    fun dump( bufferedWriter: BufferedWriter){
+
     }
     fun constructFromJson(jObj: JSONObject) {
         var jMap = jObj.getJSONObject("allActivityNodes")

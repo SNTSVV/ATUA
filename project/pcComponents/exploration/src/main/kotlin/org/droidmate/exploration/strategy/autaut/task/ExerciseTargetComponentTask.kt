@@ -159,11 +159,13 @@ class ExerciseTargetComponentTask private constructor(
             isDoingRandomExplorationTask = true
             return randomExplorationTask.chooseAction(currentState)
         }
-        if (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp) {
-            if (!isDoingRandomExplorationTask)
-                randomExplorationTask.initialize(currentState)
-            isDoingRandomExplorationTask = true
-            return randomExplorationTask.chooseAction(currentState)
+        if (currentAbstractState.window != targetWindow) {
+            if ( currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp) {
+                if (!isDoingRandomExplorationTask)
+                    randomExplorationTask.initialize(currentState)
+                isDoingRandomExplorationTask = true
+                return randomExplorationTask.chooseAction(currentState)
+            }
         }
         isDoingRandomExplorationTask = false
         if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {

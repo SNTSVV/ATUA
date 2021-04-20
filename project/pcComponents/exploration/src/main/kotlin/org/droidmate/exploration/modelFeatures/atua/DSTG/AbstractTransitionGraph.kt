@@ -2,13 +2,10 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 import org.droidmate.exploration.modelFeatures.graph.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
-import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
-import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractTransition> =
                               Graph(AbstractStateManager.instance.appResetState,
@@ -27,7 +24,11 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
         val edge = graph.update(source, prevDestination,newDestination, prevLabel, newLabel)
         return edge
     }
-    
+
+    override fun remove(edge: Edge<AbstractState, AbstractTransition>): Boolean {
+        edge.source.data.abstractTransitions.remove(edge.label)
+        return graph.remove(edge)
+    }
     fun dump(statementCoverageMF: StatementCoverageMF, bufferedWriter: BufferedWriter) {
         bufferedWriter.write(header())
         //val fromResetState = AbstractStateManager.instance.launchAbstractStates.get(AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH)!!
@@ -56,7 +57,7 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
             }
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.destination!!.data.abstractStateId};" +
-                    "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationMap?.avsId};${edge.label.data};" +
+                    "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationMap?.avmId};${edge.label.data};" +
                     "${edge.label.prevWindow?.windowId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
                     "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\""
             bufferedWriter.write(abstractTransitionInfo)

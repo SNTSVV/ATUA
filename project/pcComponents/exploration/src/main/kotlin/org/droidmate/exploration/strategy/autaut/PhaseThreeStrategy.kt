@@ -314,11 +314,12 @@ class PhaseThreeStrategy(
             log.info("Continue ${strategyTask!!.javaClass.name}")
             return
         }
-        if (currentAppState.window == relatedWindow) {
+        if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
             setRandomExplorationBudget(currentState)
             setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
             return
         }
+
         if (!strategyTask!!.isTaskEnd(currentState)) {
             log.info("Continue ${strategyTask!!.javaClass.name}")
             return
@@ -360,7 +361,7 @@ class PhaseThreeStrategy(
                 setRandomExploration(randomExplorationTask, currentState)
                 return
             }
-            if (currentAppState.window == relatedWindow) {
+            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
@@ -476,7 +477,7 @@ class PhaseThreeStrategy(
             return
         }
         if (isRandomBudgetAvailable()) {
-            if (currentAppState.window == relatedWindow) {
+            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
@@ -516,7 +517,7 @@ class PhaseThreeStrategy(
             return
         }
         if (isRandomBudgetAvailable()) {
-            if (currentAppState.window == relatedWindow) {
+            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return

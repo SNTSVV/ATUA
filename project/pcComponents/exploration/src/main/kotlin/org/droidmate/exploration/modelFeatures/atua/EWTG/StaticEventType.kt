@@ -24,6 +24,8 @@ enum class EventType {
     press_back,
     // This is for text boxes
     enter_text,
+
+    press_menu,
     // Special editor action performed on a text view - when the enter key is
     // pressed, or when an action supplied to the IME is selected by the user.
     editor_action,

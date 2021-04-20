@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.EWTG
 
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import kotlin.collections.ArrayList
 import kotlin.random.Random
 
@@ -29,7 +30,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
             }
         }
     val children: ArrayList<EWTGWidget> = ArrayList()
-
+    var modelVersion: ModelVersion = ModelVersion.RUNNING
     init {
         window.widgets.add(this)
         allStaticWidgets.add(this)

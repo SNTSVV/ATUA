@@ -269,11 +269,11 @@ private suspend fun waitForSync(env: UiAutomationEnvironment, afterAction: Boole
 					time += it / 1000000
 					cnt += 1
 				}) // this sometimes really sucks in performance but we do not yet have any reliable alternative
-		debugOut("check if we have a webView", debugFetch)
+		/*debugOut("check if we have a webView", debugFetch)
 		if (afterAction && UiHierarchy.any(env, cond = isWebView)) { // waitForIdle is insufficient for WebView's therefore we need to handle the stabilize separately
 			debugOut("WebView detected wait for interactive element with different package name", debugFetch)
 			UiHierarchy.waitFor(env, interactiveTimeout, actableAppElem)
-		}
+		}*/
 	} catch(e: java.util.concurrent.TimeoutException) {
 		Log.e(logTag, "No idle state with idle timeout: 100ms within global timeout: ${env.idleTimeout}ms", e)
 	}
@@ -309,7 +309,7 @@ private var time: Long = 0
 private var cnt = 0
 private var wt = 0.0
 private var wc = 0
-private const val debugFetch = false
+private const val debugFetch = true
 private val isInteractive = { w: UiElementPropertiesI -> w.clickable || w.longClickable || w.checked!=null || w.isInputField}
 suspend fun fetchDeviceData(env: UiAutomationEnvironment, afterAction: Boolean = false): DeviceResponse = coroutineScope{
 	debugOut("start fetch execution",debugFetch)
@@ -403,7 +403,7 @@ private suspend fun UiDevice.minimizeMaximize(){
 	delay(100) // avoid idle 0 which get the wait stuck for multiple seconds
 	measureTimeMillis { waitForIdle(idleTimeout) }.let { Log.d(logTag, "waited $it millis for IDLE") }
 
-	for (i in (0 until 10)) {
+	for (i in (0 until 9)) {
 		pressRecentApps()
 
 		// Cannot use wait for changes because it waits some interact-able element

@@ -3,7 +3,6 @@ package org.droidmate.exploration.modelFeatures.atua.EWTG
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.deviceInterface.exploration.Swipe
-import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.actions.availableActions
 import org.droidmate.exploration.actions.swipeDown
 import org.droidmate.exploration.actions.swipeLeft
@@ -215,8 +214,8 @@ class Helper {
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
             val result = ArrayList(getActionableWidgetsWithoutKeyboard(state))
             val potentialLayoutWidgets = state.widgets.filterNot{result.contains(it)}.filter {
-                it.isVisible && it.childHashes.isNotEmpty()
-                        && (it.className.contains("ListView") || it.className.contains("RecyclerView"))
+                it.isVisible && (it.childHashes.isNotEmpty()
+                        && (it.className.contains("ListView") || it.className.contains("RecyclerView"))) || it.className.contains("android.webkit.WebView")
             }
             result.addAll(potentialLayoutWidgets)
             return result
@@ -280,7 +279,7 @@ class Helper {
 
             }
             if (matchedEWTGWidgets.isNotEmpty()) {
-                avm_ewtgWidgets[attributeValuationMap.avsId]=matchedEWTGWidgets.first()
+                avm_ewtgWidgets[attributeValuationMap.avmId]=matchedEWTGWidgets.first()
             }
             /*if (matchedStaticWidgets.isEmpty()
                     && (widget.className == "android.widget.RelativeLayout" || widget.className.contains("ListView") ||  widget.className.contains("RecycleView" ) ||  widget.className == "android.widget.LinearLayout"))
@@ -304,9 +303,9 @@ class Helper {
                     val attributeValuationSetId = if (getUnqualifiedResourceId(attributeValuationMap.getResourceId()).isBlank())
                         ""
                     else
-                        attributeValuationMap.avsId
+                        attributeValuationMap.avmId
                     val newWidget = EWTGWidget.getOrCreateStaticWidget(
-                            widgetId = attributeValuationMap.avsId.toString(),
+                            widgetId = attributeValuationMap.avmId.toString(),
                             resourceIdName = getUnqualifiedResourceId(attributeValuationMap.getResourceId()),
                             className = attributeValuationMap.getClassName(),
                             wtgNode = wtgNode,
@@ -315,10 +314,10 @@ class Helper {
                             attributeValuationSetId = attributeValuationSetId
                     )
                     newWidget.createdAtRuntime = true
-                    val ancestorAVMWithMatchedEWTGWidget: AttributeValuationMap? = findAncestorAVMHavingMatchedEWTGWidget(attributeValuationMap.parentAttributeValuationSetId,
+                    val ancestorAVMWithMatchedEWTGWidget: AttributeValuationMap? = findAncestorAVMHavingMatchedEWTGWidget(attributeValuationMap.parentAttributeValuationMapId,
                             avm_ewtgWidgets,wtgNode.activityClass)
                     if (ancestorAVMWithMatchedEWTGWidget!=null) {
-                        val matchedAncestorEWTGWidget = avm_ewtgWidgets.get(ancestorAVMWithMatchedEWTGWidget.avsId)!!
+                        val matchedAncestorEWTGWidget = avm_ewtgWidgets.get(ancestorAVMWithMatchedEWTGWidget.avmId)!!
                         newWidget.parent = matchedAncestorEWTGWidget
                     } else {
                         val layoutRoots = wtgNode.widgets.filter { it.parent == null && it != newWidget}
@@ -333,7 +332,7 @@ class Helper {
                     }
                     wtgNode.addWidget(newWidget)
                     matchedEWTGWidgets.add(newWidget)
-                    avm_ewtgWidgets[attributeValuationMap.avsId]=newWidget
+                    avm_ewtgWidgets[attributeValuationMap.avmId]=newWidget
                 }
             }
             return matchedEWTGWidgets.firstOrNull()
@@ -348,19 +347,19 @@ class Helper {
                     return parentAVM
                 }
             }
-            return findAncestorAVMHavingMatchedEWTGWidget(parentAVM.parentAttributeValuationSetId,avmEwtgwidgets,activity)
+            return findAncestorAVMHavingMatchedEWTGWidget(parentAVM.parentAttributeValuationMapId,avmEwtgwidgets,activity)
         }
 
         private fun verifyMatchingHierchyWindowLayout(avm: AttributeValuationMap, ewtgWidget: EWTGWidget, wtgNode: Window, avmEwtgwidgets: HashMap<String, EWTGWidget>): Double {
-            if (avm.parentAttributeValuationSetId == "" && ewtgWidget.parent == null)
+            if (avm.parentAttributeValuationMapId == "" && ewtgWidget.parent == null)
                 return 1.0
             var traversingAVM: AttributeValuationMap = avm
-            while (traversingAVM.parentAttributeValuationSetId!= "" && ewtgWidget.parent != null) {
-                if (!avmEwtgwidgets.containsKey(traversingAVM.parentAttributeValuationSetId)) {
-                    traversingAVM = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[wtgNode.activityClass]!!.get(traversingAVM.parentAttributeValuationSetId)!!
+            while (traversingAVM.parentAttributeValuationMapId!= "" && ewtgWidget.parent != null) {
+                if (!avmEwtgwidgets.containsKey(traversingAVM.parentAttributeValuationMapId)) {
+                    traversingAVM = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[wtgNode.activityClass]!!.get(traversingAVM.parentAttributeValuationMapId)!!
                     continue
                 }
-                val matchingParentWidgets = arrayListOf(avmEwtgwidgets.get(traversingAVM.parentAttributeValuationSetId)!!)
+                val matchingParentWidgets = arrayListOf(avmEwtgwidgets.get(traversingAVM.parentAttributeValuationMapId)!!)
                 var totalCorrectnessDistance = 0.0
                 matchingParentWidgets.forEach {
                     val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it, ArrayList())

@@ -187,15 +187,13 @@ class PhaseTwoStrategy (
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)
             return emptyList()
-        if (!abstractStateProbabilityByWindow.containsKey(targetWindow)) {
-            throw Exception("$targetWindow does not have a probability")
-        }
-
-        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]!!.filter { AbstractStateManager.instance.ABSTRACT_STATES.contains( it.first) }
-        //targetAbstractStatesProbability.removeIf { it.first == currentAbState }
         val targetAbstractStatesPbMap = HashMap<AbstractState,Double>()
-        targetAbstractStatesProbability.forEach {
-            targetAbstractStatesPbMap.put(it.first,it.second)
+        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]?.filter { AbstractStateManager.instance.ABSTRACT_STATES.contains( it.first) }
+        //targetAbstractStatesProbability.removeIf { it.first == currentAbState }
+        if (targetAbstractStatesProbability!=null) {
+            targetAbstractStatesProbability.forEach {
+                targetAbstractStatesPbMap.put(it.first, it.second)
+            }
         }
         if (targetAbstractStatesPbMap.isEmpty()) {
             val windowAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow!! }
@@ -394,7 +392,7 @@ class PhaseTwoStrategy (
         if (budgetLeft > 0)
             return
         val inputWidgetCount = Helper.getInputFields(currentState).size
-        val targetEvents = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow }
+        val targetEvents = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow && it.key.verifiedEventHandlers.isNotEmpty() }
         var targetEventCount = targetEvents.size
         val allInputMappings = AbstractStateManager.instance.ABSTRACT_STATES.map { it.inputMappings }
         targetEvents.filter{it.key.widget!=null}. forEach { event, _ ->
@@ -403,7 +401,8 @@ class PhaseTwoStrategy (
                 targetEventCount+=(5).toInt()
             }
         }
-        budgetLeft = (targetEventCount * (inputWidgetCount+1) * scaleFactor).toInt()
+        val undiscoverdTargetHiddenHandlers = autautMF.untriggeredTargetHandlers.filter { autautMF.windowHandlersHashMap.get(targetWindow!!)?.contains(it)?:false }
+        budgetLeft = ((targetEventCount * (inputWidgetCount+1) + undiscoverdTargetHiddenHandlers.size) * scaleFactor).toInt()
         budgetType = 1
     }
 
@@ -417,6 +416,10 @@ class PhaseTwoStrategy (
             alreadyRandomInputInTarget = false
         if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu || currentAppState.window is OutOfApp) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
+        }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
         }
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)
@@ -549,6 +552,10 @@ class PhaseTwoStrategy (
                 setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                 return true
             }
+        }
+        if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return true
         }
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)

@@ -17,7 +17,8 @@ class AbstractTransition(
         val data: Any? =null,
         var fromWTG: Boolean = false,
         val source: AbstractState,
-        val dest: AbstractState
+        val dest: AbstractState,
+        val modelVersion: ModelVersion = ModelVersion.RUNNING
 ) {
     init {
         source.abstractTransitions.add(this)
@@ -29,7 +30,7 @@ class AbstractTransition(
     val userInputs = ArrayList<HashMap<UUID,String>>()
     val statementCoverage = HashSet<String>()
     val methodCoverage = HashSet<String>()
-    val version = ModelVersion.BASE
+
     fun isExplicit() = !isImplicit
 
     fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {

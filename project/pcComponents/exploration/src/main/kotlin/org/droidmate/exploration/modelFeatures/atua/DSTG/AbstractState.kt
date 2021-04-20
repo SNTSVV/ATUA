@@ -10,6 +10,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -22,12 +23,13 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 open class AbstractState(
+        id: String? = null,
         val activity: String,
         val attributeValuationMaps: ArrayList<AttributeValuationMap> = arrayListOf(),
         val guiStates: ArrayList<State<*>> = ArrayList(),
         var window: Window,
         val EWTGWidgetMapping: HashMap<AttributeValuationMap, EWTGWidget> = HashMap(),
-        val abstractTransitions: ArrayList<AbstractTransition> = ArrayList(),
+        val abstractTransitions: HashSet<AbstractTransition> = HashSet(),
         val inputMappings: HashMap<AbstractAction, ArrayList<Input>> = HashMap(),
         val isHomeScreen: Boolean = false,
         val isOpeningKeyboard: Boolean = false,
@@ -37,24 +39,36 @@ open class AbstractState(
         var hasOptionsMenu: Boolean = true,
         var rotation: Rotation,
         var internet: InternetStatus,
-        var loaded: Boolean = false
+        var loadedFromModel: Boolean = false,
+        var modelVersion: ModelVersion = ModelVersion.RUNNING
 ) {
     val actionCount = HashMap<AbstractAction, Int>()
     val targetActions = HashSet<AbstractAction>()
 
     val abstractStateId: String
     var hashCode: Int = 0
-
+    var isInitalState = false
     init {
         abstractStateIdByWindow.putIfAbsent(window,0)
         val maxId = abstractStateIdByWindow[window]!!
-        abstractStateId = "${window}_${maxId+1}"
+        if (id==null) {
+            abstractStateId = "${window}_${maxId + 1}"
+        } else {
+            abstractStateId = id
+        }
         abstractStateIdByWindow.put(window,maxId+1)
         window.mappedStates.add(this)
         attributeValuationMaps.forEach {
             it.captured = true
         }
 
+        countAVMFrequency()
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
+    }
+    fun updateHashCode() {
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
+    }
+     fun countAVMFrequency() {
         if (!AbstractStateManager.instance.attrValSetsFrequency.containsKey(window)) {
             AbstractStateManager.instance.attrValSetsFrequency.put(window, HashMap())
         }
@@ -66,15 +80,12 @@ open class AbstractState(
                 widgetGroupFrequency[it] = widgetGroupFrequency[it]!! + 1
             }
         }
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (other !is AbstractState) {
-            return false
-        }
+    fun isStructuralEqual(other: AbstractState): Boolean {
         return hashCode == other.hashCode
     }
+
     fun initAction(){
         val resetAction = AbstractAction(
                 actionType = AbstractActionType.RESET_APP
@@ -96,10 +107,12 @@ open class AbstractState(
         )
         actionCount.put(pressBackAction, 0)
         if (window !is OptionsMenu && window !is Dialog) {
-            val pressMenuAction = AbstractAction(
-                    actionType = AbstractActionType.PRESS_MENU
-            )
-            actionCount.put(pressMenuAction, 0)
+            if (WindowManager.instance.updatedModelWindows.any { it is OptionsMenu && it.ownerActivity == this.window }) {
+                val pressMenuAction = AbstractAction(
+                        actionType = AbstractActionType.PRESS_MENU
+                )
+                actionCount.put(pressMenuAction, 0)
+            }
             val minmaxAction = AbstractAction(
                     actionType = AbstractActionType.MINIMIZE_MAXIMIZE
             )
@@ -195,7 +208,10 @@ open class AbstractState(
                     && it.key.actionType != AbstractActionType.RESET_APP
                     && it.key.actionType != AbstractActionType.ENABLE_DATA
                     && it.key.actionType != AbstractActionType.DISABLE_DATA
-                    && it.key.isWidgetAction()
+                    && it.key.actionType != AbstractActionType.WAIT
+                    && it.key.actionType != AbstractActionType.PRESS_BACK
+
+                    && !it.key.isWidgetAction()
         }
                 .map { it.key })
         val widgetActionCounts = if (currentState != null) {
@@ -349,9 +365,10 @@ open class AbstractState(
     open fun dump(parentDirectory: Path) {
         val dumpedAttributeValuationSet = ArrayList<String>()
         File(parentDirectory.resolve("AbstractState_" + abstractStateId.toString() + ".csv").toUri()).bufferedWriter().use { all ->
-            all.write(header())
+            val header = header()
+            all.write(header)
             attributeValuationMaps.forEach {
-                if (!dumpedAttributeValuationSet.contains(it.avsId)) {
+                if (!dumpedAttributeValuationSet.contains(it.avmId)) {
                     all.newLine()
                     it.dump(all, dumpedAttributeValuationSet,this)
                 }
@@ -360,7 +377,17 @@ open class AbstractState(
     }
 
     fun header(): String {
-        return "AttributeValuationSetID;className;resourceId;contentDesc;text;enabled;selected;checkable;isInputField;clickable;longClickable;scrollable;checked;isLeaf;parentId;childrenStructure;childrenText;siblingInfo;cardinality;captured;wtgWidgetMapping"
+        return "AttributeValuationSetID;parentAVMID;${localAttributesHeader()};cardinality;captured;wtgWidgetMapping;hashcode"
+    }
+
+    private fun localAttributesHeader(): String {
+        var result = ""
+        AttributeType.values().toSortedSet().forEach {
+            result+=it.toString()
+            result+=";"
+        }
+        result = result.substring(0,result.length-1)
+        return result
     }
 
     fun belongToAUT(): Boolean {
@@ -370,7 +397,7 @@ open class AbstractState(
     companion object {
         val abstractStateIdByWindow = HashMap<Window, Int>()
         fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, activity: String, rotation: Rotation, internet: InternetStatus): Int {
-            return attributeValuationMaps.sortedBy { it.avsId }.fold(emptyUUID) { id, avs ->
+            return attributeValuationMaps.sortedBy { it.avmId }.fold(emptyUUID) { id, avs ->
                 /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
                 // however different selectable auto-completion proposes are only 'rendered'
                 // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/

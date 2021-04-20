@@ -155,13 +155,11 @@ class PhaseOneStrategy(
                 .filter {
                     it !is VirtualAbstractState &&
                             !flaggedWindows.contains(it.window) &&
-
                             it.guiStates.isNotEmpty() &&
                             hasBudgetLeft(it.window)
                 }
         if (availableAbstractStates.isEmpty())
             return false
-        PathFindingHelper.allAvailableTransitionPaths.clear()
         if (availableAbstractStates.any { !isBlocked(it, currentState) }) {
             return true
         }
@@ -553,7 +551,6 @@ class PhaseOneStrategy(
                 return
             }
         }
-        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
                  setGoToTarget(goToTargetNodeTask, currentState)
             return
@@ -635,7 +632,6 @@ class PhaseOneStrategy(
             return
         }
         if (continueOrEndCurrentTask(currentState)) return
-        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
         if (goToAnotherNode.destWindow == currentAppState.window) {
             if (hasBudgetLeft2(currentState, currentAppState)) {
                 setRandomExploration(randomExplorationTask, currentState,false,true)
@@ -676,7 +672,6 @@ class PhaseOneStrategy(
             }
         }
         if (continueOrEndCurrentTask(currentState)) return
-        if (nextActionOnDialog(currentAppState, currentState, randomExplorationTask, goToTargetNodeTask)) return
         if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
             setGoToTarget(goToTargetNodeTask, currentState)
             return
@@ -739,7 +734,7 @@ class PhaseOneStrategy(
         }
         if (continueRandomExplorationIfIsFillingData(randomExplorationTask)) return
 
-        if (randomExplorationTask.stopWhenHavingTestPath && currentAppState.window !is Dialog && currentAppState.window !is OptionsMenu && currentAppState.window !is OutOfApp) {
+        if (randomExplorationTask.stopWhenHavingTestPath ) {
             if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, true,false)) {
                 setGoToTarget(goToTargetNodeTask, currentState)
                 return

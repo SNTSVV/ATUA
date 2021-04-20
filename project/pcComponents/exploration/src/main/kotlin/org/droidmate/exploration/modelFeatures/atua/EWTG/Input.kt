@@ -7,7 +7,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 open class Input (
         val eventType: EventType,
         val eventHandlers: HashSet<String>,
-        val widget: EWTGWidget?,
+        var widget: EWTGWidget?,
         var sourceWindow: Window,
         val createdAtRuntime: Boolean = false
 )
@@ -80,7 +80,10 @@ open class Input (
                     || action == EventType.dialog_dismiss.name
                     || action == EventType.dialog_cancel.name
                     || action == EventType.dialog_press_key.name
-                    || action == EventType.press_key.name)
+                    || action == EventType.press_key.name
+                    || action == EventType.implicit_launch_event.name
+                    || action == EventType.press_back.name
+                    || action == EventType.press_menu.name)
         }
 
         fun isIgnoreEvent(action: String): Boolean {

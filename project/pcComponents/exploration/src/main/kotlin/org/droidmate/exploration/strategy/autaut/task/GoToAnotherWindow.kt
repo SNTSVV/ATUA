@@ -115,7 +115,6 @@ open class GoToAnotherWindow constructor(
                 if (retryTimes <= 3*autautStrategy.budgetScale) {
                     //TODO check currentPath is valid
                     if (!PathFindingHelper.allAvailableTransitionPaths.values.any {it.contains(pathTraverser!!.transitionPath)}) {
-
                         initPossiblePaths(currentState,true)
                     } else {
                         retryTimes += 1
@@ -130,6 +129,7 @@ open class GoToAnotherWindow constructor(
             }
             else
             {
+                expectedNextAbState = pathTraverser!!.getPrevTransition()!!.dest
                 if (pathTraverser!!.finalStateAchieved()) {
                     return true
                 }
@@ -163,16 +163,16 @@ open class GoToAnotherWindow constructor(
          }
 
          if (pathTraverser!!.finalStateAchieved()) {
-             if (expectedAbstractState.window == currentAbState.window) {
+             if (pathTraverser!!.getPrevTransition()!!.dest is VirtualAbstractState) {
                  return true
              }
              return false
          }
          while (!pathTraverser!!.finalStateAchieved()) {
-             val nextTransition = pathTraverser!!.getPrevTransition()
-             if (nextTransition == null)
+             val currentTransition = pathTraverser!!.getPrevTransition()
+             if (currentTransition == null)
                  break
-             val expectedAbstractState = nextTransition.dest
+             val expectedAbstractState = currentTransition.dest
 
              if (expectedAbstractState!!.window != currentAbState!!.window) {
                  pathTraverser!!.getNextTransition()
@@ -198,31 +198,29 @@ open class GoToAnotherWindow constructor(
                      pathTraverser!!.getNextTransition()
                      continue
                  }
-                 pathTraverser!!.getNextTransition()
-             } else {
-                 val nextTransition = pathTraverser!!.transitionPath.path[pathTraverser!!.latestEdgeId!!+1]
-                 if (nextTransition!=null) {
-                     if (!nextTransition.abstractAction.isWidgetAction()) {
+             }
+             val nextTransition = pathTraverser!!.transitionPath.path[pathTraverser!!.latestEdgeId!!+1]
+             if (nextTransition!=null) {
+                 if (!nextTransition.abstractAction.isWidgetAction()) {
+                     reached = true
+                     break
+                 } else {
+                     val avm = nextTransition.abstractAction.attributeValuationMap!!
+                     if (autautMF.getRuntimeWidgets(avm, currentAbState, currentState).isNotEmpty()) {
                          reached = true
                          break
-                     } else {
-                         val avm = nextTransition.abstractAction.attributeValuationMap!!
-                         if (autautMF.getRuntimeWidgets(avm, currentAbState, currentState).isNotEmpty()) {
+                     }
+                     val staticWidget = expectedAbstractState.EWTGWidgetMapping[avm]
+                     if (staticWidget != null) {
+                         val availableWidgets = currentAbState.EWTGWidgetMapping.filter { it.value == staticWidget }
+                         if (availableWidgets.isNotEmpty()) {
                              reached = true
                              break
                          }
-                         val staticWidget = expectedAbstractState.EWTGWidgetMapping[avm]
-                         if (staticWidget != null) {
-                             val availableWidgets = currentAbState.EWTGWidgetMapping.filter { it.value == staticWidget }
-                             if (availableWidgets.isNotEmpty()) {
-                                 reached = true
-                                 break
-                             }
-                         }
                      }
                  }
-                 pathTraverser!!.getNextTransition()
              }
+             pathTraverser!!.getNextTransition()
          }
          if (reached) {
              expectedNextAbState = expectedAbstractState
@@ -411,7 +409,7 @@ open class GoToAnotherWindow constructor(
                 //log.info("Event: ${currentEdge!!.label.abstractAction.actionName} on ${currentEdge!!.label.abstractAction.widgetGroup}")
                 //Fill text input (if required)
                 //TODO Need save swipe action data
-                if (currentEdge!!.abstractAction.actionType!= AbstractActionType.TEXT_INSERT && currentEdge!!.userInputs.isNotEmpty()?:false)
+                /*if (currentEdge!!.abstractAction.actionType!= AbstractActionType.TEXT_INSERT && currentEdge!!.userInputs.isNotEmpty()?:false)
                 {
                     val inputData = currentEdge!!.userInputs.random()
                     inputData.forEach {
@@ -427,17 +425,17 @@ open class GoToAnotherWindow constructor(
                                 }
                             }
                         }
-                        /*if (regressionTestingMF.getRuntimeWidgets(it.key,currentEdge!!.source.data,currentState).isNotEmpty())
+                        *//*if (regressionTestingMF.getRuntimeWidgets(it.key,currentEdge!!.source.data,currentState).isNotEmpty())
                         {
                             // val inputWidget = regressionTestingMF.getRuntimeWidgets(it.key,currentEdge!!.source.data,currentState).random()
 
-                        }*/
+                        }*//*
                     }
                     if (fillingDataActionList.isNotEmpty())
                     {
                         isFillingText = true
                     }
-                }
+                }*/
                 if (isFillingText) {
                     return fillingDataActionList.pop()
                 }

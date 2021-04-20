@@ -77,8 +77,8 @@ data class AbstractAction (
                 return interaction.targetWidget
             }
             if (actionType == AbstractActionType.TEXT_INSERT) {
-                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState)!!
-                if (avm.localAttributes.containsKey(AttributeType.text)) {
+                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState)
+                if (avm!=null && avm.localAttributes.containsKey(AttributeType.text)) {
                     return interaction.data
                 }
                 return null

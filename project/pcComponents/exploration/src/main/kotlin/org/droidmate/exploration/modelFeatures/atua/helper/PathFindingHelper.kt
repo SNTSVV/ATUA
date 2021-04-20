@@ -342,11 +342,12 @@ class PathFindingHelper {
                 }
             }*/
 
-            val edgesFromSource = graph.edges(source).filter { it.destination!=null
+            val originaEdges = graph.edges(source)
+            val edgesFromSource = originaEdges.filter { it.destination!=null
                     && AbstractStateManager.instance.ABSTRACT_STATES.contains(it.label.dest)
                     && it.source.data.abstractTransitions.contains(it.label)
             }
-            val forwardTransitions = edgesFromSource.filter {
+           val forwardTransitions = edgesFromSource.filter {
                 it.destination != null
                         //&& it.source != it.destination
                         && it.destination!!.data.window !is FakeWindow
@@ -413,7 +414,7 @@ class PathFindingHelper {
                                 else if (includeWTG)
                                     selectedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
                                 else if (depth == 0) {
-                                    val loadedAbstractTransitions = implicitTransitions.filter { it.label.dest.loaded }
+                                    val loadedAbstractTransitions = implicitTransitions.filter { it.label.dest.loadedFromModel }
                                     selectedTransition.addAll(loadedAbstractTransitions)
                                 }
                             }

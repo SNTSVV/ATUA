@@ -1,10 +1,14 @@
 package org.droidmate.exploration.modelFeatures.atua.ewtgdiff
 
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
+import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.file.Files
@@ -13,6 +17,7 @@ import java.nio.file.Path
 class EWTGDiff private constructor(){
     val windowDifferentSets: HashMap<String,DifferentSet<Window>> = HashMap()
     val widgetDifferentSets: HashMap<String,DifferentSet<EWTGWidget>> = HashMap()
+    val transitionDifferentSets: HashMap<String, DifferentSet<Edge<Window,Input>>> = HashMap()
     fun getWidgetAdditions(): List<EWTGWidget> {
         if (widgetDifferentSets.containsKey("AdditionSet")) {
             return (widgetDifferentSets["AdditionSet"]!! as AdditionSet<EWTGWidget>).addedElements
@@ -21,11 +26,11 @@ class EWTGDiff private constructor(){
     }
     fun getWidgetReplacement(): List<EWTGWidget> {
         if (widgetDifferentSets.containsKey("ReplacementSet")) {
-            return (widgetDifferentSets["ReplacementSet"]!! as ReplacementSet<EWTGWidget>).replacedElements.map { it.replacing }
+            return (widgetDifferentSets["ReplacementSet"]!! as ReplacementSet<EWTGWidget>).replacedElements.map { it.new }
         }
         return emptyList<EWTGWidget>()
     }
-    fun loadFromFile(filePath: Path) {
+    fun loadFromFile(filePath: Path, atuamf: ATUAMF) {
         if (!Files.exists(filePath))
             return
         val jsonData = String(Files.readAllBytes(filePath))
@@ -36,6 +41,9 @@ class EWTGDiff private constructor(){
             }
             if (key == "widgetDifferences") {
                 loadWidgetDifferences(ewtgdiffJson.get(key) as JSONObject)
+            }
+            if (key == "transitionDifferences") {
+                loadTransitionDifferences(ewtgdiffJson.get(key) as JSONObject,atuamf)
             }
         }
         if (windowDifferentSets.containsKey("DeletionSet")) {
@@ -53,11 +61,36 @@ class EWTGDiff private constructor(){
         }
         if (windowDifferentSets.containsKey("ReplacementSet")) {
             for (replacement in (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements) {
-                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.replaced }.forEach {
-                    it.window = replacement.replacing
+                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.old }.forEach {
+                    it.window = replacement.new
+                }
+                atuamf.allTargetWindow_ModifiedMethods.remove(replacement.old)
+                replacement.old.widgets.filter { it.createdAtRuntime }.forEach {
+                    replacement.new.widgets.add(it)
+                    replacement.old.widgets.remove(it)
+                    it.window = replacement.new
+                }
+                replacement.old.inputs.filter { it.createdAtRuntime }.forEach {
+                    it.sourceWindow = replacement.new
+                    replacement.old.inputs.remove(it)
+                    replacement.new.inputs.add(it)
+                }
+                val toRemoveEdges = ArrayList<Edge<Window,Input>>()
+                atuamf.wtg.edges(replacement.old).forEach {
+                    atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
+                    toRemoveEdges.add(it)
+                }
+                atuamf.wtg.edges().forEach {
+                    if (it.destination?.data == replacement.old) {
+                        atuamf.wtg.add(it.source.data,replacement.new, it.label)
+                        toRemoveEdges.add(it)
+                    }
+                }
+                toRemoveEdges.forEach {
+                    atuamf.wtg.remove(it)
                 }
             }
-            val replacements = (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements.map { Pair(it.replaced,it.replacing) }.toMap()
+            val replacements = (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                 it.abstractTransitions.forEach {
                     if (replacements.contains(it.prevWindow)) {
@@ -65,14 +98,41 @@ class EWTGDiff private constructor(){
                     }
                 }
             }
+
         }
         if (windowDifferentSets.containsKey("RetainerSet")) {
             for (replacement in (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements) {
-                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.replaced }.forEach {
-                    it.window = replacement.replacing
+                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.old }.forEach {
+                    it.window = replacement.new
+                }
+                atuamf.allTargetWindow_ModifiedMethods.remove(replacement.old)
+                replacement.old.widgets.filter { it.createdAtRuntime }.forEach {
+                    replacement.old.widgets.remove(it)
+                    replacement.new.widgets.add(it)
+                    it.window = replacement.new
+                }
+                replacement.old.inputs.filter { it.createdAtRuntime }.forEach {
+                    it.sourceWindow = replacement.new
+                    replacement.old.inputs.remove(it)
+                    replacement.new.inputs.add(it)
+                }
+                val toRemoveEdges = ArrayList<Edge<Window,Input>>()
+                atuamf.wtg.edges(replacement.old).forEach {
+                    atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
+                    toRemoveEdges.add(it)
+                }
+                atuamf.wtg.edges().forEach {
+                    if (it.destination?.data == replacement.old) {
+                        atuamf.wtg.add(it.source.data,replacement.new, it.label)
+                        toRemoveEdges.add(it)
+                    }
+                }
+                toRemoveEdges.forEach {
+                    atuamf.wtg.remove(it)
                 }
             }
-            val replacements = (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements.map { Pair(it.replaced,it.replacing) }.toMap()
+
+            val replacements = (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                 it.abstractTransitions.forEach {
                     if (replacements.contains(it.prevWindow)) {
@@ -95,24 +155,38 @@ class EWTGDiff private constructor(){
         }
         if (widgetDifferentSets.containsKey("ReplacementSet")) {
             for (replacement in (widgetDifferentSets.get("ReplacementSet")!! as ReplacementSet<EWTGWidget>).replacedElements) {
+                // update avm-ewtgwidget mapping
+                replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
+                    it.widget = replacement.new
+                }
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
-                    val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.replaced }.keys
+                    val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.old }.keys
                     toBeReplacedAvms.forEach { avm->
-                        it.EWTGWidgetMapping.put(avm, replacement.replacing)
+                        it.EWTGWidgetMapping.put(avm, replacement.new)
                     }
+
                 }
             }
         }
         if (widgetDifferentSets.containsKey("RetainerSet")) {
             for (replacement in (widgetDifferentSets.get("RetainerSet")!! as RetainerSet<EWTGWidget>).replacedElements) {
+                replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
+                    it.widget = replacement.new
+                }
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
-                    val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.replaced }.keys
+                    val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.old }.keys
                     toBeReplacedAvms.forEach { avm->
-                        it.EWTGWidgetMapping.put(avm, replacement.replacing)
+                        it.EWTGWidgetMapping.put(avm, replacement.new)
                     }
                 }
             }
         }
+        if (transitionDifferentSets.containsKey("RetainerSet")) {
+            for (replacement in (transitionDifferentSets.get("RetainerSet")!! as RetainerSet<Edge<Window,Input>>).replacedElements) {
+                replacement.new.label.eventHandlers.addAll(replacement.old.label.eventHandlers)
+            }
+        }
+
         AbstractStateManager.instance.ABSTRACT_STATES.forEach {
             val toRemoveMappings = ArrayList<AttributeValuationMap>()
             it.EWTGWidgetMapping.forEach {
@@ -126,6 +200,158 @@ class EWTGDiff private constructor(){
         }
     }
 
+    private fun loadTransitionDifferences(jsonObject: JSONObject,atuamf: ATUAMF) {
+        jsonObject.keys().forEach {key->
+            if (key == "transitionAdditions") {
+                val transitionAdditionSet = AdditionSet<Edge<Window,Input>>()
+                transitionDifferentSets.put("AdditionSet",transitionAdditionSet)
+                loadTransitionAdditionSet(jsonObject.get(key) as JSONArray, transitionAdditionSet,atuamf)
+            }
+            if (key == "transitionDeletions") {
+                val transitionDeletionSet = DeletionSet<Edge<Window,Input>>()
+                transitionDifferentSets.put("DeletionSet",transitionDeletionSet)
+                loadTransitionDeletionSet(jsonObject.get(key) as JSONArray, transitionDeletionSet,atuamf)
+            }
+            if (key == "transitionReplacements") {
+                val transitionReplacementSet = ReplacementSet<Edge<Window,Input>>()
+                transitionDifferentSets.put("ReplacementSet",transitionReplacementSet)
+                loadTransitionReplacementSet(jsonObject.get(key) as JSONArray, transitionReplacementSet,atuamf)
+
+            }
+            if (key == "transitionRetainers") {
+                val transitionRetainSet = RetainerSet<Edge<Window,Input>>()
+                transitionDifferentSets.put("RetainerSet",transitionRetainSet)
+                loadTransitionRetainSet(jsonObject.get(key) as JSONArray, transitionRetainSet,atuamf)
+            }
+        }
+    }
+
+    private fun loadTransitionRetainSet(jsonArray: JSONArray, transitionRetainSet: RetainerSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+        for (item in jsonArray) {
+            val replacementJson = item as JSONObject
+            val oldTransitionFullId = replacementJson.get("oldElement").toString()
+            val newTransitionFullId = replacementJson.get("newElement").toString()
+            val oldTransition = parseTransition(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
+            val newTransition = parseTransition(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
+            if (oldTransition != null && newTransition!=null) {
+                transitionRetainSet.replacedElements.add(Replacement(oldTransition,newTransition))
+                newTransition.label.eventHandlers.addAll(oldTransition.label.eventHandlers)
+            } else {
+                val oldInput = parseInput(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
+                val newInput = parseInput(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
+                if (oldInput!=null && newInput!=null) {
+                    newInput.eventHandlers.addAll(oldInput.eventHandlers)
+                }
+            }
+        }
+    }
+
+    private fun loadTransitionReplacementSet(jsonArray: JSONArray, transitionReplacementSet: ReplacementSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+        for (item in jsonArray) {
+            val replacementJson = item as JSONObject
+            val oldTransitionFullId = replacementJson.get("oldElement").toString()
+            val newTransitionFullId = replacementJson.get("newElement").toString()
+            val oldTransition = parseTransition(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
+            val newTransition = parseTransition(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
+            if (oldTransition != null && newTransition!=null) {
+                transitionReplacementSet.replacedElements.add(Replacement(oldTransition,newTransition))
+                newTransition.label.eventHandlers.addAll(oldTransition.label.eventHandlers)
+            } else {
+                val oldInput = parseInput(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
+                val newInput = parseInput(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
+                if (oldInput!=null && newInput!=null) {
+                    newInput.eventHandlers.addAll(oldInput.eventHandlers)
+                }
+            }
+        }
+    }
+
+    private fun loadTransitionDeletionSet(jsonArray: JSONArray, transitionDeletionSet: DeletionSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+        jsonArray.forEach {item ->
+            var transition : Edge<Window,Input>? = null
+            transition = parseTransition(item.toString(), atuamf, WindowManager.instance.baseModelWindows)
+            if (transition!=null) {
+                transitionDeletionSet.deletedElements.add(transition)
+            }
+        }
+    }
+
+    private fun loadTransitionAdditionSet(jsonArray: JSONArray, transitionAdditionSet: AdditionSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+        jsonArray.forEach {item ->
+            var transition : Edge<Window,Input>? = null
+            transition = parseTransition(item.toString(), atuamf, WindowManager.instance.updatedModelWindows)
+            if (transition!=null) {
+                transitionAdditionSet.addedElements.add(transition)
+            }
+        }
+    }
+
+    private fun parseTransition(item: String, atuamf: ATUAMF, windowList: ArrayList<Window>): Edge<Window, Input>? {
+        var transition: Edge<Window,Input>? = null
+        val transitionFullId = item.toString()
+        val split = transitionFullId.split("_")
+        val sourceWindowId = split[0]!!.replace("WIN", "")
+        val destWindowId = split[1]!!.replace("WIN", "")
+        val action = split[2]!!.replace("-","_")
+        if (!Input.isIgnoreEvent(action)) {
+            var widgetId = ""
+            var ignoreWidget = false
+            if (Input.isNoWidgetEvent(action)) {
+                ignoreWidget = true
+            } else {
+                widgetId = split[3]!!.replace("WID", "")
+            }
+            val sourceWindow = windowList.find { it.windowId == sourceWindowId }
+            val destWindow = windowList.find { it.windowId == destWindowId }
+            if (sourceWindow == null || destWindow == null)
+                return transition
+            val widget = if (ignoreWidget)
+                null
+            else
+                sourceWindow.widgets.find { it.widgetId == widgetId }
+            val input = sourceWindow.inputs.find {
+                it.eventType == EventType.valueOf(action)
+                        && it.widget == widget
+            }
+            transition = atuamf.wtg.edges(sourceWindow).find {
+                it.destination?.data == destWindow
+                        && it.label == input
+            }
+
+        }
+        return transition
+    }
+
+    private fun parseInput(item: String, atuamf: ATUAMF, windowList: ArrayList<Window>): Input? {
+        var input: Input? = null
+        val transitionFullId = item.toString()
+        val split = transitionFullId.split("_")
+        val sourceWindowId = split[0]!!.replace("WIN", "")
+        val destWindowId = split[1]!!.replace("WIN", "")
+        val action = split[2]!!.replace("-","_")
+        if (!Input.isIgnoreEvent(action)) {
+            var widgetId = ""
+            var ignoreWidget = false
+            if (Input.isNoWidgetEvent(action)) {
+                ignoreWidget = true
+            } else {
+                widgetId = split[3]!!.replace("WID", "")
+            }
+            val sourceWindow = windowList.find { it.windowId == sourceWindowId }
+            val destWindow = windowList.find { it.windowId == destWindowId }
+            if (sourceWindow == null || destWindow == null)
+                return input
+            val widget = if (ignoreWidget)
+                null
+            else
+                sourceWindow.widgets.find { it.widgetId == widgetId }
+            input = sourceWindow.inputs.find {
+                it.eventType == EventType.valueOf(action)
+                        && it.widget == widget
+            }
+        }
+        return input
+    }
     private fun loadWidgetDifferences(jsonObject: JSONObject) {
         jsonObject.keys().forEach {key->
             if (key == "widgetAdditions") {

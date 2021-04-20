@@ -39,3 +39,10 @@ buildSrc
 out
 out
 .gradle
+project/deviceComponents/deviceControlDaemon/build
+project/deviceComponents/deviceControlDaemon/build
+project/pcComponents/core/build
+project/pcComponents/core/out
+project/pcComponents/exploration/build
+.DS_Store
+out

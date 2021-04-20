@@ -115,14 +115,62 @@ data class AttributePath (
      * Write in csv
      */
     fun dump(): String {
-        return "${attributePathId};${localAttributes.get(AttributeType.className)};${localAttributes.get(AttributeType.resourceId)};" +
+        val dumpedString = listOf<String>(attributePathId.toString(),dumpParentAttributePathId(),dumpLocalAttributes()
+        ).joinToString(";")
+        //loadDumpedString(dumpedString)
+        return dumpedString
+       /* return "${attributePathId};${localAttributes.get(AttributeType.className)};${localAttributes.get(AttributeType.resourceId)};" +
                 "${localAttributes.get(AttributeType.contentDesc)};${localAttributes.get(AttributeType.text)};${localAttributes.get(AttributeType.enabled)};" +
                 "${localAttributes.get(AttributeType.selected)};${localAttributes.get(AttributeType.checked)!=null};${localAttributes.get(AttributeType.isInputField)};" +
                 "${localAttributes.get(AttributeType.clickable)};${localAttributes.get(AttributeType.longClickable)};${localAttributes.get(AttributeType.scrollable)};" +
                 "${localAttributes.get(AttributeType.checked)};${localAttributes.get(AttributeType.isLeaf)};" +
-                "${if(parentAttributePathId== emptyUUID)"null" else parentAttributePathId};\"${childAttributePathIds.joinToString(";")}\""
+                "${if(parentAttributePathId== emptyUUID)"null" else parentAttributePathId};\"${childAttributePathIds.joinToString(";")}\""*/
     }
 
+    private fun dumpParentAttributePathId(): String {
+        return if(parentAttributePathId== emptyUUID)
+            "null"
+            else parentAttributePathId.toString()
+    }
+
+    private fun dumpLocalAttributes(): String {
+        var result = ""
+        var first = true
+        AttributeType.values().toSortedSet().forEach { attributeType ->
+            val value = localAttributes.get(attributeType)
+            if (value==null) {
+                result+= "null"
+            } else {
+                result += dumpAttributeValueToString(attributeType, value)
+            }
+            result+=";"
+        }
+        result = result.substring(0,result.length-1)
+        return result
+    }
+    fun dumpAttributeValueToString(attributeType: AttributeType,value: Any?): String {
+        return when (attributeType) {
+            AttributeType.resourceId -> value as String
+            AttributeType.className -> value as String
+            AttributeType.contentDesc -> value as String
+            AttributeType.text -> value as String
+            AttributeType.checkable -> value.toString()
+            AttributeType.enabled -> value.toString()
+            AttributeType.password -> value.toString()
+            AttributeType.selected -> value.toString()
+            AttributeType.isInputField -> value.toString()
+            //interactive
+            AttributeType.clickable -> value.toString()
+            AttributeType.longClickable -> value.toString()
+            AttributeType.scrollable -> value.toString()
+            AttributeType.scrollDirection -> value.toString()
+            AttributeType.checked -> value.toString()
+            AttributeType.isLeaf -> value.toString()
+            AttributeType.childrenStructure -> "\""+value.toString()+"\""
+            AttributeType.childrenText -> "\""+value.toString()+"\""
+            AttributeType. siblingsInfo -> "\""+value.toString()+"\""
+        }
+    }
     companion object {
         val allAttributePaths = HashMap<String, HashMap<UUID, AttributePath>>()
 

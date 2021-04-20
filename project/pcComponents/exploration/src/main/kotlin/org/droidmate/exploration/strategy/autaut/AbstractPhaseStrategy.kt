@@ -6,6 +6,7 @@ import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
@@ -13,6 +14,7 @@ import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.explorationModel.interaction.State
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.exp
 
 abstract class AbstractPhaseStrategy(
         val atuaTestingStrategy: ATUATestingStrategy,
@@ -40,12 +42,22 @@ abstract class AbstractPhaseStrategy(
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (currentAbstractState==null)
             return transitionPaths
-        val targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow
-                && it != currentAbstractState
+        var targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+            it.window == targetWindow
+                    && it != currentAbstractState
+                    && it !is VirtualAbstractState
         }.toHashSet()
         if (explore) {
-            targetStates.removeIf { it.guiStates.all { autautMF.getUnexploredWidget(it).isEmpty() } }
+            targetStates.removeIf { it.getUnExercisedActions(null).isEmpty() }
+            if (targetStates.isEmpty()) {
+                targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                    it.window == targetWindow
+                            && it != currentAbstractState
+                            && it.guiStates.all { autautMF.getUnexploredWidget(it).isNotEmpty() }
+                }.toHashSet()
+            }
         }
+
         val stateByActionCount = HashMap<AbstractState,Double>()
         targetStates.forEach {
 //            val unExercisedActionsSize = it.getUnExercisedActions(null).filter { it.widgetGroup!=null }.size

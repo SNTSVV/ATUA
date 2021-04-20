@@ -29,18 +29,18 @@ class RandomExplorationTask constructor(
         atuaTestingStrategy: ATUATestingStrategy,
         delay: Long, useCoordinateClicks: Boolean,
         private var randomScroll: Boolean,
-        private var maximumAttempt: Int): AbstractStrategyTask(atuaTestingStrategy,regressionTestingMF,delay, useCoordinateClicks){
-    private val MAX_ATTEMP_EACH_EXECUTION=10
-    private var prevAbState: AbstractState?=null
+        private var maximumAttempt: Int) : AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF, delay, useCoordinateClicks) {
+    private val MAX_ATTEMP_EACH_EXECUTION = 10
+    private var prevAbState: AbstractState? = null
     private val BACK_PROB = 0.1
     private val PRESSMENU_PROB = 0.2
     private val ROTATE_PROB = 0.05
     private val SWIPE_PROB = 0.5
     private val clickNavigationUpTask = ClickNavigationUpTask(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
-    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF,atuaTestingStrategy, delay, useCoordinateClicks)
+    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
 
     var goToLockedWindowTask: GoToAnotherWindow? = null
-    protected var openNavigationBarTask = OpenNavigationBarTask.getInstance(regressionTestingMF,atuaTestingStrategy,delay, useCoordinateClicks)
+    protected var openNavigationBarTask = OpenNavigationBarTask.getInstance(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
     var fillingData = false
     private var dataFilled = false
     private var initialExerciseCount = -1
@@ -60,8 +60,8 @@ class RandomExplorationTask constructor(
     val recentActions = ArrayList<AbstractAction>()
     override fun reset() {
         attemptCount = 0
-        prevAbState=null
-        isFullyExploration=false
+        prevAbState = null
+        isFullyExploration = false
         initialExerciseCount = -1
         currentExerciseCount = -1
         dataFilled = false
@@ -80,9 +80,10 @@ class RandomExplorationTask constructor(
 
     override fun initialize(currentState: State<*>) {
         reset()
-        setMaxiumAttempt(currentState,MAX_ATTEMP_EACH_EXECUTION)
+        setMaxiumAttempt(currentState, MAX_ATTEMP_EACH_EXECUTION)
     }
-    fun lockTargetWindow (window: Window) {
+
+    fun lockTargetWindow(window: Window) {
         lockedWindow = window
 
     }
@@ -93,8 +94,7 @@ class RandomExplorationTask constructor(
 /*        if (fillingData == true) {
             return false
         }*/
-        if (attemptCount >= maximumAttempt)
-        {
+        if (attemptCount >= maximumAttempt) {
             return true
         }
         /*if (isFullyExploration)
@@ -112,16 +112,17 @@ class RandomExplorationTask constructor(
 
         }*/
         return false
-       /* if (initialExerciseCount < currentExerciseCount-1)
-            return true*/
+        /* if (initialExerciseCount < currentExerciseCount-1)
+             return true*/
     }
 
-    fun setMaxiumAttempt(currentState: State<*>, attempt: Int){
-        val actionBasedAttempt = (autautMF.getAbstractState(currentState)?.getUnExercisedActions(currentState)?.size?:1)
-        maximumAttempt = min(actionBasedAttempt,attempt)
+    fun setMaxiumAttempt(currentState: State<*>, attempt: Int) {
+        val actionBasedAttempt = (autautMF.getAbstractState(currentState)?.getUnExercisedActions(currentState)?.size
+                ?: 1)
+        maximumAttempt = min(actionBasedAttempt, attempt)
     }
 
-    fun setMaxiumAttempt(attempt: Int){
+    fun setMaxiumAttempt(attempt: Int) {
         maximumAttempt = attempt
     }
 
@@ -129,9 +130,9 @@ class RandomExplorationTask constructor(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-     var attemptCount = 0
+    var attemptCount = 0
     override fun isAvailable(currentState: State<*>): Boolean {
-       return true
+        return true
     }
 
     override fun chooseWidgets(currentState: State<*>): List<Widget> {
@@ -164,9 +165,8 @@ class RandomExplorationTask constructor(
         }*/
         val visibleWidgets: List<Widget>
         visibleWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
-        if (currentState.widgets.filter { it.className == "android.webkit.WebView" }.isNotEmpty())
-        {
-            return ArrayList(currentState.widgets.filter { it.className == "android.webkit.WebView"}).also {it.addAll(visibleWidgets) }
+        if (currentState.widgets.filter { it.className == "android.webkit.WebView" }.isNotEmpty()) {
+            return ArrayList(currentState.widgets.filter { it.className == "android.webkit.WebView" }).also { it.addAll(visibleWidgets) }
         }
         /*if (random.nextInt(100)/100.toDouble()<0.5)
         {
@@ -181,7 +181,7 @@ class RandomExplorationTask constructor(
             return visibleWidgets
         }
         //when DM2 provides incorrect information
-        return currentState.widgets.filterNot { it.isKeyboard}
+        return currentState.widgets.filterNot { it.isKeyboard }
     }
 
     var tryLastAction = 0
@@ -191,9 +191,8 @@ class RandomExplorationTask constructor(
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
         val currentAbstractState = autautMF.getAbstractState(currentState)!!
-        val prevAbstractState = if (autautMF.appPrevState!=null)
-            autautMF.getAbstractState(autautMF.appPrevState!!)?:
-                    currentAbstractState
+        val prevAbstractState = if (autautMF.appPrevState != null)
+            autautMF.getAbstractState(autautMF.appPrevState!!) ?: currentAbstractState
         else
             currentAbstractState
 
@@ -201,25 +200,27 @@ class RandomExplorationTask constructor(
             return dealWithCamera(currentState)
         }
         isClickedShutterButton = false
-        if (lockedWindow != null && lockedWindow!!.activityClass != currentAbstractState.activity) {
-            if (goToLockedWindowTask != null) {
-                // should go back to target Window
-                //reset data filling
+        if (goToLockedWindowTask != null) {
+            // should go back to target Window
+            //reset data filling
 
-                if (!goToLockedWindowTask!!.isTaskEnd(currentState)) {
-                    return goToLockedWindowTask!!.chooseAction(currentState)
-                }
-            } else {
+            if (!goToLockedWindowTask!!.isTaskEnd(currentState)) {
+                return goToLockedWindowTask!!.chooseAction(currentState)
+            }
+        } else {
+            if (lockedWindow != null && lockedWindow!!.activityClass != currentAbstractState.activity) {
+
                 if (currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu && currentAbstractState.window !is OutOfApp) {
                     dataFilled = false
                     goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
-                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true,false,false)) {
+                    if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true, false, false)) {
                         goToLockedWindowTask!!.initialize(currentState)
                         return goToLockedWindowTask!!.chooseAction(currentState)
                     }
                 }
             }
         }
+
         goToLockedWindowTask = null
         val lastActionType = autautStrategy.eContext.getLastActionType()
 /*        if (lastActionType != "ResetApp" && lastActionType != "LaunchApp") {
@@ -233,10 +234,10 @@ class RandomExplorationTask constructor(
         if (currentState.widgets.any { it.isKeyboard }) {
             val actionableWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
             if (actionableWidgets.isEmpty()) {
-                 //if keyboard is openning but there 's no special actions
+                //if keyboard is openning but there 's no special actions
                 //give a 50/50 chance to do a random click on keyboard
                 if (random.nextBoolean()) {
-                    return doRandomKeyboard(currentState,null)!!
+                    return doRandomKeyboard(currentState, null)!!
                 }
                 //find search button
                 val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
@@ -262,7 +263,7 @@ class RandomExplorationTask constructor(
         }
         if (currentAbstractState.window.activityClass == "com.oath.mobile.platform.phoenix.core.TrapActivity") {
             if (currentState.visibleTargets.any { it.text == "I agree" || it.text == "Save and continue" }) {
-                return currentState.visibleTargets.find { it.text == "I agree"|| it.text == "Save and continue" }!!.click()
+                return currentState.visibleTargets.find { it.text == "I agree" || it.text == "Save and continue" }!!.click()
             }
         }
         if (currentAbstractState.rotation == Rotation.LANDSCAPE) {
@@ -332,7 +333,7 @@ class RandomExplorationTask constructor(
         }
         attemptCount++
         var randomAction: AbstractAction? = null
-        if (lastAction!=null
+        if (lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && prevAbstractState != currentAbstractState
                 && prevAbstractState.window == currentAbstractState.window
@@ -342,9 +343,9 @@ class RandomExplorationTask constructor(
                 && currentAbstractState.getAvailableActions().contains(lastAction!!)
         ) {
             tryLastAction = 1
-            maximumAttempt+=1
+            maximumAttempt += 1
             randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
-        } else if (lastAction!=null
+        } else if (lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && autautMF.appPrevState!! != currentState
                 && (prevAbstractState == currentAbstractState ||
@@ -357,21 +358,19 @@ class RandomExplorationTask constructor(
                 && lastAction!!.extra == "SwipeTillEnd"*/
                 && currentAbstractState.getAvailableActions().contains(lastAction!!)) {
             tryLastAction += 1
-            maximumAttempt+=1
+            maximumAttempt += 1
             randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
-        }
-        else {
+        } else {
             tryLastAction = 0
             //val widgetActions = currentAbstractState.getAvailableActions().filter { it.widgetGroup != null }
             val unexercisedActions = currentAbstractState.getUnExercisedActions(currentState).filterNot { it.isCheckableOrTextInput() }
             val lowestPriorityActions = unexercisedActions.filter {
-                        it.attributeValuationMap == null
+                it.attributeValuationMap == null
             }
-            if (unexercisedActions.filterNot { lowestPriorityActions.contains(it) } .isNotEmpty()) {
+            if (unexercisedActions.filterNot { lowestPriorityActions.contains(it) }.isNotEmpty()) {
                 randomAction = exerciseUnexercisedWidgetAbstractActions(unexercisedActions.filterNot { lowestPriorityActions.contains(it) }, randomAction, currentAbstractState)
                 //randomAction = unexercisedActions.random()
-            }
-            else if (unexercisedActions.isNotEmpty()) {
+            } else if (unexercisedActions.isNotEmpty()) {
                 randomAction = if (unexercisedActions.any { it.attributeValuationMap != null }) {
                     // Swipe on widget should be executed by last
                     val widgetActions = unexercisedActions.filter { it.attributeValuationMap != null }
@@ -379,10 +378,16 @@ class RandomExplorationTask constructor(
                 } else {
                     unexercisedActions.random()
                 }
-            }
-            else {
+            } else {
+
+                goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
+                if (goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, true, true)) {
+                    goToLockedWindowTask!!.initialize(currentState)
+                    return goToLockedWindowTask!!.chooseAction(currentState)
+                }
+                goToLockedWindowTask = null
                 lastAction = null
-                if (random.nextDouble()<0.1) {
+                if (random.nextDouble() < 0.1) {
                     val abstractActions = currentAbstractState.getAvailableActions().filter {
                         !it.isWidgetAction() && !recentActions.contains(it) && !it.isLaunchOrReset()
                     }
@@ -423,10 +428,9 @@ class RandomExplorationTask constructor(
                         val chosenWidget = lessExercisedWidgets.random()
                         log.info("Widget: $chosenWidget")
                         return doRandomActionOnWidget(chosenWidget, currentState)
-                    }
-                    else {
+                    } else {
                         // TODO: we shoudl try actions that are believed to enable unexplored widgets
-                        val bestCandidate = autautMF.getCandidateAction(currentState,delay,useCoordinateClicks)
+                        val bestCandidate = autautMF.getCandidateAction(currentState, delay, useCoordinateClicks)
                         log.info("Widget: ${bestCandidate.second}")
                         return bestCandidate.first
                     }
@@ -441,53 +445,53 @@ class RandomExplorationTask constructor(
                     }*/
                 }
             }
-        /*    else if(( Helper.getVisibleInteractableWidgets(currentState)
-                            .filterNot { it.isInputField || it.checked.isEnabled()  }.any {
-                            runBlocking { autautStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
-                        }
-                    && !isFullyExploration) ) {
-                lastAction = null
-                val visibleTargets = Helper.getVisibleInteractableWidgets(currentState)
-                        .filterNot { it.isInputField || it.checked.isEnabled() }
-                val candidates = runBlocking { getCandidates(visibleTargets
-                )}
+            /*    else if(( Helper.getVisibleInteractableWidgets(currentState)
+                                .filterNot { it.isInputField || it.checked.isEnabled()  }.any {
+                                runBlocking { autautStrategy.getActionCounter().widgetCntForState(it.uid,currentState.uid) == 0 }
+                            }
+                        && !isFullyExploration) ) {
+                    lastAction = null
+                    val visibleTargets = Helper.getVisibleInteractableWidgets(currentState)
+                            .filterNot { it.isInputField || it.checked.isEnabled() }
+                    val candidates = runBlocking { getCandidates(visibleTargets
+                    )}
 
-                val chosenWidget = candidates.random()
-                log.info("Widget: $chosenWidget")
+                    val chosenWidget = candidates.random()
+                    log.info("Widget: $chosenWidget")
 
-                var actionList = if (chosenWidget.visibleBounds.width > 200 && chosenWidget.visibleBounds.height > 200 ) {
-                    ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks))
+                    var actionList = if (chosenWidget.visibleBounds.width > 200 && chosenWidget.visibleBounds.height > 200 ) {
+                        ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks))
+                    } else {
+                        ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
+                    }
+                    if (actionList.isNotEmpty())
+                    {
+                        val maxVal = actionList.size
+
+                        assert(maxVal > 0) { "No actions can be performed on the widget $chosenWidget" }
+
+                        val randomIdx = random.nextInt(maxVal)
+                        val randomAction = chooseActionWithName(AbstractActionType.values().find { it.actionName.equals(actionList[randomIdx].name)}!!, "" ,chosenWidget, currentState,null)
+                        log.info("$randomAction")
+                        return randomAction?:ExplorationAction.pressBack().also { log.info("Action null -> PressBack") }
+                    }
+                    else
+                    {
+                        ExplorationTrace.widgetTargets.clear()
+                        return autautStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
+                    }
                 } else {
-                    ArrayList(chosenWidget.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe })
-                }
-                if (actionList.isNotEmpty())
-                {
-                    val maxVal = actionList.size
+                    val allActions = currentAbstractState.getAvailableActions().filterNot {
+                                it.actionType == AbstractActionType.ENABLE_DATA
+                                || it.actionType == AbstractActionType.DISABLE_DATA
+                                        || it.actionType==AbstractActionType.LAUNCH_APP
+                                        || it.actionType==AbstractActionType.RESET_APP
+                                        || it.actionType==AbstractActionType.ROTATE_UI
+                                        || it.isCheckableOrTextInput()
+                    }
 
-                    assert(maxVal > 0) { "No actions can be performed on the widget $chosenWidget" }
-
-                    val randomIdx = random.nextInt(maxVal)
-                    val randomAction = chooseActionWithName(AbstractActionType.values().find { it.actionName.equals(actionList[randomIdx].name)}!!, "" ,chosenWidget, currentState,null)
-                    log.info("$randomAction")
-                    return randomAction?:ExplorationAction.pressBack().also { log.info("Action null -> PressBack") }
-                }
-                else
-                {
-                    ExplorationTrace.widgetTargets.clear()
-                    return autautStrategy.eContext.navigateTo(chosenWidget, {it.click()})?:ExplorationAction.pressBack()
-                }
-            } else {
-                val allActions = currentAbstractState.getAvailableActions().filterNot {
-                            it.actionType == AbstractActionType.ENABLE_DATA
-                            || it.actionType == AbstractActionType.DISABLE_DATA
-                                    || it.actionType==AbstractActionType.LAUNCH_APP
-                                    || it.actionType==AbstractActionType.RESET_APP
-                                    || it.actionType==AbstractActionType.ROTATE_UI
-                                    || it.isCheckableOrTextInput()
-                }
-
-                val interestingActions = ArrayList<AbstractAction>()
-                *//*val condition = Helper.extractInputFieldAndCheckableWidget(currentState)
+                    val interestingActions = ArrayList<AbstractAction>()
+                    *//*val condition = Helper.extractInputFieldAndCheckableWidget(currentState)
                 val widgetActions = allActions.filter { it.isWidgetAction() }
 
                 if (condition.isNotEmpty()) {
@@ -538,7 +542,7 @@ class RandomExplorationTask constructor(
                 if (chosenWidgets.isEmpty()) {
                     chosenWidget = null
                 } else {
-                    val candidates = runBlocking { getCandidates(chosenWidgets)}
+                    val candidates = runBlocking { getCandidates(chosenWidgets) }
                     chosenWidget = if (candidates.isEmpty())
                         chosenWidgets.random()
                     else
@@ -558,7 +562,7 @@ class RandomExplorationTask constructor(
                 val actionType = randomAction.actionType
                 log.debug("Action: $actionType")
                 val chosenAction = when (actionType) {
-                    AbstractActionType.SEND_INTENT-> chooseActionWithName(actionType, randomAction.extra, null, currentState, randomAction)
+                    AbstractActionType.SEND_INTENT -> chooseActionWithName(actionType, randomAction.extra, null, currentState, randomAction)
                     AbstractActionType.ROTATE_UI -> chooseActionWithName(actionType, 90, null, currentState, randomAction)
                     else -> chooseActionWithName(actionType, randomAction.extra
                             ?: "", chosenWidget, currentState, randomAction)
@@ -619,7 +623,6 @@ class RandomExplorationTask constructor(
     }
 
 
-
     private fun getActionScores(currentAbstractState: AbstractState, allActions: List<AbstractAction>, actionScore: HashMap<AbstractAction, Double>, currentState: State<*>) {
         val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[currentAbstractState.window]!!
         val similarAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == currentAbstractState.window }
@@ -630,7 +633,7 @@ class RandomExplorationTask constructor(
             var actionPotentialScore = pair.second
 
             val actionCount = currentAbstractState.getActionCount(action)
-            actionScore.put(action,action.getScore()*actionPotentialScore/actionCount)
+            actionScore.put(action, action.getScore() * actionPotentialScore / actionCount)
 
             /*if (widgetGroup == null) {
                 val score = actionPotentialScore * action.getScore() / (numboerOfAbstractStates * actionCount.toDouble())
@@ -652,7 +655,7 @@ class RandomExplorationTask constructor(
             val pair = computeActionPotentialScore2(action, currentAbstractState)
             var actionPotentialScore = pair.second
             val actionCount = currentAbstractState.getActionCount(action)
-            actionScore.put(action,action.getScore()*actionPotentialScore/(actionCount*5))
+            actionScore.put(action, action.getScore() * actionPotentialScore / (actionCount * 5))
         }
     }
 
@@ -667,7 +670,7 @@ class RandomExplorationTask constructor(
 
         goToHomeEdges.forEach {
             if (!it.label.isImplicit) {
-                actionPotentialScore /= (10* it.label.interactions.size)
+                actionPotentialScore /= (10 * it.label.interactions.size)
             } else
                 actionPotentialScore /= 5
         }
@@ -712,17 +715,17 @@ class RandomExplorationTask constructor(
         val considerDeadEdges = true
         if (considerDeadEdges) {
             val deadEdges =
-                autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
-                    edge.label.abstractAction == action
-                            && edge.source.data == edge.destination?.data
-                            && edge.destination?.data !is VirtualAbstractState
-                            && edge.destination?.data?.window !is OutOfApp
-                }
+                    autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+                        edge.label.abstractAction == action
+                                && edge.source.data == edge.destination?.data
+                                && edge.destination?.data !is VirtualAbstractState
+                                && edge.destination?.data?.window !is OutOfApp
+                    }
             deadEdges.forEach {
                 if (it.label.isImplicit)
                     actionPotentialScore /= (5)
                 if (!it.label.isImplicit)
-                    actionPotentialScore/=(10*it.label.interactions.size)
+                    actionPotentialScore /= (10 * it.label.interactions.size)
 
             }
         }
@@ -740,7 +743,7 @@ class RandomExplorationTask constructor(
         }
         goToHomeEdges.forEach {
             if (!it.label.isImplicit) {
-                actionPotentialScore /= (10* it.label.interactions.size)
+                actionPotentialScore /= (10 * it.label.interactions.size)
             } else
                 actionPotentialScore /= 2
         }
@@ -783,14 +786,13 @@ class RandomExplorationTask constructor(
                             && edge.destination?.data !is VirtualAbstractState
                             && edge.destination?.data?.window !is OutOfApp
                             && edge.destination?.data?.window !is Launcher
-                            && it.label.isExplicit()}
-                if (liveEdge.size>0) {
+                            && it.label.isExplicit()
+                }
+                if (liveEdge.size > 0) {
                     actionPotentialScore *= (liveEdge.size)
                 }
             }
         }
-
-
 
 
         val considerDeadEdges = true
@@ -807,7 +809,7 @@ class RandomExplorationTask constructor(
                 if (it.label.isImplicit)
                     actionPotentialScore /= (2)
                 if (!it.label.isImplicit)
-                    actionPotentialScore/=(10*it.label.interactions.size)
+                    actionPotentialScore /= (10 * it.label.interactions.size)
 
             }
         }
@@ -832,14 +834,14 @@ class RandomExplorationTask constructor(
                 var actionScore = it.getScore()
                 val widgetGroup = it.attributeValuationMap!!
                 if (windowWidgetFrequency.containsKey(widgetGroup)) {
-                    actionByScore.put(it, actionScore.toDouble()/windowWidgetFrequency[widgetGroup]!!)
+                    actionByScore.put(it, actionScore.toDouble() / windowWidgetFrequency[widgetGroup]!!)
                 } else {
                     actionByScore.put(it, actionScore.toDouble())
                 }
             }
 
             if (actionByScore.isNotEmpty()) {
-                actionByScore.filter { it.value == actionByScore.map { it.value }. maxBy {it} }.map { it.key }.random()
+                actionByScore.filter { it.value == actionByScore.map { it.value }.maxBy { it } }.map { it.key }.random()
             } else {
                 candidateActions.random()
             }
@@ -851,14 +853,13 @@ class RandomExplorationTask constructor(
 
 
     override fun hasAnotherOption(currentState: State<*>): Boolean {
-       return false
+        return false
     }
-
 
 
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
-        var executedCount:Int = 0
+        var executedCount: Int = 0
         var instance: RandomExplorationTask? = null
         fun getInstance(regressionTestingMF: ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
@@ -867,7 +868,7 @@ class RandomExplorationTask constructor(
                         randomScroll: Boolean = true,
                         maximumAttempt: Int = 1): RandomExplorationTask {
             if (instance == null) {
-                instance = RandomExplorationTask(regressionTestingMF,atuaTestingStrategy,
+                instance = RandomExplorationTask(regressionTestingMF, atuaTestingStrategy,
                         delay, useCoordinateClicks, randomScroll, maximumAttempt)
             }
             return instance!!

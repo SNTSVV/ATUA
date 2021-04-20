@@ -5,6 +5,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV1
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV2
@@ -123,7 +124,7 @@ class AbstractionFunction (val root: DecisionNode) {
 
             abandonedAbstractTransitions.forEach { tripple->
                 all.newLine()
-                all.write("${tripple.source.activity};${tripple.abstractAction.attributeValuationMap!!.avsId};${tripple.abstractAction.actionType}")
+                all.write("${tripple.source.activity};${tripple.abstractAction.attributeValuationMap!!.avmId};${tripple.abstractAction.actionType}")
             }
         }
     }
@@ -146,9 +147,17 @@ class AbstractionFunction (val root: DecisionNode) {
     }
 
     private fun header(): String  {
-        return "Activity;AttributeValuationSetID;className;resourceId;contentDesc;text;enabled;selected;checkable;isInputField;clickable;longClickable;scrollable;checked;isLeaf;parentId;childId"
+        return "Activity;AttributeValuationSetID;parentAttributeValutionSetID;${localAttributesHeader()}"
     }
-
+    private fun localAttributesHeader(): String {
+        var result = ""
+        AttributeType.values().toSortedSet().forEach {
+            result+=it.toString()
+            result+=";"
+        }
+        result = result.substring(0,result.length-1)
+        return result
+    }
 
     companion object{
         var INSTANCE: AbstractionFunction
