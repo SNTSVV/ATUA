@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -72,17 +73,19 @@ data class AbstractAction (
     }
 
     companion object {
-        fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState): Any? {
+        fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState, atuaMF: ATUAMF): Any? {
             if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
                 return interaction.targetWidget
             }
             if (actionType == AbstractActionType.TEXT_INSERT) {
-                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState)
+                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState,atuaMF)
                 if (avm!=null && avm.localAttributes.containsKey(AttributeType.text)) {
                     return interaction.data
                 }
                 return null
             }
+            if (actionType == AbstractActionType.SEND_INTENT)
+                return interaction.data
             if (actionType != AbstractActionType.SWIPE) {
                 return null
             }

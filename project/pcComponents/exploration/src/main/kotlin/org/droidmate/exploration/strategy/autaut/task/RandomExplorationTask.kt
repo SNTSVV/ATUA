@@ -12,6 +12,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
@@ -37,7 +38,7 @@ class RandomExplorationTask constructor(
     private val ROTATE_PROB = 0.05
     private val SWIPE_PROB = 0.5
     private val clickNavigationUpTask = ClickNavigationUpTask(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
-    private val fillDataTask = PrepareContextTask.getInstance(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
+    private val fillDataTask = PrepareContextTask(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
 
     var goToLockedWindowTask: GoToAnotherWindow? = null
     protected var openNavigationBarTask = OpenNavigationBarTask.getInstance(regressionTestingMF, atuaTestingStrategy, delay, useCoordinateClicks)
@@ -47,7 +48,7 @@ class RandomExplorationTask constructor(
     private var currentExerciseCount = -1
     var reset = false
     var backAction = true
-    var isFullyExploration: Boolean = false
+    var isPureRandom: Boolean = false
     var recentChangedSystemConfiguration: Boolean = false
     var environmentChange: Boolean = false
     var alwaysUseRandomInput: Boolean = false
@@ -58,10 +59,14 @@ class RandomExplorationTask constructor(
     var isScrollToEnd = false
 
     val recentActions = ArrayList<AbstractAction>()
+
+    init {
+        reset()
+    }
     override fun reset() {
         attemptCount = 0
         prevAbState = null
-        isFullyExploration = false
+        isPureRandom = false
         initialExerciseCount = -1
         currentExerciseCount = -1
         dataFilled = false
@@ -75,7 +80,7 @@ class RandomExplorationTask constructor(
         triedRandomKeyboard = false
         stopWhenHavingTestPath = false
         recentActions.clear()
-
+        recentGoToExploreState = false
     }
 
     override fun initialize(currentState: State<*>) {
@@ -91,9 +96,9 @@ class RandomExplorationTask constructor(
     override fun isTaskEnd(currentState: State<*>): Boolean {
         if (isCameraOpening(currentState))
             return false
-/*        if (fillingData == true) {
+        if (fillingData == true) {
             return false
-        }*/
+        }
         if (attemptCount >= maximumAttempt) {
             return true
         }
@@ -117,7 +122,7 @@ class RandomExplorationTask constructor(
     }
 
     fun setMaxiumAttempt(currentState: State<*>, attempt: Int) {
-        val actionBasedAttempt = (autautMF.getAbstractState(currentState)?.getUnExercisedActions(currentState)?.size
+        val actionBasedAttempt = (atuaMF.getAbstractState(currentState)?.getUnExercisedActions(currentState,atuaMF)?.size
                 ?: 1)
         maximumAttempt = min(actionBasedAttempt, attempt)
     }
@@ -181,18 +186,18 @@ class RandomExplorationTask constructor(
             return visibleWidgets
         }
         //when DM2 provides incorrect information
-        return currentState.widgets.filterNot { it.isKeyboard }
+        return emptyList()
     }
 
     var tryLastAction = 0
     val MAX_TRY_LAST_ACTION = 3
     var triedRandomKeyboard = false
-
+    var recentGoToExploreState = false
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
-        val prevAbstractState = if (autautMF.appPrevState != null)
-            autautMF.getAbstractState(autautMF.appPrevState!!) ?: currentAbstractState
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
+        val prevAbstractState = if (atuaMF.appPrevState != null)
+            atuaMF.getAbstractState(atuaMF.appPrevState!!) ?: currentAbstractState
         else
             currentAbstractState
 
@@ -209,10 +214,9 @@ class RandomExplorationTask constructor(
             }
         } else {
             if (lockedWindow != null && lockedWindow!!.activityClass != currentAbstractState.activity) {
-
                 if (currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu && currentAbstractState.window !is OutOfApp) {
                     dataFilled = false
-                    goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
+                    goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
                     if (goToLockedWindowTask!!.isAvailable(currentState, lockedWindow!!, true, false, false)) {
                         goToLockedWindowTask!!.initialize(currentState)
                         return goToLockedWindowTask!!.chooseAction(currentState)
@@ -253,7 +257,7 @@ class RandomExplorationTask constructor(
                 return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
             //check if the action widgets are explored
-            val unexploredWidgets = autautMF.getUnexploredWidget(currentState)
+            val unexploredWidgets = atuaMF.getUnexploredWidget(currentState)
             if (unexploredWidgets.isEmpty()) {
                 //give a 50/50 chance to try again
                 if (random.nextBoolean()) {
@@ -262,30 +266,30 @@ class RandomExplorationTask constructor(
             }
         }
         if (currentAbstractState.window.activityClass == "com.oath.mobile.platform.phoenix.core.TrapActivity") {
-            if (currentState.visibleTargets.any { it.text == "I agree" || it.text == "Save and continue" }) {
-                return currentState.visibleTargets.find { it.text == "I agree" || it.text == "Save and continue" }!!.click()
+            if (currentState.visibleTargets.any { it.text == "I agree" || it.text == "Save and continue" || it.text == "Accept all" || it.text.contains("Go to end")}) {
+                return currentState.visibleTargets.find { it.text == "I agree" || it.text == "Save and continue" || it.text == "Accept all" || it.text.contains("Go to end")}!!.click()
             }
         }
-        if (currentAbstractState.rotation == Rotation.LANDSCAPE) {
+/*        if (currentAbstractState.rotation == Rotation.LANDSCAPE) {
             if (random.nextBoolean())
                 return chooseActionWithName(AbstractActionType.ROTATE_UI, "", null, currentState, null)!!
-        }
+        }*/
 
         if (environmentChange) {
             if (!recentChangedSystemConfiguration) {
                 recentChangedSystemConfiguration = true
-                if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
+                if (atuaMF.havingInternetConfiguration(currentAbstractState.window)) {
                     if (random.nextInt(4) < 3)
                         return GlobalAction(ActionType.EnableData).also {
-                            autautMF.internetStatus = true
+                            atuaMF.internetStatus = true
                         }
                     else
                         return GlobalAction(ActionType.DisableData).also {
-                            autautMF.internetStatus = false
+                            atuaMF.internetStatus = false
                         }
-                } else if (autautMF.internetStatus == false) {
+                } else if (atuaMF.internetStatus == false) {
                     return GlobalAction(ActionType.EnableData).also {
-                        autautMF.internetStatus = true
+                        atuaMF.internetStatus = true
                     }
                 }
             } /*else {
@@ -312,11 +316,17 @@ class RandomExplorationTask constructor(
 //                return openNavigationBarTask.chooseAction(currentState)
 //            }
 //        }
+        if (prevAbstractState!=null && prevAbstractState.window!=currentAbstractState.window
+                && prevAbstractState.window is Activity
+                && currentAbstractState.window is Activity) {
+            dataFilled = false
+            fillingData = false
+        }
         if (!dataFilled && !fillingData) {
             val lastAction = autautStrategy.eContext.getLastAction()
             if (!lastAction.actionType.isTextInsert()) {
                 if (fillDataTask.isAvailable(currentState, alwaysUseRandomInput)) {
-                    fillDataTask.initialize(currentState)
+                        fillDataTask.initialize(currentState)
                     fillingData = true
                 } else {
                     dataFilled = true
@@ -331,13 +341,14 @@ class RandomExplorationTask constructor(
             fillingData = false
             dataFilled = true
         }
+
         attemptCount++
         var randomAction: AbstractAction? = null
         if (lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && prevAbstractState != currentAbstractState
                 && prevAbstractState.window == currentAbstractState.window
-                && autautMF.abstractStateVisitCount[currentAbstractState]!! == 1
+                && atuaMF.abstractStateVisitCount[currentAbstractState]!! == 1
                 /*&& isScrollToEnd
                 && lastAction!!.extra == "SwipeTillEnd"*/
                 && currentAbstractState.getAvailableActions().contains(lastAction!!)
@@ -347,11 +358,11 @@ class RandomExplorationTask constructor(
             randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
         } else if (lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
-                && autautMF.appPrevState!! != currentState
+                && atuaMF.appPrevState!! != currentState
                 && (prevAbstractState == currentAbstractState ||
                         (prevAbstractState != currentAbstractState
                                 && prevAbstractState.window == currentAbstractState.window
-                                && autautMF.abstractStateVisitCount[currentAbstractState]!! > 1)
+                                && atuaMF.abstractStateVisitCount[currentAbstractState]!! > 1)
                         )
                 && tryLastAction < MAX_TRY_LAST_ACTION
                 /*&& isScrollToEnd
@@ -363,8 +374,8 @@ class RandomExplorationTask constructor(
         } else {
             tryLastAction = 0
             //val widgetActions = currentAbstractState.getAvailableActions().filter { it.widgetGroup != null }
-            val unexercisedActions = currentAbstractState.getUnExercisedActions(currentState).filterNot { it.isCheckableOrTextInput() }
-            val lowestPriorityActions = unexercisedActions.filter {
+            val unexercisedActions = currentAbstractState.getUnExercisedActions(currentState,atuaMF)
+                val lowestPriorityActions = unexercisedActions.filter {
                 it.attributeValuationMap == null
             }
             if (unexercisedActions.filterNot { lowestPriorityActions.contains(it) }.isNotEmpty()) {
@@ -379,13 +390,17 @@ class RandomExplorationTask constructor(
                     unexercisedActions.random()
                 }
             } else {
-
-                goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = autautMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
-                if (goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, true, true)) {
-                    goToLockedWindowTask!!.initialize(currentState)
-                    return goToLockedWindowTask!!.chooseAction(currentState)
+                /*if (!isPureRandom) {
+                    goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
+                    if (!recentGoToExploreState && goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, false, true)) {
+                        recentGoToExploreState = true
+                        goToLockedWindowTask!!.initialize(currentState)
+                        return goToLockedWindowTask!!.chooseAction(currentState)
+                    }
+                    goToLockedWindowTask = null
                 }
-                goToLockedWindowTask = null
+
+                recentGoToExploreState = false*/
                 lastAction = null
                 if (random.nextDouble() < 0.1) {
                     val abstractActions = currentAbstractState.getAvailableActions().filter {
@@ -397,43 +412,35 @@ class RandomExplorationTask constructor(
                 } else {
                     val visibleTargets = ArrayList(Helper.getActionableWidgetsWithoutKeyboard(currentState))
 
-                    val unexploredWidgets = autautMF.getUnexploredWidget(currentState).filter {
+                    val unexploredWidgets = atuaMF.getUnexploredWidget(currentState).filter {
                         it.clickable || it.scrollable || (!it.clickable && it.longClickable)
                     }.filterNot { Helper.isUserLikeInput(it) }
-                    if (unexploredWidgets.isNotEmpty()) {
+                    if (unexploredWidgets.isNotEmpty() || isPureRandom || true) {
 
-                        val candidates = if (unexploredWidgets.isNotEmpty()) {
-                            unexploredWidgets
-                            /*val scrollableWidgets = visibleTargets.filter { Helper.isScrollableWidget(it) }
-                            if (scrollableWidgets.isNotEmpty() && random.nextBoolean()) {
-                                scrollableWidgets
-                            } else {
-                                unexploredWidgets
-                            }*/
+                        val notUserlikeInputs = visibleTargets.filter {
+                            it.clickable || it.longClickable || it.scrollable
+                        }.filterNot { Helper.isUserLikeInput(it) }
+
+                        val candidates =  if (notUserlikeInputs.isNotEmpty() && random.nextBoolean()) {
+                            notUserlikeInputs
                         } else {
-                            val notUserlikeInputs = visibleTargets.filter {
-                                it.clickable || it.longClickable || it.scrollable
-                            }.filterNot { Helper.isUserLikeInput(it) }
-
-                            if (notUserlikeInputs.isNotEmpty() && random.nextBoolean()) {
-                                notUserlikeInputs
-                            } else {
-                                visibleTargets
-                            }
+                            visibleTargets
                         }
                         val lessExercisedWidgets = runBlocking {
                             ArrayList(getCandidates(candidates
                             ))
                         }
-                        val chosenWidget = lessExercisedWidgets.random()
+                        val chosenWidget = if (unexploredWidgets.any { lessExercisedWidgets.contains(it) })
+                            unexploredWidgets.filter { lessExercisedWidgets.contains(it) }.random()
+                        else
+                            lessExercisedWidgets.random()
                         log.info("Widget: $chosenWidget")
                         return doRandomActionOnWidget(chosenWidget, currentState)
-                    } else {
-                        // TODO: we shoudl try actions that are believed to enable unexplored widgets
-                        val bestCandidate = autautMF.getCandidateAction(currentState, delay, useCoordinateClicks)
+                    } /*else {
+                        val bestCandidate = atuaMF.getCandidateAction(currentState, delay, useCoordinateClicks)
                         log.info("Widget: ${bestCandidate.second}")
                         return bestCandidate.first
-                    }
+                    }*/
 
                     /*val attributeValuationSet = currentAbstractState.getAttributeValuationSet(chosenWidget, currentState)
                     if (attributeValuationSet == null) {
@@ -663,7 +670,7 @@ class RandomExplorationTask constructor(
         val widgetGroup = action.attributeValuationMap
         var actionPotentialScore = 1.0
 
-        val goToHomeEdges = autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val goToHomeEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.destination?.data?.window is Launcher
         }
@@ -715,7 +722,7 @@ class RandomExplorationTask constructor(
         val considerDeadEdges = true
         if (considerDeadEdges) {
             val deadEdges =
-                    autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+                    atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
                         edge.label.abstractAction == action
                                 && edge.source.data == edge.destination?.data
                                 && edge.destination?.data !is VirtualAbstractState
@@ -737,7 +744,7 @@ class RandomExplorationTask constructor(
         val widgetGroup = action.attributeValuationMap
         var actionPotentialScore = 1.0
 
-        val goToHomeEdges = autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val goToHomeEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.destination?.data?.window is Launcher
         }
@@ -747,7 +754,7 @@ class RandomExplorationTask constructor(
             } else
                 actionPotentialScore /= 2
         }
-        val openEdges = autautMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val openEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.source.data != edge.destination?.data
                     && edge.destination?.data !is VirtualAbstractState
@@ -766,9 +773,9 @@ class RandomExplorationTask constructor(
             val dest = edge.destination?.data
             if (dest != null) {
                 val numberOfAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == dest.window }.size
-                val visitedCount = autautMF.abstractStateVisitCount[dest]!!
+                val visitedCount = atuaMF.abstractStateVisitCount[dest]!!
                 val widgetGroupFrequences = AbstractStateManager.instance.attrValSetsFrequency[dest.window]!!
-                val unexploredWidgetActions = dest.getUnExercisedActions(null).filterNot { it.attributeValuationMap == null }
+                val unexploredWidgetActions = dest.getUnExercisedActions(null,atuaMF).filterNot { it.attributeValuationMap == null }
                 unexploredWidgetActions
                         .filterNot { unexploredWidgetAction.contains(it) }
                         .forEach {
@@ -781,7 +788,7 @@ class RandomExplorationTask constructor(
                         }
                 actionPotentialScore = actionPotentialScore
 
-                val liveEdge = autautMF.abstractTransitionGraph.edges(dest).filter {
+                val liveEdge = atuaMF.abstractTransitionGraph.edges(dest).filter {
                     it.destination != it.source
                             && edge.destination?.data !is VirtualAbstractState
                             && edge.destination?.data?.window !is OutOfApp
@@ -798,7 +805,7 @@ class RandomExplorationTask constructor(
         val considerDeadEdges = true
         if (considerDeadEdges) {
             val deadEdges = similarAbstractStates.map {
-                autautMF.abstractTransitionGraph.edges(it).filter { edge ->
+                atuaMF.abstractTransitionGraph.edges(it).filter { edge ->
                     edge.label.abstractAction == action
                             && edge.source.data == edge.destination?.data
                             && edge.destination?.data !is VirtualAbstractState

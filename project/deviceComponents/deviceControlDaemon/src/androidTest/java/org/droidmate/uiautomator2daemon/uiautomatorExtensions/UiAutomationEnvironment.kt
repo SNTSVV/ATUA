@@ -33,7 +33,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
-private const val debug = false
+private const val debug = true
 private const val logtag = "droidmate/UiEnv"
 
 data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveTimeout: Long = 1000, val imgQuality: Int,
@@ -191,7 +191,7 @@ data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveT
 			Log.w(logtag, "warn empty application window")
 			return null
 		}
-		debugOut("process window ${w.id} ${w.root?.packageName ?: "no ROOT!! type=${w.type}"}", debug)
+		debugOut("process window ${w.id} ${w.root?.packageName ?: "no ROOT!! type=${w.type}"} $outRect", debug)
 		return DisplayedWindow(w, uncoveredC, outRect, w.root?.isKeyboard() ?: false)
 	}
 
@@ -304,8 +304,10 @@ data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveT
 			var canContinue = true
 			windows.forEach { window ->
 				if (canContinue && !processedWindows.containsKey(window.id)) {
+					debugOut("uncoveredC before: $uncoveredC")
 					processWindows(window, uncoveredC)?.also {
 						debugOut("created window ${it.w.windowId} ${it.w.pkgName}")
+						debugOut("uncoveredC after: $uncoveredC")
 						processedWindows[it.w.windowId] = it
 					}
 						?: let { delay(10); windows = automation.getWindows(); canContinue = false }

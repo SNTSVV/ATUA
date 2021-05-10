@@ -147,7 +147,8 @@ class StaticAnalysisJSONParser() {
                         intentActivityNode = Activity.getOrCreateNode(
                                 Activity.getNodeId(), qualifiedActivityName,false,false)
                     }
-                    u.forEach {
+                    WindowManager.instance.intentFilter.put(intentActivityNode, u)
+                    /*u.forEach {
                         for (meaningNode in WindowManager.instance.allMeaningWindows) {
                             val intentEvent = Input(eventType = EventType.callIntent,
                                     eventHandlers = HashSet(), widget = null,sourceWindow = meaningNode)
@@ -155,7 +156,7 @@ class StaticAnalysisJSONParser() {
                             wtg.add(meaningNode, intentActivityNode!!, intentEvent)
                         }
 
-                    }
+                    }*/
 
                     if (allTargetInputs.filter {
                                 it.sourceWindow.activityClass.contains(activityName)
@@ -347,10 +348,10 @@ class StaticAnalysisJSONParser() {
             result["NodeType"] = nodeType
             temp = temp.substring(nodetypeIdx + 1)
             //get class type
-            val classtypeIdx = temp.lastIndexOf("]")
-            val classType = temp.substring(0, classtypeIdx)
+            val classtypeEndIdx = temp.lastIndexOf("]")
+            val classType = temp.substring(0, classtypeEndIdx)
             result["className"] = classType
-            temp = temp.substring(classtypeIdx + 1)
+            temp = temp.substring(classtypeEndIdx + 1)
             //get sootandroidId
             val allocIndex = temp.indexOf(", alloc: ")
             if (allocIndex == -1) {
@@ -359,8 +360,9 @@ class StaticAnalysisJSONParser() {
             } else {
                 val sootandroidId = temp.substring(0, allocIndex)
                 result["id"] = sootandroidId
+                temp = temp.substring(allocIndex+", alloc: ".length)
+                result["allocMethod"] = temp
             }
-
             return result
         }
 
@@ -602,63 +604,6 @@ class StaticAnalysisJSONParser() {
                                         activity = sourceNode.classType,
                                         sourceWindow = sourceNode,
                                         allTargetInputs = allTargetInputs)
-                                if (wtg.edges(sourceNode).find { it.label == event } == null) {
-                                    //this event has not appeared in graph
-                                    //let's create new edge
-                                    wtg.add(sourceNode, sourceNode, event)
-                                }
-                                /*if (ewtgWidget!=null && ewtgWidget!!.className.contains("Layout")) {
-                                    var createItemClick = false
-                                    var createItemLongClick = false
-
-                                    when (jsonEventType) {
-                                        "touch" -> {
-                                            createItemClick = true
-                                            createItemLongClick = true
-                                        }
-                                        "click" -> {
-                                            createItemClick = true
-                                        }
-                                        "long_click" -> {
-                                            createItemLongClick = true
-                                        }
-                                    }
-
-                                    //create item click and long click
-                                    if (createItemClick) {
-                                        val itemClick = getOrCreateTargetEvent(
-                                                eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
-                                                eventTypeString = "item_click",
-                                                widget = ewtgWidget,
-                                                activity = sourceNode.classType,
-                                                sourceWindow = sourceNode,
-                                                allTargetInputs = HashSet())
-                                        if (wtg.edges(sourceNode).find { it.label == itemClick } == null) {
-                                            //this event has not appeared in graph
-                                            //let's create new edge
-                                            wtg.add(sourceNode, sourceNode, itemClick)
-                                        }
-                                    }
-
-                                    if (createItemLongClick) {
-                                        //create item click and long click
-                                        val itemLongClick = getOrCreateTargetEvent(
-                                                eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
-                                                eventTypeString = "item_long_click",
-                                                widget = ewtgWidget,
-                                                activity = sourceNode.classType,
-                                                sourceWindow = sourceNode,
-                                                allTargetInputs = HashSet())
-                                        if (wtg.edges(sourceNode).find { it.label == itemLongClick } == null) {
-                                            //this event has not appeared in graph
-                                            //let's create new edge
-                                            wtg.add(sourceNode, sourceNode, itemLongClick)
-                                        }
-                                    }
-                                }*/
-                                //addWidgetToActivtity_TargetWidget_Map(source, event)
-                                val event_methods = Pair<Input, ArrayList<String>>(event, ArrayList())
-                                //widget_methodInvocations.methodInvocations.add(event_methods)
                                 val methods = jsonEvent["modMethods"] as JSONArray
                                 methods.forEach {
                                     val methodId = statementCoverageMF.getMethodId(it as String)
@@ -880,7 +825,7 @@ class StaticAnalysisJSONParser() {
                                 ewtgWidget = null
                             }
                         }
-                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label == e } }.find { it.widget == ewtgWidget && it.eventType.name == eventType }
+                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label.input == e } }.find { it.widget == ewtgWidget && it.eventType.name == eventType }
                         if (event == null) {
                             event = Input(
                                     eventType = EventType.valueOf(eventType),

@@ -25,72 +25,65 @@ import kotlin.math.abs
 class Helper {
     companion object {
 
-        fun mergeOptionsMenuWithActivity(newState: State<*>, widget_AttributeValuationMapHashMap: HashMap<Widget, AttributeValuationMap>, optionsMenuNode: Window, activityNode: Window, wtg: WindowTransitionGraph, atuaMF: ATUAMF): Boolean {
-
-            var shouldMerge = false
-            var containsOptionMenuWidgets = false
-            var containsActivityWidgets = false
-            var optionsMenuWidgets = ArrayList<EWTGWidget>()
-            var activityWidgets = ArrayList<EWTGWidget>()
-
-            val avms = widget_AttributeValuationMapHashMap.values.distinct()
-            avms.forEach {
-                val attributeValuationSet = it
-                val ewtgWidget = getStaticWidgets(attributeValuationSet, optionsMenuNode, false)
-                if (ewtgWidget!=null)
-                    optionsMenuWidgets.add(ewtgWidget)
-
-            }
-            if (optionsMenuWidgets.isEmpty()) {
-                containsOptionMenuWidgets = false
-            } else {
-                containsOptionMenuWidgets = true
-            }
-
-            avms.forEach {
-                val attributeValuationSet = it
-                val ewtgWidget = getStaticWidgets(attributeValuationSet, activityNode, false)
-                if (ewtgWidget!=null)
-                    activityWidgets.add(ewtgWidget)
-                if (activityWidgets.isEmpty()) {
-                    containsActivityWidgets = false
-                } else {
-                    containsActivityWidgets = true
-                }
-            }
-            if (containsActivityWidgets && containsOptionMenuWidgets) {
-                shouldMerge = true
-            }
-            if (shouldMerge) {
-                ATUAMF.log.info("Merge $optionsMenuNode to $activityNode")
-                wtg.mergeNode(optionsMenuNode, activityNode)
-                /*transitionGraph.removeVertex(optionsMenuNode)
-                regressionTestingMF.staticEventWindowCorrelation.filter { it.value.containsKey(optionsMenuNode) }.forEach { event, correlation ->
-                    correlation.remove(optionsMenuNode)
-                }*/
-
-
-                return true
-            }
-            return false
-        }
-
         fun calculateMatchScoreForEachNode(guiState: State<*>, allPossibleNodes: List<Window>, appName: String, activity: String, widget_AttributeValuationMapHashMap: HashMap<Widget, AttributeValuationMap>,
                                            atuaMF: ATUAMF): HashMap<Window, Double> {
             val matchWidgetsPerWindow = HashMap<Window, HashMap<AttributeValuationMap, EWTGWidget>>()
             val missWidgetsPerWindow = HashMap<Window, HashSet<AttributeValuationMap>>()
             //val propertyChangedWidgets = HashMap<Window, HashSet<Widget>>()
-            val visibleWidgets = ArrayList<Widget>()
-            visibleWidgets.addAll(getVisibleWidgetsForAbstraction(guiState))
-            if (visibleWidgets.isEmpty()) {
-                visibleWidgets.addAll(guiState.widgets.filterNot { it.isVisible && it.isKeyboard })
-            }
             allPossibleNodes.forEach {
                 matchWidgetsPerWindow[it] = HashMap()
                 missWidgetsPerWindow[it] = HashSet()
                 //propertyChangedWidgets[it] = HashSet()
             }
-            val avms = widget_AttributeValuationMapHashMap.values.distinct()
+            val actionableWidgets = ArrayList<Widget>()
+            actionableWidgets.addAll(getVisibleWidgetsForAbstraction(guiState))
+            val unmappedWidgets = actionableWidgets
+
+            val avm_widgets_map = unmappedWidgets.groupBy { widget_AttributeValuationMapHashMap[it] }
+                    .filter { it.key != null }
+            allPossibleNodes.forEach {wtgWindow->
+                val processed = ArrayList<AttributeValuationMap>()
+                val workingList: LinkedList<AttributeValuationMap> = LinkedList<AttributeValuationMap>()
+                val addedToWorkingList = HashSet<String>()
+                avm_widgets_map.keys.forEach {
+                    workingList.add(it!!)
+                    addedToWorkingList.add(it.avmId)
+                }
+
+                while (workingList.isNotEmpty()) {
+                    val avm = workingList.first
+                    if (avm.parentAttributeValuationMapId!= "" && !addedToWorkingList.contains(avm.parentAttributeValuationMapId)) {
+                        val parentAVM = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[wtgWindow.activityClass]!!.get(avm.parentAttributeValuationMapId)
+                        workingList.addFirst(parentAVM)
+                        addedToWorkingList.add(avm.parentAttributeValuationMapId)
+                        continue
+                    }
+                    workingList.removeFirst()
+                    //avmId_ewtgWidgets.putIfAbsent(avm.avsId, ArrayList())
+                    if (!processed.contains(avm)) {
+                        /*  val staticWidgets =  if (avm_widgets_map.containsKey(avm)) {
+                              Helper.getStaticWidgets(avm, wtgWindow, true, avmId_ewtgWidgets)
+                          } else {
+                              Helper.getStaticWidgets(avm, wtgWindow, false, avmId_ewtgWidgets)
+                          }*/
+                        processed.add(avm)
+                        //val staticWidgets = getStaticWidgets(avm, wtgWindow, false)
+                        //if a widgetGroup has more
+                        val matchingWidget = getStaticWidgets(avm, wtgWindow, false)
+                        if (matchingWidget != null) {
+                            if (matchWidgetsPerWindow.containsKey(wtgWindow)) {
+                                matchWidgetsPerWindow[wtgWindow]!!.put(avm, matchingWidget)
+                            }
+                        } else {
+                            if (missWidgetsPerWindow.contains(wtgWindow) && avm.getResourceId().isNotBlank()) {
+                                missWidgetsPerWindow[wtgWindow]!!.add(avm)
+                            }
+                        }
+                    }
+                }
+            }
+
+/*            val avms = widget_AttributeValuationMapHashMap.values.distinct()
             avms.forEach {
                 val attributeValuationSet = it
                 allPossibleNodes.forEach {
@@ -105,7 +98,7 @@ class Helper {
                         }
                     }
                 }
-            }
+            }*/
 /*            visibleWidgets.iterator().also {
                 while (it.hasNext()) {
                     val widget = it.next()
@@ -135,14 +128,17 @@ class Helper {
                         .filterNot{ staticWidget ->
                             matchWidgetsPerWindow[window]!!.values.any { it == staticWidget } }
                 val totalWidgets = matchWidgetsPerWindow[window]!!.size + missStaticWidgets.size
-                if (window.isRuntimeCreated && matchWidgetsPerWindow[window]!!.values.size / window.widgets.size.toDouble() < 0.7) {
+                if (totalWidgets == 0) {
+                    scores.put(window, Double.NEGATIVE_INFINITY)
+                } else if (window.isRuntimeCreated && matchWidgetsPerWindow[window]!!.values.size / window.widgets.size.toDouble() < 0.7) {
                     // for windows created at runtime
                     // need match perfectly at least all widgets with resource id.
                     // Give a bound to be 70%
                     scores.put(window, Double.NEGATIVE_INFINITY)
                 } else {
                     val score = if (matchWidgetsPerWindow[window]!!.size > 0 || window.widgets.size == 0) {
-                        (matchWidgetsPerWindow[window]!!.size * 1.0 - missWidgetsPerWindow.size * 1.0) / totalWidgets
+                        /*(matchWidgetsPerWindow[window]!!.size * 1.0 - missWidgetsPerWindow.size * 1.0) / totalWidgets*/
+                        (matchWidgetsPerWindow[window]!!.size * 1.0) / totalWidgets
                     } else {
                         Double.NEGATIVE_INFINITY
                     }
@@ -157,7 +153,7 @@ class Helper {
             if (guiState_actionableWidgets.containsKey(guiState))
                 return guiState_actionableWidgets[guiState]!!
             val excludeWidgets = ArrayList<Widget>()
-            val visibleWidgets = getVisibleWidgets(guiState)
+            val visibleWidgets = getVisibleWidgets(guiState).filter { !it.isKeyboard }
             /*val onTopWidgets = visibleWidgets.filter { it.parentId == null }
             val toCheckWidgets = LinkedList<Widget>()
             toCheckWidgets.addAll(onTopWidgets)
@@ -178,7 +174,7 @@ class Helper {
                     excludeWidgets.addAll(widgetDrawOrders.filter { it.second<maxDrawerOrder }.map { it.first }.map { getAllChild(visibleWidgets,it) }.flatten())
                 }
             }
-            val result = visibleWidgets.filter{!excludeWidgets.contains(it)}.filter {
+            var result = visibleWidgets.filter{!excludeWidgets.contains(it)}.filter {
                 isInteractiveWidgetButNotKeyboard(it)
             }
             if (result.isEmpty()) {
@@ -189,16 +185,9 @@ class Helper {
                                 .filter { it.window == abstractState.window && !it.isOpeningKeyboard }
                         val nonKeyboardGUIStates = nonKeyboardAbstractStates.map { it.guiStates }.flatten()
                         val nonKeyboardRelatedWidgets = nonKeyboardGUIStates.map { it.widgets }.flatten().map { it.uid }.distinct()
-                        val result2 = guiState.widgets
+                        result = guiState.widgets
                                 .filter { isInteractiveWidgetButNotKeyboard(it) && !nonKeyboardRelatedWidgets.contains(it.uid)}
-                        guiState_actionableWidgets.put(guiState,result2)
-                        return result2
-                    } else {
-                        //this is new state
-                        return guiState.widgets
-                                .filter { isInteractiveWidgetButNotKeyboard(it)}
                     }
-
                 }
             }
             guiState_actionableWidgets.put(guiState,result)
@@ -209,7 +198,7 @@ class Helper {
                 state.widgets.filter { isVisibleWidget(it) }
 
         private fun isVisibleWidget(it: Widget) =
-                it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty()) && !it.isKeyboard
+               isWellVisualized(it) && it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty())
 
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
             val result = ArrayList(getActionableWidgetsWithoutKeyboard(state))
@@ -222,7 +211,7 @@ class Helper {
         }
 
         fun getInputFields(state: State<*>) =
-                getVisibleWidgets(state).filter { isUserLikeInput(it) }
+                getVisibleWidgets(state).filter {!it.isKeyboard && isUserLikeInput(it) }
 
         fun getStaticWidgets(attributeValuationMap: AttributeValuationMap, wtgNode: Window, updateModel: Boolean,
                              avm_ewtgWidgets: HashMap<String, EWTGWidget> = HashMap()): EWTGWidget? {
@@ -395,8 +384,15 @@ class Helper {
         internal var changeRatioCriteria: Double = 0.05
 
         fun isInteractiveWidgetButNotKeyboard(widget: Widget): Boolean =
-                !widget.isKeyboard && (widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || isScrollableWidget(widget) /*|| (!widget.hasClickableDescendant && widget.selected.isEnabled())*/)
+              isVisibleWidget(widget) &&  !widget.isKeyboard && (widget.isInputField || widget.clickable || widget.checked != null || widget.longClickable || isScrollableWidget(widget)
+                        || widget.className == "android.webkit.WebView"/*|| (!widget.hasClickableDescendant && widget.selected.isEnabled())*/)
 
+        fun isWellVisualized(widget: Widget): Boolean {
+            if (widget.visibleBounds.width > 20 && widget.visibleBounds.height > 20)
+                return true
+            else
+                return false
+        }
         fun isScrollableWidget(widget: Widget): Boolean {
             if (widget.visibleBounds.width > 200 && widget.visibleBounds.height > 200) {
                 return widget.scrollable
@@ -680,7 +676,8 @@ class Helper {
             if (hasMultipleChilds == null)
                 return false
             if (hasMultipleChilds.className == "android.widget.ListView") {
-                return true
+                if (currentState.widgets.any { it.resourceId == "android:id/title" } )
+                    return true
             }
             return false
         }

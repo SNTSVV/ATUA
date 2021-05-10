@@ -68,9 +68,10 @@ fun ExplorationAction.Companion.queue(actions: List<ExplorationAction>, delay:Lo
 
 //TODO enableWifi takes ~11s therefore we may consider to only do it once on exploration start instead
 fun ExplorationContext<*,*,*>.launchApp(): ExplorationAction = ExplorationAction.launchApp(apk.packageName, cfg[ConfigProperties.Exploration.launchActivityDelay])
-fun ExplorationAction.Companion.launchApp(packageName: String, launchDelay: Long) = queue(listOf(LaunchApp(packageName, launchDelay),
+/*fun ExplorationAction.Companion.launchApp(packageName: String, launchDelay: Long) = queue(listOf(LaunchApp(packageName, launchDelay),
 	GlobalAction(ActionType.EnableData),
-	GlobalAction(ActionType.CloseKeyboard)))
+	GlobalAction(ActionType.CloseKeyboard)))*/
+fun ExplorationAction.Companion.launchApp(packageName: String, launchDelay: Long) = LaunchApp(packageName,launchDelay)
 
 fun ExplorationContext<*,*,*>.resetApp(): ExplorationAction =  ExplorationAction.resetApp(apk.packageName,cfg[ConfigProperties.Exploration.launchActivityDelay])
 //fun ExplorationAction.Companion.resetApp(packageName: String, launchDelay: Long) = LaunchApp(packageName, launchDelay)

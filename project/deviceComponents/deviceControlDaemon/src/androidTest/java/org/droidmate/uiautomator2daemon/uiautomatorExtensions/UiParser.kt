@@ -58,7 +58,7 @@ abstract class UiParser {
 				}
 
 		return node.createWidget(w, xPath, children.filterNotNull(), img, idHash = idHash, parentH = parentH, processedNodes = nodes).also {
-			nodes.add(it)
+				nodes.add(it)
 		}
 	}
 
@@ -105,7 +105,11 @@ abstract class UiParser {
 
 		props.add("markedAsOccupied = $markedAsOccupied")
 		val visibleBounds: Rectangle = when {
-			visibleAreas.isEmpty() -> Rectangle(0,0,0,0)  // no uncovered area means this node cannot be visible
+			visibleAreas.isEmpty() ->
+				if (isEnabled && isVisibleToUser)
+					nodeRect.toRectangle()
+				else
+					Rectangle(0,0,0,0)  // no uncovered area means this node cannot be visible
 			children.isEmpty() -> {
 				visibleAreas.visibleOuterBounds()
 			}
@@ -115,7 +119,6 @@ abstract class UiParser {
 				visibleOuterBounds()
 			}
 		}
-
 		val selected = if(actionList.contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_SELECT)&& markedAsOccupied) isSelected else null
 		return UiElementProperties(
 				idHash = idHash,

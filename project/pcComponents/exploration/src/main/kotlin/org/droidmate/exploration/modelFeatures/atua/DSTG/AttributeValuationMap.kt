@@ -507,12 +507,13 @@ class AttributeValuationMap {
         return result
     }
 
+
     fun dumpAttributeValueToString(attributeType: AttributeType,value: Any?): String {
         return when (attributeType) {
             AttributeType.resourceId -> value as String
             AttributeType.className -> value as String
-            AttributeType.contentDesc -> value as String
-            AttributeType.text -> value as String
+            AttributeType.contentDesc -> "\""+ (value as String?)?.replace("\n","\\n")+"\""
+            AttributeType.text -> "\""+ (value as String?)?.replace("\n","\\n")+"\""
             AttributeType.checkable -> value.toString()
             AttributeType.enabled -> value.toString()
             AttributeType.password -> value.toString()
@@ -525,9 +526,9 @@ class AttributeValuationMap {
             AttributeType.scrollDirection -> value.toString()
             AttributeType.checked -> value.toString()
             AttributeType.isLeaf -> value.toString()
-            AttributeType.childrenStructure -> "\""+value.toString()+"\""
-            AttributeType.childrenText -> "\""+value.toString()+"\""
-            AttributeType. siblingsInfo -> "\""+value.toString()+"\""
+            AttributeType.childrenStructure -> "\""+ (value as String?)?.replace("\n","\\n")+"\""
+            AttributeType.childrenText -> "\""+ (value as String?)?.replace("\n","\\n")+"\""
+            AttributeType. siblingsInfo -> "\""+ (value as String?)?.replace("\n","\\n")+"\""
         }
     }
     private fun testReloadAttributes() {
@@ -535,8 +536,8 @@ class AttributeValuationMap {
 
         val className = getClassName()
         val resourceId = getResourceId()
-        val contentDesc = localAttributes.get(AttributeType.contentDesc)?:"null"
-        val text = localAttributes.get(AttributeType.text)?:"null"
+        val contentDesc = "\""+ (localAttributes.get(AttributeType.contentDesc)?.replace("\n","\\n")?:"null")+ "\""
+        val text = "\""+ (localAttributes.get(AttributeType.text)?.replace("\n","\\n")?:"null") + "\""
         val enabled = isEnable().toString()
         val selected = localAttributes.get(AttributeType.selected)?:"null".toString()
         val checkable = isCheckable().toString()
@@ -574,7 +575,8 @@ class AttributeValuationMap {
     }
     private fun addAttributeIfNotNull(attributeType: AttributeType, attributeValue: String, attributes: HashMap<AttributeType,String>) {
         if (attributeValue!= "null" ) {
-            attributes.put(attributeType,attributeValue)
+            val replaced = attributeValue.replace("\\n","\n")
+            attributes.put(attributeType,replaced)
         }
     }
     private fun dumpParentUUID() = if (parentAttributeValuationMapId == "") "null" else parentAttributeValuationMapId

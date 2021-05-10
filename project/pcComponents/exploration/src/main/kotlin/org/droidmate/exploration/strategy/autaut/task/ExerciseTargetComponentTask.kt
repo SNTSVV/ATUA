@@ -1,5 +1,6 @@
 package org.droidmate.exploration.strategy.autaut.task
 
+import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
@@ -35,7 +36,7 @@ class ExerciseTargetComponentTask private constructor(
     var alwaysUseRandomInput = false
     private var prevAbstractState: AbstractState?=null
     var originalEventList: ArrayList<AbstractAction> = ArrayList()
-    private val fillDataTask = PrepareContextTask.getInstance(autautMF,atuaTestingStrategy, delay, useCoordinateClicks)
+    private val fillDataTask = PrepareContextTask.getInstance(atuaMF,atuaTestingStrategy, delay, useCoordinateClicks)
     val targetItemEvents = HashMap<AbstractAction, HashMap<String,Int>>()
 
     override fun chooseRandomOption(currentState: State<*>) {
@@ -49,7 +50,7 @@ class ExerciseTargetComponentTask private constructor(
         if (isCameraOpening(currentState)) {
             return false
         }
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         if (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp) {
             if (isDoingRandomExplorationTask && randomExplorationTask.isTaskEnd(currentState)) {
                 return true
@@ -59,7 +60,7 @@ class ExerciseTargetComponentTask private constructor(
         if (currentAbstractState.window != targetWindow) {
             return true
         }
-        val abstractState = autautMF.getAbstractState(currentState)!!
+        val abstractState = atuaMF.getAbstractState(currentState)!!
         eventList.removeIf {
             it.isWidgetAction() &&
                     !abstractState.attributeValuationMaps.contains(it.attributeValuationMap)
@@ -77,9 +78,9 @@ class ExerciseTargetComponentTask private constructor(
         reset()
         randomExplorationTask.fillingData=false
         mainTaskFinished = false
-        val currentAbstractState = autautMF.getAbstractState(currentState)
+        val currentAbstractState = atuaMF.getAbstractState(currentState)
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
-        targetWindow = autautMF.getAbstractState(currentState)!!.window
+        targetWindow = atuaMF.getAbstractState(currentState)!!.window
         eventList.filter { it.isItemAction() }.forEach { action ->
             currentAbstractState!!.attributeValuationMaps.filter { action.attributeValuationMap!!.isParent(it) }.forEach { childWidget->
                 val childActionType = when (action.actionType) {
@@ -126,7 +127,7 @@ class ExerciseTargetComponentTask private constructor(
         eventList.addAll(autautStrategy.phaseStrategy.getCurrentTargetEvents(currentState))
         originalEventList.addAll(eventList)
         if (eventList.isNotEmpty()){
-            targetWindow = autautMF.getAbstractState(currentState)!!.window
+            targetWindow = atuaMF.getAbstractState(currentState)!!.window
             log.info("Current node has ${eventList.size} target Window transition(s).")
             return true
         }
@@ -136,9 +137,9 @@ class ExerciseTargetComponentTask private constructor(
 
     override fun chooseWidgets(currentState: State<*>): List<Widget> {
         //check if we can encounter any target component in current state
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         var candidates= ArrayList<Widget>()
-        candidates.addAll(autautMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationMap!!,currentAbstractState, currentState))
+        candidates.addAll(atuaMF.getRuntimeWidgets(chosenAbstractAction!!.attributeValuationMap!!,currentAbstractState, currentState))
         if (candidates.isNotEmpty())
         {
             return candidates
@@ -149,7 +150,7 @@ class ExerciseTargetComponentTask private constructor(
     var isDoingRandomExplorationTask: Boolean = false
     override fun chooseAction(currentState: State<*>): ExplorationAction {
         executedCount++
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         if (currentAbstractState != null) {
             prevAbstractState = currentAbstractState
         }
@@ -168,21 +169,21 @@ class ExerciseTargetComponentTask private constructor(
             }
         }
         isDoingRandomExplorationTask = false
-        if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
+        if (atuaMF.havingInternetConfiguration(currentAbstractState.window)) {
             if (!recentChangedSystemConfiguration && environmentChange && random.nextBoolean()) {
                 recentChangedSystemConfiguration = true
-                if (autautMF.havingInternetConfiguration(currentAbstractState.window)) {
+                if (atuaMF.havingInternetConfiguration(currentAbstractState.window)) {
                     if (random.nextInt(4) < 3)
                         return GlobalAction(ActionType.EnableData).also {
-                            autautMF.internetStatus = true
+                            atuaMF.internetStatus = true
                         }
                     else
                         return GlobalAction(ActionType.DisableData).also {
-                            autautMF.internetStatus = false
+                            atuaMF.internetStatus = false
                         }
                 } else {
                     return GlobalAction(ActionType.EnableData).also {
-                        autautMF.internetStatus = false
+                        atuaMF.internetStatus = false
                     }
                 }
             }
@@ -238,7 +239,7 @@ class ExerciseTargetComponentTask private constructor(
             {
                 val candidates = chooseWidgets(currentState)
                 if (candidates.isNotEmpty())  {
-                    chosenWidget = candidates.random()
+                    chosenWidget = runBlocking { getCandidates(candidates) }.random()
                 }
                 if (chosenWidget==null)
                 {
@@ -269,7 +270,7 @@ class ExerciseTargetComponentTask private constructor(
             else
             {
                 autautStrategy.phaseStrategy.registerTriggeredEvents(chosenAbstractAction!!,currentState)
-                autautMF.isAlreadyRegisteringEvent = true
+                atuaMF.isAlreadyRegisteringEvent = true
                 dataFilled = false
                 return chosenAction
             }

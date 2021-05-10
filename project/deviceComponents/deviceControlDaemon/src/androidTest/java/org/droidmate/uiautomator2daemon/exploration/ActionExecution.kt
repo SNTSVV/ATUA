@@ -136,12 +136,10 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 							Settings.System.AIRPLANE_MODE_ON, 0) === 1
 
 					// toggle airplane mode
-					// toggle airplane mode
 					Settings.System.putInt(
 							env.context.getContentResolver(),
 							Settings.System.AIRPLANE_MODE_ON, if (isEnabled) 0 else 1)
 
-					// Post an intent to reload
 					// Post an intent to reload
 					val intent = Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED)
 					intent.putExtra("state", !isEnabled)
@@ -198,6 +196,10 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
 			//reset rotaion
 			env.automation.setRotation(0)
+			//close keyboard
+			if (env.isKeyboardOpen())
+				env.device.pressBack()
+			true
 		}
 		is ResetApp -> {
 			//reset wifi
@@ -207,10 +209,13 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
             }
 			//launch app
             env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
-
 			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
 			//reset rotaion
 			env.automation.setRotation(0)
+			//close keyboard
+			if (env.isKeyboardOpen())
+				env.device.pressBack()
+			true
 		}
 		is Swipe -> env.device.twoPointAction(start,end){
 			x0, y0, x1, y1 ->  env.device.swipe(x0, y0, x1, y1, stepSize)

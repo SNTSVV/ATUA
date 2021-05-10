@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.WidgetReducer
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
@@ -139,17 +140,6 @@ open class AbstractState(
         }
     }
 
-    @Suppress
-    fun addAttributeValuationSet(attributeValuationMap: AttributeValuationMap) {
-        if (attributeValuationMaps.contains(attributeValuationMap)) {
-            return
-        }
-        //attributeValuationSets.add(attributeValuationSet)
-        attributeValuationMap.captured = true
-        val attrValSetsFrequency = AbstractStateManager.instance.attrValSetsFrequency[window]!!
-        attrValSetsFrequency[attributeValuationMap] = 1
-    }
-
     fun addAction(action: AbstractAction) {
         if (action.actionType == AbstractActionType.PRESS_HOME) {
             return
@@ -167,7 +157,7 @@ open class AbstractState(
         }
     }
 
-    fun getAttributeValuationSet(widget: Widget, guiState: State<*>): AttributeValuationMap? {
+    fun getAttributeValuationSet(widget: Widget, guiState: State<*>, atuaMF: ATUAMF): AttributeValuationMap? {
         if (!guiStates.contains(guiState))
             return null
         val mappedWidget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[activity]
@@ -175,7 +165,16 @@ open class AbstractState(
             return null
         val mappedAttributeValuationSet = mappedWidget_AttributeValuationSet.get(widget)
         if (mappedAttributeValuationSet == null)
+        {
+            if (mappedWidget_AttributeValuationSet.any { it.key.uid == widget.uid }) {
+                val reducedAttributePath = WidgetReducer.reduce(widget,guiState,activity,rotation,atuaMF,HashMap(),HashMap())
+                val attributeValuationSet = attributeValuationMaps.find {
+                    it.haveTheSameAttributePath(reducedAttributePath)
+                }
+                return attributeValuationSet
+            }
             return null
+        }
         val attributeValuationSet = attributeValuationMaps.find {
             it.haveTheSameAttributePath(mappedAttributeValuationSet)
         }
@@ -190,13 +189,13 @@ open class AbstractState(
         return allActions
     }
 
-    fun getUnExercisedActions(currentState: State<*>?): List<AbstractAction> {
+    fun getUnExercisedActions(currentState: State<*>?,atuaMF: ATUAMF): List<AbstractAction> {
         val unexcerisedActions = HashSet<AbstractAction>()
         //use hashmap to optimize the performance of finding widget
         val widget_WidgetGroupMap = HashMap<Widget, AttributeValuationMap>()
         if (currentState != null) {
             Helper.getVisibleWidgetsForAbstraction(currentState).forEach { w ->
-                val wg = this.getAttributeValuationSet(w, currentState)
+                val wg = this.getAttributeValuationSet(w, currentState,atuaMF)
                 if (wg != null)
                     widget_WidgetGroupMap.put(w, wg)
             }
@@ -210,7 +209,6 @@ open class AbstractState(
                     && it.key.actionType != AbstractActionType.DISABLE_DATA
                     && it.key.actionType != AbstractActionType.WAIT
                     && it.key.actionType != AbstractActionType.PRESS_BACK
-
                     && !it.key.isWidgetAction()
         }
                 .map { it.key })
@@ -250,7 +248,7 @@ open class AbstractState(
         }
     }
 
-    fun increaseActionCount(action: AbstractAction, updateSimilarAbstractState: Boolean = false) {
+    fun increaseActionCount(action: AbstractAction) {
         if (action.attributeValuationMap == null) {
             if (actionCount.containsKey(action)) {
                 actionCount[action] = actionCount[action]!! + 1
@@ -263,6 +261,7 @@ open class AbstractState(
             if (actionCount.containsKey(nonDataAction) && nonDataAction != action) {
                 actionCount[nonDataAction] = actionCount[nonDataAction]!! + 1
             }
+
         } else if (attributeValuationMaps.contains(action.attributeValuationMap)) {
             val widgetGroup = attributeValuationMaps.find { it.equals(action.attributeValuationMap) }!!
             if (widgetGroup.actionCount.containsKey(action)) {
@@ -322,7 +321,7 @@ open class AbstractState(
 
     fun computeScore(autautMF: ATUAMF): Double {
         var localScore = 0.0
-        val unexploredActions = getUnExercisedActions(null).filterNot { it.attributeValuationMap == null }
+        val unexploredActions = getUnExercisedActions(null,autautMF).filterNot { it.attributeValuationMap == null }
         val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[this.window]!!
         unexploredActions.forEach {
             val actionScore = it.getScore()
@@ -432,4 +431,4 @@ class VirtualAbstractState(activity: String,
         isOutOfApplication = (staticNode is OutOfApp)
 )
 
-class AppResetAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT, internet = InternetStatus.Undefined)
+class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT, internet = InternetStatus.Undefined)

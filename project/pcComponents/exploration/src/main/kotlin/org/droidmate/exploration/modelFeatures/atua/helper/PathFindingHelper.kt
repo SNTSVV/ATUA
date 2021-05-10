@@ -32,7 +32,7 @@ class PathFindingHelper {
                                       , shortest: Boolean = true
                                       , pathCountLimitation: Int = 1
                                       , pathType: PathType) {
-            val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
+/*            val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
             if (existingPaths!= null && existingPaths.isNotEmpty()) {
                val satisfiedPaths = existingPaths.filter {
                             it.pathType == pathType
@@ -43,16 +43,22 @@ class PathFindingHelper {
                         return
                     }
                 }
-            }
+            }*/
             val pathTracking = HashMap<AbstractTransition,
                     Triple<AbstractState,
                             AbstractTransition?,
                             ArrayList<HashMap<UUID,String>>
                             >?
                     >()
-            val targetTraces = if ( pathType == PathType.RESET) {
+            val targetTraces = if (pathType == PathType.TRACE) {
                 val edgesToTarget = autautMF.abstractTransitionGraph.edges().filter { it.label.dest == finalTarget }
                 edgesToTarget.map { it.label.tracing }.flatten().map { it.first }.distinct()
+            } else {
+                emptyList()
+            }
+            val inEdgesTrace =  if (pathType == PathType.TRACE) {
+                val edgesToTarget = autautMF.abstractTransitionGraph.edges().filter { it.label.dest == finalTarget }
+                edgesToTarget.map { it.label.tracing }.flatten()
             } else {
                 emptyList()
             }
@@ -75,26 +81,7 @@ class PathFindingHelper {
                         includeResetAction = false,
                         includeImplicitInteraction = true,
                         includeLaunchAction = false,
-                        pathType = pathType,
-                        targetTraces = targetTraces)
-                PathType.NORMAL -> findPathToTargetComponentByBFS(
-                        autautMF = autautMF,
-                        currentState = currentState,
-                        root = root,
-                        finalTarget =  finalTarget,
-                        prevEdgeIds =  emptyList(),
-                        traversedEdges = HashMap(),
-                        allPaths =  allPaths,
-                        includeBackEvent =  true,
-                        pathTracking =  HashMap(),
-                        depth = 0,
-                        includeWTG =  false,
-                        stopWhenHavingUnexercisedAction = false,
-                        shortest = shortest,
-                        pathCountLimitation = pathCountLimitation,
-                        includeResetAction = false,
-                        includeImplicitInteraction = false,
-                        includeLaunchAction = true,
+                        followTrace = false,
                         pathType = pathType,
                         targetTraces = targetTraces)
                 PathType.RESET -> findPathToTargetComponentByBFS(
@@ -113,8 +100,51 @@ class PathFindingHelper {
                         shortest = shortest,
                         pathCountLimitation = pathCountLimitation,
                         includeResetAction = true,
+                        includeImplicitInteraction = true,
+                        includeLaunchAction = false,
+                        followTrace = false,
+                        pathType = pathType,
+                        targetTraces = targetTraces)
+                PathType.NORMAL -> findPathToTargetComponentByBFS(
+                        autautMF = autautMF,
+                        currentState = currentState,
+                        root = root,
+                        finalTarget =  finalTarget,
+                        prevEdgeIds =  emptyList(),
+                        traversedEdges = HashMap(),
+                        allPaths =  allPaths,
+                        includeBackEvent =  true,
+                        pathTracking =  HashMap(),
+                        depth = 0,
+                        includeWTG =  false,
+                        stopWhenHavingUnexercisedAction = false,
+                        shortest = shortest,
+                        pathCountLimitation = pathCountLimitation,
+                        includeResetAction = true,
                         includeImplicitInteraction = false,
                         includeLaunchAction = false,
+                        followTrace = false,
+                        pathType = pathType,
+                        targetTraces = targetTraces)
+                PathType.TRACE -> findPathToTargetComponentByBFS(
+                        autautMF = autautMF,
+                        currentState = currentState,
+                        root = root,
+                        prevEdgeIds =  emptyList(),
+                        traversedEdges = HashMap(),
+                        finalTarget =  finalTarget,
+                        allPaths =  allPaths,
+                        includeBackEvent =  true,
+                        pathTracking =  HashMap(),
+                        depth = 0,
+                        includeWTG =  false,
+                        stopWhenHavingUnexercisedAction = false,
+                        shortest = shortest,
+                        pathCountLimitation = pathCountLimitation,
+                        includeResetAction = true,
+                        includeImplicitInteraction = false,
+                        includeLaunchAction = false,
+                        followTrace = true,
                         pathType = pathType,
                         targetTraces = targetTraces)
                 PathType.WTG -> findPathToTargetComponentByBFS(
@@ -134,7 +164,8 @@ class PathFindingHelper {
                         pathCountLimitation = pathCountLimitation,
                         includeResetAction = true,
                         includeImplicitInteraction = false,
-                        includeLaunchAction = true,
+                        includeLaunchAction = false,
+                        followTrace = false,
                         pathType = pathType,
                         targetTraces = targetTraces)
             }
@@ -159,10 +190,11 @@ class PathFindingHelper {
                                            stopWhenHavingUnexercisedAction: Boolean = false,
                                            shortest: Boolean = true,
                                            pathCountLimitation: Int = 1,
-                                           includeResetAction: Boolean,//TODO rename
-                                           includeBackEvent: Boolean,
-                                           includeImplicitInteraction: Boolean,
                                            includeLaunchAction: Boolean,
+                                           includeBackEvent: Boolean,
+                                           includeResetAction: Boolean,//TODO rename
+                                           includeImplicitInteraction: Boolean,
+                                           followTrace: Boolean,
                                            pathType: PathType,
                                            targetTraces: List<Int>
         ) {
@@ -191,6 +223,7 @@ class PathFindingHelper {
                             includeResetAction =  includeResetAction,
                             includeImplicitInteraction = includeImplicitInteraction,
                             includeLaunchAction = includeLaunchAction,
+                            followTrace = followTrace,
                             pathType = pathType,
                             targetTraces = targetTraces)
                 } else {
@@ -227,6 +260,7 @@ class PathFindingHelper {
                             includeResetAction =  includeResetAction,
                             includeImplicitInteraction = includeImplicitInteraction,
                             includeLaunchAction = includeLaunchAction,
+                            followTrace = followTrace,
                             pathType = pathType,
                             targetTraces = targetTraces)
                 }
@@ -270,6 +304,7 @@ class PathFindingHelper {
                         includeResetAction = includeResetAction,
                         includeImplicitInteraction = includeImplicitInteraction,
                         includeLaunchAction = includeLaunchAction,
+                        followTrace = followTrace,
                         pathType = pathType,
                         targetTraces = targetTraces)
         }
@@ -288,60 +323,10 @@ class PathFindingHelper {
                                            includeResetAction: Boolean,
                                            includeBackEvent: Boolean,
                                            includeLaunchAction: Boolean,
+                                           followTrace: Boolean,
                                            pathType: PathType,
                                            targetTraces: List<Int>
                                            ) {
-
-        /*    if (includeBackEvent && windowStack.isNotEmpty()) {
-                val processingBackEdges = ArrayList<Edge<AbstractState, AbstractTransition>>()
-                val backEdges = graph.edges(source).filter {
-                    it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK
-                            && it.destination != null
-                }
-
-                val backCandiates = backEdges.filter {
-                    it.destination!!.data.window !is OutOfApp
-                            && it.destination!!.data.window !is Launcher
-                            && isTheSamePrevWindow(windowStack.peek(),it)
-                }.groupBy { it.label.isImplicit }
-
-                if (backCandiates.containsKey(false)) {
-                    if (!backCandiates[false]!!.any { backToLauncherOrNot(it) }) {
-                        backCandiates[false]!!.forEach {
-                            if (!traversedEdges.containsKey(it.destination!!.data)) {
-                                processingBackEdges.add(it)
-                            }
-                        }
-                    }
-                } else if (backCandiates.containsKey(true)) {
-                    backCandiates[true]!!.forEach {
-                        if (!traversedEdges.containsKey(it.destination!!.data)) {
-                            processingBackEdges.add(it)
-                        }
-                    }
-                }
-
-                processingBackEdges.forEach { edge ->
-                    val backTransition = edge.label
-                    val backState = edge.destination!!.data
-                    val edgeCondition = graph.edgeConditions[edge]!!
-                    traversedEdges.put(backState, Triple(source, backTransition,edgeCondition))
-                    val fullGraph = createTransitionPath(autautMF, pathType, backState, root, traversedEdges)
-                    if (!isDisablePath(fullGraph)) {
-                        if (isArrived(backTransition, backState, finalTarget, stopWhenHavingUnexercisedAction,includeWTG)) {
-                            allPaths.add(fullGraph)
-                            registerTransitionPath(root, backState, fullGraph)
-                        }
-                        val nextWindowStack = if (backTransition.abstractAction.isLaunchOrReset()) {
-                            Stack<Window>().also { it.push(Launcher.getOrCreateNode()) }
-                        } else {
-                            createWindowStackForNext(windowStack, source, backState)
-                        }
-                        nextTransitions.add(Pair(first = nextWindowStack, second = backState))
-                    }
-                }
-            }*/
-
             val originaEdges = graph.edges(source)
             val edgesFromSource = originaEdges.filter { it.destination!=null
                     && AbstractStateManager.instance.ABSTRACT_STATES.contains(it.label.dest)
@@ -353,7 +338,7 @@ class PathFindingHelper {
                         && it.destination!!.data.window !is FakeWindow
                         && includingBackEventOrNot(it,includeBackEvent)
                         && includingRotateUIOrNot(autautMF, it)
-                        && includingResetOrNot(it, includeResetAction,depth)
+                        && includingResetOrNot(it, includeResetAction,depth, pathType == PathType.TRACE)
                         && includingWTGOrNot(it, includeWTG)
                         && includingLaunchOrNot(it, includeLaunchAction,depth)
                         && followTrace(it,depth,targetTraces ,traversedEdges, prevEdgeId,pathTracking, pathType)
@@ -371,18 +356,25 @@ class PathFindingHelper {
                             possibleTransitions.addAll(edges)
                     } else {
                         val groupByDestination = edges.groupBy { it.destination }
+
                         if (groupByDestination.size > 1) {
                             val groupByPreWindow = edges.groupBy { it.label.prevWindow }
+                            var selectedAtLeastOne = false
                             groupByPreWindow.forEach { prevWindow, edges ->
                                 if (prevWindow == null && includeWTG) {
                                     possibleTransitions.addAll(edges)
+                                    selectedAtLeastOne = true
                                 } else if (prevWindow != null) {
                                     edges.forEach {
                                         if (isTheSamePrevWindow(windowStack.peek(), it)) {
                                             possibleTransitions.add(it)
+                                            selectedAtLeastOne = true
                                         }
                                     }
                                 }
+                            }
+                            if (!selectedAtLeastOne) {
+                                possibleTransitions.addAll(edges)
                             }
                         } else {
                             // different prevWindow but the same destination
@@ -406,17 +398,9 @@ class PathFindingHelper {
                                     selectedTransition.addAll(implicitTransitions)
                                 }
                                 else if (includeImplicitInteraction == true && depth == 0)
-                                    selectedTransition.addAll(implicitTransitions.filter {
-                                        it.label.abstractAction.actionType == AbstractActionType.PRESS_BACK
-                                                || it.label.abstractAction.actionType == AbstractActionType.ROTATE_UI
-                                                || it.label.abstractAction.actionType == AbstractActionType.SWIPE
-                                    })
+                                    selectedTransition.addAll(implicitTransitions)
                                 else if (includeWTG)
                                     selectedTransition.addAll(implicitTransitions.filter { it.label.fromWTG })
-                                else if (depth == 0) {
-                                    val loadedAbstractTransitions = implicitTransitions.filter { it.label.dest.loadedFromModel }
-                                    selectedTransition.addAll(loadedAbstractTransitions)
-                                }
                             }
                             selectedTransition.addAll(reliableTransition)
                         }
@@ -430,12 +414,11 @@ class PathFindingHelper {
                 if (!traversedNodes.contains(it.label.source) && it.label.source!=root) {
                     val strange=""
                 }
-                if (!traversedNodes.contains(it.label.dest) || pathType == PathType.RESET) {
+                if (!traversedNodes.contains(it.label.dest) || pathType == PathType.TRACE) {
                     val fullGraph = createTransitionPath(autautMF, pathType, nextState, transition, prevEdgeId, root, traversedEdges, pathTracking)
-                    if (fullGraph.path.size <= 10 || pathType == PathType.RESET) {
-                        val checkTrace = (pathType == PathType.RESET)
-                        if (!isDisablePath(fullGraph, checkTrace)) {
-                            if (isArrived(nextState, finalTarget, stopWhenHavingUnexercisedAction, includeWTG)) {
+                    if (fullGraph.path.size <= 15 || pathType == PathType.TRACE) {
+                        if (!isDisablePath(fullGraph, followTrace)) {
+                            if (isArrived(nextState, finalTarget, stopWhenHavingUnexercisedAction, includeWTG,atuamf = autautMF)) {
                                 allPaths.add(fullGraph)
                                 registerTransitionPath(root, nextState, fullGraph)
                             }
@@ -463,7 +446,7 @@ class PathFindingHelper {
         }
 
         private fun followTrace(edge: Edge<AbstractState, AbstractTransition>, depth: Int,targetTraces: List<Int>, traversedEdges: HashMap<Int, Pair<AbstractTransition, Stack<Window>>>, prevEdgeId: Int?, pathTracking: HashMap<Int, Int>, pathType: PathType): Boolean {
-            if (pathType != PathType.RESET) {
+            if (pathType != PathType.TRACE) {
                 return true
             }
             if (prevEdgeId == null)
@@ -507,13 +490,13 @@ class PathFindingHelper {
             return true
         }
 
-        private fun isArrived(nextState: AbstractState, finalTarget: AbstractState, stopWhenHavingUnexercisedAction: Boolean, useVirtualAbstractState: Boolean): Boolean {
+        private fun isArrived(nextState: AbstractState, finalTarget: AbstractState, stopWhenHavingUnexercisedAction: Boolean, useVirtualAbstractState: Boolean,atuamf: ATUAMF): Boolean {
             if (nextState == finalTarget){
                return true
             }
             if (stopWhenHavingUnexercisedAction &&
                     nextState !is VirtualAbstractState &&
-                    nextState.getUnExercisedActions(null).isNotEmpty())
+                    nextState.getUnExercisedActions(null,atuamf).isNotEmpty())
                 return true
             if (useVirtualAbstractState && nextState.window == finalTarget.window) {
                 if(finalTarget is VirtualAbstractState && nextState == finalTarget) {
@@ -526,15 +509,14 @@ class PathFindingHelper {
             return false
         }
 
-        private fun includingResetOrNot(it: Edge<AbstractState, AbstractTransition>, includeReset: Boolean, depth: Int): Boolean {
+        private fun includingResetOrNot(it: Edge<AbstractState, AbstractTransition>, includeReset: Boolean, depth: Int, onlyStartWithReset: Boolean): Boolean {
             if (includeReset && depth == 0) {
-                if (it.label.abstractAction.actionType==AbstractActionType.RESET_APP) {
+                if (onlyStartWithReset)
+                    return it.label.abstractAction.actionType == AbstractActionType.RESET_APP
+                else
                     return true
-                }
-                return false
             }
-            else
-                return it.label.abstractAction.actionType!=AbstractActionType.RESET_APP
+            return it.label.abstractAction.actionType!=AbstractActionType.RESET_APP
         }
 
         private fun includingLaunchOrNot(it: Edge<AbstractState, AbstractTransition>, includeLaunch: Boolean, depth: Int): Boolean {
@@ -785,8 +767,11 @@ class PathFindingHelper {
                 pathTraverser.reset()
             }
             var samePrefix = false
-            while (iterator.hasNext() && !pathTraverser.finalStateAchieved()) {
+            while (iterator.hasNext() ) {
                 val edge1 = iterator.next()
+                if (pathTraverser.finalStateAchieved()) {
+                    return false
+                }
                 val edge2 = pathTraverser.getNextTransition()
                 if (edge2 == null)
                     return false
@@ -802,6 +787,7 @@ class PathFindingHelper {
         INCLUDE_INFERED,
         NORMAL,
         RESET,
+        TRACE,
         WTG,
         ANY
     }

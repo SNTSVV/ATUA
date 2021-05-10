@@ -19,6 +19,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowTransition
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.ContextMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
@@ -197,11 +198,13 @@ class AutAutModelLoader {
 
             val abstractAction = createAbstractAction(actionType,interactedAVSId,actionData,sourceState)
             val prevWindowId = data[5]
-            val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}
-
+            val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}
+            val prevWindowAbstractStateId = data[6]
+            val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
             val abstractTransition = sourceState.abstractTransitions.find {
                 it.isExplicit() && it.dest == destState && it.abstractAction == abstractAction
                         && it.prevWindow == prevWindow
+                        && it.preWindowAbstractState == prevWindowAbstractState
             }
 
             if (abstractTransition == null) {
@@ -210,13 +213,14 @@ class AutAutModelLoader {
                         dest = destState,
                         fromWTG = false,
                         prevWindow = prevWindow,
+                        preWindowAbstractState = prevWindowAbstractState,
                         isImplicit = false,
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
                 )
                 autAutMF.abstractTransitionGraph.add(sourceState,destState,newAbstractTransition)
-                createStaticEventFromAbstractInteraction(newAbstractTransition,autAutMF)
-               AbstractStateManager.instance.addImplicitAbstractInteraction(
+                createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)
+                AbstractStateManager.instance.addImplicitAbstractInteraction(
                         abstractTransition = newAbstractTransition,
                         currentState = null
                 )
@@ -242,7 +246,7 @@ class AutAutModelLoader {
             return abstractAction
         }
 
-        private fun createStaticEventFromAbstractInteraction(abstractTransition: AbstractTransition, atuaMF: ATUAMF) {
+        private fun createWindowTransitionFromAbstractInteraction(abstractTransition: AbstractTransition, atuaMF: ATUAMF) {
             val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
             if (eventType == EventType.fake_action || eventType == EventType.resetApp || eventType == EventType.implicit_launch_event)
                 return
@@ -251,7 +255,11 @@ class AutAutModelLoader {
             else
                 createNewInput(abstractTransition,atuaMF)
             inputs.forEach { input ->
-                atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window,input)
+                atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window, WindowTransition(
+                       abstractTransition.source.window,
+                        abstractTransition.dest.window,
+                        input,
+                        abstractTransition.preWindowAbstractState?.window))
             }
 
         }
@@ -699,14 +707,31 @@ class AutAutModelLoader {
         fun splitCSVLineToField(line: String): List<String> {
             // TODO too slow, reimplement without regex
 
-            val data = ArrayList(line.split(";(?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()))
+            val data = ArrayList(line.split(";"))
             val result = ArrayList<String>()
-            data.forEach {
-                if (it.startsWith("\"") && it.endsWith("\"")) {
-                    val newString = it.trim('"')
-                    result.add(newString)
+            var startQuote = false
+            var temp = ""
+            for (s in data) {
+                if (!startQuote) {
+                    if (!s.startsWith("\"")) {
+                        result.add(s)
+                    } else {
+                        if (s.length>1 && s.endsWith("\"")) {
+                            result.add(s)
+                        }else {
+                            startQuote = true
+                            temp = s
+                        }
+                    }
                 } else {
-                    result.add(it)
+                    temp = temp + ";"+s
+                    if (s.endsWith("\"")) {
+                        startQuote = false
+                        // remove quote
+                        temp = temp.substring(1,temp.length-1)
+                        result.add(temp)
+                        temp = ""
+                    }
                 }
             }
             return result
@@ -757,6 +782,7 @@ class AutAutModelLoader {
                 "Dialog" -> Dialog.getOrCreateNode(nodeId = windowId,
                         classType = classType,
                         runtimeCreated = createdAtRuntime,
+                        allocMethod = "",
                         isBaseModel = true)
                 "OptionsMenu" -> OptionsMenu.getOrCreateNode(nodeId = windowId,
                         classType = classType,

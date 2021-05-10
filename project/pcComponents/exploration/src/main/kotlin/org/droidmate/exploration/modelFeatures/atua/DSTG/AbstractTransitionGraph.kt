@@ -43,7 +43,7 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
     }
 
     private fun header(): String {
-        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;Handlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionID"
+        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;PrevAbstractStateId;PrevHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionID"
     }
 
     fun recursiveDump(sourceAbstractState: AbstractState, statementCoverageMF: StatementCoverageMF, dumpedSourceStates: ArrayList<AbstractState> , bufferedWriter: BufferedWriter) {
@@ -58,7 +58,7 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.destination!!.data.abstractStateId};" +
                     "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationMap?.avmId};${edge.label.data};" +
-                    "${edge.label.prevWindow?.windowId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
+                    "${edge.label.prevWindow?.windowId};${edge.label.preWindowAbstractState?.abstractStateId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
                     "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\""
             bufferedWriter.write(abstractTransitionInfo)
 

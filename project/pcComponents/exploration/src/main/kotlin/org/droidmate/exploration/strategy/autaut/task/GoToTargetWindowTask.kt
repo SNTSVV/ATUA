@@ -1,6 +1,5 @@
 package org.droidmate.exploration.strategy.autaut.task
 
-import jdk.nashorn.internal.ir.ContinueNode
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
@@ -17,22 +16,25 @@ class GoToTargetWindowTask (
         executedCount++
     }
 
-    override fun initPossiblePaths(currentState: State<*>, continueNode: Boolean) {
+    override fun initPossiblePaths(currentState: State<*>, continueMode: Boolean) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
+                PathFindingHelper.PathType.RESET
+        else if (continueMode)
             PathFindingHelper.PathType.INCLUDE_INFERED
-        else if (!continueNode)
-            computeNextPathType(currentPath!!.pathType,includeReset)
         else
-            PathFindingHelper.PathType.NORMAL
+            computeNextPathType(currentPath!!.pathType,includeResetAction)
         
         while (possiblePaths.isEmpty()) {
             possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
-            if (nextPathType == PathFindingHelper.PathType.WTG ||
-                    (!includeReset && nextPathType == PathFindingHelper.PathType.NORMAL)) {
+            if (nextPathType == PathFindingHelper.PathType.WTG)
                 break
-            }else {
-                nextPathType = computeNextPathType(nextPathType,includeReset)
+            if (continueMode)
+                break
+            if (!includeResetAction && nextPathType == PathFindingHelper.PathType.INCLUDE_INFERED) {
+                break
+            } else {
+                nextPathType = computeNextPathType(nextPathType,includeResetAction)
             }
         }
         if (possiblePaths.isEmpty()) {

@@ -12,9 +12,10 @@ open class Input (
         val createdAtRuntime: Boolean = false
 )
 {
+
+    val verifiedEventHandlers = HashSet<String>() //if an event handler appears in this set, we will not remove it from event's handlers
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,
-    val verifiedEventHandlers = HashSet<String>() //if an event handler appears in this set, we will not remove it from event's handlers
     val coverage = HashMap<String,Int>()
 
     var data: Any? = null
@@ -55,15 +56,7 @@ open class Input (
             }
         }
     }
-    fun fullyCovered(): Boolean {
-        val uncoveredMethods = this.modifiedMethods.filter { it.value==false }.size
-        if (uncoveredMethods>0)
-            return false
-        val uncoveredStatements = this.modifiedMethodStatement.filter { it.value==false }.size
-        if (uncoveredStatements>0)
-            return false
-        return true
-    }
+
 
     override fun toString(): String {
         return "$sourceWindow-->$eventType-->[$widget]"

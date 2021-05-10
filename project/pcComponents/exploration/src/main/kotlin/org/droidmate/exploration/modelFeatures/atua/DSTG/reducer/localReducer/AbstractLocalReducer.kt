@@ -14,6 +14,8 @@ abstract class AbstractLocalReducer {
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())
         reducedAttributes.put(AttributeType.checkable, guiWidget.checked.isEnabled().toString())
+        if (guiWidget.checked.isEnabled())
+            reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
         reducedAttributes.put(AttributeType.isInputField, guiWidget.isInputField.toString())
         reducedAttributes.put(AttributeType.clickable, guiWidget.clickable.toString())
         reducedAttributes.put(AttributeType.longClickable, guiWidget.longClickable.toString())
@@ -38,7 +40,7 @@ abstract class AbstractLocalReducer {
         }
         if (guiWidget.selected.isEnabled())
             reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
-        reducedAttributes.put(AttributeType.isLeaf,guiWidget.childHashes.isEmpty().toString())
+
         return reducedAttributes
     }
 }

@@ -14,6 +14,7 @@ class AbstractTransition(
         val interactions: HashSet<Interaction<*>> = HashSet(),
         val isImplicit: Boolean,
         var prevWindow: Window?,
+        var preWindowAbstractState: AbstractState?=null,
         val data: Any? =null,
         var fromWTG: Boolean = false,
         val source: AbstractState,
@@ -30,7 +31,7 @@ class AbstractTransition(
     val userInputs = ArrayList<HashMap<UUID,String>>()
     val statementCoverage = HashSet<String>()
     val methodCoverage = HashSet<String>()
-
+    val changeResults = HashSet<ChangeResult>()
     fun isExplicit() = !isImplicit
 
     fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {

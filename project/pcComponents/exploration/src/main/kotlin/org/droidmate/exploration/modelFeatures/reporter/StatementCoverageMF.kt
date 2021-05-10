@@ -57,6 +57,7 @@ import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.coroutines.CoroutineContext
@@ -84,8 +85,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
      val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
      val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
 
-    val recentExecutedStatements: HashSet<String> = HashSet()
-    val recentExecutedMethods: HashSet<String> = HashSet()
+    val recentExecutedStatements: ArrayList<String> = ArrayList()
+    val recentExecutedMethods: ArrayList<String> = ArrayList()
     val actionTraceCoverage = HashMap<Int,Int>()
     val actionIncreaseCoverage = HashMap<Int,Int>()
 
@@ -129,8 +130,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                         val uuidIndex = statement[1].toString().lastIndexOf(" uuid=")
                         //val parts = statement[1].toString().split(" uuid=".toRegex()).toTypedArray()
                         val statementId = statement[1].toString().substring(uuidIndex+" uuid=".length)
-
-                        recentExecutedStatements.add(statementId)
+                        if (!recentExecutedStatements.contains(statementId))
+                            recentExecutedStatements.add(statementId)
                         var found = executedStatementsMap.containsKey(statementId)
                         if (!found /*&& instrumentationMap.containsKey(id)*/) {
                             executedStatementsMap[statementId] = tms
@@ -145,7 +146,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                             //val methodId = parts2.last()
                             val methodId = fullStatement.substring(methodIdIndex+" methodId=".length)
                             // Add the statement if it wasn't executed before
-                            recentExecutedMethods.add(methodId)
+                            if (!recentExecutedMethods.contains(methodId))
+                                recentExecutedMethods.add(methodId)
                             found = executedMethodsMap.containsKey(methodId)
                             if (!found)
                             {

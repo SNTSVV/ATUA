@@ -4,11 +4,11 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 
 class Dialog(classType: String,
              nodeId: String= getNodeId(),
+             allocMethod: String,// can only acquired by ewtg
              runtimeCreated: Boolean,
              isBaseModel:Boolean): Window(classType,nodeId,runtimeCreated,isBaseModel){
     var ownerActivity: Window? = null;
-
-
+    var dialogType: DialogType = DialogType.NORMAL
     init {
         counter++
     }
@@ -24,7 +24,7 @@ class Dialog(classType: String,
     companion object{
         var counter = 0
         fun getNodeId(): String = "Dialog-${counter+1}"
-        fun getOrCreateNode(nodeId: String, classType: String, runtimeCreated: Boolean, isBaseModel: Boolean): Dialog {
+        fun getOrCreateNode(nodeId: String, classType: String, allocMethod: String, runtimeCreated: Boolean, isBaseModel: Boolean): Dialog {
             val node = if (isBaseModel) {
                 WindowManager.instance.baseModelWindows.find { it.windowId == nodeId
                         && it is Dialog}
@@ -35,7 +35,13 @@ class Dialog(classType: String,
             if (node != null)
                 return node!! as Dialog
             else
-                return Dialog(nodeId = nodeId, classType = classType, runtimeCreated = runtimeCreated,isBaseModel = isBaseModel)
+                return Dialog(nodeId = nodeId, classType = classType, allocMethod = allocMethod, runtimeCreated = runtimeCreated,isBaseModel = isBaseModel)
         }
     }
+}
+
+enum class DialogType {
+    NORMAL,
+    ITEM_SELECTOR,
+    DATA_INPUT
 }

@@ -7,6 +7,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowTransition
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.json.JSONArray
@@ -17,7 +18,7 @@ import java.nio.file.Path
 class EWTGDiff private constructor(){
     val windowDifferentSets: HashMap<String,DifferentSet<Window>> = HashMap()
     val widgetDifferentSets: HashMap<String,DifferentSet<EWTGWidget>> = HashMap()
-    val transitionDifferentSets: HashMap<String, DifferentSet<Edge<Window,Input>>> = HashMap()
+    val transitionDifferentSets: HashMap<String, DifferentSet<Edge<Window,WindowTransition>>> = HashMap()
     fun getWidgetAdditions(): List<EWTGWidget> {
         if (widgetDifferentSets.containsKey("AdditionSet")) {
             return (widgetDifferentSets["AdditionSet"]!! as AdditionSet<EWTGWidget>).addedElements
@@ -75,7 +76,7 @@ class EWTGDiff private constructor(){
                     replacement.old.inputs.remove(it)
                     replacement.new.inputs.add(it)
                 }
-                val toRemoveEdges = ArrayList<Edge<Window,Input>>()
+                val toRemoveEdges = ArrayList<Edge<Window,WindowTransition>>()
                 atuamf.wtg.edges(replacement.old).forEach {
                     atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
                     toRemoveEdges.add(it)
@@ -116,7 +117,7 @@ class EWTGDiff private constructor(){
                     replacement.old.inputs.remove(it)
                     replacement.new.inputs.add(it)
                 }
-                val toRemoveEdges = ArrayList<Edge<Window,Input>>()
+                val toRemoveEdges = ArrayList<Edge<Window,WindowTransition>>()
                 atuamf.wtg.edges(replacement.old).forEach {
                     atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
                     toRemoveEdges.add(it)
@@ -143,7 +144,7 @@ class EWTGDiff private constructor(){
         }
 
         if (widgetDifferentSets.containsKey("DeletionSet")) {
-            for (deleted in (windowDifferentSets.get("DeletionSet")!! as DeletionSet<EWTGWidget>).deletedElements) {
+            for (deleted in (widgetDifferentSets.get("DeletionSet")!! as DeletionSet<EWTGWidget>).deletedElements) {
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                     val toDeleteAvms = it.EWTGWidgetMapping.filter { it.value == deleted }.keys
                     toDeleteAvms.forEach { avm->
@@ -203,30 +204,30 @@ class EWTGDiff private constructor(){
     private fun loadTransitionDifferences(jsonObject: JSONObject,atuamf: ATUAMF) {
         jsonObject.keys().forEach {key->
             if (key == "transitionAdditions") {
-                val transitionAdditionSet = AdditionSet<Edge<Window,Input>>()
+                val transitionAdditionSet = AdditionSet<Edge<Window,WindowTransition>>()
                 transitionDifferentSets.put("AdditionSet",transitionAdditionSet)
                 loadTransitionAdditionSet(jsonObject.get(key) as JSONArray, transitionAdditionSet,atuamf)
             }
             if (key == "transitionDeletions") {
-                val transitionDeletionSet = DeletionSet<Edge<Window,Input>>()
+                val transitionDeletionSet = DeletionSet<Edge<Window,WindowTransition>>()
                 transitionDifferentSets.put("DeletionSet",transitionDeletionSet)
                 loadTransitionDeletionSet(jsonObject.get(key) as JSONArray, transitionDeletionSet,atuamf)
             }
             if (key == "transitionReplacements") {
-                val transitionReplacementSet = ReplacementSet<Edge<Window,Input>>()
+                val transitionReplacementSet = ReplacementSet<Edge<Window,WindowTransition>>()
                 transitionDifferentSets.put("ReplacementSet",transitionReplacementSet)
                 loadTransitionReplacementSet(jsonObject.get(key) as JSONArray, transitionReplacementSet,atuamf)
 
             }
             if (key == "transitionRetainers") {
-                val transitionRetainSet = RetainerSet<Edge<Window,Input>>()
+                val transitionRetainSet = RetainerSet<Edge<Window,WindowTransition>>()
                 transitionDifferentSets.put("RetainerSet",transitionRetainSet)
                 loadTransitionRetainSet(jsonObject.get(key) as JSONArray, transitionRetainSet,atuamf)
             }
         }
     }
 
-    private fun loadTransitionRetainSet(jsonArray: JSONArray, transitionRetainSet: RetainerSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+    private fun loadTransitionRetainSet(jsonArray: JSONArray, transitionRetainSet: RetainerSet<Edge<Window, WindowTransition>>, atuamf: ATUAMF) {
         for (item in jsonArray) {
             val replacementJson = item as JSONObject
             val oldTransitionFullId = replacementJson.get("oldElement").toString()
@@ -235,7 +236,7 @@ class EWTGDiff private constructor(){
             val newTransition = parseTransition(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
             if (oldTransition != null && newTransition!=null) {
                 transitionRetainSet.replacedElements.add(Replacement(oldTransition,newTransition))
-                newTransition.label.eventHandlers.addAll(oldTransition.label.eventHandlers)
+                newTransition.label.input.eventHandlers.addAll(oldTransition.label.input.eventHandlers)
             } else {
                 val oldInput = parseInput(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
                 val newInput = parseInput(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
@@ -246,7 +247,7 @@ class EWTGDiff private constructor(){
         }
     }
 
-    private fun loadTransitionReplacementSet(jsonArray: JSONArray, transitionReplacementSet: ReplacementSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+    private fun loadTransitionReplacementSet(jsonArray: JSONArray, transitionReplacementSet: ReplacementSet<Edge<Window, WindowTransition>>, atuamf: ATUAMF) {
         for (item in jsonArray) {
             val replacementJson = item as JSONObject
             val oldTransitionFullId = replacementJson.get("oldElement").toString()
@@ -255,7 +256,7 @@ class EWTGDiff private constructor(){
             val newTransition = parseTransition(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
             if (oldTransition != null && newTransition!=null) {
                 transitionReplacementSet.replacedElements.add(Replacement(oldTransition,newTransition))
-                newTransition.label.eventHandlers.addAll(oldTransition.label.eventHandlers)
+                newTransition.label.input.eventHandlers.addAll(oldTransition.label.input.eventHandlers)
             } else {
                 val oldInput = parseInput(oldTransitionFullId,atuamf,WindowManager.instance.baseModelWindows)
                 val newInput = parseInput(newTransitionFullId,atuamf,WindowManager.instance.updatedModelWindows)
@@ -266,9 +267,9 @@ class EWTGDiff private constructor(){
         }
     }
 
-    private fun loadTransitionDeletionSet(jsonArray: JSONArray, transitionDeletionSet: DeletionSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+    private fun loadTransitionDeletionSet(jsonArray: JSONArray, transitionDeletionSet: DeletionSet<Edge<Window, WindowTransition>>, atuamf: ATUAMF) {
         jsonArray.forEach {item ->
-            var transition : Edge<Window,Input>? = null
+            var transition : Edge<Window,WindowTransition>? = null
             transition = parseTransition(item.toString(), atuamf, WindowManager.instance.baseModelWindows)
             if (transition!=null) {
                 transitionDeletionSet.deletedElements.add(transition)
@@ -276,9 +277,9 @@ class EWTGDiff private constructor(){
         }
     }
 
-    private fun loadTransitionAdditionSet(jsonArray: JSONArray, transitionAdditionSet: AdditionSet<Edge<Window, Input>>, atuamf: ATUAMF) {
+    private fun loadTransitionAdditionSet(jsonArray: JSONArray, transitionAdditionSet: AdditionSet<Edge<Window, WindowTransition>>, atuamf: ATUAMF) {
         jsonArray.forEach {item ->
-            var transition : Edge<Window,Input>? = null
+            var transition : Edge<Window,WindowTransition>? = null
             transition = parseTransition(item.toString(), atuamf, WindowManager.instance.updatedModelWindows)
             if (transition!=null) {
                 transitionAdditionSet.addedElements.add(transition)
@@ -286,8 +287,8 @@ class EWTGDiff private constructor(){
         }
     }
 
-    private fun parseTransition(item: String, atuamf: ATUAMF, windowList: ArrayList<Window>): Edge<Window, Input>? {
-        var transition: Edge<Window,Input>? = null
+    private fun parseTransition(item: String, atuamf: ATUAMF, windowList: ArrayList<Window>): Edge<Window, WindowTransition>? {
+        var transition: Edge<Window,WindowTransition>? = null
         val transitionFullId = item.toString()
         val split = transitionFullId.split("_")
         val sourceWindowId = split[0]!!.replace("WIN", "")
@@ -296,7 +297,7 @@ class EWTGDiff private constructor(){
         if (!Input.isIgnoreEvent(action)) {
             var widgetId = ""
             var ignoreWidget = false
-            if (Input.isNoWidgetEvent(action)) {
+            if (Input.isNoWidgetEvent(action) || split.size < 4) {
                 ignoreWidget = true
             } else {
                 widgetId = split[3]!!.replace("WID", "")
@@ -315,7 +316,7 @@ class EWTGDiff private constructor(){
             }
             transition = atuamf.wtg.edges(sourceWindow).find {
                 it.destination?.data == destWindow
-                        && it.label == input
+                        && it.label.input == input
             }
 
         }
@@ -332,7 +333,7 @@ class EWTGDiff private constructor(){
         if (!Input.isIgnoreEvent(action)) {
             var widgetId = ""
             var ignoreWidget = false
-            if (Input.isNoWidgetEvent(action)) {
+            if (Input.isNoWidgetEvent(action) || split.size < 4) {
                 ignoreWidget = true
             } else {
                 widgetId = split[3]!!.replace("WID", "")

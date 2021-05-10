@@ -20,23 +20,20 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
-                              Graph(FakeWindow(nodeId = "Root",isBaseModel = false) as Window,
-                                      stateComparison = { a, b -> a == b },
-                                      labelComparison = { a, b ->
-                                          a == b
-                                      })) : IGraph<Window, Input> by graph {
-    val edgeConditions: HashMap<Edge<*, *>, HashMap<EWTGWidget, String>> = HashMap()
-    val edgeProved: HashMap<Edge<*, *>, Int> = HashMap()
-    val statementCoverageInfo: HashMap<Edge<*, *>, ArrayList<String>> = HashMap()
-    val methodCoverageInfo: HashMap<Edge<*, *>, ArrayList<String>> = HashMap()
-
+class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> =
+                                    Graph(FakeWindow(nodeId = "Root", isBaseModel = false) as Window,
+                                            stateComparison = { a, b -> a == b },
+                                            labelComparison = { a, b ->
+                                                a == b
+                                            })) : IGraph<Window, WindowTransition> by graph {
     init {
         Launcher.getOrCreateNode()
     }
-    fun dump( bufferedWriter: BufferedWriter){
+
+    fun dump(bufferedWriter: BufferedWriter) {
 
     }
+
     fun constructFromJson(jObj: JSONObject) {
         var jMap = jObj.getJSONObject("allActivityNodes")
         jMap.keys().asSequence().forEach { key ->
@@ -52,7 +49,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
             val windowInfo = StaticAnalysisJSONParser.windowParser(source)
             val sourceNode = getOrCreateWTGNode(windowInfo)
             if (sourceNode is Launcher) {
-                this.add(root.data, sourceNode, LaunchAppEvent(sourceNode))
+                val event = LaunchAppEvent(sourceNode)
             }
             //for each possbile transition to another window
             val transitions = jMap[key] as JSONArray
@@ -98,55 +95,60 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
                     } else {
                         ewtgWidget = null
                     }
-                    if (Input.isNoWidgetEvent(action) || (!Input.isNoWidgetEvent(action) && ewtgWidget!=null) ) {
-                            val event = Input.getOrCreateEvent(
-                                    eventTypeString = action,
-                                    eventHandlers = emptySet(),
-                                    widget = ewtgWidget,
-                                    activity = sourceNode.classType,
-                                    sourceWindow = sourceNode
+                    if (Input.isNoWidgetEvent(action) || (!Input.isNoWidgetEvent(action) && ewtgWidget != null)) {
+                        val event = Input.getOrCreateEvent(
+                                eventTypeString = action,
+                                eventHandlers = emptySet(),
+                                widget = ewtgWidget,
+                                activity = sourceNode.classType,
+                                sourceWindow = sourceNode
 
-                            )
-                            //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
-                            edgeConditions.put(this.add(sourceNode, targetNode, event), HashMap())
+                        )
+                        //event = StaticEvent(EventType.valueOf(action), arrayListOf(), staticWidget, sourceNode.classType, sourceNode)
+                        val windowTransition = WindowTransition(
+                                source = sourceNode,
+                                destination = targetNode,
+                                input = event,
+                                prevWindow = null
+                        )
 
-                            if (ewtgWidget!=null && ewtgWidget!!.className.contains("Layout")) {
-                                var createItemClick = false
-                                var createItemLongClick = false
-                                /*when (action) {
-                                    "touch" -> {
-                                        createItemClick=true
-                                        createItemLongClick=true
-                                    }
-                                    "click" -> {
-                                        createItemClick=true
-                                    }
-                                    "long_click" -> {
-                                        createItemLongClick=true
-                                    }
-                                }*/
-                                if (createItemClick) {
-                                    //create item click and long click
-                                    val itemClick = Input.getOrCreateEvent(
-                                            eventHandlers = emptySet(),
-                                            eventTypeString = "item_click",
-                                            widget = ewtgWidget,
-                                            activity = sourceNode.classType,
-                                            sourceWindow = sourceNode)
-
-                                    this.add(sourceNode, targetNode, itemClick)
+                        if (ewtgWidget != null && ewtgWidget!!.className.contains("Layout")) {
+                            var createItemClick = false
+                            var createItemLongClick = false
+                            /*when (action) {
+                                "touch" -> {
+                                    createItemClick=true
+                                    createItemLongClick=true
                                 }
-                                if (createItemLongClick) {
-                                    //create item click and long click
-                                    val itemLongClick = Input.getOrCreateEvent(
-                                            eventHandlers = emptySet(),
-                                            eventTypeString = "item_long_click",
-                                            widget = ewtgWidget,
-                                            activity = sourceNode.classType,
-                                            sourceWindow = sourceNode)
-                                    this.add(sourceNode, targetNode, itemLongClick  )
+                                "click" -> {
+                                    createItemClick=true
                                 }
+                                "long_click" -> {
+                                    createItemLongClick=true
+                                }
+                            }*/
+                            if (createItemClick) {
+                                //create item click and long click
+                                val itemClick = Input.getOrCreateEvent(
+                                        eventHandlers = emptySet(),
+                                        eventTypeString = "item_click",
+                                        widget = ewtgWidget,
+                                        activity = sourceNode.classType,
+                                        sourceWindow = sourceNode)
+
+                                this.add(sourceNode, targetNode, WindowTransition(sourceNode,targetNode,itemClick,null))
                             }
+                            if (createItemLongClick) {
+                                //create item click and long click
+                                val itemLongClick = Input.getOrCreateEvent(
+                                        eventHandlers = emptySet(),
+                                        eventTypeString = "item_long_click",
+                                        widget = ewtgWidget,
+                                        activity = sourceNode.classType,
+                                        sourceWindow = sourceNode)
+                                this.add(sourceNode, targetNode, WindowTransition(sourceNode,targetNode,itemLongClick,null))
+                            }
+                        }
                     }
                 }
 
@@ -157,11 +159,13 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
             val owner = WindowManager.instance.updatedModelWindows.find { a -> a is Activity && a.classType == o.classType }
             if (owner != null) {
                 val edges = this.edges(owner, o)
+
                 if (edges.isEmpty()) {
-                    this.add(owner, o, Input(eventType = EventType.implicit_menu,
+                    val input = Input(eventType = EventType.implicit_menu,
                             eventHandlers = HashSet(),
                             widget = null,
-                            sourceWindow = o))
+                            sourceWindow = o)
+                    this.add(owner, o, WindowTransition(owner,o,input,null))
                 }
             }
 
@@ -171,18 +175,20 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
 
     fun getOrCreateWTGNode(windowInfo: HashMap<String, String>): Window {
         val wtgNode = when (windowInfo["NodeType"]) {
-            "ACT" -> Activity.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!,false,false)
-            "DIALOG" -> Dialog.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!,false,false)
-            "OptionsMenu" -> OptionsMenu.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!,false,false)
-            "ContextMenu" -> ContextMenu.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!,false,false)
+            "ACT" -> Activity.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!, false, false)
+            "DIALOG" -> Dialog.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!, windowInfo["allocMethod"]!!, false, false)
+            "OptionsMenu" -> OptionsMenu.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!, false, false)
+            "ContextMenu" -> ContextMenu.getOrCreateNode(windowInfo["id"]!!, windowInfo["className"]!!, false, false)
             "LAUNCHER_NODE" -> Launcher.getOrCreateNode()
             else -> throw Exception("Not supported windowType")
         }
         if (wtgNode is OptionsMenu) {
             val activityNode = WindowManager.instance.updatedModelWindows.find { it.classType == wtgNode.classType && it is Activity }
             if (activityNode != null) {
-                if (this.edges(activityNode, wtgNode).isEmpty())
-                    this.add(activityNode, wtgNode, Input(EventType.implicit_menu, HashSet( ), null, sourceWindow = activityNode))
+                if (this.edges(activityNode, wtgNode).isEmpty()) {
+                    val input = Input(EventType.implicit_menu, HashSet(), null, sourceWindow = activityNode)
+                    this.add(activityNode, wtgNode, WindowTransition(activityNode,wtgNode,input,null))
+                }
             }
 
         }
@@ -204,9 +210,9 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
 
     fun haveOptionsMenu(wtgNode: Window): Boolean {
         val outEdges = this.edges(wtgNode)
-        if (outEdges.find { it.destination != null && it.destination!!.data is OptionsMenu && it.label.eventType != EventType.implicit_back_event } != null)
+        if (outEdges.find { it.destination != null && it.destination!!.data is OptionsMenu && it.label.input.eventType != EventType.implicit_back_event } != null)
             return true
-        if (outEdges.find { it.destination != null && it.label.eventType == EventType.implicit_menu } != null)
+        if (outEdges.find { it.destination != null && it.label.input.eventType == EventType.implicit_menu } != null)
             return true
         return false
     }
@@ -218,7 +224,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         val edges = this.edges(wtgNode).filter {
             it.destination != null
                     && it.destination!!.data is OptionsMenu
-                    && it.label.eventType != EventType.implicit_back_event
+                    && it.label.input.eventType != EventType.implicit_back_event
         }
         return edges.map { it.destination!!.data }.firstOrNull()
     }
@@ -232,36 +238,24 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         if (activityContextMenus.isNotEmpty()) {
             return activityContextMenus
         }
-        val createdContextMenus = ArrayList<ContextMenu>()
-        originalContextMenus.forEach {
-            //create new WTGContextMenus
-            val newWTGContextMenuNode = ContextMenu.getOrCreateNode(
-                    nodeId = ContextMenu.getNodeId(),
-                    classType = wtgNode.activityClass,
-                    runtimeCreated = false,
-                    isBaseModel = false)
-            newWTGContextMenuNode.activityClass = wtgNode.activityClass
-            copyNode(it, newWTGContextMenuNode)
-            this.add(wtgNode, newWTGContextMenuNode, FakeEvent(wtgNode))
-            AbstractStateManager.instance.createVirtualAbstractState(newWTGContextMenuNode)
-            createdContextMenus.add(newWTGContextMenuNode)
-        }
-        return createdContextMenus
+        return originalContextMenus
     }
 
     fun getDialogs(wtgNode: Window): List<Dialog> {
         val edges = this.edges(wtgNode).filter { it.destination != null }
-                .filter { it.destination!!.data is Dialog
-                        && (it.destination!!.data.activityClass.isBlank()
-                        || it.destination!!.data.activityClass == wtgNode.activityClass)}
+                .filter {
+                    it.destination!!.data is Dialog
+                            && (it.destination!!.data.activityClass.isBlank()
+                            || it.destination!!.data.activityClass == wtgNode.activityClass)
+                }
         val dialogs = edges.map { it.destination!!.data as Dialog }.toHashSet()
-        dialogs.addAll(WindowManager.instance.updatedModelWindows.filter {it is Dialog && it.activityClass == wtgNode.activityClass } as List<Dialog>)
+        dialogs.addAll(WindowManager.instance.updatedModelWindows.filter { it is Dialog && it.activityClass == wtgNode.activityClass } as List<Dialog>)
         return dialogs.toList()
     }
 
     fun getWindowBackward(wtgNode: Window): List<Edge<*, *>> {
         val pressBackEvents = arrayListOf<Edge<*, *>>()
-        this.edges(wtgNode).filter { it.label.eventType == EventType.implicit_back_event }.forEach {
+        this.edges(wtgNode).filter { it.label.input.eventType == EventType.implicit_back_event }.forEach {
             pressBackEvents.add(it)
         }
         return pressBackEvents
@@ -272,8 +266,8 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         if (childGraphRoot == null)
             return false
         var node: Window? = childGraphRoot
-        val stack: Stack<Edge<Window, Input>> = Stack()
-        val traversedEdge = arrayListOf<Edge<Window, Input>>()
+        val stack: Stack<Edge<Window, WindowTransition>> = Stack()
+        val traversedEdge = arrayListOf<Edge<Window, WindowTransition>>()
         while (node != null) {
             val edges = childWTG.edges(node)
             val newEdges = edges.filter { !traversedEdge.contains(it) }
@@ -296,6 +290,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         return true
     }
 
+    @Suppress
     fun mergeNode(source: Window, dest: Window) {
         source.widgets.forEach {
             //source.widgets.remove(it)
@@ -307,7 +302,6 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
 
         val edges = this.edges(source).toMutableList()
         edges.forEach {
-            it.label.sourceWindow = dest
             this.add(dest, it.destination?.data, it.label)
         }
 
@@ -319,28 +313,8 @@ class WindowTransitionGraph(private val graph: IGraph<Window, Input> =
         }
     }
 
-    fun copyNode(source: Window, dest: Window) {
-        source.widgets.forEach {
-            if (!dest.widgets.contains(it)) {
-                dest.addWidget(it)
-            }
-        }
-
-        val edges = this.edges(source).toMutableList()
-        edges.forEach {
-            it.label.sourceWindow = dest
-            this.add(dest, it.destination?.data, it.label)
-        }
-
-    }
-
-
-    override fun add(source: Window, destination: Window?, label: Input, updateIfExists: Boolean, weight: Double): Edge<Window, Input> {
+    override fun add(source: Window, destination: Window?, label: WindowTransition, updateIfExists: Boolean, weight: Double): Edge<Window, WindowTransition> {
         val edge = graph.add(source, destination, label, updateIfExists, weight)
-        edgeProved.put(edge, 0)
-        edgeConditions.put(edge, HashMap())
-        methodCoverageInfo.put(edge, ArrayList())
-        statementCoverageInfo.put(edge, ArrayList())
         return edge
     }
 

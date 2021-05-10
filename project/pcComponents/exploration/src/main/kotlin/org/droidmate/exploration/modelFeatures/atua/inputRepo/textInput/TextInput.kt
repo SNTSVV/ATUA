@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput
 
 import org.droidmate.deviceInterface.exploration.isEnabled
+import org.droidmate.exploration.strategy.autaut.task.InputCoverage
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*
@@ -29,11 +30,11 @@ class TextInput () {
             return null
         }
 
-        fun getSetTextInputValue(widget: Widget, state: State<*>, randomInput: Boolean): String {
+        fun getSetTextInputValue(widget: Widget, state: State<*>, randomInput: Boolean, inputCoverageType: InputCoverage): String {
             val inputValue = when (widget.inputType) {
                 2 -> randomInt()
-                1 -> inputString(widget, state,randomInput)
-                else -> inputString(widget, state,randomInput)
+                1 -> inputString(widget, state,randomInput,inputCoverageType)
+                else -> inputString(widget, state,randomInput,inputCoverageType)
             }
             return inputValue
         }
@@ -46,7 +47,7 @@ class TextInput () {
             }
         }
 
-        protected open fun inputString(widget: Widget, state: State<*>, randomInput: Boolean): String{
+        protected open fun inputString(widget: Widget, state: State<*>, randomInput: Boolean, inputCoverageType: InputCoverage): String{
             var inputCandidates = ""
             if(inputConfiguration !=null )
             {
@@ -58,12 +59,26 @@ class TextInput () {
                 }
             }
             if (widget.checked.isEnabled()) {
-                if (random.nextBoolean()) {
-                    return "true"
+                when (inputCoverageType) {
+                    InputCoverage.FILL_ALL -> return "true"
+                    InputCoverage.FILL_EMPTY -> return "false"
+                    InputCoverage.FILL_NONE -> return widget.checked.toString()
+                    InputCoverage.FILL_RANDOM -> return if (random.nextBoolean())
+                        "true"
+                    else
+                        "false"
                 }
-                return "false"
             }
             //widget is TextInput
+            when (inputCoverageType) {
+                InputCoverage.FILL_EMPTY -> return ""
+                InputCoverage.FILL_NONE -> return widget.text
+                InputCoverage.FILL_ALL, InputCoverage.FILL_RANDOM -> return generateInput(widget)
+            }
+            return ""
+        }
+
+        private fun generateInput(widget: Widget): String {
             val reuseString = random.nextBoolean()
             if (reuseString && historyTextInput.isNotEmpty())
             {

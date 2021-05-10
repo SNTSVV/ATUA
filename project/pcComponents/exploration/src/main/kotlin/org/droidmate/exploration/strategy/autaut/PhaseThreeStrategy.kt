@@ -9,14 +9,12 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.TransitionPath
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
@@ -181,12 +179,7 @@ class PhaseThreeStrategy(
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
-        val runtimeAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
-                .filterNot { it is VirtualAbstractState
-                        || it == currentAbState
-                        || it.window is Launcher
-                        || it.window is OutOfApp
-                }
+        val runtimeAbstractStates = getUnexhaustedExploredAbstractState(currentState)
         val abstratStateCandidates = runtimeAbstractStates
 
         val stateByActionCount = HashMap<AbstractState,Double>()
@@ -595,7 +588,7 @@ class PhaseThreeStrategy(
         remainPhaseStateCount = 0
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
-            it.isFullyExploration = true
+            it.isPureRandom = true
             it.backAction = true
             it.setMaxiumAttempt((5*scaleFactor).toInt())
             it.environmentChange = true

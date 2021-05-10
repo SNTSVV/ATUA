@@ -9,12 +9,7 @@ import org.droidmate.explorationModel.interaction.Widget
 class LocalReducerLV2: AbstractLocalReducer() {
     override fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>  {
         val reducedAttributes = reduceBaseAttributes(guiWidget,guiState)
-        if (guiWidget.checked.isEnabled())
-            reducedAttributes.put(AttributeType.checked,guiWidget.checked.toString())
-        if (!guiWidget.isInputField) {
-            reducedAttributes.put(AttributeType.text, guiWidget.text)
-            reducedAttributes.put(AttributeType.contentDesc, guiWidget.contentDesc)
-        }
+        reducedAttributes.put(AttributeType.text, guiWidget.nlpText)
         return reducedAttributes
     }
 }

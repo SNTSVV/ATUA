@@ -29,7 +29,7 @@ import kotlin.collections.HashMap
 import kotlin.random.Random
 
 abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
-                                     val autautMF: ATUAMF,
+                                     val atuaMF: ATUAMF,
                                      val delay: Long,
                                      val useCoordinateClicks: Boolean){
 
@@ -44,7 +44,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         return widgets
                 .let { filteredCandidates ->
                     // for each widget in this state the number of interactions
-                    autautMF.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    atuaMF.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
                             .groupBy { it.key.packageName }.flatMap { (pkgName, countEntry) ->
                                 if (pkgName != autautStrategy.eContext.apk.packageName) {
                                     val pkgActions = counter.pkgCount(pkgName)
@@ -178,7 +178,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 AbstractActionType.PRESS_HOME -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.MINIMIZE_MAXIMIZE -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.ROTATE_UI -> {
-                    if (autautMF.currentRotation==Rotation.PORTRAIT) {
+                    if (atuaMF.currentRotation==Rotation.PORTRAIT) {
                         ExplorationAction.rotate(90)
                     }
                     else
@@ -349,7 +349,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         if (action == AbstractActionType.TEXT_INSERT && chosenWidget.isInputField) {
             return chooseActionForTextInput(chosenWidget, currentState)
         }
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         if (action == AbstractActionType.SWIPE && data is String) {
             val swipeAction =
              when (data) {
@@ -359,7 +359,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 "SwipeRight" -> chosenWidget.swipeRight()
                  "SwipeTillEnd" -> doDeepSwipeUp(chosenWidget,currentState).also {
                      if (abstractAction!=null)
-                        currentAbstractState.increaseActionCount(abstractAction,true)
+                        currentAbstractState.increaseActionCount(abstractAction)
                  }
                 else -> {
                     if (data.isNotBlank()) {
@@ -429,7 +429,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 return null
             }
             if (abstractAction!=null){
-                currentAbstractState.increaseActionCount(abstractAction,updateSimilarAbstractState = true)
+                currentAbstractState.increaseActionCount(abstractAction)
             }
             return explorationAction
         }
@@ -506,7 +506,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
 
 
     private fun chooseActionForTextInput(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
-        val inputValue = TextInput.getSetTextInputValue(chosenWidget, currentState,true)
+        val inputValue = TextInput.getSetTextInputValue(chosenWidget, currentState,true, InputCoverage.FILL_RANDOM)
         val explorationAction = chosenWidget.setText(inputValue, delay = delay, sendEnter = true)
         return explorationAction
     }
@@ -514,7 +514,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
     private fun chooseActionForItemEvent(chosenWidget: Widget, currentState: State<*>, action: AbstractActionType, abstractAction: AbstractAction?): ExplorationAction? {
         if (chosenWidget.childHashes.size == 0)
             return null
-        autautMF.isRecentItemAction = true
+        atuaMF.isRecentItemAction = true
         var childWidgets = getChildWidgets(currentState, chosenWidget)
         if (childWidgets.isEmpty()) {
             if (abstractAction!=null) {
@@ -524,7 +524,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         }
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         if (abstractAction!=null)
-            abstractState.increaseActionCount(abstractAction,updateSimilarAbstractState = true)
+            abstractState.increaseActionCount(abstractAction)
         if (chosenWidget.className == "android.webkit.WebView") {
            val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
             if (action==AbstractActionType.ITEM_CLICK) {
@@ -588,8 +588,17 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
     private fun callIntent(data: Any?): CallIntent {
         if (data is IntentFilter) {
             val intentFilter = data as IntentFilter
-            return autautStrategy.eContext.callIntent(intentFilter.getActions().random(),
-                    intentFilter.getCategories().random(), intentFilter.getDatas().random().testData.random(), intentFilter.activity)
+            val action = intentFilter.getActions().random()
+            val category = if (intentFilter.getCategories().isNotEmpty())
+                intentFilter.getCategories().random()
+            else
+                ""
+            val data = if (intentFilter.getDatas().isNotEmpty())
+                intentFilter.getDatas().random().testData.random()
+            else
+                ""
+            return autautStrategy.eContext.callIntent(action,
+                    category, data, intentFilter.activity)
 
         } else {
             val intentData: HashMap<String,String> = parseIntentData(data as String)

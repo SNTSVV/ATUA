@@ -6,6 +6,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.AdditionSet
 import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
@@ -137,20 +138,42 @@ class ModelBackwardAdapter {
             }*/
             baseAbstractTransitions.addAll(abstractTransition.source.abstractTransitions.filter {
                 it.abstractAction == abstractTransition.abstractAction
-                        && it.prevWindow == abstractTransition.prevWindow
+                        && (it.prevWindow == abstractTransition.prevWindow
+                        || it.prevWindow == null)
                         && it.modelVersion == ModelVersion.BASE
                         && it.dest.guiStates.isEmpty() // which means that the destination has not observed before
             })
-            baseAbstractTransitions.forEach {
-                val dest = it.dest
-                if (observedAbstractState == dest) {
-                    backwardEquivalenceFound = true
+            if (baseAbstractTransitions.isNotEmpty()) {
+                baseAbstractTransitions.forEach {
+                    val dest = it.dest
+                    if (observedAbstractState == dest) {
+                        backwardEquivalenceFound = true
+                    } else if (isBackwardEquivant(observedAbstractState, dest)) {
+                        backwardEquivalentMapping.putIfAbsent(dest, HashSet())
+                        backwardEquivalentMapping[dest]!!.add(observedAbstractState)
+                        copyAbstractTransitions(observedAbstractState, dest)
+                        backwardEquivalenceFound = true
+                    }
                 }
-                else if (isBackwardEquivant(observedAbstractState, dest)) {
-                    backwardEquivalentMapping.putIfAbsent(dest, HashSet())
-                    backwardEquivalentMapping[dest]!!.add(observedAbstractState)
-                    copyAbstractTransitions(observedAbstractState, dest)
-                    backwardEquivalenceFound = true
+            } else {
+                if (abstractTransition.source.abstractTransitions.any {
+                            it.abstractAction == abstractTransition.abstractAction
+                                    && it.dest.window == observedAbstractState.window
+                                    && it.fromWTG}) {
+                    val candidates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                        it !is VirtualAbstractState && it.window == observedAbstractState.window
+                                && it.modelVersion == ModelVersion.BASE
+                    }
+                    candidates.forEach {
+                        if (observedAbstractState == it) {
+                            backwardEquivalenceFound = true
+                        } else if (isBackwardEquivant(observedAbstractState, it)) {
+                            backwardEquivalentMapping.putIfAbsent(it, HashSet())
+                            backwardEquivalentMapping[it]!!.add(observedAbstractState)
+                            copyAbstractTransitions(observedAbstractState, it)
+                            backwardEquivalenceFound = true
+                        }
+                    }
                 }
             }
             if (backwardEquivalenceFound) {
@@ -240,7 +263,7 @@ class ModelBackwardAdapter {
         } else {
             val unmatchedWidgets =  unmatchedAVMs.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
             val windowBaseCreatedRuntimeWidgets = observedAbstractState.window.widgets.filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.BASE }
-            if (unmatchedWidgets.all {!windowBaseCreatedRuntimeWidgets.contains(it) }) {
+            if (unmatchedWidgets.all {windowBaseCreatedRuntimeWidgets.contains(it) }) {
                 return true
             }
         }

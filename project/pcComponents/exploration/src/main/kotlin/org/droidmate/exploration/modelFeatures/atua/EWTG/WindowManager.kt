@@ -5,6 +5,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.FakeWindow
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
 import org.droidmate.explorationModel.config.ModelConfig
 import org.droidmate.explorationModel.interaction.State
 import java.io.File
@@ -14,7 +15,8 @@ class WindowManager {
     private constructor()
     val updatedModelWindows = ArrayList<Window>()
     val baseModelWindows = ArrayList<Window>()
-
+    val userlikedWidgets = ArrayList<EWTGWidget>()
+    val intentFilter = HashMap<Window, ArrayList<IntentFilter>>()
     val allMeaningWindows
         get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp }
 

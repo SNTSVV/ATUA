@@ -58,7 +58,8 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
     }
 
     var prevNode: AbstractState? = null
-    var currentPhase: Int = 1
+
+
 
     internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
         var chosenAction: ExplorationAction
