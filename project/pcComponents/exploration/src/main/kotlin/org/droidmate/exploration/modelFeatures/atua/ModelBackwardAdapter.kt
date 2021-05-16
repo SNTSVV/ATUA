@@ -18,6 +18,7 @@ import kotlin.collections.HashSet
 
 class ModelBackwardAdapter {
     val backwardEquivalentMapping = HashMap<AbstractState, HashSet<AbstractState>>()
+    val remappedBaseAbstractState = HashSet<AbstractState>()
     val quasibackwardEquivalentMapping = HashMap<Pair<AbstractState, AbstractAction>,HashSet<Pair<AbstractState,AbstractState>>>()
 
     val checkingQuasibackwardEquivalent = Stack<Triple<AbstractState,AbstractAction,AbstractState>> ()
@@ -31,12 +32,14 @@ class ModelBackwardAdapter {
         /*if (abstractTransition.abstractAction.actionType == AbstractActionType.RESET_APP) {
             checkingQuasibackwardEquivalent.clear()
         }*/
+        if (observedAbstractState.modelVersion == ModelVersion.BASE) {
+            remappedBaseAbstractState.add(observedAbstractState)
+            return
+        }
         if (abstractTransition.modelVersion == ModelVersion.BASE) {
             return
         }
-        if (observedAbstractState.modelVersion == ModelVersion.BASE) {
-            return
-        }
+
         if (backwardEquivalentMapping.values.any {it.contains(observedAbstractState)}) {
             return
         }
@@ -140,6 +143,7 @@ class ModelBackwardAdapter {
                 it.abstractAction == abstractTransition.abstractAction
                         && (it.prevWindow == abstractTransition.prevWindow
                         || it.prevWindow == null)
+                        && (it.preWindowAbstractState == abstractTransition.preWindowAbstractState)
                         && it.modelVersion == ModelVersion.BASE
                         && it.dest.guiStates.isEmpty() // which means that the destination has not observed before
             })
@@ -153,6 +157,8 @@ class ModelBackwardAdapter {
                         backwardEquivalentMapping[dest]!!.add(observedAbstractState)
                         copyAbstractTransitions(observedAbstractState, dest)
                         backwardEquivalenceFound = true
+                    } else {
+                        abstractTransition.source.abstractTransitions.remove(it)
                     }
                 }
             } else {
@@ -215,6 +221,7 @@ class ModelBackwardAdapter {
                         abstractAction = sourceTransition.abstractAction,
                         isImplicit = sourceTransition.isImplicit
                 )
+                newAbstractTransition.modelVersion == ModelVersion.BASE
                 newAbstractTransition.userInputs.addAll(sourceTransition.userInputs)
                 sourceTransition.handlers.forEach { handler, _ ->
                     newAbstractTransition.handlers.putIfAbsent(handler,false)

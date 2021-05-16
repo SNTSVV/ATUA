@@ -255,7 +255,7 @@ class PrepareContextTask constructor(
                                 val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
                                 val widgetGroup = abstractState.getAttributeValuationSet(widget = it, guiState = currentState,atuaMF = atuaMF)
                                 if (widgetGroup != null) {
-                                    val isGoToAnotherWindow = atuaMF.abstractTransitionGraph.edges(abstractState).any {
+                                    val isGoToAnotherWindow = atuaMF.DSTG.edges(abstractState).any {
                                         it.destination!!.data.window != it.source.data.window
                                                 && it.label.abstractAction.actionType == AbstractActionType.CLICK
                                                 && it.label.abstractAction.isWidgetAction()

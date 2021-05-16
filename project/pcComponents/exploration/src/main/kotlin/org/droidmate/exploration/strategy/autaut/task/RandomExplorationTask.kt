@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
@@ -236,6 +235,9 @@ class RandomExplorationTask constructor(
             }
         }*/
         if (currentState.widgets.any { it.isKeyboard }) {
+            if (random.nextBoolean()) {
+                return GlobalAction(actionType = ActionType.CloseKeyboard)
+            }
             val actionableWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
             if (actionableWidgets.isEmpty()) {
                 //if keyboard is openning but there 's no special actions
@@ -255,14 +257,6 @@ class RandomExplorationTask constructor(
                     }
                 }
                 return GlobalAction(actionType = ActionType.CloseKeyboard)
-            }
-            //check if the action widgets are explored
-            val unexploredWidgets = atuaMF.getUnexploredWidget(currentState)
-            if (unexploredWidgets.isEmpty()) {
-                //give a 50/50 chance to try again
-                if (random.nextBoolean()) {
-                    return GlobalAction(actionType = ActionType.CloseKeyboard)
-                }
             }
         }
         if (currentAbstractState.window.activityClass == "com.oath.mobile.platform.phoenix.core.TrapActivity") {
@@ -358,15 +352,13 @@ class RandomExplorationTask constructor(
             randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
         } else if (lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
-                && atuaMF.appPrevState!! != currentState
+                && atuaMF.appPrevState!!.stateId.uid != currentState.stateId.uid
                 && (prevAbstractState == currentAbstractState ||
                         (prevAbstractState != currentAbstractState
                                 && prevAbstractState.window == currentAbstractState.window
                                 && atuaMF.abstractStateVisitCount[currentAbstractState]!! > 1)
                         )
                 && tryLastAction < MAX_TRY_LAST_ACTION
-                /*&& isScrollToEnd
-                && lastAction!!.extra == "SwipeTillEnd"*/
                 && currentAbstractState.getAvailableActions().contains(lastAction!!)) {
             tryLastAction += 1
             maximumAttempt += 1
@@ -375,7 +367,7 @@ class RandomExplorationTask constructor(
             tryLastAction = 0
             //val widgetActions = currentAbstractState.getAvailableActions().filter { it.widgetGroup != null }
             val unexercisedActions = currentAbstractState.getUnExercisedActions(currentState,atuaMF)
-                val lowestPriorityActions = unexercisedActions.filter {
+            val lowestPriorityActions = unexercisedActions.filter {
                 it.attributeValuationMap == null
             }
             if (unexercisedActions.filterNot { lowestPriorityActions.contains(it) }.isNotEmpty()) {
@@ -390,7 +382,7 @@ class RandomExplorationTask constructor(
                     unexercisedActions.random()
                 }
             } else {
-                /*if (!isPureRandom) {
+                if (!isPureRandom) {
                     goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
                     if (!recentGoToExploreState && goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, false, true)) {
                         recentGoToExploreState = true
@@ -400,7 +392,7 @@ class RandomExplorationTask constructor(
                     goToLockedWindowTask = null
                 }
 
-                recentGoToExploreState = false*/
+                recentGoToExploreState = false
                 lastAction = null
                 if (random.nextDouble() < 0.1) {
                     val abstractActions = currentAbstractState.getAvailableActions().filter {
@@ -670,7 +662,7 @@ class RandomExplorationTask constructor(
         val widgetGroup = action.attributeValuationMap
         var actionPotentialScore = 1.0
 
-        val goToHomeEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val goToHomeEdges = atuaMF.DSTG.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.destination?.data?.window is Launcher
         }
@@ -722,7 +714,7 @@ class RandomExplorationTask constructor(
         val considerDeadEdges = true
         if (considerDeadEdges) {
             val deadEdges =
-                    atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+                    atuaMF.DSTG.edges(currentAbstractState).filter { edge ->
                         edge.label.abstractAction == action
                                 && edge.source.data == edge.destination?.data
                                 && edge.destination?.data !is VirtualAbstractState
@@ -744,7 +736,7 @@ class RandomExplorationTask constructor(
         val widgetGroup = action.attributeValuationMap
         var actionPotentialScore = 1.0
 
-        val goToHomeEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val goToHomeEdges = atuaMF.DSTG.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.destination?.data?.window is Launcher
         }
@@ -754,7 +746,7 @@ class RandomExplorationTask constructor(
             } else
                 actionPotentialScore /= 2
         }
-        val openEdges = atuaMF.abstractTransitionGraph.edges(currentAbstractState).filter { edge ->
+        val openEdges = atuaMF.DSTG.edges(currentAbstractState).filter { edge ->
             edge.label.abstractAction == action
                     && edge.source.data != edge.destination?.data
                     && edge.destination?.data !is VirtualAbstractState
@@ -788,7 +780,7 @@ class RandomExplorationTask constructor(
                         }
                 actionPotentialScore = actionPotentialScore
 
-                val liveEdge = atuaMF.abstractTransitionGraph.edges(dest).filter {
+                val liveEdge = atuaMF.DSTG.edges(dest).filter {
                     it.destination != it.source
                             && edge.destination?.data !is VirtualAbstractState
                             && edge.destination?.data?.window !is OutOfApp
@@ -805,7 +797,7 @@ class RandomExplorationTask constructor(
         val considerDeadEdges = true
         if (considerDeadEdges) {
             val deadEdges = similarAbstractStates.map {
-                atuaMF.abstractTransitionGraph.edges(it).filter { edge ->
+                atuaMF.DSTG.edges(it).filter { edge ->
                     edge.label.abstractAction == action
                             && edge.source.data == edge.destination?.data
                             && edge.destination?.data !is VirtualAbstractState

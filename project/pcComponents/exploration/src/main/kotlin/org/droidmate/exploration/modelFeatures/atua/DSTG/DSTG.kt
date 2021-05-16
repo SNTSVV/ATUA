@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
 import kotlin.collections.ArrayList
 
-class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractTransition> =
+class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
                               Graph(AbstractStateManager.instance.appResetState,
                                       stateComparison = { a, b -> a == b },
                                       labelComparison = { a, b ->
@@ -34,16 +34,13 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
         //val fromResetState = AbstractStateManager.instance.launchAbstractStates.get(AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH)!!
         //val fromResetAbstractState = AbstractStateManager.instance.getAbstractState(fromResetState)!!
         val dumpedSourceStates = ArrayList<AbstractState>()
-        this.getVertices().forEach {
+        this.getVertices().filter{it.data.guiStates.isNotEmpty()}.forEach {
             recursiveDump(it.data,statementCoverageMF,dumpedSourceStates, bufferedWriter)
         }
-
-
-                
     }
 
     private fun header(): String {
-        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;PrevAbstractStateId;PrevHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionID"
+        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;PrevWindowAbstractStateId;PrevHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionID"
     }
 
     fun recursiveDump(sourceAbstractState: AbstractState, statementCoverageMF: StatementCoverageMF, dumpedSourceStates: ArrayList<AbstractState> , bufferedWriter: BufferedWriter) {
@@ -80,10 +77,7 @@ class AbstractTransitionGraph(private val graph: IGraph<AbstractState, AbstractT
             edge.label.handlers.filter { it.value == true }.map { it.key }.map { statementCoverageMF.getMethodName(it) }.joinToString(separator = ";")
 
     companion object {
-
         @JvmStatic
-        private val log: Logger by lazy { LoggerFactory.getLogger(AbstractTransitionGraph::class.java) }
-
-
+        private val log: Logger by lazy { LoggerFactory.getLogger(DSTG::class.java) }
     }
 }

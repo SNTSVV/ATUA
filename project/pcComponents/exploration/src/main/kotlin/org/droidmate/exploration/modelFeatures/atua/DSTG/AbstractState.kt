@@ -247,13 +247,30 @@ open class AbstractState(
             action.attributeValuationMap.actionCount[action] = count
         }
     }
+    fun increaseActionCount2(abstractAction: AbstractAction, updateSimilarAbstractStates: Boolean) {
+        this.increaseActionCount(abstractAction)
+        if (updateSimilarAbstractStates) {
+            if (!abstractAction.isWidgetAction()) {
+                AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                    it != this
+                            && it.window == this.window
+                }.forEach {
+                    it.increaseActionCount(abstractAction)
+                }
+            }
+        }
+    }
 
-    fun increaseActionCount(action: AbstractAction) {
+    private fun increaseActionCount(action: AbstractAction) {
         if (action.attributeValuationMap == null) {
             if (actionCount.containsKey(action)) {
                 actionCount[action] = actionCount[action]!! + 1
             } else {
-                actionCount[action] = 1
+                if (validateActionType(action.actionType,false))
+                    actionCount[action] = 1
+                else {
+                    val a = 1
+                }
             }
             val nonDataAction = AbstractAction(
                     actionType = action.actionType
@@ -391,6 +408,26 @@ open class AbstractState(
 
     fun belongToAUT(): Boolean {
         return !this.isHomeScreen && !this.isOutOfApplication && !this.isRequestRuntimePermissionDialogBox && !this.isAppHasStoppedDialogBox
+    }
+
+    fun validateInput(input: Input):Boolean {
+        val actionType = input.convertToExplorationActionName()
+        return validateActionType(actionType, input.widget != null)
+    }
+
+    private fun validateActionType(actionType: AbstractActionType, isWigetAction: Boolean): Boolean {
+        if (actionType == AbstractActionType.FAKE_ACTION) {
+            return false
+        }
+        if (!isWigetAction) {
+            if (actionType == AbstractActionType.CLOSE_KEYBOARD) {
+                return this.isOpeningKeyboard
+            }
+            if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
+                return this.isOpeningKeyboard
+            }
+        }
+        return true
     }
 
     companion object {

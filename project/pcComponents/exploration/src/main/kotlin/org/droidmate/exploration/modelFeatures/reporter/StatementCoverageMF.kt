@@ -76,14 +76,14 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     override val coroutineContext: CoroutineContext = CoroutineName("StatementCoverageMF") + Job()
 
      val executedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() //methodid -> first executed
-     val executedModifiedMethodsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
-     val executedModifiedMethodStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap() // methodid -> first executed
-     val statementInstrumentationMap= HashMap<String, String>() //statementid -> statement
+    val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
+
+
+    val statementInstrumentationMap= HashMap<String, String>() //statementid -> statement
      val statementMethodInstrumentationMap = HashMap<String, String>() //statementid -> methodid
      val methodInstrumentationMap= HashMap<String, String>() //method id -> method
-     val modMethodInstrumentationMap= HashMap<String, String>() //method id -> method
-     val modMethodStatementInstrumentationMap= HashMap<String, String>() //method id -> method
-     val executedStatementsMap: ConcurrentHashMap<String, Date> = ConcurrentHashMap()
+
+    val modifiedMethodsList = ArrayList<String>()
 
     val recentExecutedStatements: ArrayList<String> = ArrayList()
     val recentExecutedMethods: ArrayList<String> = ArrayList()
@@ -104,6 +104,17 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         Files.createDirectories(statementsLogOutputDir)
         getInstrumentation(appName)
     }
+    val modMethodInstrumentationMap by lazy {
+        methodInstrumentationMap.filter { modifiedMethodsList.contains(it.value) }
+    } //method id -> method
+    val modMethodStatementInstrumentationMap by lazy {
+        statementInstrumentationMap.filter { modifiedMethodsList.contains(methodInstrumentationMap.get(statementMethodInstrumentationMap[it.key]!!)!!)}
+    } //method id -> method
+    val executedModifiedMethodsMap:  Map<String,Date>
+        get()= executedMethodsMap.filter { modMethodInstrumentationMap.containsKey(it.key) }
+    val executedModifiedMethodStatementsMap: Map<String,Date>
+        get() = executedStatementsMap.filter { modMethodStatementInstrumentationMap.containsKey(it.key) }
+
 
     override fun onAppExplorationStarted(context: ExplorationContext<*, *, *>) {
         this.trace = context.explorationTrace
@@ -153,21 +164,6 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                             {
                                 executedMethodsMap[methodId] = tms
                             }
-                            val modMethod = modMethodInstrumentationMap.containsKey(methodId)
-                            if (modMethod)
-                            {
-                                found = executedModifiedMethodsMap.containsKey(methodId)
-                                if (!found)
-                                {
-                                    executedModifiedMethodsMap[methodId] = tms
-                                    newModifiedMethod.add(methodId)
-                                }
-                                found = executedModifiedMethodStatementsMap.containsKey(statementId)
-                                if (!found)
-                                {
-                                    executedModifiedMethodStatementsMap[statementId] = tms
-                                }
-                            }
                         }
                     }
 
@@ -176,10 +172,10 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                 log.info("New modified method: $methodName")
             }*/
 
-            log.info("Current statement coverage: ${"%.2f".format(getCurrentCoverage())}. Encountered statements: ${executedStatementsMap.size}")
-            log.info("Current method coverage: ${"%.2f".format(getCurrentMethodCoverage())}. Encountered methods: ${executedMethodsMap.size}")
-            log.info("Current modified method coverage: ${"%.2f".format(getCurrentModifiedMethodCoverage())}. Encountered modified methods: ${executedModifiedMethodsMap.size}")
-            log.info("Current modified method's statement coverage: ${"%.2f".format(getCurrentModifiedMethodStatementCoverage())}. Encountered modified methods: ${executedModifiedMethodStatementsMap.size}")
+            log.info("Current statement coverage: ${"%.2f".format(getCurrentCoverage())}. Encountered statements: ${executedStatementsMap.size}/${statementInstrumentationMap.size}")
+            log.info("Current method coverage: ${"%.2f".format(getCurrentMethodCoverage())}. Encountered methods: ${executedMethodsMap.size}/${methodInstrumentationMap.size}")
+            log.info("Current modified method coverage: ${"%.2f".format(getCurrentModifiedMethodCoverage())}. Encountered modified methods: ${executedModifiedMethodsMap.size}/${modMethodInstrumentationMap.size}")
+            log.info("Current modified method's statement coverage: ${"%.2f".format(getCurrentModifiedMethodStatementCoverage())}. Encountered modified methods: ${executedModifiedMethodStatementsMap.size}/${modMethodStatementInstrumentationMap.size}")
 
             // Write the received content into a file
             if (readStatements.isNotEmpty()) {
@@ -220,8 +216,32 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                     "the corresponding instrumentation file. DroidMate will monitor coverage, but won't be able" +
                     "to calculate the coverage.")
             }
-
+            val appModel = getAppModelFile(apkName,resourceDir)
+            if (appModel != null) {
+                readModifiedMethodList(appModel)
+            }
         }
+    }
+
+    private fun readModifiedMethodList(appModel: Path) {
+        val jsonData = String(Files.readAllBytes(appModel))
+        val jObj = JSONObject(jsonData)
+        val modifiedMethodsJson = jObj.getJSONArray("modifiedMethods")
+        if (modifiedMethodsJson!=null) {
+            modifiedMethodsJson.forEach {
+                modifiedMethodsList.add(it.toString())
+            }
+        }
+    }
+
+    private fun getAppModelFile(apkName: String, resourceDir: Path): Path? {
+        return Files.list(resourceDir)
+                .filter {
+                    it.fileName.toString().contains(apkName)
+                            && it.fileName.toString().endsWith("-AppModel.json")
+                }
+                .findFirst()
+                .orElse(null)
     }
 
     /**
@@ -273,29 +293,23 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                     //example format: "modified=true <com.teleca.jamendo.window.SearchActivity$SearchingDialog: void playlistSearch()> uuid=3b389bcf-70e4-400b-afce-c0e67d682333"
                     val modified = method.toString().contains("modified=true")
 
-                    if (modified)
-                    {
+                    if (modified) {
                         //get uuid
                         val index = method.toString().indexOf("modified=true")
-                        val methodInfo = method.toString().substring(index+"modified=true ".length)
+                        val methodInfo = method.toString().substring(index + "modified=true ".length)
                         val parts = methodInfo.split(" uuid=")
                         val uuid = parts[1]
                         assert(uuid.length == l, { "Invalid UUID $uuid $method" })
-                        modMethodInstrumentationMap[uuid] = parts[0]
                         methodInstrumentationMap[uuid] = parts[0]
-                    }
-                    else
-                    {
+                    } else {
 
                         val parts = method.toString().split(" uuid=")
                         val uuid = parts[1]
                         assert(uuid.length == l, { "Invalid UUID $uuid $method" })
                         methodInstrumentationMap[uuid] = parts[0]
                     }
-
                 }
         log.info("methods : ${methodInstrumentationMap.size}")
-        log.info("modified methods : ${modMethodInstrumentationMap.size} - ${modMethodInstrumentationMap.size}*100/${methodInstrumentationMap.size}%")
 
         //NGO change
         //val jMap = jObj.getJSONObject(INSTRUMENTATION_FILE_METHODS_PROP)
@@ -320,10 +334,6 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                         val methodId = parts2.last()
                         // Add the statement if it wasn't executed before
                         statementMethodInstrumentationMap[uuid] = methodId
-                        if (isModifiedMethod(methodId))
-                        {
-                            modMethodStatementInstrumentationMap[uuid] = methodId
-                        }
                     }
                 }
         log.info("statement : ${statementInstrumentationMap.size}")

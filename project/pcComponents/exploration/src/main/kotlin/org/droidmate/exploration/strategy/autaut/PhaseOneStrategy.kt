@@ -45,7 +45,7 @@ class PhaseOneStrategy(
 
 
     val untriggeredWidgets = arrayListOf<EWTGWidget>()
-    val untriggeredTargetEvents = arrayListOf<Input>()
+    val untriggeredTargetInputs = arrayListOf<Input>()
 
     var attemps: Int
     var targetWindow: Window? = null
@@ -70,7 +70,7 @@ class PhaseOneStrategy(
         }
 
         autautMF.allTargetInputs.forEach {
-            untriggeredTargetEvents.add(it)
+            untriggeredTargetInputs.add(it)
         }
     }
 
@@ -84,7 +84,7 @@ class PhaseOneStrategy(
         if (staticEvents != null) {
             staticEvents.forEach {
                 recentTargetEvent = it
-                untriggeredTargetEvents.remove(it)
+                untriggeredTargetInputs.remove(it)
                 /*if (autautMF.targetItemEvents.containsKey(it)) {
                     autautMF.targetItemEvents[it]!!["count"] = autautMF!!.targetItemEvents[it]!!["count"]!! + 1
                     if (autautMF.targetItemEvents[it]!!["count"] == autautMF!!.targetItemEvents[it]!!["max"]!!) {
@@ -109,7 +109,7 @@ class PhaseOneStrategy(
         }
         if (autautMF.appPrevState!!.isRequestRuntimePermissionDialogBox) {
             if (recentTargetEvent!=null) {
-                untriggeredTargetEvents.add(recentTargetEvent!!)
+                untriggeredTargetInputs.add(recentTargetEvent!!)
                 recentTargetEvent = null
             }
         }
@@ -252,17 +252,8 @@ class PhaseOneStrategy(
     }
 
     private fun updateFlaggedWindows() {
-        val addToFlagWindows = ArrayList<Window>()
         val toRemove = ArrayList<Window>()
         outofbudgetWindows.forEach {
-            /*if (it is Activity) {
-                val optionsMenu = autautMF.wtg.getOptionsMenu(it)
-                if (optionsMenu!=null) {
-                    addToFlagWindows.add(optionsMenu)
-                }
-                val dialogs = autautMF.wtg.getDialogs(it)
-                addToFlagWindows.addAll(dialogs)
-            }*/
             if (hasBudgetLeft(it)) {
                 toRemove.add(it)
             }
@@ -270,14 +261,15 @@ class PhaseOneStrategy(
         toRemove.forEach {
             outofbudgetWindows.remove(it)
         }
-        outofbudgetWindows.addAll(addToFlagWindows)
         val availableAbState_Window =  AbstractStateManager.instance.ABSTRACT_STATES
                 .filter { it !is VirtualAbstractState &&
+                        it.window !is OutOfApp && it.window !is Launcher &&
                         !outofbudgetWindows.contains(it.window) &&
-                        !unreachableWindows.contains(it.window)
+                        !unreachableWindows.contains(it.window) &&
+                        windowRandomExplorationBudget.containsKey(it.window)
                 }.groupBy { it.window }
         availableAbState_Window.forEach {
-          if (!hasBudgetLeft(it.key)) {
+            if (windowRandomExplorationBudgetUsed[it.key]!! > windowRandomExplorationBudget[it.key]!!) {
               outofbudgetWindows.add(it.key)
               if (it.key is Activity) {
                   val optionsMenu = autautMF.wtg.getOptionsMenu(it.key)
@@ -287,14 +279,20 @@ class PhaseOneStrategy(
                   val dialogs = autautMF.wtg.getDialogs(it.key)
                   outofbudgetWindows.addAll(dialogs)
               }
+          }else {
+              val allGuiStates = it.value.map { it.guiStates }.flatten()
+              if (allGuiStates.all { autautMF.getUnexploredWidget(it).isEmpty() }) {
+                  outofbudgetWindows.add(it.key)
+              }
           }
         }
     }
 
     private fun updateTargetWindows() {
-        autautMF.allTargetWindow_ModifiedMethods.map { it.key }.forEach {
+        autautMF.allTargetWindow_ModifiedMethods.map { it.key }.filterNot { fullyCoveredWindows.contains(it) }.forEach {
             var coverCriteriaCount = 0
-            if (autautMF.allTargetWindow_ModifiedMethods[it]!!.all { autautMF.allModifiedMethod[it] == true }) {
+            if (autautMF.allTargetWindow_ModifiedMethods[it]!!.all { autautMF.allModifiedMethod[it] == true }
+                    || untriggeredTargetInputs.filter { input -> input.sourceWindow == it}.isEmpty()) {
                 coverCriteriaCount++
             }
             if (autautMF.untriggeredTargetHandlers.intersect(
@@ -311,8 +309,6 @@ class PhaseOneStrategy(
                     }
                 }
             }
-            if (!targetWindowTryCount.containsKey(it))
-                targetWindowTryCount.put(it, 0)
         }
     }
 
@@ -527,22 +523,15 @@ class PhaseOneStrategy(
             }
         }
         if (randomExplorationInSpecialWindows(currentAppState, randomExplorationTask, currentState)) return
-        if (goToTargetNodeTask.isAvailable(currentState =  currentState,
-                        destWindow =  targetWindow!!,
-                        includePressback = true,
-                        includeResetApp = false,
-                        isExploration = false)) {
-            setGoToTarget(goToTargetNodeTask, currentState)
-            return
-        }
         //unreachableWindows.add(targetWindow!!)
-        if (hasBudgetLeft(currentAppState.window)) {
-            setRandomExploration(randomExplorationTask, currentState, false,false)
-            return
-        }
+
         //if (goToWindowToExploreOrRandomExploration(currentAppState, goToAnotherNode, currentState, randomExplorationTask)) return
         if (goToTargetNodeTask.isAvailable(currentState =  currentState)) {
-            setGoToTarget(goToTargetNodeTask, currentState)
+                setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
+        if (hasBudgetLeft(currentAppState.window)) {
+            setRandomExploration(randomExplorationTask, currentState, false,false)
             return
         }
         if (goToAnotherNode.isAvailable(currentState)) {
@@ -615,8 +604,8 @@ class PhaseOneStrategy(
         if (continueOrEndCurrentTask(currentState)) return
         //unreachableWindows.add(targetWindow!!)
         if (randomExplorationInSpecialWindows(currentAppState, randomExplorationTask, currentState)) return
-        if (hasBudgetLeft2(currentState, currentAppState)) {
-            setRandomExploration(randomExplorationTask, currentState, false,false)
+        if (hasBudgetLeft(currentAppState.window)) {
+            setRandomExploration(randomExplorationTask, currentState, true,false)
             return
         }
         if (goToAnotherNode.isAvailable(currentState)) {
@@ -668,8 +657,8 @@ class PhaseOneStrategy(
         }
         if (continueOrEndCurrentTask(currentState)) return
         if (goToAnotherNode.destWindow == currentAppState.window) {
-            if (hasBudgetLeft2(currentState, currentAppState)) {
-                setRandomExploration(randomExplorationTask, currentState,false,true)
+            if (hasBudgetLeft(currentAppState.window)) {
+                setRandomExploration(randomExplorationTask, currentState,true,true)
                 return
             }
         }
@@ -878,7 +867,7 @@ class PhaseOneStrategy(
         if (autautMF.untriggeredTargetHandlers.intersect(
                         autautMF.windowHandlersHashMap[currentAbstractState.window] ?: emptyList()
                 ).isNotEmpty()) {
-            if (hasBudgetLeft2(currentState,currentAbstractState))
+            if (hasBudgetLeft(currentAbstractState.window))
                 return true
         }
         return false
@@ -907,7 +896,7 @@ class PhaseOneStrategy(
         //Try finding reachable target
         val maxTry = targetWindowTryCount.size/2+1
         val explicitTargetWindows = WindowManager.instance.allMeaningWindows.filter { window ->
-            untriggeredTargetEvents.any { it.sourceWindow == window }
+            untriggeredTargetInputs.any { it.sourceWindow == window }
         }
         var candidates = targetWindowTryCount.filter { isExplicitCandidateWindow(explicitTargetWindows,it) }
         if (candidates.isNotEmpty()) {
@@ -987,8 +976,6 @@ class PhaseOneStrategy(
                 stateScores.put(it, score)
             }
         }
-        if (stateScores.size == 1 && stateScores.entries.single().key is VirtualAbstractState)
-            return transitionPaths
         getPathToStatesBasedOnPathType(pathType,transitionPaths,stateScores,currentAbstractState,currentState)
         return transitionPaths
     }
@@ -997,7 +984,7 @@ class PhaseOneStrategy(
         val targetEvents = HashMap<Input,List<AbstractAction>>()
         if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
             return emptySet<AbstractAction>()
-        val currentWindowTargetEvents = untriggeredTargetEvents.filter { it.sourceWindow == targetWindow }
+        val currentWindowTargetEvents = untriggeredTargetInputs.filter { it.sourceWindow == targetWindow }
         currentWindowTargetEvents.forEach {
             val abstractInteractions = autautMF.validateEvent(it, currentState)
 
@@ -1057,29 +1044,9 @@ class PhaseOneStrategy(
     }
 
     private fun hasBudgetLeft(window: Window): Boolean {
-        if (!windowRandomExplorationBudget.containsKey(window))
-            return true
-        if (windowRandomExplorationBudgetUsed[window]!! <
-                windowRandomExplorationBudget[window]!!) {
-            return true
-        }
-        return false
-    }
-
-    private fun hasBudgetLeft2(currentState: State<*>?, currentAbstractState: AbstractState): Boolean {
-        if (hasBudgetLeft(currentAbstractState.window))
-            return true
-//        if (currentAbstractState.getUnExercisedActions(currentState).filter { it.isWidgetAction() }.isNotEmpty()) {
-//            return true
-//        }
-       /* if (!windowRandomExplorationBudget2.containsKey(abstractState))
-            return true
-        val totalActionCount = getAbstractStateExecutedActionsCount(abstractState)
-        if (totalActionCount < windowRandomExplorationBudget2[abstractState]!!) {
-            return true
-        }*/
-
-        return false
+        if (outofbudgetWindows.contains(window))
+            return false
+        return true
     }
 
     private fun getAbstractStateExecutedActionsCount(abstractState: AbstractState) =

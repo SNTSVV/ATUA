@@ -844,7 +844,7 @@ class PhaseThreeStrategy(
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<AbstractState, AbstractTransition>>()
         appStateList.forEach { appState ->
-            edges.addAll(autautMF.abstractTransitionGraph.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
+            edges.addAll(autautMF.DSTG.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
             appStateModifiedMethodMap.put(appState, HashSet())
             appState.abstractTransitions.map { it.modifiedMethods}.forEach { hmap ->
                 hmap.forEach { m, v ->

@@ -12,6 +12,8 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.json.JSONArray
 import org.json.JSONObject
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -387,10 +389,12 @@ class EWTGDiff private constructor(){
             val oldWidgetId = oldWidgetFullId.split("_")[1]!!.replace("WID","")
             val oldWindow = WindowManager.instance.baseModelWindows.find { it.windowId == oldWindowId }
             if (oldWindow==null) {
-                throw Exception("Cannot get the window with id $oldWindowId")
+               log.warn("Cannot get the old window with id $oldWindowId")
+                continue
             }
             val oldWidget =  oldWindow.widgets.find { it.widgetId == oldWidgetId }
             if (oldWidget == null) {
+                log.warn("Cannot get the old widget with id $oldWidgetId")
                 continue
             }
             val newWindowId = newWidgetFullId.split("_")[0]!!.replace("WIN","")
@@ -416,23 +420,27 @@ class EWTGDiff private constructor(){
             val oldWidgetId = oldWidgetFullId.split("_")[1]!!.replace("WID","")
             val oldWindow = WindowManager.instance.baseModelWindows.find { it.windowId == oldWindowId }
             if (oldWindow==null) {
-                throw Exception("Cannot get the window with id $oldWindowId")
+                log.warn("Cannot get the old window with id $oldWindowId")
+                continue
             }
             val oldWidget =  oldWindow.widgets.find { it.widgetId == oldWidgetId }
             if (oldWidget == null) {
+               log.warn("Cannot not get the old widget with id $oldWidgetId")
                 continue
             }
             val newWindowId = newWidgetFullId.split("_")[0]!!.replace("WIN","")
             val newWidgetId = newWidgetFullId.split("_")[1]!!.replace("WID","")
             val newWindow = WindowManager.instance.updatedModelWindows.find { it.windowId == newWindowId }
             if (newWindow==null) {
-                throw Exception("Cannot get the window with id $newWidgetId")
+                log.warn("Cannot get the old window with id $newWidgetId")
+            } else {
+
+                val newWidget =  newWindow.widgets.find { it.widgetId == newWidgetId }
+                if (newWidget == null) {
+                    continue
+                }
+                widgetReplacementSet.replacedElements.add(Replacement<EWTGWidget>(oldWidget,newWidget))
             }
-            val newWidget =  newWindow.widgets.find { it.widgetId == newWidgetId }
-            if (newWidget == null) {
-                continue
-            }
-            widgetReplacementSet.replacedElements.add(Replacement<EWTGWidget>(oldWidget,newWidget))
         }
 
     }
@@ -444,11 +452,13 @@ class EWTGDiff private constructor(){
             val widgetId = widgetFullId.split("_")[1]!!.replace("WID","")
             val window = WindowManager.instance.baseModelWindows.find { it.windowId == windowId }
             if (window==null) {
-                throw Exception("Cannot get the window with id $windowId")
-            }
-            val widget =  window.widgets.find { it.widgetId == widgetId }
-            if (widget != null) {
-                widgetDeletionSet.deletedElements.add(widget)
+                log.warn("Cannot get the old window with id $windowId")
+            } else{
+
+                val widget =  window.widgets.find { it.widgetId == widgetId }
+                if (widget != null) {
+                    widgetDeletionSet.deletedElements.add(widget)
+                }
             }
 
         }
@@ -461,11 +471,12 @@ class EWTGDiff private constructor(){
             val widgetId = widgetFullId.split("_")[1]!!.replace("WID","")
             val window = WindowManager.instance.updatedModelWindows.find { it.windowId == windowId }
             if (window==null) {
-                throw Exception("Cannot get the window with id $windowId")
-            }
-            val widget =  window.widgets.find { it.widgetId == widgetId }
-            if (widget != null) {
-                widgetAdditionSet.addedElements.add(widget)
+                log.warn("Cannot get the old window with id $windowId")
+            } else {
+                val widget = window.widgets.find { it.widgetId == widgetId }
+                if (widget != null) {
+                    widgetAdditionSet.addedElements.add(widget)
+                }
             }
 
         }
@@ -503,13 +514,17 @@ class EWTGDiff private constructor(){
             val windowNewId = replacementJson.get("newElement").toString().replace("WIN","")
             val oldWindow = WindowManager.instance.baseModelWindows.find { it.windowId == windowOldId }
             val newWindow = WindowManager.instance.updatedModelWindows.find { it.windowId == windowNewId }
-            if (oldWindow==null) {
-                throw Exception("Cannot get the old window with id $windowOldId")
+            if (oldWindow != null) {
+                if (newWindow==null) {
+                    log.warn ("Cannot get the new window with id $windowNewId")
+                } else
+                    windowRetainerSet.replacedElements.add(Replacement<Window>(oldWindow,newWindow))
             }
-            if (newWindow==null) {
-                throw Exception("Cannot get the new window with id $windowNewId")
+            else {
+                log.warn("Cannot get the old window with id $windowOldId")
             }
-            windowRetainerSet.replacedElements.add(Replacement<Window>(oldWindow,newWindow))
+
+
         }
     }
 
@@ -520,13 +535,17 @@ class EWTGDiff private constructor(){
             val windowNewId = replacementJson.get("newElement").toString().replace("WIN","")
             val oldWindow = WindowManager.instance.baseModelWindows.find { it.windowId == windowOldId }
             val newWindow = WindowManager.instance.updatedModelWindows.find { it.windowId == windowNewId }
-            if (oldWindow==null) {
-                throw Exception("Cannot get the window with id $windowOldId")
+            if (oldWindow != null && newWindow != null) {
+                windowReplacementSet.replacedElements.add(Replacement<Window>(oldWindow,newWindow))
+            } else {
+                if (oldWindow == null) {
+                    log.warn("Cannot get the old window with id $windowOldId")
+                }
+                if (newWindow == null) {
+                    log.warn("Cannot get the new window with id $windowNewId")
+                }
             }
-            if (newWindow==null) {
-                throw Exception("Cannot get the window with id $windowNewId")
-            }
-            windowReplacementSet.replacedElements.add(Replacement<Window>(oldWindow,newWindow))
+
         }
     }
 
@@ -535,9 +554,9 @@ class EWTGDiff private constructor(){
             val windowId = item.toString().replace("WIN","")
             val window = WindowManager.instance.baseModelWindows.find { it.windowId == windowId }
             if (window==null) {
-                throw Exception("Cannot get the window with id $windowId")
-            }
-            windowDeletionSet.deletedElements.add(window)
+                log.warn("Cannot get the old window with id $windowId")
+            } else
+                windowDeletionSet.deletedElements.add(window)
         }
     }
 
@@ -546,13 +565,15 @@ class EWTGDiff private constructor(){
             val windowId = item.toString().replace("WIN","")
             val window = WindowManager.instance.updatedModelWindows.find { it.windowId == windowId }
             if (window==null) {
-                throw Exception("Cannot get the window with id $windowId")
-            }
-            windowAdditionSet.addedElements.add(window)
+                log.warn("Cannot get the new window with id $windowId")
+            } else
+                windowAdditionSet.addedElements.add(window)
         }
     }
 
     companion object {
+        @JvmStatic
+        val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
         val instance: EWTGDiff by lazy {
             EWTGDiff()
         }

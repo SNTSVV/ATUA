@@ -20,9 +20,6 @@ class WindowManager {
     val allMeaningWindows
         get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp }
 
-    fun getWindowByState(state: State<*>): Window?{
-        return updatedModelWindows.find { it.mappedStates.find { it.equals(state)}!=null }
-    }
     fun dump(config: ModelConfig, atuaMF: ATUAMF) {
         val wtgFolder = config.baseDir.resolve("EWTG")
         Files.createDirectory(wtgFolder)

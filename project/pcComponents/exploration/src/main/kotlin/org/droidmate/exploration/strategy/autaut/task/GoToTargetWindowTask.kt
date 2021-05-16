@@ -19,7 +19,7 @@ class GoToTargetWindowTask (
     override fun initPossiblePaths(currentState: State<*>, continueMode: Boolean) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
-                PathFindingHelper.PathType.RESET
+                PathFindingHelper.PathType.INCLUDE_INFERED
         else if (continueMode)
             PathFindingHelper.PathType.INCLUDE_INFERED
         else

@@ -11,6 +11,7 @@ import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
@@ -350,30 +351,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
             return chooseActionForTextInput(chosenWidget, currentState)
         }
         val currentAbstractState = atuaMF.getAbstractState(currentState)!!
-        if (action == AbstractActionType.SWIPE && data is String) {
-            val swipeAction =
-             when (data) {
-                "SwipeUp" -> chosenWidget.swipeUp()
-                "SwipeDown" -> chosenWidget.swipeDown()
-                "SwipeLeft" -> chosenWidget.swipeLeft()
-                "SwipeRight" -> chosenWidget.swipeRight()
-                 "SwipeTillEnd" -> doDeepSwipeUp(chosenWidget,currentState).also {
-                     if (abstractAction!=null)
-                        currentAbstractState.increaseActionCount(abstractAction)
-                 }
-                else -> {
-                    if (data.isNotBlank()) {
-                        val swipeInfo: List<Pair<Int,Int>> = Helper.parseSwipeData(data)
-                        Swipe(swipeInfo[0],swipeInfo[1],25,true)
-                    } else {
-                        arrayListOf(chosenWidget.swipeUp(), chosenWidget.swipeDown(),chosenWidget.swipeLeft(),chosenWidget.swipeRight()).random()
-                    }
-                }
-            }
-            ExplorationTrace.widgetTargets.clear()
-            ExplorationTrace.widgetTargets.add(chosenWidget)
-            return swipeAction
-        }
+
         if (chosenWidget.className == "android.webkit.WebView") {
             val explorationAction: ExplorationAction?;
             var childWidgets = Helper.getAllChild(currentState.widgets,chosenWidget)
@@ -386,14 +364,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 return null
             }
             if (action == AbstractActionType.CLICK) {
-                /*val swipeActions = allAvailableActions.filter { it is Swipe }
-                for (i in 0..10) {
-                    actionList.add(swipeActions.random())
-                }
-                val clickActions = allAvailableActions.filter { it is ClickEvent || it is Click }
-                for (i in 0..10) {
-                    actionList.add(clickActions.random())
-                }*/
+
                 if (data == "RandomMultiple") {
                     for (i in 0..10) {
                         actionList.add(childWidgets.random().click())
@@ -404,14 +375,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 }
             }
             else if (action == AbstractActionType.LONGCLICK) {
-                /*val swipeActions = allAvailableActions.filter { it is Swipe }
-                for (i in 0..10) {
-                    actionList.add(swipeActions.random())
-                }
-                val longClickActions = allAvailableActions.filter { it is LongClickEvent || it is LongClick }
-                for (i in 0..10) {
-                    actionList.add(longClickActions.random())
-                }*/
+
                 if (data == "RandomMultiple") {
                     //val actions = allAvailableActions.filter {it is LongClickEvent || it is LongClick }
                     for (i in 0..5) {
@@ -422,19 +386,33 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                     explorationAction = childWidgets.random().longClick()
                 }
 
-            }  else {
+            } else  if (action == AbstractActionType.SWIPE && data is String) {
+                val swipeableWidgets = childWidgets.filter { Helper.isScrollableWidget(it) }
+                val actionWidget = if (swipeableWidgets.isEmpty()) {
+                    chosenWidget
+                } else
+                    swipeableWidgets.random()
+                val swipeAction =
+                        computeSwipeAction(data, actionWidget, currentState, abstractAction, currentAbstractState)
+                return swipeAction
+            }
+            else {
                 if (abstractAction!=null) {
                     abstractAction.attributeValuationMap!!.actionCount.remove(abstractAction)
                 }
                 return null
             }
             if (abstractAction!=null){
-                currentAbstractState.increaseActionCount(abstractAction)
+                currentAbstractState.increaseActionCount2(abstractAction,false)
             }
             return explorationAction
         }
+        if (action == AbstractActionType.SWIPE && data is String) {
+            val swipeAction =
+                    computeSwipeAction(data, chosenWidget, currentState, abstractAction, currentAbstractState)
+            return swipeAction
+        }
         val actionList = Helper.getAvailableActionsForWidget(chosenWidget, currentState,delay, useCoordinateClicks)
-
         val widgetActions = actionList.filter {
             when (action) {
                 AbstractActionType.CLICK -> (it.name == "Click" || it.name == "ClickEvent")
@@ -454,6 +432,31 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
             else -> chosenWidget.click(ignoreClickable = true)
         }
         return hardAction
+    }
+
+    private fun computeSwipeAction(data: String, actionWidget: Widget, currentState: State<*>, abstractAction: AbstractAction?, currentAbstractState: AbstractState): ExplorationAction? {
+        val swipeAction =
+                when (data) {
+                    "SwipeUp" -> actionWidget.swipeUp()
+                    "SwipeDown" -> actionWidget.swipeDown()
+                    "SwipeLeft" -> actionWidget.swipeLeft()
+                    "SwipeRight" -> actionWidget.swipeRight()
+                    "SwipeTillEnd" -> doDeepSwipeUp(actionWidget, currentState).also {
+                        if (abstractAction != null)
+                            currentAbstractState.increaseActionCount2(abstractAction, false)
+                    }
+                    else -> {
+                        if (data.isNotBlank()) {
+                            val swipeInfo: List<Pair<Int, Int>> = Helper.parseSwipeData(data)
+                            Swipe(swipeInfo[0], swipeInfo[1], 25, true)
+                        } else {
+                            arrayListOf(actionWidget.swipeUp(), actionWidget.swipeDown(), actionWidget.swipeLeft(), actionWidget.swipeRight()).random()
+                        }
+                    }
+                }
+        ExplorationTrace.widgetTargets.clear()
+        ExplorationTrace.widgetTargets.add(actionWidget)
+        return swipeAction
     }
 
     fun doRandomActionOnWidget(chosenWidget: Widget, currentState: State<*>): ExplorationAction {
@@ -524,7 +527,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         }
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
         if (abstractAction!=null)
-            abstractState.increaseActionCount(abstractAction)
+            abstractState.increaseActionCount2(abstractAction,false)
         if (chosenWidget.className == "android.webkit.WebView") {
            val actionList: ArrayList<ExplorationAction>  = ArrayList<ExplorationAction>()
             if (action==AbstractActionType.ITEM_CLICK) {

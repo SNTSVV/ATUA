@@ -198,7 +198,7 @@ class Helper {
                 state.widgets.filter { isVisibleWidget(it) }
 
         private fun isVisibleWidget(it: Widget) =
-               isWellVisualized(it) && it.enabled && (it.isVisible || it.visibleAreas.isNotEmpty())
+                it.enabled &&  isWellVisualized(it) && it.metaInfo.contains("visibleToUser = true")
 
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
             val result = ArrayList(getActionableWidgetsWithoutKeyboard(state))
@@ -388,6 +388,8 @@ class Helper {
                         || widget.className == "android.webkit.WebView"/*|| (!widget.hasClickableDescendant && widget.selected.isEnabled())*/)
 
         fun isWellVisualized(widget: Widget): Boolean {
+            if (!widget.isVisible && widget.visibleAreas.isEmpty())
+                return false
             if (widget.visibleBounds.width > 20 && widget.visibleBounds.height > 20)
                 return true
             else
@@ -613,6 +615,15 @@ class Helper {
                 if (guiTreeDimension.height / autautMF.portraitScreenSurface.width.toDouble() > 0.9) {
                     return true
                 }
+            }
+            return false
+        }
+
+        fun isDialog(rotation: Rotation, guiTreeDimension: Rectangle, guiState: State<*>, autautMF: ATUAMF):Boolean {
+            if (isSameFullScreenDimension(rotation, guiTreeDimension, autautMF))
+                return false
+            if (guiState.widgets.any { it.resourceId == "android:id/content" }) {
+                return true
             }
             return false
         }

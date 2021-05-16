@@ -31,7 +31,7 @@ class AbstractTransition(
     val userInputs = ArrayList<HashMap<UUID,String>>()
     val statementCoverage = HashSet<String>()
     val methodCoverage = HashSet<String>()
-    val changeResults = HashSet<ChangeResult>()
+    val changeEffects = HashSet<ChangeEffect>()
     fun isExplicit() = !isImplicit
 
     fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {

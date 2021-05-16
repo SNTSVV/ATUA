@@ -105,11 +105,10 @@ abstract class UiParser {
 
 		props.add("markedAsOccupied = $markedAsOccupied")
 		val visibleBounds: Rectangle = when {
-			visibleAreas.isEmpty() ->
-				if (isEnabled && isVisibleToUser)
-					nodeRect.toRectangle()
-				else
-					Rectangle(0,0,0,0)  // no uncovered area means this node cannot be visible
+			visibleAreas.isEmpty() -> if (isEnabled && isVisibleToUser)
+				nodeRect.toRectangle()
+			else
+				Rectangle(0,0,0,0)  // no uncovered area means this node cannot be visible
 			children.isEmpty() -> {
 				visibleAreas.visibleOuterBounds()
 			}

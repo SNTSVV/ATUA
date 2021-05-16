@@ -291,7 +291,7 @@ class AttributeValuationMap {
             }
         }
         if (selectedGuiWidgets.isEmpty()) {
-            Helper.getVisibleWidgetsForAbstraction(guiState).forEach {
+            Helper.getVisibleWidgets(guiState).forEach {
                 if (isAbstractRepresentationOf(it,guiState,true)) {
                     selectedGuiWidgets.add(it)
                 }

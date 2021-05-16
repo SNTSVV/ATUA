@@ -36,7 +36,7 @@ class AbstractionFunction (val root: DecisionNode) {
     fun reduce(guiWidget: Widget, guiState: State<*>, activity: String, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
                , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
-        var isOptionsMenu = if (!Helper.isSameFullScreenDimension(rotation,guiTreeRectangle,autaut))
+        var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, autaut))
                 Helper.isOptionsMenuLayout(guiState)
         else
             false

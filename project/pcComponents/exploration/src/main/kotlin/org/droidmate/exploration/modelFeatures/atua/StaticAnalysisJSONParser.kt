@@ -92,7 +92,7 @@ class StaticAnalysisJSONParser() {
 
         private fun readWindowDependency(jObj: JSONObject,
                                          windowTermsHashMap: HashMap<Window, HashMap<String,Long>>,
-                                         wtg: WindowTransitionGraph) {
+                                         wtg: EWTG) {
             val jsonWindowTerm = jObj.getJSONObject("windowsDependency")
             if (jsonWindowTerm != null)
             {
@@ -101,7 +101,7 @@ class StaticAnalysisJSONParser() {
         }
 
         private fun readWindowHandlers (jObj: JSONObject, windowHandlersHashMap: HashMap<Window, Set<String>>,
-                                        wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF) {
+                                        wtg: EWTG, statementCoverageMF: StatementCoverageMF) {
             val jsonWindowHandlers = jObj.getJSONObject("windowHandlers")
             if (jsonWindowHandlers != null) {
                 windowHandlersHashMap.putAll(readWindowHandlers(jsonWindowHandlers,wtg, statementCoverageMF))
@@ -119,7 +119,7 @@ class StaticAnalysisJSONParser() {
         }
         private fun readEventCorrelation(jObj: JSONObject,
                                          inputWindowCorrelation:  HashMap<Input, HashMap<Window,Double>>,
-                                         wtg: WindowTransitionGraph) {
+                                         wtg: EWTG) {
             var eventCorrelationJson = jObj.getJSONObject("event_window_Correlation")
             if (eventCorrelationJson!=null)
             {
@@ -128,7 +128,7 @@ class StaticAnalysisJSONParser() {
         }
 
         private fun readIntentModel(intentFilters: HashMap<String, ArrayList<IntentFilter>>, appName:String,
-                                    wtg: WindowTransitionGraph,
+                                    wtg: EWTG,
                                     allTargetInputs: HashSet<Input>,
                                     targetIntFilters: HashMap<IntentFilter,Int>,
                                     intentModelFile: Path) {
@@ -190,11 +190,11 @@ class StaticAnalysisJSONParser() {
         }
 
         private fun readWindowWidgets(jObj: JSONObject, allEventHandlers: HashSet<String>,
-                                      wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF) {
+                                      wtg: EWTG, statementCoverageMF: StatementCoverageMF) {
             var jMap1 = jObj.getJSONObject("allWindow_Widgets")
-            StaticAnalysisJSONParser.readWindowWidgets(jMap1,wtg)
+            readWindowWidgets(jMap1,wtg)
             var jMap2 = jObj.getJSONObject("allWidgetEvent")
-            StaticAnalysisJSONParser.readAllWidgetEvents(jMap2, wtg, allEventHandlers, statementCoverageMF)
+            readAllWidgetEvents(jMap2, wtg, allEventHandlers, statementCoverageMF)
 
         }
 
@@ -206,8 +206,7 @@ class StaticAnalysisJSONParser() {
                                                  allTargetWindow_ModifiedMethods: HashMap<Window,HashSet<String>>,
                                                  untriggeredTargetHandlers: HashSet<String>){
             var jMap = jObj.getJSONObject("modiMethodTopCaller")
-            readModifiedMethodTopCallers(jMap,modifiedMethodTopCallersMap,statementCoverageMF)
-
+            readModifiedMethodTopCallers(jMap,modifiedMethodTopCallersMap,statementCoverageMF,windowHandlersHashMap)
             //Add windows containing top caller to allTargetWindows list
             modifiedMethodTopCallersMap.forEach { modMethod, topCallers ->
                 allTargetHandlers.addAll(topCallers)
@@ -228,7 +227,7 @@ class StaticAnalysisJSONParser() {
         }
 
         private fun readModifiedMethodInvocation(jObj: JSONObject,
-                                                 wtg: WindowTransitionGraph,
+                                                 wtg: EWTG,
                                                  allTargetInputs: HashSet<Input>,
                                                  allTargetStaticWidgets: HashSet<EWTGWidget>,
                                                  statementCoverageMF: StatementCoverageMF,
@@ -367,7 +366,7 @@ class StaticAnalysisJSONParser() {
         }
 
         fun readWindowWidgets(jsonObj: JSONObject,
-                              wtg: WindowTransitionGraph) {
+                              wtg: EWTG) {
             jsonObj.keys().asSequence().forEach { key ->
                 val windowJson = key as String
                 val windowInfo = windowParser(windowJson)
@@ -437,7 +436,7 @@ class StaticAnalysisJSONParser() {
         }
 
         fun readAllWidgetEvents(jsonObj: JSONObject
-                                , wtg: WindowTransitionGraph
+                                , wtg: EWTG
                                 , allEventHandlers: HashSet<String>
                                 , statementCoverageMF: StatementCoverageMF) {
             jsonObj.keys().asSequence().forEach { key ->
@@ -539,7 +538,7 @@ class StaticAnalysisJSONParser() {
         }
 
         fun readModifiedMethodInvocation(jsonObj: JSONObject,
-                                         wtg: WindowTransitionGraph,
+                                         wtg: EWTG,
                                          allTargetEWTGWidgets: HashSet<EWTGWidget>,
                                          allTargetInputs: HashSet<Input>,
                                          statementCoverageMF: StatementCoverageMF
@@ -625,15 +624,17 @@ class StaticAnalysisJSONParser() {
 
         fun readModifiedMethodTopCallers(jsonObj: JSONObject,
                                          methodTopCallersMap: HashMap<String, Set<String>>,
-                                         statementCoverageMF: StatementCoverageMF)
+                                         statementCoverageMF: StatementCoverageMF,
+                                         windowHandlersHashMap: HashMap<Window, Set<String>>)
         {
+            val allHiddenHandlers = windowHandlersHashMap.values.flatten().distinct()
             jsonObj.keys().asSequence().forEach {
                 val methodId = statementCoverageMF.getMethodId(it)
                 val methodTopCallers = HashSet<String>()
                 val methodTopCallersJsonArray = jsonObj[it] as JSONArray
                 methodTopCallersJsonArray.asSequence().forEach {
                     val callId = statementCoverageMF.getMethodId(it.toString())
-                    if (callId.isNotBlank())
+                    if (callId.isNotBlank() && allHiddenHandlers.contains(callId))
                         methodTopCallers.add(callId)
                 }
                 methodTopCallersMap.put(methodId,methodTopCallers)
@@ -794,7 +795,7 @@ class StaticAnalysisJSONParser() {
             return testData
         }
 
-        fun readEventWindowCorrelation(jsonObj: JSONObject, wtg: WindowTransitionGraph): HashMap<Input, HashMap<Window, Double>> {
+        fun readEventWindowCorrelation(jsonObj: JSONObject, wtg: EWTG): HashMap<Input, HashMap<Window, Double>> {
             val result: HashMap<Input, HashMap<Window, Double>> = HashMap()
             jsonObj.keys().asSequence().forEach { key ->
                 val source = key as String
@@ -869,7 +870,7 @@ class StaticAnalysisJSONParser() {
             return methodTerms
         }
 
-        fun readWindowTerms(jsonObj: JSONObject, wtg: WindowTransitionGraph):Map<Window, HashMap<String, Long>>{
+        fun readWindowTerms(jsonObj: JSONObject, wtg: EWTG):Map<Window, HashMap<String, Long>>{
             val windowTerms = HashMap<Window, HashMap<String,Long>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)
@@ -888,7 +889,7 @@ class StaticAnalysisJSONParser() {
             return windowTerms
         }
 
-        fun readWindowHandlers(jsonObj: JSONObject, wtg: WindowTransitionGraph, statementCoverageMF: StatementCoverageMF): Map<Window, Set<String>> {
+        fun readWindowHandlers(jsonObj: JSONObject, wtg: EWTG, statementCoverageMF: StatementCoverageMF): Map<Window, Set<String>> {
             val windowHandlers = HashMap<Window, HashSet<String>>()
             jsonObj.keys().asSequence().forEach { windowName ->
                 val windowInfo = windowParser(windowName)

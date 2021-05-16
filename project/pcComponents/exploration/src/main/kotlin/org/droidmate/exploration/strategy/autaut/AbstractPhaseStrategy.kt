@@ -176,7 +176,7 @@ abstract class AbstractPhaseStrategy(
                         , pathType: PathFindingHelper.PathType) {
         val candidateStates = HashMap(stateByScore)
         while (candidateStates.isNotEmpty()) {
-            if (shortest && transitionPaths.isNotEmpty())
+            if (transitionPaths.isNotEmpty())
                 break
             val abstractState = candidateStates.maxBy { it.value }!!.key
             PathFindingHelper.findPathToTargetComponent(currentState = currentState

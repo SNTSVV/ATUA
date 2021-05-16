@@ -218,7 +218,7 @@ class AutAutModelLoader {
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
                 )
-                autAutMF.abstractTransitionGraph.add(sourceState,destState,newAbstractTransition)
+                autAutMF.DSTG.add(sourceState,destState,newAbstractTransition)
                 createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)
                 AbstractStateManager.instance.addImplicitAbstractInteraction(
                         abstractTransition = newAbstractTransition,

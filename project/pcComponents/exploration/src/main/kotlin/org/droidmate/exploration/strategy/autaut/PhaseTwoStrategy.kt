@@ -393,7 +393,7 @@ class PhaseTwoStrategy (
             targetEvents.filter { it.key.widget != null }.forEach { event, _ ->
                 val allAVMs = allInputMappings.filter { it.values.any { it.contains(event) } }.map { it.keys }.flatten().filter { it.isWidgetAction() }.map { it.attributeValuationMap!! }
                 if (allAVMs.any { it.cardinality == Cardinality.MANY }) {
-                    targetEventCount += (5).toInt()
+                    targetEventCount += (2).toInt()
                 }
             }
         }
@@ -655,21 +655,19 @@ class PhaseTwoStrategy (
 
     fun selectTargetWindow(currentState: State<*>, numberOfTried: Int, in_maxTried: Int = 0){
         computeAppStatesScore()
-        var leastTriedWindows = targetWindowsCount.filter { windowScores.containsKey(it.key) }. map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.firstOrNull()
-        //debug begin
+        var leastTriedWindows = targetWindowsCount.filter { windowScores.containsKey(it.key)}. map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.firstOrNull()
+
         if (leastTriedWindows == null) {
-            computeAppStatesScore()
             leastTriedWindows = targetWindowsCount.map { Pair<Window, Int>(first = it.key, second = it.value) }.groupBy { it.second }.entries.sortedBy { it.key }.first()
         }
-        //debug end
 
         val leastTriedWindowScore = windowScores.filter { windowScore -> leastTriedWindows.value.any { it.first == windowScore.key } }
         val maxTried =
-        if (in_maxTried == 0) {
-            leastTriedWindowScore.size/2+1
-        } else {
-            in_maxTried
-        }
+            if (in_maxTried == 0) {
+                leastTriedWindowScore.size/2+1
+            } else {
+                in_maxTried
+            }
        if (leastTriedWindowScore.isNotEmpty()) {
             val pb = ProbabilityDistribution<Window>(leastTriedWindowScore)
             val targetNode = pb.getRandomVariable()
@@ -726,7 +724,7 @@ class PhaseTwoStrategy (
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<AbstractState, AbstractTransition>>()
         appStateList.forEach { appState ->
-            edges.addAll(autautMF.abstractTransitionGraph.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
+            edges.addAll(autautMF.DSTG.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
             appStateModifiedMethodMap.put(appState, HashSet())
             appState.abstractTransitions.map { it.modifiedMethods}.forEach { hmap ->
                 hmap.forEach { m, v ->

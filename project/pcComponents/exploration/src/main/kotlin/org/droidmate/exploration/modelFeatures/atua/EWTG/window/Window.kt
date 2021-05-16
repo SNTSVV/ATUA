@@ -3,6 +3,7 @@ package org.droidmate.exploration.modelFeatures.atua.EWTG.window
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
@@ -45,11 +46,23 @@ abstract class Window(val classType: String,
     }
 
     fun dumpStructure(windowsFolder: Path) {
+        val obsoleteWidgets = ArrayList<EWTGWidget>()
+        val visualizedWidgets = ArrayList<EWTGWidget>()
+        AbstractStateManager.instance.ABSTRACT_STATES.forEach {
+            it.EWTGWidgetMapping.map { it.value }.forEach {
+                if (!visualizedWidgets.contains(it)) {
+                    visualizedWidgets.add(it)
+                }
+            }
+        }
+        this.widgets.filter { !visualizedWidgets.contains(it) }.forEach {
+            obsoleteWidgets.add(it)
+        }
         File(windowsFolder.resolve("Widgets_$windowId.csv").toUri()).bufferedWriter().use { all ->
             all.write(structureHeader())
             widgets.forEach {
                 all.newLine()
-                all.write("${it.widgetId};${it.resourceIdName};${it.className};${it.parent?.widgetId};${it.activity};${it.createdAtRuntime};${getAttributeValuationSetOrNull(it)}")
+                all.write("${it.widgetId};${it.resourceIdName};${it.className};${it.parent?.widgetId};${it.activity};${it.createdAtRuntime};${getAttributeValuationSetOrNull(it)};${obsoleteWidgets.contains(it)}")
             }
         }
     }
@@ -61,6 +74,7 @@ abstract class Window(val classType: String,
                 it.attributeValuationSetId
 
     fun dumpEvents(windowsFolder: Path, atuaMF: ATUAMF) {
+
         File(windowsFolder.resolve("Events_$windowId.csv").toUri()).bufferedWriter().use { all ->
             all.write(eventHeader())
             inputs.forEach {
@@ -72,7 +86,7 @@ abstract class Window(val classType: String,
         }
     }
     fun structureHeader(): String {
-        return "widgetId;resourceIdName;className;parent;activity;createdAtRuntime;attributeValuationSetId"
+        return "widgetId;resourceIdName;className;parent;activity;createdAtRuntime;attributeValuationSetId;isObsolete"
     }
     fun eventHeader(): String {
         return "eventType;widgetId;sourceWindowId;createdAtRuntime;eventHandlers;modifiedMethods"

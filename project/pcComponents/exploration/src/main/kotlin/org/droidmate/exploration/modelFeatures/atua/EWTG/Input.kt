@@ -49,6 +49,7 @@ open class Input (
             EventType.closeKeyboard -> AbstractActionType.CLOSE_KEYBOARD
             EventType.implicit_launch_event -> AbstractActionType.LAUNCH_APP
             EventType.resetApp -> AbstractActionType.RESET_APP
+            EventType.press_menu -> AbstractActionType.PRESS_MENU
             else -> if (widget != null) {
                 AbstractActionType.CLICK
             } else {

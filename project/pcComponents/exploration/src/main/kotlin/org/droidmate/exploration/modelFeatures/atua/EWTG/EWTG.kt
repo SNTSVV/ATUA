@@ -2,7 +2,6 @@ package org.droidmate.exploration.modelFeatures.atua.EWTG
 
 import org.droidmate.exploration.modelFeatures.graph.*
 import org.droidmate.exploration.modelFeatures.atua.*
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.ContextMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
@@ -16,11 +15,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> =
+class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                     Graph(FakeWindow(nodeId = "Root", isBaseModel = false) as Window,
                                             stateComparison = { a, b -> a == b },
                                             labelComparison = { a, b ->
@@ -186,7 +184,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> 
             val activityNode = WindowManager.instance.updatedModelWindows.find { it.classType == wtgNode.classType && it is Activity }
             if (activityNode != null) {
                 if (this.edges(activityNode, wtgNode).isEmpty()) {
-                    val input = Input(EventType.implicit_menu, HashSet(), null, sourceWindow = activityNode)
+                    val input = Input(EventType.press_menu, HashSet(), null, sourceWindow = activityNode)
                     this.add(activityNode, wtgNode, WindowTransition(activityNode,wtgNode,input,null))
                 }
             }
@@ -261,7 +259,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> 
         return pressBackEvents
     }
 
-    fun containsGraph(childWTG: WindowTransitionGraph): Boolean {
+    fun containsGraph(childWTG: EWTG): Boolean {
         val childGraphRoot = childWTG.getNextRoot()
         if (childGraphRoot == null)
             return false
@@ -290,25 +288,39 @@ class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> 
         return true
     }
 
-    @Suppress
     fun mergeNode(source: Window, dest: Window) {
         source.widgets.forEach {
             //source.widgets.remove(it)
             if (!dest.widgets.contains(it)) {
                 dest.addWidget(it)
+                it.window = dest
             }
         }
         source.widgets.clear()
 
         val edges = this.edges(source).toMutableList()
         edges.forEach {
-            this.add(dest, it.destination?.data, it.label)
+            val newTransition = WindowTransition(
+                    source = dest,
+                    destination = it.destination!!.data,
+                    input = it.label.input,
+                    prevWindow = it.label.prevWindow
+            )
+            newTransition.input.sourceWindow = dest
+            this.add(newTransition.source, newTransition.destination, newTransition)
         }
 
         this.getVertices().forEach { v ->
             val outEdges = this.edges(v)
             outEdges.filter { it.destination != null && it.destination!!.data == source }.forEach { e ->
-                add(v.data, dest, e.label)
+                val newTransition = WindowTransition(
+                        source = v.data,
+                        destination = dest,
+                        input = e.label.input,
+                        prevWindow = e.label.prevWindow
+                )
+                newTransition.input.sourceWindow = v.data
+                this.add(newTransition.source, newTransition.destination, newTransition)
             }
         }
     }
@@ -321,7 +333,7 @@ class WindowTransitionGraph(private val graph: IGraph<Window, WindowTransition> 
     companion object {
 
         @JvmStatic
-        private val log: Logger by lazy { LoggerFactory.getLogger(WindowTransitionGraph::class.java) }
+        private val log: Logger by lazy { LoggerFactory.getLogger(EWTG::class.java) }
 
 
     }
