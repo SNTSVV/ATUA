@@ -29,7 +29,7 @@ wrapper{
 }
 
 allprojects {
-	group = "org.autaut"
+	group = "org.atua"
 	version = "1.0"
 
 	/* Merge all the build directories into one. */
@@ -81,7 +81,7 @@ apply from: file("project/functions.gradle")
 project.ext { // direct child projects would be childProjects
 	pcJvmTargets = subprojects.find() { it.name == 'pcComponents' }.subprojects
 	artifactModules = allprojects.findAll {
-		it.name in [ "autaut", "core", "exploration",    // internal artifacts
+		it.name in [ "atua", "core", "exploration",    // internal artifacts
 		             "deviceDaemonLib", "explorationModel" ]  // external for platform independency
 	}
 }

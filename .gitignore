@@ -46,3 +46,4 @@ project/pcComponents/core/out
 project/pcComponents/exploration/build
 .DS_Store
 out
+buildSrc

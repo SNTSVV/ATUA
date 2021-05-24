@@ -80,13 +80,11 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                     resourceId = widgetInfo["resourceId"]!!,
                                     resourceIdName = widgetInfo["resourceIdName"]!!,
                                     className = widgetInfo["className"]!!,
-                                    wtgNode = sourceNode,
-                                    activity = sourceNode.classType)
+                                    wtgNode = sourceNode)
                         } else if (widgetInfo.containsKey("className") && widgetInfo.containsKey("id")) {
                             ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                     className = widgetInfo["className"]!!,
-                                    wtgNode = sourceNode,
-                                    activity = sourceNode.classType)
+                                    wtgNode = sourceNode)
                         } else {
                             ewtgWidget = null
                         }
@@ -231,8 +229,8 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
         val edges = this.edges(wtgNode).filter { it.destination != null }
                 .filter { it.destination!!.data is ContextMenu }
         val windows = edges.map { it.destination!!.data as ContextMenu }.toMutableList()
-        val originalContextMenus = windows.filter { it.activityClass != wtgNode.activityClass }
-        val activityContextMenus = windows.filterNot { it.activityClass != wtgNode.activityClass }
+        val originalContextMenus = windows.filter { it.classType != wtgNode.classType }
+        val activityContextMenus = windows.filterNot { it.classType != wtgNode.classType }
         if (activityContextMenus.isNotEmpty()) {
             return activityContextMenus
         }
@@ -243,11 +241,9 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
         val edges = this.edges(wtgNode).filter { it.destination != null }
                 .filter {
                     it.destination!!.data is Dialog
-                            && (it.destination!!.data.activityClass.isBlank()
-                            || it.destination!!.data.activityClass == wtgNode.activityClass)
                 }
         val dialogs = edges.map { it.destination!!.data as Dialog }.toHashSet()
-        dialogs.addAll(WindowManager.instance.updatedModelWindows.filter { it is Dialog && it.activityClass == wtgNode.activityClass } as List<Dialog>)
+        dialogs.addAll(WindowManager.instance.updatedModelWindows.filter { it is Dialog && it.ownerActivitys.contains(wtgNode)} as List<Dialog>)
         return dialogs.toList()
     }
 

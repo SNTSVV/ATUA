@@ -107,11 +107,14 @@ class PhaseOneStrategy(
         if (autautMF.lastUpdatedStatementCoverage == 1.0) {
             return false
         }
-        if (autautMF.appPrevState!!.isRequestRuntimePermissionDialogBox) {
+        if (autautMF.appPrevState!!.isRequestRuntimePermissionDialogBox
+                && atuaTestingStrategy.eContext.getLastActionType() != "ResetApp") {
             if (recentTargetEvent!=null) {
                 untriggeredTargetInputs.add(recentTargetEvent!!)
                 recentTargetEvent = null
             }
+        } else {
+            recentTargetEvent = null
         }
         updateReachedWindows(currentState)
         updateBudgetForWindow(currentState)
@@ -163,7 +166,8 @@ class PhaseOneStrategy(
     private fun isAvailableAbstractStatesExisting(currentState: State<*>): Boolean {
         val availableAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
                 .filter {
-                    it !is VirtualAbstractState &&
+                    it !is VirtualAbstractState
+                            && it.attributeValuationMaps.isNotEmpty()
                             !outofbudgetWindows.contains(it.window) &&
                             it.guiStates.isNotEmpty() &&
                             hasBudgetLeft(it.window)
@@ -214,14 +218,13 @@ class PhaseOneStrategy(
                 if (!widgets.any { w.resourceId == it.resourceId }) {
                     newWidgets.add(w)
                 }
-                widgets.add(w)
             }
             interactableWidgets.filter { w -> w.resourceId.isNotBlank() }.forEach { w->
                 if (!widgets.any { it.uid == w.uid }) {
                     newWidgets.add(w)
                 }
-                widgets.add(w)
             }
+            widgets.addAll(newWidgets)
         }
         if (!windowRandomExplorationBudget.containsKey(window)) {
             if (window is Activity)
@@ -233,7 +236,7 @@ class PhaseOneStrategy(
         var newActions = 0
         newWidgets.forEach {
             if (it.visibleBounds.width > 200 && it.visibleBounds.height > 200 ) {
-               newActions += it.availableActions(delay, useCoordinateClicks).size
+               newActions += it.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe}.size
             } else {
                 newActions += it.availableActions(delay, useCoordinateClicks).filterNot { it is Swipe }.size
             }
@@ -264,6 +267,7 @@ class PhaseOneStrategy(
         val availableAbState_Window =  AbstractStateManager.instance.ABSTRACT_STATES
                 .filter { it !is VirtualAbstractState &&
                         it.window !is OutOfApp && it.window !is Launcher &&
+                        it.attributeValuationMaps.isNotEmpty()
                         !outofbudgetWindows.contains(it.window) &&
                         !unreachableWindows.contains(it.window) &&
                         windowRandomExplorationBudget.containsKey(it.window)
@@ -289,15 +293,18 @@ class PhaseOneStrategy(
     }
 
     private fun updateTargetWindows() {
-        autautMF.allTargetWindow_ModifiedMethods.map { it.key }.filterNot { fullyCoveredWindows.contains(it) }.forEach {
+
+        targetWindowTryCount.keys.filterNot { fullyCoveredWindows.contains(it) }.forEach {
             var coverCriteriaCount = 0
             if (autautMF.allTargetWindow_ModifiedMethods[it]!!.all { autautMF.allModifiedMethod[it] == true }
                     || untriggeredTargetInputs.filter { input -> input.sourceWindow == it}.isEmpty()) {
                 coverCriteriaCount++
             }
-            if (autautMF.untriggeredTargetHandlers.intersect(
-                            autautMF.windowHandlersHashMap[it] ?: emptyList()
-                    ).isEmpty()) {
+            val untriggeredhandlers = autautMF.untriggeredTargetHandlers.intersect(
+                    autautMF.windowHandlersHashMap[it] ?: emptyList()
+            )
+            val untriggeredhandlernames = untriggeredhandlers.map { autautMF.statementMF!!.methodInstrumentationMap.get(it) }
+            if (untriggeredhandlers.isEmpty()) {
                 coverCriteriaCount++
             }
             if (coverCriteriaCount==2) {
@@ -321,7 +328,6 @@ class PhaseOneStrategy(
         abstractStates.put(abstractState,1.0)
         getPathToStates(transitionPaths=transitionPath,
                 stateByScore = abstractStates,
-                stopWhenHavingUnexercisedAction = false,
                 currentState = currentState,
                 currentAbstractState = currentAbstractState,
                 shortest = false,
@@ -1009,12 +1015,11 @@ class PhaseOneStrategy(
     var clickedOnKeyboard = false
     var needResetApp = false
     var actionCountSinceSelectTarget: Int = 0
-
-
     private fun isCountAction(chosenAction: ExplorationAction) =
            !chosenAction.isFetch()
                    && chosenAction.name!="CloseKeyboard"
                    && !chosenAction.name.isLaunchApp()
+                   && chosenAction !is Swipe
 
     private fun isTargetWindow(currentAppState: AbstractState): Boolean {
         return targetWindowTryCount.filterNot {
@@ -1127,6 +1132,7 @@ class PhaseOneStrategy(
         val excludedNodes = arrayListOf<AbstractState>(currentNode)
         if (!AbstractStateManager.instance.ABSTRACT_STATES.any {
                     it !is VirtualAbstractState && it.window == targetWindow
+                            && it.attributeValuationMaps.isNotEmpty()
                 }) {
             val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {
                 it is VirtualAbstractState && it.window == targetWindow
@@ -1143,6 +1149,8 @@ class PhaseOneStrategy(
                         it !is VirtualAbstractState &&
                         it.window == targetWindow
                                 && !excludedNodes.contains(it)
+                                && it.attributeValuationMaps.isNotEmpty()
+
                     }
                     .forEach {
                         val hasUntriggeredTargetEvent: Boolean
@@ -1158,6 +1166,7 @@ class PhaseOneStrategy(
                             it.window == targetWindow
                                     && it !is VirtualAbstractState
                                     && !excludedNodes.contains(it)
+                                    && it.attributeValuationMaps.isNotEmpty()
                         }
                         .forEach {
                                 candidates.add(it)

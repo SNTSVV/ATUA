@@ -23,13 +23,13 @@ class DialogBehaviorMonitor {
                 return
             }
             if (currentAbstractState.window is Activity) {
-                if (currentAbstractState.window.activityClass == checkingDialog!!.activityClass) {
+                if (checkingDialog!!.ownerActivitys.contains(currentAbstractState.window)) {
                     if (initialGUIState == resGuiState) {
                         // the dialog's behavior has no effect on the initialGUIState
                         // stop the checking
                         reset()
                     } else {
-                        checkingDialog!!.dialogType = DialogType.DATA_INPUT
+                        checkingDialog!!.isInputDialog = true
                         checkingUserInput!!.isUserLikeInput = true
                         reset()
                     }
@@ -41,10 +41,10 @@ class DialogBehaviorMonitor {
         }
         if (!abstractTransition!!.abstractAction.isWidgetAction())
             return
-        if (currentAbstractState.window is Dialog && (currentAbstractState.window as Dialog).dialogType == DialogType.NORMAL) {
-            if (prevAbstractState.window is Activity && prevAbstractState.window.activityClass == currentAbstractState.window.activityClass) {
+        if (currentAbstractState.window is Dialog && (currentAbstractState.window as Dialog).isInputDialog == false) {
+            if (prevAbstractState.window is Activity && (currentAbstractState.window as Dialog).ownerActivitys.contains(prevAbstractState.window)) {
                 if (abstractTransition!!.abstractAction.attributeValuationMap!!.getClassName() == "android.widget.Spinner") {
-                    (currentAbstractState.window!! as Dialog).dialogType == DialogType.ITEM_SELECTOR
+                    (currentAbstractState.window!! as Dialog).isInputDialog = true
                     abstractTransition.source.EWTGWidgetMapping.get(abstractTransition.abstractAction.attributeValuationMap!!)!!.isUserLikeInput = true
                 } else {
                     // we don't know which type of the dialog is yet.

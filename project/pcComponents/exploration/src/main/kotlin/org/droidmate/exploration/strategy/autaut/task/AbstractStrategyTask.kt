@@ -394,6 +394,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                     swipeableWidgets.random()
                 val swipeAction =
                         computeSwipeAction(data, actionWidget, currentState, abstractAction, currentAbstractState)
+                currentAbstractState.increaseActionCount2(abstractAction!!,true)
                 return swipeAction
             }
             else {
@@ -410,6 +411,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         if (action == AbstractActionType.SWIPE && data is String) {
             val swipeAction =
                     computeSwipeAction(data, chosenWidget, currentState, abstractAction, currentAbstractState)
+
             return swipeAction
         }
         val actionList = Helper.getAvailableActionsForWidget(chosenWidget, currentState,delay, useCoordinateClicks)

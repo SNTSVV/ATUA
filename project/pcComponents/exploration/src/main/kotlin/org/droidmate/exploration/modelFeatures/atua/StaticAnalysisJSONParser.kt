@@ -4,6 +4,8 @@ import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentData
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.DialogType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
@@ -28,6 +30,7 @@ class StaticAnalysisJSONParser() {
                 //val activityEventList = List<ActivityEvent>()
                 val jsonData = String(Files.readAllBytes(appModelFile))
                 val jObj = JSONObject(jsonData)
+                readDialogs(jObj)
                 ATUAMF.log.debug("Reading Window Transition Graph")
                 atuaMF.wtg.constructFromJson(jObj)
                 readActivityAlias(jObj,atuaMF.activityAlias)
@@ -35,7 +38,7 @@ class StaticAnalysisJSONParser() {
                         atuaMF.wtg, atuaMF.statementMF!!)
                 WindowManager.instance.updatedModelWindows.forEach { w ->
                     if (w is OptionsMenu) {
-                        val ownerActivity = WindowManager.instance.updatedModelWindows.find { it is Activity && it.activityClass == w.activityClass }
+                        val ownerActivity = WindowManager.instance.updatedModelWindows.find { it is Activity && it.classType == w.classType }
                         w.ownerActivity = ownerActivity
                     }
 /*                    if (w is Dialog) {
@@ -78,6 +81,33 @@ class StaticAnalysisJSONParser() {
                 }
             }
 
+        }
+
+        private fun readDialogs(jObj: JSONObject) {
+            val jsonDialogClasses = jObj.getJSONObject("allDialogs")
+            if (jsonDialogClasses != null) {
+                jsonDialogClasses.keys().asSequence().forEach { dialogTypeString->
+                    val dialogType = when(dialogTypeString) {
+                        "libraryDialogs" -> DialogType.LIBRARY_DIALOG
+                        "applicationDialogs" -> DialogType.APPLICATION_DIALOG
+                        "dialogFragments" -> DialogType.DIALOG_FRAGMENT
+                        else -> DialogType.UNKNOWN
+                    }
+                    WindowManager.instance.dialogClasses.put(dialogType,ArrayList())
+                    val dialogClasses = jsonDialogClasses.get(dialogTypeString) as JSONArray
+                    WindowManager.instance.dialogClasses.get(dialogType)!!.addAll(dialogClasses.map { it.toString() })
+                    dialogClasses.forEach { it ->
+                        Dialog.getOrCreateNode(
+                                nodeId = Dialog.getNodeId(),
+                                classType = it.toString(),
+                                allocMethod = "",
+                                runtimeCreated = false,
+                                isBaseModel = false
+                        )
+                    }
+
+                }
+            }
         }
 
         private fun readActivityAlias (jObj: JSONObject, activityAlias: HashMap<String, String>) {
@@ -159,7 +189,7 @@ class StaticAnalysisJSONParser() {
                     }*/
 
                     if (allTargetInputs.filter {
-                                it.sourceWindow.activityClass.contains(activityName)
+                                it.sourceWindow.classType.contains(activityName)
                                         && (it.eventType == EventType.implicit_rotate_event
                                         || it.eventType == EventType.implicit_lifecycle_event
                                         || it.eventType == EventType.implicit_power_event)
@@ -381,8 +411,7 @@ class StaticAnalysisJSONParser() {
                                 resourceId = widgetInfo["resourceId"]?:"",
                                 resourceIdName = widgetInfo["resourceIdName"]?:"",
                                 className = widgetInfo["className"]!!,
-                                wtgNode = wtgNode,
-                                activity = wtgNode.classType)
+                                wtgNode = wtgNode)
                         val jsonChildren = jsonObjectRoot["children"] as JSONObject
                         parseWindowWigetsChildren(jsonChildren, parent)
 
@@ -394,8 +423,7 @@ class StaticAnalysisJSONParser() {
                                     resourceId = widgetInfo["resourceId"]!!,
                                     resourceIdName = widgetInfo["resourceIdName"]!!,
                                     className = widgetInfo["className"]!!,
-                                    wtgNode = wtgNode,
-                                    activity = wtgNode.classType)
+                                    wtgNode = wtgNode)
                         }
 
                     }
@@ -413,8 +441,7 @@ class StaticAnalysisJSONParser() {
                             resourceId = widgetInfo["resourceId"]?:"",
                             resourceIdName = widgetInfo["resourceIdName"]?:"",
                             className = widgetInfo["className"]!!,
-                            wtgNode = parent.window,
-                            activity = parent.window.classType)
+                            wtgNode = parent.window)
                     widget.parent = parent
                     val jsonChildren = jsonObjectTree["children"] as JSONObject
                     parseWindowWigetsChildren(jsonChildren, widget)
@@ -426,8 +453,7 @@ class StaticAnalysisJSONParser() {
                                 resourceId = widgetInfo["resourceId"]!!,
                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                 className = widgetInfo["className"]!!,
-                                wtgNode = parent.window,
-                                activity = parent.window.classType)
+                                wtgNode = parent.window)
                         widget.parent = parent
                     }
 
@@ -463,13 +489,11 @@ class StaticAnalysisJSONParser() {
                                                 resourceId = widgetInfo["resourceId"]!!,
                                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                                 className = widgetInfo["className"]!!,
-                                                wtgNode = wtgNode,
-                                                activity = wtgNode.classType)
+                                                wtgNode = wtgNode)
                                     } else {
                                         ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 className = widgetInfo["className"]!!,
-                                                wtgNode = wtgNode,
-                                                activity = wtgNode.classType)
+                                                wtgNode = wtgNode)
                                     }
 
                                 } catch (e: Exception) {
@@ -575,14 +599,12 @@ class StaticAnalysisJSONParser() {
                                                 resourceId = widgetInfo["resourceId"]!!,
                                                 resourceIdName = widgetInfo["resourceIdName"]!!,
                                                 className = widgetInfo["className"]!!,
-                                                wtgNode = sourceNode,
-                                                activity = sourceNode.classType)
+                                                wtgNode = sourceNode)
 
                                     } else {
                                         ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
                                                 className = widgetInfo["className"]!!,
-                                                wtgNode = sourceNode,
-                                                activity = sourceNode.classType)
+                                                wtgNode = sourceNode)
                                     }
                                     if (!allTargetEWTGWidgets.contains(ewtgWidget)) {
                                         allTargetEWTGWidgets.add(ewtgWidget)
@@ -682,7 +704,7 @@ class StaticAnalysisJSONParser() {
                 optionsMenuList.forEach {
                     val menuItem = it.widgets.find { it.widgetId == widgetInfo["id"]!! }
                     if (menuItem != null) {
-                        menuItem.possibleTexts = ArrayList((jsonObj[key] as JSONArray).map { it.toString() })
+                        menuItem.possibleTexts.addAll(ArrayList((jsonObj[key] as JSONArray).map { it.toString() }))
                     }
                 }
             }
@@ -820,8 +842,7 @@ class StaticAnalysisJSONParser() {
                                         resourceId = widgetInfo["resourceId"]!!,
                                         resourceIdName = widgetInfo["resourceIdName"]!!,
                                         className = widgetInfo["className"]!!,
-                                        wtgNode = sourceNode,
-                                        activity = sourceNode.classType)
+                                        wtgNode = sourceNode)
                             } catch (e: Exception) {
                                 ewtgWidget = null
                             }

@@ -204,7 +204,6 @@ class AutAutModelLoader {
             val abstractTransition = sourceState.abstractTransitions.find {
                 it.isExplicit() && it.dest == destState && it.abstractAction == abstractAction
                         && it.prevWindow == prevWindow
-                        && it.preWindowAbstractState == prevWindowAbstractState
             }
 
             if (abstractTransition == null) {
@@ -213,7 +212,6 @@ class AutAutModelLoader {
                         dest = destState,
                         fromWTG = false,
                         prevWindow = prevWindow,
-                        preWindowAbstractState = prevWindowAbstractState,
                         isImplicit = false,
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
@@ -259,7 +257,7 @@ class AutAutModelLoader {
                        abstractTransition.source.window,
                         abstractTransition.dest.window,
                         input,
-                        abstractTransition.preWindowAbstractState?.window))
+                        abstractTransition.prevWindow))
             }
 
         }
@@ -305,14 +303,12 @@ class AutAutModelLoader {
                     val ewtgWidget = EWTGWidget(
                             widgetId = attributeValuationSet.avmId.toString(),
                             resourceIdName = attributeValuationSet.getResourceId(),
-                            resourceId = "",
-                            activity = sourceAbstractState.activity,
                             window = sourceAbstractState.window,
                             className = attributeValuationSet.getClassName(),
                             contentDesc = attributeValuationSet.getContentDesc(),
                             text = attributeValuationSet.getText(),
                             createdAtRuntime = true,
-                            attributeValuationSetId = attributeValuationSetId
+                            widgetUUID = attributeValuationSetId
                     )
                     ewtgWidget.modelVersion = ModelVersion.BASE
                     sourceAbstractState.EWTGWidgetMapping.put(attributeValuationSet, ewtgWidget)
@@ -392,7 +388,7 @@ class AutAutModelLoader {
             val hashcode = data[12].toInt()
             val isInitalState = data[13].toBoolean()
             val widgetIdMapping: HashMap<AttributeValuationMap,String> = HashMap()
-            val attributeValuationSets = loadAttributeValuationSets(uuid, dstgFolderPath,widgetIdMapping, activity)
+            val attributeValuationSets = loadAttributeValuationSets(uuid, dstgFolderPath,widgetIdMapping, window.classType)
             val widgetMapping = HashMap<AttributeValuationMap,EWTGWidget>()
             widgetIdMapping.forEach { avs, widgetId ->
                 val widget = window.widgets.find { it.widgetId == widgetId }
@@ -407,14 +403,13 @@ class AutAutModelLoader {
                     activity = activity,
                     isOutOfApplication = isOutOfApp,
                     isHomeScreen = isHomeScreen,
-                    internet = internetStatus,
                     rotation = rotation,
                     isOpeningKeyboard = isOpenningKeyboard,
                     isRequestRuntimePermissionDialogBox = isRequestRuntimePermissionDialogBox,
                     isAppHasStoppedDialogBox = isAppHasStoppedDialogBox,
                     attributeValuationMaps = ArrayList(attributeValuationSets),
                     EWTGWidgetMapping = widgetMapping,
-                    hasOptionsMenu = hasOptionsMenu,
+                    isMenusOpened = hasOptionsMenu,
                     window = window,
                     loadedFromModel = true,
                     modelVersion = ModelVersion.BASE
@@ -462,9 +457,9 @@ class AutAutModelLoader {
             return attributeValuationSets
         }
         private fun createAttributeValuationSet(attributeValuationSetRawRecord: List<String>,
-                                               attributeValuationMaps: ArrayList<AttributeValuationMap>,
-                                               activity: String,
-                                               widgetMapping: HashMap<AttributeValuationMap, String>):AttributeValuationMap {
+                                                attributeValuationMaps: ArrayList<AttributeValuationMap>,
+                                                windowClassType: String,
+                                                widgetMapping: HashMap<AttributeValuationMap, String>):AttributeValuationMap {
             //TODO("Not implemented")
             val parentAVSId = if (attributeValuationSetRawRecord[1] !="null")
                 attributeValuationSetRawRecord[1]
@@ -485,11 +480,11 @@ class AutAutModelLoader {
                     localAttributes = attributes,
                     parentAVMId = parentAVSId,
                     cardinality = cardinality,
-                    activity = activity)
-            if (!AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.containsKey(activity)) {
-                AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.put(activity, HashMap())
+                    windowClassType = windowClassType)
+            if (!AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.containsKey(windowClassType)) {
+                AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.put(windowClassType, HashMap())
             }
-            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.put(attributeValuationSet.avmId,attributeValuationSet)
+            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.put(attributeValuationSet.avmId,attributeValuationSet)
 
             if (captured.toBoolean()) {
                 attributeValuationMaps.add(attributeValuationSet)
@@ -750,15 +745,13 @@ class AutAutModelLoader {
             }
             val widget = EWTGWidget(
                     widgetId = widgetId,
-                    activity = activity,
                     createdAtRuntime = createdAtRuntime,
                     resourceIdName = resourceIdName,
                     className = className,
                     window = window,
                     contentDesc = "",
                     text = "",
-                    resourceId = "",
-                    attributeValuationSetId = attributeValuationSetId
+                    widgetUUID = attributeValuationSetId
             )
             widget.modelVersion = ModelVersion.BASE
             return widget
@@ -797,7 +790,6 @@ class AutAutModelLoader {
                 "Launcher" -> Launcher.getOrCreateNode()
                 else -> throw Exception("Error windowType: $windowType")
             }
-            window.activityClass = activityClass
             window.portraitDimension = portraitDimension
             window.landscapeDimension = landscapeDimension
             window.portraitKeyboardDimension = portraitKeyboardDimension

@@ -14,7 +14,6 @@ class AbstractTransition(
         val interactions: HashSet<Interaction<*>> = HashSet(),
         val isImplicit: Boolean,
         var prevWindow: Window?,
-        var preWindowAbstractState: AbstractState?=null,
         val data: Any? =null,
         var fromWTG: Boolean = false,
         val source: AbstractState,

@@ -24,16 +24,17 @@ import kotlin.collections.HashMap
 class AbstractionFunction (val root: DecisionNode) {
     val abandonedAbstractTransitions: ArrayList<AbstractTransition> = ArrayList()
 
-    fun isAbandonedAttributePath(activity: String, abstractTransition: AbstractTransition):Boolean {
+    fun isAbandonedAbstractTransition(activity: String, abstractTransition: AbstractTransition):Boolean {
         return abandonedAbstractTransitions.filter { it.source.activity == activity }.any {
             abstractTransition.abstractAction == it.abstractAction &&
             abstractTransition.abstractAction.attributeValuationMap?.equals(it.abstractAction.attributeValuationMap!!)?:false
                     && abstractTransition.source.equals(it.source)
                     && abstractTransition.dest.equals(it.dest)
+                    && abstractTransition.prevWindow == it.prevWindow
         }
     }
 
-    fun reduce(guiWidget: Widget, guiState: State<*>, activity: String, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
+    fun reduce(guiWidget: Widget, guiState: State<*>, windowClassType: String, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
                , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
         var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, autaut))
@@ -51,16 +52,16 @@ class AbstractionFunction (val root: DecisionNode) {
                 currentDecisionNode = root
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,activity,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,windowClassType,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.containAttributePath(attributePath,activity))
+                && currentDecisionNode.containAttributePath(attributePath,windowClassType))
         if (level==1 && isOptionsMenu) {
-            if (!currentDecisionNode.attributePaths.containsKey(activity)) {
-                currentDecisionNode.attributePaths.put(activity, arrayListOf())
+            if (!currentDecisionNode.attributePaths.containsKey(windowClassType)) {
+                currentDecisionNode.attributePaths.put(windowClassType, arrayListOf())
             }
-            currentDecisionNode!!.attributePaths.get(activity)!!.add(attributePath)
-            attributePath = currentDecisionNode!!.nextNode!!.reducer.reduce(guiWidget, guiState, activity,rotation,autaut, tempWidgetReduceMap, tempChildWidgetAttributePaths)
+            currentDecisionNode!!.attributePaths.get(windowClassType)!!.add(attributePath)
+            attributePath = currentDecisionNode!!.nextNode!!.reducer.reduce(guiWidget, guiState, windowClassType,rotation,autaut, tempWidgetReduceMap, tempChildWidgetAttributePaths)
         }
         return attributePath
     }
@@ -68,7 +69,7 @@ class AbstractionFunction (val root: DecisionNode) {
     /**
      * Increase the level of Reducer. Return [true] if it can be increased, otherwise [false]
      */
-    fun increaseReduceLevel(attributePath: AttributePath, activity: String, level2Maximum: Boolean,guiWidget: Widget, guiState: State<*>): Boolean
+    fun increaseReduceLevel(attributePath: AttributePath, activity: String, level2Maximum: Boolean): Boolean
     {
         var currentDecisionNode: DecisionNode? = null
         var level = 1

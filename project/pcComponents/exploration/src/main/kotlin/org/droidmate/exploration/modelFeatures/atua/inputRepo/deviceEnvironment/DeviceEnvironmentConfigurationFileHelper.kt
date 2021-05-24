@@ -2,6 +2,7 @@ package org.droidmate.exploration.modelFeatures.atua.inputRepo.deviceEnvironment
 
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.file.Files
@@ -30,7 +31,7 @@ class DeviceEnvironmentConfigurationFileHelper {
                     val windows = HashSet<Window>()
                     settingConfigJson.getJSONArray("AppliedActivities").forEach {
                         val activity = it.toString()
-                        val window = WindowManager.instance.allMeaningWindows.find { it.activityClass == activity || it.classType == activity }
+                        val window = WindowManager.instance.allMeaningWindows.find { it.classType == activity && it is Activity }
                         if (window != null) {
                             windows.add(window)
                         }

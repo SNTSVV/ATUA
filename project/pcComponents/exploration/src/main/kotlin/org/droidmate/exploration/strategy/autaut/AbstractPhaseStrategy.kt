@@ -9,6 +9,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
@@ -29,6 +30,7 @@ abstract class AbstractPhaseStrategy(
     lateinit var autautMF: ATUAMF
 
     var strategyTask: AbstractStrategyTask? = null
+    var fullControl: Boolean = false
     abstract fun nextAction(eContext: ExplorationContext<*,*,*>): ExplorationAction
     abstract fun isTargetState(currentState: State<*>): Boolean
     abstract fun isTargetWindow(window: Window): Boolean
@@ -45,8 +47,10 @@ abstract class AbstractPhaseStrategy(
                         || it == currentAbstractState
                         || it.window is Launcher
                         || it.window is OutOfApp
+                        || (it.window is Dialog && (it.window as Dialog).ownerActivitys.all { it is OutOfApp })
                         || it.isRequestRuntimePermissionDialogBox
                         || it.isAppHasStoppedDialogBox
+                        || it.attributeValuationMaps.isEmpty()
                         || it.guiStates.isEmpty()
                         || it.guiStates.all { autautMF.getUnexploredWidget(it).isEmpty() }
                 }
@@ -63,6 +67,7 @@ abstract class AbstractPhaseStrategy(
         var targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
             it.window == targetWindow
                     && it != currentAbstractState
+                    && (it is VirtualAbstractState || it.attributeValuationMaps.isNotEmpty())
         }.toHashSet()
         if (explore) {
             targetStates.removeIf { it is VirtualAbstractState && it.getUnExercisedActions(null,autautMF).isEmpty() }
@@ -70,7 +75,7 @@ abstract class AbstractPhaseStrategy(
                 targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
                     it.window == targetWindow
                             && it != currentAbstractState
-                            && it.guiStates.all { autautMF.getUnexploredWidget(it).isNotEmpty() }
+                            && it.guiStates.any { autautMF.getUnexploredWidget(it).isNotEmpty() }
                             && it !is VirtualAbstractState
                 }.toHashSet()
             }
@@ -93,16 +98,20 @@ abstract class AbstractPhaseStrategy(
         return transitionPaths
     }
 
-     fun getPathToStatesBasedOnPathType(pathType: PathFindingHelper.PathType, transitionPaths: ArrayList<TransitionPath>, stateByActionCount: HashMap<AbstractState, Double>, currentAbstractState: AbstractState, currentState: State<*>) {
+     fun getPathToStatesBasedOnPathType(pathType: PathFindingHelper.PathType,
+                                        transitionPaths: ArrayList<TransitionPath>,
+                                        stateByActionCount: HashMap<AbstractState, Double>,
+                                        currentAbstractState: AbstractState,
+                                        currentState: State<*>,
+                                        shortest: Boolean=false) {
         if (pathType != PathFindingHelper.PathType.ANY)
             getPathToStates(
                     transitionPaths = transitionPaths,
                     stateByScore = stateByActionCount,
                     currentAbstractState = currentAbstractState,
                     currentState = currentState,
-                    stopWhenHavingUnexercisedAction = false,
                     pathType = pathType,
-                    shortest = false,
+                    shortest = shortest,
                     pathCountLimitation = 5)
         else {
             getPathToStates(
@@ -110,9 +119,8 @@ abstract class AbstractPhaseStrategy(
                     stateByScore = stateByActionCount,
                     currentAbstractState = currentAbstractState,
                     currentState = currentState,
-                    stopWhenHavingUnexercisedAction = false,
                     pathType = PathFindingHelper.PathType.INCLUDE_INFERED,
-                    shortest = false,
+                    shortest = shortest,
                     pathCountLimitation = 5)
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -120,9 +128,8 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.RESET,
-                        shortest = false,
+                        shortest = shortest,
                         pathCountLimitation = 5)
             }
             if (transitionPaths.isEmpty()) {
@@ -131,9 +138,8 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.NORMAL,
-                        shortest = false,
+                        shortest = shortest,
                         pathCountLimitation = 5)
             }
             if (transitionPaths.isEmpty()) {
@@ -142,9 +148,8 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.TRACE,
-                        shortest = false,
+                        shortest = shortest,
                         pathCountLimitation = 5)
             }
             if (transitionPaths.isEmpty()) {
@@ -153,9 +158,8 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        stopWhenHavingUnexercisedAction = false,
                         pathType = PathFindingHelper.PathType.WTG,
-                        shortest = false,
+                        shortest = shortest,
                         pathCountLimitation = 5)
             }
         }
@@ -170,13 +174,12 @@ abstract class AbstractPhaseStrategy(
 
     fun getPathToStates(transitionPaths: ArrayList<TransitionPath>, stateByScore: Map<AbstractState, Double>
                         , currentAbstractState: AbstractState, currentState: State<*>
-                        , stopWhenHavingUnexercisedAction: Boolean
                         , shortest: Boolean
                         , pathCountLimitation: Int
                         , pathType: PathFindingHelper.PathType) {
         val candidateStates = HashMap(stateByScore)
         while (candidateStates.isNotEmpty()) {
-            if (transitionPaths.isNotEmpty())
+            if (transitionPaths.isNotEmpty() && shortest)
                 break
             val abstractState = candidateStates.maxBy { it.value }!!.key
             PathFindingHelper.findPathToTargetComponent(currentState = currentState
@@ -189,6 +192,10 @@ abstract class AbstractPhaseStrategy(
                     , pathType = pathType)
             //windowStates.remove(abstractState)
             candidateStates.remove(abstractState)
+        }
+        if (shortest && transitionPaths.isNotEmpty()) {
+            val minSequenceLength = transitionPaths.map { it.path.size }.min()!!
+            transitionPaths.removeIf { it.path.size > minSequenceLength }
         }
     }
 

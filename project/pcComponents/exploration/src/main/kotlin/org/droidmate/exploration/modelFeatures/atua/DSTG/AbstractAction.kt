@@ -59,7 +59,7 @@ data class AbstractAction (
         var actionScore = when(actionType) {
             AbstractActionType.PRESS_BACK -> 0.5
             AbstractActionType.LONGCLICK,AbstractActionType.ITEM_LONGCLICK,AbstractActionType.SWIPE -> 2.0
-            AbstractActionType.CLICK,AbstractActionType.ITEM_CLICK -> 2.0
+            AbstractActionType.CLICK,AbstractActionType.ITEM_CLICK -> 4.0
             else -> 1.0
         }
         if (attributeValuationMap == null)
@@ -73,6 +73,33 @@ data class AbstractAction (
     }
 
     companion object {
+        fun normalizeActionType(interaction: Interaction<Widget>, prevState: State<*>): AbstractActionType {
+            val actionType = interaction.actionType
+            var abstractActionType = when (actionType) {
+                "Tick" -> AbstractActionType.CLICK
+                "ClickEvent" -> AbstractActionType.CLICK
+                "LongClickEvent" -> AbstractActionType.LONGCLICK
+                else -> AbstractActionType.values().find { it.actionName.equals(actionType) }
+            }
+            if (abstractActionType == AbstractActionType.CLICK && interaction.targetWidget == null) {
+                if (interaction.data.isBlank()) {
+                    abstractActionType = AbstractActionType.CLICK_OUTBOUND
+                } else {
+                    val guiDimension = Helper.computeGuiTreeDimension(prevState)
+                    val clickCoordination = Helper.parseCoordinationData(interaction.data)
+                    if (clickCoordination.first < guiDimension.leftX || clickCoordination.second < guiDimension.topY) {
+                        abstractActionType = AbstractActionType.CLICK_OUTBOUND
+                    }
+                }
+            }
+            if (abstractActionType == AbstractActionType.CLICK && interaction.targetWidget != null && interaction.targetWidget!!.isKeyboard) {
+                abstractActionType = AbstractActionType.RANDOM_KEYBOARD
+            }
+            if (abstractActionType == null) {
+                throw Exception("No abstractActionType for $actionType")
+            }
+            return abstractActionType
+        }
         fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState, atuaMF: ATUAMF): Any? {
             if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
                 return interaction.targetWidget
@@ -115,6 +142,7 @@ data class AbstractAction (
             )
         }
     }
+
 }
 
 enum class AbstractActionType(val actionName: String) {

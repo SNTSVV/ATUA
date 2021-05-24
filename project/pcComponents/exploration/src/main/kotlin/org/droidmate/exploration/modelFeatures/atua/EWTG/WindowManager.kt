@@ -1,6 +1,8 @@
 package org.droidmate.exploration.modelFeatures.atua.EWTG
 
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.DialogType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.FakeWindow
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
@@ -17,6 +19,7 @@ class WindowManager {
     val baseModelWindows = ArrayList<Window>()
     val userlikedWidgets = ArrayList<EWTGWidget>()
     val intentFilter = HashMap<Window, ArrayList<IntentFilter>>()
+    val dialogClasses = HashMap<DialogType, ArrayList<String>>()
     val allMeaningWindows
         get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp }
 
@@ -27,7 +30,7 @@ class WindowManager {
             all.write(header())
             updatedModelWindows.forEach {
                 all.newLine()
-                all.write("${it.windowId};${it.getWindowType()};${it.classType};${it.activityClass};${it.isRuntimeCreated};${it.portraitDimension};${it.landscapeDimension};" +
+                all.write("${it.windowId};${it.getWindowType()};${it.classType};${it.isRuntimeCreated};${it.portraitDimension};${it.landscapeDimension};" +
                         "${it.portraitKeyboardDimension};${it.landscapeKeyboardDimension}")
             }
         }
@@ -43,7 +46,7 @@ class WindowManager {
         }
     }
     fun header(): String {
-        return "WindowID;WindowType;classType;activityClass;createdAtRuntime;portraitDimension;landscapeDimension;portraitKeyboardDimension;landscapeKeyboardDimension;"
+        return "[1]WindowID;[2]WindowType;[3]classType;[4]createdAtRuntime;[5]portraitDimension;[6]landscapeDimension;[7]portraitKeyboardDimension;[8]landscapeKeyboardDimension;"
     }
     companion object{
         val instance: WindowManager by lazy {

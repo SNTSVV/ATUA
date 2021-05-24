@@ -9,7 +9,6 @@ class OptionsMenu (classType: String,
 
     var ownerActivity: Window? = null
     init {
-        activityClass = classType
         counter++
     }
     override fun getWindowType(): String {

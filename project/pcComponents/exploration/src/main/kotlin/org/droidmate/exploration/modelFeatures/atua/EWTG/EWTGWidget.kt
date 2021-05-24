@@ -2,22 +2,22 @@ package org.droidmate.exploration.modelFeatures.atua.EWTG
 
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import java.lang.StringBuilder
 import kotlin.collections.ArrayList
 import kotlin.random.Random
 
 open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                   val resourceIdName: String,
-                                  @Suppress val resourceId: String,
                                   val className: String,
-                                  @Suppress var contentDesc: String,
-                                  var text: String, //usefull for mapping menu item
-                                  var activity: String,
+                                  text: String, //usefull for mapping menu item
+                                  contentDesc: String,
                                   var window: Window,
                                   var createdAtRuntime: Boolean = false,
-                                  val attributeValuationSetId: String = ""
+                                  val widgetUUID: String = ""
                                     ){
     var isUserLikeInput: Boolean = false
-    var possibleTexts= ArrayList<String>()
+    val possibleTexts= ArrayList<String>()
+    val possibleContentDescriptions = ArrayList<String>()
     var exercised: Boolean = false
     var exerciseCount: Int = 0
     var textInputHistory: ArrayList<String> = ArrayList()
@@ -35,6 +35,12 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
     init {
         window.widgets.add(this)
         allStaticWidgets.add(this)
+        if (text.isNotBlank()) {
+                    possibleTexts.add(text)
+                }
+        if (contentDesc.isNotBlank()) {
+            possibleContentDescriptions.add(text)
+        }
     }
     override fun toString(): String {
         return "$widgetId-resourceId=$resourceIdName-className=$className"
@@ -44,21 +50,29 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
     fun clone(newNode: Window): EWTGWidget {
         val newStaticWidget = getOrCreateStaticWidget(
                 widgetId = this.widgetId,
-                resourceId = this.resourceId,
                 resourceIdName = this.resourceIdName,
                 className = this.className,
-                activity = this.activity,
                 wtgNode = newNode,
-                attributeValuationSetId = attributeValuationSetId
+                attributeValuationSetId = widgetUUID
         )
-        newStaticWidget.possibleTexts = this.possibleTexts
-        newStaticWidget.contentDesc = this.contentDesc
-        newStaticWidget.text = this.text
+        newStaticWidget.possibleTexts.addAll( this.possibleTexts)
+        newStaticWidget.possibleContentDescriptions.addAll(this.possibleContentDescriptions)
         newStaticWidget.exercised = this.exercised
         newStaticWidget.exerciseCount = this.exerciseCount
         return newStaticWidget
     }
 
+    fun generateSignature(): String {
+        if (this.children.isEmpty())
+            return "[className]${this.className}[resourceId]${this.resourceIdName}"
+        val sigSB = StringBuilder()
+        sigSB.append("[className]${this.className}[resourceId]${this.resourceIdName}")
+        sigSB.append("/")
+        this.children.sortedBy { it.className+it.resourceIdName }.forEach {
+            sigSB.append(it.generateSignature())
+        }
+        return sigSB.toString()
+    }
 
 
     companion object{
@@ -67,14 +81,17 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                     resourceIdName: String = "",
                                     resourceId: String = "",
                                     className: String,
-                                    activity: String,
                                     wtgNode: Window,
                                     attributeValuationSetId: String = ""): EWTGWidget {
-            val returnWidget = allStaticWidgets.find{ it.widgetId==widgetId && it.activity == activity}
+            val returnWidget = allStaticWidgets.find{ it.widgetId==widgetId && it.window == wtgNode}
             if ( returnWidget == null) {
-                var staticWidget = EWTGWidget(widgetId = widgetId, resourceIdName = resourceIdName,
-                        resourceId = resourceId, window = wtgNode, className = className, text = "", contentDesc = "",
-                        activity = activity, attributeValuationSetId = attributeValuationSetId)
+                var staticWidget = EWTGWidget(widgetId = widgetId
+                        , resourceIdName = resourceIdName
+                        , window = wtgNode
+                        , className = className
+                        , text = ""
+                        , contentDesc = ""
+                        , widgetUUID = attributeValuationSetId)
                 return staticWidget
             }
             else

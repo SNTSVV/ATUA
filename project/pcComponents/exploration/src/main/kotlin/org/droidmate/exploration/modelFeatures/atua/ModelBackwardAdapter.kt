@@ -143,7 +143,6 @@ class ModelBackwardAdapter {
                 it.abstractAction == abstractTransition.abstractAction
                         && (it.prevWindow == abstractTransition.prevWindow
                         || it.prevWindow == null)
-                        && (it.preWindowAbstractState == abstractTransition.preWindowAbstractState)
                         && it.modelVersion == ModelVersion.BASE
                         && it.dest.guiStates.isEmpty() // which means that the destination has not observed before
             })
@@ -239,8 +238,10 @@ class ModelBackwardAdapter {
     private fun isBackwardEquivant(observedAbstractState: AbstractState, expectedAbstractState: AbstractState): Boolean {
         val observedAbstractStateAVMCount = observedAbstractState.attributeValuationMaps.size
         val expectedAbstractStateAVMCount = expectedAbstractState.attributeValuationMaps.size
-        val matchedAVMs = ArrayList<Pair<AttributeValuationMap,AttributeValuationMap>>() // observered - expected
-        val unmatchedAVMs = ArrayList<AttributeValuationMap>() // observered
+        val matchedAVMs1 = HashMap<AttributeValuationMap,AttributeValuationMap>() // observered - expected
+        val matchedAVMs2 = HashMap<AttributeValuationMap,AttributeValuationMap>() // expected - observered
+        val unmatchedAVMs1 = ArrayList<AttributeValuationMap>() // observered
+        val unmatchedAVMs2 = ArrayList<AttributeValuationMap>() // expected
         val addedAVMS = ArrayList<AttributeValuationMap>()
         val addedWidgets = EWTGDiff.instance.widgetDifferentSets.get("AdditionSet") as AdditionSet
         observedAbstractState.EWTGWidgetMapping.forEach { avm, widget ->
@@ -260,17 +261,41 @@ class ModelBackwardAdapter {
                 }
             }
             if (matchedAVM != null){
-                matchedAVMs.add(Pair(avm1,matchedAVM))
+                matchedAVMs1.put(avm1,matchedAVM)
+                matchedAVMs2.put(matchedAVM,avm1)
             } else {
-                unmatchedAVMs.add(avm1)
+                unmatchedAVMs1.add(avm1)
             }
         }
-        if (unmatchedAVMs.size == 0) {
+        expectedAbstractState.attributeValuationMaps.filterNot{ addedAVMS.contains(it) && matchedAVMs2.keys.contains(it) }.forEach { avm1 ->
+            var matchedAVM = observedAbstractState.attributeValuationMaps.find { it == avm1  }
+            if (matchedAVM == null ) {
+                val associatedWidget = expectedAbstractState.EWTGWidgetMapping.get(avm1)
+                matchedAVM = observedAbstractState.EWTGWidgetMapping.filter { it.value == associatedWidget }.keys.find {
+                    it.isClickable() == avm1.isClickable()
+                            && it.isLongClickable() == avm1.isLongClickable()
+                            && it.isChecked() == avm1.isChecked()
+                            && it.isScrollable() == avm1.isScrollable()
+                }
+            }
+            if (matchedAVM != null){
+                matchedAVMs2.put(avm1,matchedAVM!!)
+                if (!matchedAVMs1.containsKey(matchedAVM!!)) {
+                    matchedAVMs1.put(matchedAVM!!,avm1)
+                }
+            } else {
+                unmatchedAVMs2.add(avm1)
+            }
+        }
+        if (unmatchedAVMs1.size == 0 && unmatchedAVMs2.size == 0) {
             return true
         } else {
-            val unmatchedWidgets =  unmatchedAVMs.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
-            val windowBaseCreatedRuntimeWidgets = observedAbstractState.window.widgets.filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.BASE }
-            if (unmatchedWidgets.all {windowBaseCreatedRuntimeWidgets.contains(it) }) {
+            val unmatchedWidgets1 =  unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
+            val unmatchedWidgets2 = unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) }
+            val baseWindowCreatedRuntimeWidgets = observedAbstractState.window.widgets.filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.BASE }
+            val condition1 = if (unmatchedWidgets1.isNotEmpty()) unmatchedWidgets1.all {!baseWindowCreatedRuntimeWidgets.contains(it) } else true
+            val condition2 = if (unmatchedWidgets2.isNotEmpty()) unmatchedWidgets2.all {baseWindowCreatedRuntimeWidgets.contains(it) } else true
+            if (condition1 && condition2) {
                 return true
             }
         }

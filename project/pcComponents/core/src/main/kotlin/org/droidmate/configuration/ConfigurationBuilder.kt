@@ -217,8 +217,8 @@ public class ConfigurationBuilder : IConfigurationBuilder {
 			CommandLineOption(org.droidmate.explorationModel.config.ConfigProperties.Output.debugMode, description = "enable debug output"),
 			CommandLineOption(ATUAMF.Companion.RegressionStrategy.use , description = "If true, regression testing is used"),
 			CommandLineOption(ATUAMF.Companion.RegressionStrategy.budgetScale, description = "Budget scale. Increase this for longer testing time."),
-			CommandLineOption(ATUAMF.Companion.RegressionStrategy.reuseBaseModel, description = "Enable base model reuse.")
-
+			CommandLineOption(ATUAMF.Companion.RegressionStrategy.reuseBaseModel, description = "Enable base model reuse."),
+			CommandLineOption(ATUAMF.Companion.RegressionStrategy.baseModelDir, description = "Base model dir.")
 			).first, fs)
 
 	@Throws(ConfigurationException::class)

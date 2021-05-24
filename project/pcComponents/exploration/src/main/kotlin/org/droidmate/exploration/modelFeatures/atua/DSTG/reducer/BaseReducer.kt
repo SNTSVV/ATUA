@@ -31,14 +31,14 @@ open class BaseReducer(
                      tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath?{
         var currentWidget = guiWidget
         var parentGUIWidget = guiState.widgets.find { it.id == guiWidget.parentId }
-        while (parentGUIWidget!=null &&
+/*        while (parentGUIWidget!=null &&
                 parentGUIWidget.text.isBlank()
                         && parentGUIWidget.resourceId.isBlank()
                 && parentGUIWidget.childHashes.size == 1
         ) {
             currentWidget = parentGUIWidget
             parentGUIWidget = guiState.widgets.find { it.id == currentWidget.parentId }
-        }
+        }*/
         if (currentWidget.hasParent)
         {
             val parentWidget = guiState.widgets.find { it.idHash == currentWidget.parentHash

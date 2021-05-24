@@ -17,6 +17,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -212,7 +213,7 @@ class RandomExplorationTask constructor(
                 return goToLockedWindowTask!!.chooseAction(currentState)
             }
         } else {
-            if (lockedWindow != null && lockedWindow!!.activityClass != currentAbstractState.activity) {
+            if (lockedWindow != null && lockedWindow != currentAbstractState.window) {
                 if (currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu && currentAbstractState.window !is OutOfApp) {
                     dataFilled = false
                     goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
@@ -259,9 +260,11 @@ class RandomExplorationTask constructor(
                 return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
         }
-        if (currentAbstractState.window.activityClass == "com.oath.mobile.platform.phoenix.core.TrapActivity") {
+        if (isTrapActivity(currentAbstractState)) {
             if (currentState.visibleTargets.any { it.text == "I agree" || it.text == "Save and continue" || it.text == "Accept all" || it.text.contains("Go to end")}) {
-                return currentState.visibleTargets.find { it.text == "I agree" || it.text == "Save and continue" || it.text == "Accept all" || it.text.contains("Go to end")}!!.click()
+                val candidates = currentState.visibleTargets.filter { it.text == "I agree" || it.text == "Save and continue" || it.text == "Accept all" || it.text.contains("Go to end")}
+                val choosenWidget = runBlocking {  getCandidates(candidates).random() }
+                return choosenWidget.click()
             }
         }
 /*        if (currentAbstractState.rotation == Rotation.LANDSCAPE) {
@@ -338,7 +341,7 @@ class RandomExplorationTask constructor(
 
         attemptCount++
         var randomAction: AbstractAction? = null
-        if (lastAction != null
+        if (!isPureRandom && lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && prevAbstractState != currentAbstractState
                 && prevAbstractState.window == currentAbstractState.window
@@ -350,7 +353,7 @@ class RandomExplorationTask constructor(
             tryLastAction = 1
             maximumAttempt += 1
             randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
-        } else if (lastAction != null
+        } else if (!isPureRandom && lastAction != null
                 && lastAction!!.actionType == AbstractActionType.SWIPE
                 && atuaMF.appPrevState!!.stateId.uid != currentState.stateId.uid
                 && (prevAbstractState == currentAbstractState ||
@@ -382,7 +385,7 @@ class RandomExplorationTask constructor(
                     unexercisedActions.random()
                 }
             } else {
-                if (!isPureRandom) {
+                if (!isPureRandom && currentAbstractState.window !is Dialog && currentAbstractState.window !is OptionsMenu) {
                     goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
                     if (!recentGoToExploreState && goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, false, true)) {
                         recentGoToExploreState = true
@@ -621,6 +624,10 @@ class RandomExplorationTask constructor(
 
     }
 
+    private fun isTrapActivity(currentAbstractState: AbstractState) =
+            currentAbstractState.window.classType == "com.oath.mobile.platform.phoenix.core.TrapActivity"
+                    || currentAbstractState.window.classType == "com.yahoo.mobile.client.share.account.controller.activity.TrapsActivity"
+
 
     private fun getActionScores(currentAbstractState: AbstractState, allActions: List<AbstractAction>, actionScore: HashMap<AbstractAction, Double>, currentState: State<*>) {
         val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[currentAbstractState.window]!!
@@ -840,7 +847,8 @@ class RandomExplorationTask constructor(
             }
 
             if (actionByScore.isNotEmpty()) {
-                actionByScore.filter { it.value == actionByScore.map { it.value }.maxBy { it } }.map { it.key }.random()
+                val pb = ProbabilityDistribution<AbstractAction>(actionByScore)
+                pb.getRandomVariable()
             } else {
                 candidateActions.random()
             }

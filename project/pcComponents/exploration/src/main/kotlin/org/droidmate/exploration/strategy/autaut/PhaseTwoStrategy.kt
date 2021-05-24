@@ -1,6 +1,8 @@
 package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.Swipe
+import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
@@ -164,31 +166,42 @@ class PhaseTwoStrategy (
             log.debug("No task seleted. It might be a bug.")
             chosenAction = eContext.resetApp()
         }
-        budgetConsume()
+        budgetConsume(chosenAction)
 /*        if (strategyTask is RandomExplorationTask && (strategyTask as RandomExplorationTask).fillingData == false) {
             budgetLeft--
         }*/
         return chosenAction
     }
 
-    private fun budgetConsume() {
+    private fun budgetConsume(choosenAction: ExplorationAction) {
         if (budgetType == 1) {
-            if (strategyTask is ExerciseTargetComponentTask && !(strategyTask as ExerciseTargetComponentTask).fillingData) {
+            if (strategyTask is ExerciseTargetComponentTask
+                    && !(strategyTask as ExerciseTargetComponentTask).fillingData
+                    && !(strategyTask as ExerciseTargetComponentTask).isDoingRandomExplorationTask) {
                 budgetLeft--
             }
             if (phaseState == PhaseState.P2_RANDOM_IN_EXERCISE_TARGET_NODE) {
-                if (strategyTask is RandomExplorationTask && !(strategyTask as RandomExplorationTask).fillingData) {
+                if (strategyTask is RandomExplorationTask
+                        && !(strategyTask as RandomExplorationTask).fillingData
+                        && (strategyTask as RandomExplorationTask).goToLockedWindowTask == null) {
                     // check current Window is also target Window
-                    budgetLeft --
+                    if (isCountAction(choosenAction))
+                        budgetLeft --
                 }
             }
         }
         if (budgetType == 2){
             if (strategyTask is RandomExplorationTask && !(strategyTask as RandomExplorationTask).fillingData)
-                randomBudgetLeft--
+                if (isCountAction(choosenAction))
+                    randomBudgetLeft--
         }
 
     }
+    private fun isCountAction(chosenAction: ExplorationAction) =
+            !chosenAction.isFetch()
+                    && chosenAction.name!="CloseKeyboard"
+                    && !chosenAction.name.isLaunchApp()
+                    && chosenAction !is Swipe
 
     override fun getPathsToTargetWindows(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
@@ -196,7 +209,8 @@ class PhaseTwoStrategy (
         if (currentAbState==null)
             return emptyList()
         val targetAbstractStatesPbMap = HashMap<AbstractState,Double>()
-        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]?.filter { AbstractStateManager.instance.ABSTRACT_STATES.contains( it.first) }
+        val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]?.filter {
+            AbstractStateManager.instance.ABSTRACT_STATES.contains( it.first) }
         //targetAbstractStatesProbability.removeIf { it.first == currentAbState }
         if (targetAbstractStatesProbability!=null) {
             targetAbstractStatesProbability.forEach {
@@ -204,7 +218,9 @@ class PhaseTwoStrategy (
             }
         }
         if (targetAbstractStatesPbMap.isEmpty()) {
-            val windowAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == targetWindow!! }
+            val windowAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                it.window == targetWindow!!
+                        && it.attributeValuationMaps.isNotEmpty()}
             windowAbstractStates.forEach {
                 targetAbstractStatesPbMap.put(it,1.0)
             }
@@ -386,6 +402,7 @@ class PhaseTwoStrategy (
         if (budgetLeft > 0)
             return
         val inputWidgetCount = Helper.getInputFields(currentState).size
+        //val inputWidgetCount = 1
         val targetEvents = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow && it.key.verifiedEventHandlers.isNotEmpty() }
         var targetEventCount = targetEvents.size
         val allInputMappings = AbstractStateManager.instance.ABSTRACT_STATES.map { it.inputMappings }

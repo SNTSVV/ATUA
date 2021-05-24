@@ -16,10 +16,10 @@ import kotlin.collections.HashMap
 class StateReducer
 {
     companion object{
-        fun reduce(guiState: State<*>, activity: String, packageName: String, rotation: Rotation, atuaMF: ATUAMF): HashMap<Widget, AttributeValuationMap>{
-            AttributeValuationMap.allWidgetAVMHashMap.putIfAbsent(activity, HashMap())
-            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.putIfAbsent(activity,HashMap())
-            val derivedWidgets = AttributeValuationMap.allWidgetAVMHashMap[activity]!!
+        fun reduce(guiState: State<*>, classType: String, packageName: String, rotation: Rotation, atuaMF: ATUAMF): HashMap<Widget, AttributeValuationMap>{
+            AttributeValuationMap.allWidgetAVMHashMap.putIfAbsent(classType, HashMap())
+            AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.putIfAbsent(classType,HashMap())
+            val derivedWidgets = AttributeValuationMap.allWidgetAVMHashMap[classType]!!
             val widgetAVMHashMap = HashMap<Widget, AttributeValuationMap>()
             val widgetReduceMap = HashMap<Widget,AttributePath>()
             val attributePath_Cardinalitys = HashMap<AttributePath,Cardinality>()
@@ -27,7 +27,7 @@ class StateReducer
             val tempFullAttrPaths = HashMap<Widget,AttributePath>()
             val tempRelativeAttrPaths = HashMap<Widget,AttributePath>()
             //TODO: Save all computed attributePath to prevent from recomputing
-            val capturedWidgets = if (activity.startsWith("com.oath.mobile.platform.phoenix.core.")) {
+            val capturedWidgets = if (classType.startsWith("com.oath.mobile.platform.phoenix.core.")) {
                 Helper.getVisibleWidgets(guiState).filter { !it.isKeyboard }
             } else {
                 Helper.getVisibleWidgetsForAbstraction(guiState)
@@ -50,7 +50,7 @@ class StateReducer
                     tempFullAttrPaths[it]!!
                 }
                 else {
-                    WidgetReducer.reduce(it, guiState, activity, rotation, atuaMF, tempFullAttrPaths, tempRelativeAttrPaths)
+                    WidgetReducer.reduce(it, guiState, classType, rotation, atuaMF, tempFullAttrPaths, tempRelativeAttrPaths)
                 }
 
                 if (capturedWidgets.contains(it)) {
@@ -75,9 +75,9 @@ class StateReducer
             while (workingList.isNotEmpty()) {
                 val element = workingList.pop()
                 processedList.add(element)
-                var attributeValuationSet =  AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.map { it.value }. find { it.haveTheSameAttributePath(element) }
+                var attributeValuationSet =  AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[classType]!!.map { it.value }. find { it.haveTheSameAttributePath(element) }
                 if (attributeValuationSet == null) {
-                    attributeValuationSet =  AttributeValuationMap(element,attributePath_Cardinalitys[element]!!,activity,attributePath_Cardinalitys)
+                    attributeValuationSet =  AttributeValuationMap(element,attributePath_Cardinalitys[element]!!,classType,attributePath_Cardinalitys)
                 }
                 widgetReduceMap.filter { it.value.equals(element) }.forEach { w, _ ->
                     if (capturedAttributePaths.contains(element)) {

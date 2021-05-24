@@ -40,7 +40,7 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
     }
 
     private fun header(): String {
-        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;PrevWindowAbstractStateId;PrevHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionID"
+        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;EventHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionIDs;modelVersion"
     }
 
     fun recursiveDump(sourceAbstractState: AbstractState, statementCoverageMF: StatementCoverageMF, dumpedSourceStates: ArrayList<AbstractState> , bufferedWriter: BufferedWriter) {
@@ -55,8 +55,8 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.destination!!.data.abstractStateId};" +
                     "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationMap?.avmId};${edge.label.data};" +
-                    "${edge.label.prevWindow?.windowId};${edge.label.preWindowAbstractState?.abstractStateId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
-                    "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\""
+                    "${edge.label.prevWindow?.windowId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
+                    "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\";${edge.label.modelVersion}"
             bufferedWriter.write(abstractTransitionInfo)
 
         }

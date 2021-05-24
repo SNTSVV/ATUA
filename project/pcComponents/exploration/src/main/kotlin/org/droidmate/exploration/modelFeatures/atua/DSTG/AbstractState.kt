@@ -37,11 +37,11 @@ open class AbstractState(
         val isRequestRuntimePermissionDialogBox: Boolean = false,
         val isAppHasStoppedDialogBox: Boolean = false,
         val isOutOfApplication: Boolean = false,
-        var hasOptionsMenu: Boolean = true,
+        var isMenusOpened: Boolean = false,
         var rotation: Rotation,
-        var internet: InternetStatus,
         var loadedFromModel: Boolean = false,
-        var modelVersion: ModelVersion = ModelVersion.RUNNING
+        var modelVersion: ModelVersion = ModelVersion.RUNNING,
+        reuseAbstractStateId: UUID? = null
 ) {
     val actionCount = HashMap<AbstractAction, Int>()
     val targetActions = HashSet<AbstractAction>()
@@ -49,26 +49,36 @@ open class AbstractState(
     val abstractStateId: String
     var hashCode: Int = 0
     var isInitalState = false
+
+    var hasOptionsMenu: Boolean = true
+
     init {
-        abstractStateIdByWindow.putIfAbsent(window,0)
-        val maxId = abstractStateIdByWindow[window]!!
-        if (id==null) {
-            abstractStateId = "${window}_${maxId + 1}"
-        } else {
-            abstractStateId = id
-        }
-        abstractStateIdByWindow.put(window,maxId+1)
         window.mappedStates.add(this)
         attributeValuationMaps.forEach {
             it.captured = true
         }
 
         countAVMFrequency()
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation)
+        abstractStateIdByWindow.putIfAbsent(window,HashSet())
+        if (reuseAbstractStateId!=null
+                && abstractStateIdByWindow[window]!!.contains(reuseAbstractStateId)) {
+            abstractStateId = reuseAbstractStateId.toString()
+            abstractStateIdByWindow.get(window)!!.add(reuseAbstractStateId)
+        } else {
+            var id: Int = hashCode
+            while (abstractStateIdByWindow[window]!!.contains(id.toUUID())) {
+                id = id + 1
+            }
+            abstractStateId = "${id.toUUID()}"
+            abstractStateIdByWindow.get(window)!!.add(id.toUUID())
+        }
     }
+
     fun updateHashCode() {
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation, internet)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation)
     }
+
      fun countAVMFrequency() {
         if (!AbstractStateManager.instance.attrValSetsFrequency.containsKey(window)) {
             AbstractStateManager.instance.attrValSetsFrequency.put(window, HashMap())
@@ -102,13 +112,12 @@ open class AbstractState(
             )
             actionCount.put(closeKeyboardAction, 0)
             return
-        }
-        val pressBackAction = AbstractAction(
-                actionType = AbstractActionType.PRESS_BACK
-        )
-        actionCount.put(pressBackAction, 0)
-        if (window !is OptionsMenu && window !is Dialog) {
-            if (WindowManager.instance.updatedModelWindows.any { it is OptionsMenu && it.ownerActivity == this.window }) {
+        } else {
+            val pressBackAction = AbstractAction(
+                    actionType = AbstractActionType.PRESS_BACK
+            )
+            actionCount.put(pressBackAction, 0)
+            if (!this.isMenusOpened && this.hasOptionsMenu && this.window !is Dialog) {
                 val pressMenuAction = AbstractAction(
                         actionType = AbstractActionType.PRESS_MENU
                 )
@@ -118,26 +127,26 @@ open class AbstractState(
                     actionType = AbstractActionType.MINIMIZE_MAXIMIZE
             )
             actionCount.put(minmaxAction, 0)
+            if (window is Activity || rotation == Rotation.LANDSCAPE) {
+                val rotationAction = AbstractAction(
+                        actionType = AbstractActionType.ROTATE_UI
+                )
+                actionCount.put(rotationAction, 0)
+            }
+            if (window is Dialog) {
+                val clickOutDialog = AbstractAction(
+                        actionType = AbstractActionType.CLICK_OUTBOUND
+                )
+                actionCount.put(clickOutDialog, 0)
+            }
+        }
 
-        }
-        if (window is Activity || rotation == Rotation.LANDSCAPE) {
-            val rotationAction = AbstractAction(
-                    actionType = AbstractActionType.ROTATE_UI
-            )
-            actionCount.put(rotationAction, 0)
-        }
-
-        if (window is Dialog) {
-            val clickOutDialog = AbstractAction(
-                    actionType = AbstractActionType.CLICK_OUTBOUND
-            )
-            actionCount.put(clickOutDialog, 0)
-        }
 
         attributeValuationMaps.forEach {
             //it.actionCount.clear()
             it.initActions()
         }
+
     }
 
     fun addAction(action: AbstractAction) {
@@ -160,7 +169,7 @@ open class AbstractState(
     fun getAttributeValuationSet(widget: Widget, guiState: State<*>, atuaMF: ATUAMF): AttributeValuationMap? {
         if (!guiStates.contains(guiState))
             return null
-        val mappedWidget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[activity]
+        val mappedWidget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[window]
         if (mappedWidget_AttributeValuationSet == null)
             return null
         val mappedAttributeValuationSet = mappedWidget_AttributeValuationSet.get(widget)
@@ -210,6 +219,8 @@ open class AbstractState(
                     && it.key.actionType != AbstractActionType.WAIT
                     && it.key.actionType != AbstractActionType.PRESS_BACK
                     && !it.key.isWidgetAction()
+                    && it.key.actionType != AbstractActionType.CLICK
+                    && it.key.actionType != AbstractActionType.LONGCLICK
         }
                 .map { it.key })
         val widgetActionCounts = if (currentState != null) {
@@ -232,7 +243,7 @@ open class AbstractState(
 
 
     override fun toString(): String {
-        return "AbstractState[${this.abstractStateId}]-${window}-Rotation:$rotation"
+        return "AbstractState[${this.abstractStateId}]-${window}"
     }
 
 
@@ -431,8 +442,8 @@ open class AbstractState(
     }
 
     companion object {
-        val abstractStateIdByWindow = HashMap<Window, Int>()
-        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, activity: String, rotation: Rotation, internet: InternetStatus): Int {
+        val abstractStateIdByWindow = HashMap<Window, HashSet<UUID>>()
+        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, activity: String, rotation: Rotation): Int {
             return attributeValuationMaps.sortedBy { it.avmId }.fold(emptyUUID) { id, avs ->
                 /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
                 // however different selectable auto-completion proposes are only 'rendered'
@@ -440,7 +451,7 @@ open class AbstractState(
 
                 //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
                 id + avs.hashCode.toUUID()
-            }.plus(listOf<String>(rotation.toString(),internet.toString(),activity).joinToString("<;>").toUUID()).hashCode()
+            }.plus(listOf<String>(rotation.toString(),activity).joinToString("<;>").toUUID()).hashCode()
         }
 
         internal operator fun UUID.plus(uuid: UUID?): UUID {
@@ -463,9 +474,9 @@ class VirtualAbstractState(activity: String,
         activity = activity,
         window = staticNode,
         rotation = Rotation.PORTRAIT,
-        internet = InternetStatus.Undefined,
         isHomeScreen = isHomeScreen,
-        isOutOfApplication = (staticNode is OutOfApp)
+        isOutOfApplication = (staticNode is OutOfApp),
+        isMenusOpened = false
 )
 
-class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT, internet = InternetStatus.Undefined)
+class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT)

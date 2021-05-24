@@ -9,7 +9,7 @@ class OutOfApp(nodeId: String= getNodeId(), activity: String,
     }
 
     init {
-        this.activityClass = activity
+        this.classType = activity
         counter++
     }
 

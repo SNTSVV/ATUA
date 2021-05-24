@@ -267,7 +267,7 @@ private suspend fun waitForSync(env: UiAutomationEnvironment, afterAction: Boole
 
 		debugT("wait for IDLE avg = ${time / max(1, cnt)} ms", {
 			env.automation.waitForIdle(100, env.idleTimeout)
-//		env.device.waitForIdle(env.idleTimeout) // this has a minimal delay of 500ms between events until the device is considered idle
+		//env.device.waitForIdle(env.idleTimeout) // this has a minimal delay of 500ms between events until the device is considered idle
 		}, inMillis = true,
 				timer = {
 					Log.d(logTag, "time=${it / 1000000}")

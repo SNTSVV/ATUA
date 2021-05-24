@@ -1,6 +1,8 @@
 package org.droidmate.exploration.strategy.autaut
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.Swipe
+import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
@@ -9,6 +11,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
@@ -165,11 +168,19 @@ class PhaseThreeStrategy(
         }
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).fillingData != true
-                && phaseState == PhaseState.P3_EXPLORATION_IN_RELATED_WINDOW) {
+                && (strategyTask as RandomExplorationTask).goToLockedWindowTask != null
+                && phaseState == PhaseState.P3_EXPLORATION_IN_RELATED_WINDOW
+                && isCountAction(chosenAction)) {
             randomBudgetLeft--
         }
         return chosenAction
     }
+
+    private fun isCountAction(chosenAction: ExplorationAction) =
+            !chosenAction.isFetch()
+                    && chosenAction.name!="CloseKeyboard"
+                    && !chosenAction.name.isLaunchApp()
+                    && chosenAction !is Swipe
 
     override fun getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         if (targetWindow==null)
@@ -201,12 +212,12 @@ class PhaseThreeStrategy(
         val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
         if (currentAbState==null)
             return emptyList()
-        val targetAppStatesDistribution = HashMap<AbstractState,Pair<Double, Double>>()
 
         if (!abstractStateProbability.containsKey(targetWindow))
             return emptyList()
         val targetScores = HashMap<AbstractState,Double>()
-        abstractStateProbability[targetWindow]!!.filter {
+
+/*        abstractStateProbability[targetWindow]!!.filter {
             it.first.inputMappings.filter { it.value.contains(targetEvent) }.isNotEmpty()
         }.forEach {
             targetScores.put(it.first,it.second)
@@ -215,8 +226,17 @@ class PhaseThreeStrategy(
             abstractStateProbability[targetWindow]!!.forEach {
                 targetScores.put(it.first,it.second)
             }
+        }*/
+        AbstractStateManager.instance.ABSTRACT_STATES.filter {
+            it.window == targetWindow
+                    && it.attributeValuationMaps.isNotEmpty()
+        }.filterNot { it is VirtualAbstractState }.filter{
+            it.inputMappings.filter { it.value.contains(targetEvent) }.isNotEmpty()
+        }.forEach {
+            targetScores.put(it,1.0)
         }
         val transitionPaths = ArrayList<TransitionPath>()
+        getPathToStatesBasedOnPathType(pathType,transitionPaths,targetScores,currentAbState,currentState,true)
         return transitionPaths
     }
 
@@ -307,7 +327,7 @@ class PhaseThreeStrategy(
             log.info("Continue ${strategyTask!!.javaClass.name}")
             return
         }
-        if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
+        if (currentAppState.window == relatedWindow!!) {
             setRandomExplorationBudget(currentState)
             setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
             return
@@ -352,9 +372,10 @@ class PhaseThreeStrategy(
             }
             if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu || currentAppState.window is OutOfApp) {
                 setRandomExploration(randomExplorationTask, currentState)
+                randomExplorationTask.isPureRandom = true
                 return
             }
-            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
+            if (currentAppState.window == relatedWindow!!) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
@@ -470,7 +491,7 @@ class PhaseThreeStrategy(
             return
         }
         if (isRandomBudgetAvailable()) {
-            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
+            if (currentAppState.window == relatedWindow!!) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
@@ -510,7 +531,7 @@ class PhaseThreeStrategy(
             return
         }
         if (isRandomBudgetAvailable()) {
-            if (currentAppState.window.activityClass == relatedWindow!!.activityClass) {
+            if (currentAppState.window == relatedWindow!!) {
                 setRandomExplorationBudget(currentState)
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return

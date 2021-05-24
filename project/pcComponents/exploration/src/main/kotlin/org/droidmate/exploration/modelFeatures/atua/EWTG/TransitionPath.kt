@@ -37,7 +37,7 @@ class PathTraverser (val transitionPath: TransitionPath) {
             return null
         return transitionPath.path[latestEdgeId!!]
     }
-    fun getNextTransition(): AbstractTransition? {
+    fun next(): AbstractTransition? {
         if(destinationReached)
             return null
         if (latestEdgeId == null)
@@ -45,12 +45,8 @@ class PathTraverser (val transitionPath: TransitionPath) {
         else
             latestEdgeId = latestEdgeId!! + 1
         val edge = transitionPath.path[latestEdgeId!!]
-        if (latestEdgeId == transitionPath.path.keys.max()) {
+        if (latestEdgeId!! == transitionPath.path!!.size-1) {
             destinationReached = true
-        }
-        if (edge == null) {
-            latestEdgeId = null
-            return null
         }
         return edge
     }

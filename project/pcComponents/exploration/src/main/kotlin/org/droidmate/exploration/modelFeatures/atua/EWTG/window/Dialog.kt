@@ -4,11 +4,12 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 
 class Dialog(classType: String,
              nodeId: String= getNodeId(),
+             var dialogType: DialogType,
              allocMethod: String,// can only acquired by ewtg
              runtimeCreated: Boolean,
              isBaseModel:Boolean): Window(classType,nodeId,runtimeCreated,isBaseModel){
-    var ownerActivity: Window? = null;
-    var dialogType: DialogType = DialogType.NORMAL
+    var ownerActivitys: HashSet<Window> = HashSet();
+    var isInputDialog: Boolean = false
     init {
         counter++
     }
@@ -26,22 +27,32 @@ class Dialog(classType: String,
         fun getNodeId(): String = "Dialog-${counter+1}"
         fun getOrCreateNode(nodeId: String, classType: String, allocMethod: String, runtimeCreated: Boolean, isBaseModel: Boolean): Dialog {
             val node = if (isBaseModel) {
-                WindowManager.instance.baseModelWindows.find { it.windowId == nodeId
+                WindowManager.instance.baseModelWindows.find { it.classType == classType
                         && it is Dialog}
             } else {
-                WindowManager.instance.updatedModelWindows.find { it.windowId == nodeId
+                WindowManager.instance.updatedModelWindows.find { it.classType == classType
                         && it is Dialog}
             }
+            val dialogType = if (runtimeCreated)
+                    DialogType.LIBRARY_DIALOG
+            else
+                    WindowManager.instance.dialogClasses.filter { it.value.contains(classType) }.entries.firstOrNull()?.key?:DialogType.UNKNOWN
             if (node != null)
                 return node!! as Dialog
             else
-                return Dialog(nodeId = nodeId, classType = classType, allocMethod = allocMethod, runtimeCreated = runtimeCreated,isBaseModel = isBaseModel)
+                return Dialog(nodeId = nodeId
+                        , classType = classType
+                        , dialogType = dialogType
+                        , allocMethod = allocMethod
+                        , runtimeCreated = runtimeCreated
+                        ,isBaseModel = isBaseModel)
         }
     }
 }
 
 enum class DialogType {
-    NORMAL,
-    ITEM_SELECTOR,
-    DATA_INPUT
+    LIBRARY_DIALOG,
+    APPLICATION_DIALOG,
+    DIALOG_FRAGMENT,
+    UNKNOWN
 }

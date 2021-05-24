@@ -10,12 +10,12 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 import java.io.File
 import java.nio.file.Path
 
-abstract class Window(val classType: String,
+abstract class Window(var classType: String,
                       val windowId: String,
                       val isRuntimeCreated: Boolean,
                       baseModel: Boolean)
 {
-    var activityClass = ""
+    //var activityClass = ""
     val widgets = arrayListOf<EWTGWidget>()
     val inputs = arrayListOf<Input>()
     val widgetState = HashMap<EWTGWidget, Boolean>()
@@ -24,7 +24,7 @@ abstract class Window(val classType: String,
     var landscapeDimension: Rectangle = Rectangle.empty()
     var portraitKeyboardDimension: Rectangle = Rectangle.empty()
     var landscapeKeyboardDimension: Rectangle = Rectangle.empty()
-
+    val windowRuntimeIds = HashSet<String>()
     init {
         if (!baseModel)
             WindowManager.instance.updatedModelWindows.add(this)
@@ -36,7 +36,6 @@ abstract class Window(val classType: String,
         if (widgets.contains(EWTGWidget))
             return EWTGWidget
         widgets.add(EWTGWidget)
-        EWTGWidget.activity = classType
         EWTGWidget.window = this
         return EWTGWidget
     }
@@ -62,19 +61,26 @@ abstract class Window(val classType: String,
             all.write(structureHeader())
             widgets.forEach {
                 all.newLine()
-                all.write("${it.widgetId};${it.resourceIdName};${it.className};${it.parent?.widgetId};${it.activity};${it.createdAtRuntime};${getAttributeValuationSetOrNull(it)};${obsoleteWidgets.contains(it)}")
+                all.write("${it.widgetId};${it.resourceIdName};${it.className};${it.parent?.widgetId};${it.window.classType};${it.createdAtRuntime};${getAttributeValuationSetOrNull(it)};${obsoleteWidgets.contains(it)}")
             }
         }
     }
 
     private fun getAttributeValuationSetOrNull(it: EWTGWidget) =
-            if (it.attributeValuationSetId == "")
+            if (it.widgetUUID == "")
                 null
             else
-                it.attributeValuationSetId
+                it.widgetUUID
 
+    fun isTargetWindowCandidate(): Boolean{
+        return this !is Launcher
+                && this !is OutOfApp
+                && (this !is Dialog ||
+                (
+                        ((this as Dialog).dialogType == DialogType.APPLICATION_DIALOG
+                                || (this as Dialog).dialogType == DialogType.DIALOG_FRAGMENT)))
+    }
     fun dumpEvents(windowsFolder: Path, atuaMF: ATUAMF) {
-
         File(windowsFolder.resolve("Events_$windowId.csv").toUri()).bufferedWriter().use { all ->
             all.write(eventHeader())
             inputs.forEach {
@@ -86,10 +92,10 @@ abstract class Window(val classType: String,
         }
     }
     fun structureHeader(): String {
-        return "widgetId;resourceIdName;className;parent;activity;createdAtRuntime;attributeValuationSetId;isObsolete"
+        return "[1]widgetId;[2]resourceIdName;[3]className;[4]parent;[5]activity;[6]createdAtRuntime;[7]attributeValuationSetId;[8]isObsolete"
     }
     fun eventHeader(): String {
-        return "eventType;widgetId;sourceWindowId;createdAtRuntime;eventHandlers;modifiedMethods"
+        return "[1]eventType;[2]widgetId;[3]sourceWindowId;[4]createdAtRuntime;[5]eventHandlers;[6]modifiedMethods"
     }
 
     abstract fun getWindowType(): String

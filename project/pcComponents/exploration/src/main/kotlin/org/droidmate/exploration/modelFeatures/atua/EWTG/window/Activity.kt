@@ -11,8 +11,6 @@ class Activity(classType: String,
     }
 
     init {
-
-        activityClass = classType
         counter++
     }
 
