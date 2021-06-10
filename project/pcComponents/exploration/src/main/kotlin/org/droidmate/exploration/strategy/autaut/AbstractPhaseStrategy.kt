@@ -1,5 +1,6 @@
 package org.droidmate.exploration.strategy.autaut
 
+import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
@@ -38,6 +39,16 @@ abstract class AbstractPhaseStrategy(
     abstract fun getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath>
     abstract fun getPathsToTargetWindows(currentState: State<*> ,pathType: PathFindingHelper.PathType): List<TransitionPath>
 
+    fun needReset(currentState: State<*>): Boolean {
+        val interval = 100 * scaleFactor
+        val lastReset = runBlocking {
+            atuaTestingStrategy.eContext.explorationTrace.P_getActions()
+                    .indexOfLast { it.actionType == "ResetApp" }
+        }
+        val currAction = atuaTestingStrategy.eContext.explorationTrace.size
+        val diff = currAction - lastReset
+        return diff > interval
+    }
     fun getUnexhaustedExploredAbstractState(currentState: State<*>): List<AbstractState> {
         val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (currentAbstractState==null)
@@ -52,12 +63,12 @@ abstract class AbstractPhaseStrategy(
                         || it.isAppHasStoppedDialogBox
                         || it.attributeValuationMaps.isEmpty()
                         || it.guiStates.isEmpty()
-                        || it.guiStates.all { autautMF.getUnexploredWidget(it).isEmpty() }
+                        || it.guiStates.all { autautMF.actionCount.getUnexploredWidget(it).isEmpty() }
                 }
         return runtimeAbstractStates
     }
     fun hasUnexploreWidgets(currentState: State<*>): Boolean {
-        return autautMF.getUnexploredWidget(currentState).isNotEmpty()
+        return autautMF.actionCount.getUnexploredWidget(currentState).isNotEmpty()
     }
     open fun getPathsToWindowToExplore(currentState: State<*>, targetWindow: Window, pathType: PathFindingHelper.PathType, explore: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
@@ -75,7 +86,7 @@ abstract class AbstractPhaseStrategy(
                 targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
                     it.window == targetWindow
                             && it != currentAbstractState
-                            && it.guiStates.any { autautMF.getUnexploredWidget(it).isNotEmpty() }
+                            && it.guiStates.any { autautMF.actionCount.getUnexploredWidget(it).isNotEmpty() }
                             && it !is VirtualAbstractState
                 }.toHashSet()
             }

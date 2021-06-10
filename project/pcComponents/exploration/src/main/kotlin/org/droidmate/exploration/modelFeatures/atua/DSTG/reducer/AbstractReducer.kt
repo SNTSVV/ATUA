@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG.reducer
 
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.AbstractLocalReducer
@@ -11,7 +12,7 @@ abstract class AbstractReducer(
         val localReducer: AbstractLocalReducer
 ) {
 
-    abstract fun reduce(guiWidget: Widget, guiState: State<*>, activity: String, rotation: Rotation, atuaMF: ATUAMF
+    abstract fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle:Rectangle, classType: String, rotation: Rotation, atuaMF: ATUAMF
                         , tempWidgetReduceMap: HashMap<Widget,AttributePath>
                         , tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath
 

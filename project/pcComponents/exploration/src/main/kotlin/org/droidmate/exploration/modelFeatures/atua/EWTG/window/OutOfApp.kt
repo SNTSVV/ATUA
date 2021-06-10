@@ -4,6 +4,15 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 
 class OutOfApp(nodeId: String= getNodeId(), activity: String,
                isBaseModel: Boolean): Window(activity,nodeId,true,isBaseModel){
+    override fun copyToRunningModel(): Window {
+        val newWindow = OutOfApp.getOrCreateNode(
+                nodeId = getNodeId(),
+                activity = this.classType,
+                isBaseModel = false
+        )
+        return newWindow
+    }
+
     override fun getWindowType(): String {
         return "OutOfApp"
     }

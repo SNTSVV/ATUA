@@ -23,6 +23,7 @@ class AbstractTransition(
     init {
         source.abstractTransitions.add(this)
     }
+    val guaranteedAVMs = ArrayList<AttributeValuationMap>() // guaranteedAVMsInDest
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,
     val handlers = HashMap<String,Boolean>() // handler method id

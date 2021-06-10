@@ -122,6 +122,7 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 				}  // allow google's internal log-in screen
 	}
 
+
 	suspend fun update(action: ExplorationAction, result: ActionResult) {
 		lastDump = result.guiSnapshot.windowHierarchyDump
 		apk.updateLaunchableActivityName(result.guiSnapshot.launchedMainActivityName)
@@ -196,9 +197,16 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 	fun explorationCanMoveOn() = isEmpty() || // we are starting the app -> no terminate yet
 			getCurrentState().isRequestRuntimePermissionDialogBox || isOpenWithDialog() || isActivityChooser(getCurrentState()) || // FIXME what if we currently have isHomeScreen?
 				(!getCurrentState().isHomeScreen
-						&& belongsToApp(getCurrentState())
+						/*&& belongsToApp(getCurrentState())*/
 						&& getCurrentState().actionableWidgets.any { it.clickable }
+						&& !isSystemSettingActivies(getCurrentState())
 						)
+
+	private fun isSystemSettingActivies(currentState: S): Boolean {
+		return currentState.widgets.any {
+			it.packageName.equals("com.android.settings")
+		}
+	}
 
 	private fun isActivityChooser(currentState: S): Boolean {
 		return currentState.widgets.any{

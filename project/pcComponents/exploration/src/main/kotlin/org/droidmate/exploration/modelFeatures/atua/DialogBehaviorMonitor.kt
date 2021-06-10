@@ -18,7 +18,7 @@ class DialogBehaviorMonitor {
         val prevAbstractState = abstractTransition.source
         val currentAbstractState = abstractTransition.dest
         if (checkingDialog!=null) {
-            if (abstractTransition.abstractAction.isLaunchOrReset()) {
+            if (abstractTransition.abstractAction.isLaunchOrReset() || abstractTransition.source.isMenusOpened) {
                 reset()
                 return
             }
@@ -41,18 +41,20 @@ class DialogBehaviorMonitor {
         }
         if (!abstractTransition!!.abstractAction.isWidgetAction())
             return
+        if (abstractTransition!!.source.isMenusOpened)
+            return
         if (currentAbstractState.window is Dialog && (currentAbstractState.window as Dialog).isInputDialog == false) {
             if (prevAbstractState.window is Activity && (currentAbstractState.window as Dialog).ownerActivitys.contains(prevAbstractState.window)) {
                 if (abstractTransition!!.abstractAction.attributeValuationMap!!.getClassName() == "android.widget.Spinner") {
                     (currentAbstractState.window!! as Dialog).isInputDialog = true
                     abstractTransition.source.EWTGWidgetMapping.get(abstractTransition.abstractAction.attributeValuationMap!!)!!.isUserLikeInput = true
-                } else {
+                } /*else {
                     // we don't know which type of the dialog is yet.
                     // tracking the dialog behavior
                     checkingDialog = currentAbstractState.window as Dialog
                     checkingUserInput = abstractTransition.source.EWTGWidgetMapping.get(abstractTransition.abstractAction.attributeValuationMap!!)!!
                     initialGUIState = prevGuiState
-                }
+                }*/
             }
         }
 

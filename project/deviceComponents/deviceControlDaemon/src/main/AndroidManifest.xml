@@ -22,6 +22,15 @@ This file is necessary because of gradle 'com.android.application' plugin.
 				android:name="uiautomator2daemon"
 				android:exported="true" tools:ignore="ExportedService">
 		</service>
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="${applicationId}"
+			android:exported="false"
+			android:grantUriPermissions="true">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/provider_paths" />
+		</provider>
 	</application>
 
 </manifest>

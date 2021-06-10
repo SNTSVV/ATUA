@@ -11,7 +11,7 @@ import java.io.File
 import java.nio.file.Path
 
 abstract class Window(var classType: String,
-                      val windowId: String,
+                      var windowId: String,
                       val isRuntimeCreated: Boolean,
                       baseModel: Boolean)
 {
@@ -67,10 +67,10 @@ abstract class Window(var classType: String,
     }
 
     private fun getAttributeValuationSetOrNull(it: EWTGWidget) =
-            if (it.widgetUUID == "")
+            if (it.structure == "")
                 null
             else
-                it.widgetUUID
+                it.structure
 
     fun isTargetWindowCandidate(): Boolean{
         return this !is Launcher
@@ -86,7 +86,7 @@ abstract class Window(var classType: String,
             inputs.forEach {
                 all.newLine()
                 all.write("${it.eventType};${it.widget?.widgetId};${it.sourceWindow.windowId};${it.createdAtRuntime};" +
-                        "\"${it.eventHandlers.map { atuaMF.statementMF!!.getMethodName(it) }.joinToString(";")}\";" +
+                        "\"${it.verifiedEventHandlers.map { atuaMF.statementMF!!.getMethodName(it) }.joinToString(";")}\";" +
                         "\"${it.modifiedMethods.map { atuaMF.statementMF!!.getMethodName(it.key)}.joinToString(";")}\"")
             }
         }
@@ -99,7 +99,7 @@ abstract class Window(var classType: String,
     }
 
     abstract fun getWindowType(): String
-
+    abstract fun copyToRunningModel(): Window
     companion object{
 
     }

@@ -45,6 +45,10 @@ class AttributeValuationMap {
             parentAttributeValuationMapId = ""
         } else {
             val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,windowClassType)
+            if (parentAttributePath == null)
+            {
+                throw Exception()
+            }
             if (ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.any { it.value.haveTheSameAttributePath(parentAttributePath) }) {
                 parentAttributeValuationMapId = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.map {it.value}.find{ it.haveTheSameAttributePath(parentAttributePath) }!!.avmId
             } else {
@@ -258,7 +262,7 @@ class AttributeValuationMap {
         }
     }
     fun isCheckable(): Boolean{
-        if (localAttributes[AttributeType.checkable]!!.equals("true"))
+        if (localAttributes[AttributeType.checkable]?.equals("true")?:false)
         {
             return true
         }
@@ -373,6 +377,9 @@ class AttributeValuationMap {
             }
             val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(parentAttributeValuationMapId)!!
             val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,windowClassType)
+            if (parentAttributePath==null) {
+                throw Exception()
+            }
             if (!parentAttributeValuationSet.haveTheSameAttributePath(parentAttributePath)) {
                 return false
             }

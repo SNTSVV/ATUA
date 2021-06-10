@@ -55,7 +55,7 @@ android {
 		targetSdkVersion project.ext.androidTargetSdkVersion
 		versionCode 1
 		versionName "1.0"
-
+		multiDexEnabled true
 		testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
 		lintOptions {
@@ -101,7 +101,9 @@ dependencies {
 //			strictly driverLib_version
 //		}
 //	}
+	def core_version = "1.5.0"
 
+	implementation "androidx.core:core:$core_version"
 	// Testing-only dependencies
 	testImplementation 'junit:junit:4.12'
 	// Force usage of support annotations in the test app, since it is internally used by the runner module.

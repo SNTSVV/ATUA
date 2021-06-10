@@ -42,10 +42,10 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
     protected var blackList: BlackListMF = autautStrategy.getBlacklist()
 
     protected suspend fun getCandidates(widgets: List<Widget>): List<Widget> {
-        return widgets
+        val lessExerciseWidgetsByUUID = widgets
                 .let { filteredCandidates ->
                     // for each widget in this state the number of interactions
-                    atuaMF.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    atuaMF.actionCount.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
                             .groupBy { it.key.packageName }.flatMap { (pkgName, countEntry) ->
                                 if (pkgName != autautStrategy.eContext.apk.packageName) {
                                     val pkgActions = counter.pkgCount(pkgName)
@@ -64,6 +64,13 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                             }
                             ?: emptyList()
                 }
+        val lessExceriseWidgets = lessExerciseWidgetsByUUID.let { filteredCandidates ->
+            atuaMF.actionCount.widgetNumExplored2(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    .groupBy { it.value }.let { map ->
+                        map.listOfSmallest()?.map { (w, _) -> w } ?: emptyList()
+                    }
+        }
+        return lessExceriseWidgets
     }
 
     open suspend fun ExplorationContext<*, *, *>.computeCandidates(widgets: List<Widget>): Collection<Widget> = debugT("blacklist computation", {
@@ -168,6 +175,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
 
     internal fun chooseActionWithName(action: AbstractActionType, data: Any?, widget: Widget?, currentState: State<*>, abstractAction: AbstractAction?): ExplorationAction? {
         //special operating for list view
+        val currentAbstactState = atuaMF.getAbstractState(currentState)!!
         if (widget == null)
         {
             return when (action){
@@ -179,7 +187,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 AbstractActionType.PRESS_HOME -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.MINIMIZE_MAXIMIZE -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.ROTATE_UI -> {
-                    if (atuaMF.currentRotation==Rotation.PORTRAIT) {
+                    if (currentAbstactState==Rotation.PORTRAIT) {
                         ExplorationAction.rotate(90)
                     }
                     else
@@ -194,7 +202,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 AbstractActionType.RESET_APP -> autautStrategy.eContext.resetApp()
                 AbstractActionType.RANDOM_KEYBOARD -> doRandomKeyboard(currentState,data)
                 AbstractActionType.CLOSE_KEYBOARD -> GlobalAction(ActionType.CloseKeyboard)
-                AbstractActionType.CLICK_OUTBOUND -> doClickOutbound(currentState)
+                AbstractActionType.CLICK_OUTBOUND -> doClickOutbound(currentState,abstractAction!!)
                 AbstractActionType.ACTION_QUEUE -> doActionQueue(data,currentState)
                 AbstractActionType.CLICK -> doClickWithoutTarget(data,currentState)
                 else -> ExplorationAction.pressBack()
@@ -213,13 +221,15 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         }
     }
 
-    private fun doClickOutbound(currentState: State<*>): ExplorationAction? {
+    private fun doClickOutbound(currentState: State<*>, abstractAction: AbstractAction): ExplorationAction? {
         val guiDimension = Helper.computeGuiTreeDimension(currentState)
         if (guiDimension.leftX - 50 < 0) {
             return Click (guiDimension.leftX,y=guiDimension.topY-50)
         }
         if (guiDimension.topY - 50 < 0)
             return Click (guiDimension.leftX-50,y=guiDimension.topY)
+        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        abstractState.increaseActionCount2(abstractAction,false)
         return Click (guiDimension.leftX-50,y=guiDimension.topY-50)
     }
 
@@ -590,7 +600,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         return childWidgets
     }
 
-    private fun callIntent(data: Any?): CallIntent {
+    private fun callIntent(data: Any?): ExplorationAction {
         if (data is IntentFilter) {
             val intentFilter = data as IntentFilter
             val action = intentFilter.getActions().random()
@@ -606,7 +616,13 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                     category, data, intentFilter.activity)
 
         } else {
+            if (data == null) {
+                return GlobalAction(ActionType.FetchGUI)
+            }
             val intentData: HashMap<String,String> = parseIntentData(data as String)
+            if (intentData["activity"]==null) {
+                return GlobalAction(ActionType.FetchGUI)
+            }
             return autautStrategy.eContext.callIntent(
                     action = intentData["action"]?:"",
                     category = intentData["category"]?:"",

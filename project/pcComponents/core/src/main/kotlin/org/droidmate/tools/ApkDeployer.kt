@@ -116,6 +116,7 @@ class ApkDeployer constructor(private val cfg: ConfigurationWrapper) : IApkDeplo
 		 - a different version of the same app can be installed, if necessary (without uninstall, an error will be issued about
 		 certificates not matching (or something like that))
 		*/
+		device.clearPackage(apk.packageName)
 		device.uninstallApk(apk.packageName, /* ignoreFailure  = */ true)
 
 		if (!device.isAvailable())

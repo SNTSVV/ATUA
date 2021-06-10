@@ -564,23 +564,24 @@ Logcat reference:
 	override fun clearPackage(deviceSerialNumber: String, apkPackageName: String): Boolean {
 
 		try {
-			val commandDescription = "Executing adb (Android Debug Bridge) to clear package on the Android Device."
+			if (isApkInstalled(deviceSerialNumber, apkPackageName)) {
+				val commandDescription = "Executing adb (Android Debug Bridge) to clear package on the Android Device."
 
-			// WISH what about softer alternative of am force-stop ? See http://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console
-			// Reference:
-			// http://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console/3117310#3117310
-			val stdStreams = sysCmdExecutor.execute(
-				commandDescription, cfg.adbCommand, "-H", cfg[hostIp],
-				"-s", deviceSerialNumber,
-				"shell", "pm", "clear", // clear everything associated with a package
-				apkPackageName
-			)
+				// WISH what about softer alternative of am force-stop ? See http://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console
+				// Reference:
+				// http://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console/3117310#3117310
+				val stdStreams = sysCmdExecutor.execute(
+						commandDescription, cfg.adbCommand, "-H", cfg[hostIp],
+						"-s", deviceSerialNumber,
+						"shell", "pm", "clear", // clear everything associated with a package
+						apkPackageName
+				)
 
-			val stdout = stdStreams[0].trim()
-			val adbClearPackageFailureStdout = "Failed"
-			if (stdout == adbClearPackageFailureStdout)
-				throw AdbWrapperException("adb returned '$adbClearPackageFailureStdout' on stdout when supplied with command 'shell pm clear $apkPackageName'")
-
+				val stdout = stdStreams[0].trim()
+				val adbClearPackageFailureStdout = "Failed"
+				if (stdout == adbClearPackageFailureStdout)
+					throw AdbWrapperException("adb returned '$adbClearPackageFailureStdout' on stdout when supplied with command 'shell pm clear $apkPackageName'")
+			}
 			return true
 
 		} catch (e: SysCmdExecutorException) {

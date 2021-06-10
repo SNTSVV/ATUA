@@ -10,7 +10,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
-import org.droidmate.exploration.modelFeatures.atua.DSTG.InternetStatus
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.AbstractionFunction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.DecisionNode
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
@@ -29,6 +29,8 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.emptyUUID
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.FileReader
 import java.nio.file.Files
@@ -40,11 +42,21 @@ import kotlin.streams.toList
 
 class AutAutModelLoader {
     companion object {
+        @JvmStatic
+        val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
+
         fun loadModel(modelPath: Path, autAutMF: ATUAMF) {
             if (!Files.exists(modelPath))
                 return
             val ewtgFolderPath: Path = getEWTGFolderPath(modelPath)
             loadEWTG(ewtgFolderPath,autAutMF)
+            WindowManager.instance.baseModelWindows.forEach {
+                if (!AbstractStateManager.instance.ABSTRACT_STATES.any { it is VirtualAbstractState
+                                && it.window == it }) {
+                    val virtualAbstractState = VirtualAbstractState(it.classType, it, it is Launcher)
+                    AbstractStateManager.instance.ABSTRACT_STATES.add(virtualAbstractState)
+                }
+            }
             val dstgFolderPath: Path = getDSTGFolderPath(modelPath)
             loadDSTG(dstgFolderPath,autAutMF)
         }
@@ -157,14 +169,17 @@ class AutAutModelLoader {
         private fun loadDSTGFile(dstgFilePath: Path,autAutMF: ATUAMF) {
             val lines: List<String>
             lines = readAllLines(dstgFilePath)
-            lines.forEach {
-                parseAbstractTransition(it,autAutMF)
+            var i =0
+            while (i<lines.size) {
+                parseAbstractTransition(lines[i],autAutMF)
+                i+=1
             }
-
         }
 
         private fun parseAbstractTransition(line: String, autAutMF: ATUAMF) {
             val data = splitCSVLineToField(line)
+            if (data.size<11)
+                return
             val sourceStateId = data[0]
 
             val sourceState = if(updatedAbstractStateId.containsKey(sourceStateId)) {
@@ -199,8 +214,12 @@ class AutAutModelLoader {
             val abstractAction = createAbstractAction(actionType,interactedAVSId,actionData,sourceState)
             val prevWindowId = data[5]
             val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}
-            val prevWindowAbstractStateId = data[6]
-            val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
+            // val prevWindowAbstractStateId = data[6]
+            // val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
+            val guiTransitionIds = data[9]!!
+            if (guiTransitionIds.isBlank()) {
+                return
+            }
             val abstractTransition = sourceState.abstractTransitions.find {
                 it.isExplicit() && it.dest == destState && it.abstractAction == abstractAction
                         && it.prevWindow == prevWindow
@@ -262,8 +281,8 @@ class AutAutModelLoader {
 
         }
 
-        private fun createNewInput(abstractTransition: AbstractTransition, atuaMF: ATUAMF): ArrayList<Input> {
-            val result = ArrayList<Input>()
+        private fun createNewInput(abstractTransition: AbstractTransition, atuaMF: ATUAMF): HashSet<Input> {
+            val result = HashSet<Input>()
             val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
             val sourceAbstractState = abstractTransition.source
             val destAbstractState = abstractTransition.dest
@@ -282,12 +301,12 @@ class AutAutModelLoader {
                 if (newInput.eventHandlers.intersect(atuaMF.allTargetHandlers).isNotEmpty()) {
                     atuaMF.allTargetInputs.add(newInput)
                 }
-                sourceAbstractState.inputMappings.putIfAbsent(abstractTransition.abstractAction, arrayListOf())
+                sourceAbstractState.inputMappings.putIfAbsent(abstractTransition.abstractAction, hashSetOf())
                 sourceAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
                 AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == sourceAbstractState }. filter { it.window == sourceAbstractState.window }.forEach {
                     val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
                     if (similarAbstractAction != null) {
-                        it.inputMappings.put(similarAbstractAction, arrayListOf(newInput!!))
+                        it.inputMappings.put(similarAbstractAction, hashSetOf(newInput!!))
                     }
                 }
             }
@@ -308,7 +327,7 @@ class AutAutModelLoader {
                             contentDesc = attributeValuationSet.getContentDesc(),
                             text = attributeValuationSet.getText(),
                             createdAtRuntime = true,
-                            widgetUUID = attributeValuationSetId
+                            structure = attributeValuationSetId
                     )
                     ewtgWidget.modelVersion = ModelVersion.BASE
                     sourceAbstractState.EWTGWidgetMapping.put(attributeValuationSet, ewtgWidget)
@@ -334,13 +353,13 @@ class AutAutModelLoader {
                     newInput.data = abstractTransition.abstractAction.extra
                     newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
                     if (!sourceAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
-                        sourceAbstractState.inputMappings.put(abstractTransition.abstractAction, arrayListOf())
+                        sourceAbstractState.inputMappings.put(abstractTransition.abstractAction, hashSetOf())
                     }
                     sourceAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
                     AbstractStateManager.instance.ABSTRACT_STATES.filterNot { it == sourceAbstractState }. filter { it.window == sourceAbstractState.window }.forEach {
                         val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
                         if (similarAbstractAction != null) {
-                            it.inputMappings.put(similarAbstractAction, arrayListOf(newInput))
+                            it.inputMappings.put(similarAbstractAction, hashSetOf(newInput))
                         }
                     }
                 }
@@ -374,10 +393,11 @@ class AutAutModelLoader {
             val windowId = data[2]
             val window = WindowManager.instance.baseModelWindows.find { it.windowId == windowId }
             if (window == null) {
-                throw Exception("Cannot find window $windowId")
+               log.debug("Cannot find window $windowId")
+                return
             }
             val rotation = Rotation.values().find { it.name == data[3] }!!
-            val internetStatus = InternetStatus.values().find { it.name == data[4] }!!
+            val isMenuOpen = data[4].toBoolean()
             val isHomeScreen = data[5].toBoolean()
             val isRequestRuntimePermissionDialogBox = data[6].toBoolean()
             val isAppHasStoppedDialogBox = data[7].toBoolean()
@@ -409,12 +429,12 @@ class AutAutModelLoader {
                     isAppHasStoppedDialogBox = isAppHasStoppedDialogBox,
                     attributeValuationMaps = ArrayList(attributeValuationSets),
                     EWTGWidgetMapping = widgetMapping,
-                    isMenusOpened = hasOptionsMenu,
+                    isMenusOpened = isMenuOpen,
                     window = window,
                     loadedFromModel = true,
                     modelVersion = ModelVersion.BASE
             )
-
+            abstractState.hasOptionsMenu = hasOptionsMenu
             abstractState.updateHashCode()
             assert(abstractState.hashCode == hashcode)
             if (abstractState.abstractStateId != uuid) {
@@ -751,7 +771,7 @@ class AutAutModelLoader {
                     window = window,
                     contentDesc = "",
                     text = "",
-                    widgetUUID = attributeValuationSetId
+                    structure = attributeValuationSetId
             )
             widget.modelVersion = ModelVersion.BASE
             return widget
@@ -761,12 +781,11 @@ class AutAutModelLoader {
             val windowId = data[0]
             val windowType = data[1]
             val classType = data[2]
-            val activityClass = data[3]
-            val createdAtRuntime = data[4].toBoolean()
-            val portraitDimension: Rectangle = Helper.parseRectangle(data[5])
-            val landscapeDimension: Rectangle = Helper.parseRectangle(data[6])
-            val portraitKeyboardDimension: Rectangle = Helper.parseRectangle(data[7])
-            val landscapeKeyboardDimension: Rectangle =Helper.parseRectangle(data[8])
+            val createdAtRuntime = data[3].toBoolean()
+            val portraitDimension: Rectangle = Helper.parseRectangle(data[4])
+            val landscapeDimension: Rectangle = Helper.parseRectangle(data[5])
+            val portraitKeyboardDimension: Rectangle = Helper.parseRectangle(data[6])
+            val landscapeKeyboardDimension: Rectangle =Helper.parseRectangle(data[7])
             val window = when (windowType) {
                 "Activity" -> Activity.getOrCreateNode(nodeId = windowId,
                         classType = classType,
@@ -785,7 +804,7 @@ class AutAutModelLoader {
                         classType = classType,
                         runtimeCreated = createdAtRuntime,
                         isBaseModel = true)
-                "OutOfApp" -> OutOfApp.getOrCreateNode(nodeId = windowId, activity = activityClass,isBaseModel = true)
+                "OutOfApp" -> OutOfApp.getOrCreateNode(nodeId = windowId, activity = classType,isBaseModel = true)
                 "FakeWindow" -> FakeWindow.getOrCreateNode(nodeId = windowId,isBaseModel = true)
                 "Launcher" -> Launcher.getOrCreateNode()
                 else -> throw Exception("Error windowType: $windowType")

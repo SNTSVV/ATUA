@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG.reducer
 
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeType
@@ -18,15 +19,15 @@ open class IncludeChildrenReducer(
 )
     : BaseReducer(localReducer = localReducer)
 {
-    override fun reduce(guiWidget: Widget, guiState: State<*>, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>, tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath {
+    override fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, classType: String, rotation: Rotation, autAutMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>, tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath {
         val localAttributes = localReducer.reduce(guiWidget,guiState)
-        val parentAttributePath = parentReduce(guiWidget, guiState,activity,rotation,autAutMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, classType,rotation,autAutMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         var childStructure: String = ""
         var childText: String = ""
         guiWidget.childHashes.forEach { childHash ->
             val childWidget = guiState.widgets.find { it.idHash == childHash && it.isVisible }
             if (childWidget!=null) {
-                val childInfo = childReduce(childWidget, guiState, activity, rotation,autAutMF, tempChildWidgetAttributePaths)
+                val childInfo = childReduce(childWidget, guiState,isOptionsMenu,guiTreeRectangle, classType, rotation,autAutMF, tempChildWidgetAttributePaths)
                 childStructure += childInfo.first
                 childText += childInfo.second
             }
@@ -35,10 +36,12 @@ open class IncludeChildrenReducer(
         localAttributes.put(AttributeType.childrenText,childText)
         if (childrenReducer is LocalReducerLV3) {
             var siblingInfos = ""
-            val siblings = guiState.widgets.filter { it.parentId == guiWidget.parentId }
+            val siblings = guiState.widgets.filter { it.parentId == guiWidget.parentId && it!= guiWidget }
             siblings.forEach { sibling ->
-                val siblingInfo = siblingReduce(sibling, guiState, activity, rotation,autAutMF, tempChildWidgetAttributePaths)
-                siblingInfos += siblingInfo
+                if (sibling.className != guiWidget.className) {
+                    val siblingInfo = siblingReduce(sibling, guiState, isOptionsMenu, guiTreeRectangle, classType, rotation, autAutMF, tempChildWidgetAttributePaths)
+                    siblingInfos += siblingInfo
+                }
             }
             localAttributes.put(AttributeType.siblingsInfo,siblingInfos)
 
@@ -46,19 +49,19 @@ open class IncludeChildrenReducer(
         val attributePath = AttributePath(
                 localAttributes = localAttributes,
                 parentAttributePathId = parentAttributePath?.attributePathId?: emptyUUID,
-                activity = activity
+                activity = classType
         )
         tempWidgetReduceMap.put(guiWidget,attributePath)
         return attributePath
     }
 
-    fun childReduce(widget: Widget, guiState: State<*>, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): Pair<String,String> {
+    fun childReduce(widget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): Pair<String,String> {
         var nestedChildrenStructure: String = ""
         var nestedChildrenText: String = ""
         widget.childHashes.forEach { childHash ->
             val childWidget = guiState.widgets.find { it.idHash == childHash && it.isVisible }
             if (childWidget != null) {
-                val nestedChildren = childReduce(childWidget,guiState, activity, rotation, autAutMF, tempChildWidgetAttributePaths)
+                val nestedChildren = childReduce(childWidget,guiState,isOptionsMenu,guiTreeRectangle, activity, rotation, autAutMF, tempChildWidgetAttributePaths)
                 nestedChildrenStructure += nestedChildren.first
                 nestedChildrenText += nestedChildren.second
             }
@@ -72,12 +75,12 @@ open class IncludeChildrenReducer(
         return Pair(structure,text)
     }
 
-    fun siblingReduce(widget: Widget, guiState: State<*>, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): String {
+    fun siblingReduce(widget: Widget, guiState: State<*>,isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): String {
         var siblingInfo = ""
         widget.childHashes.forEach { childHash ->
             val childWidget = guiState.widgets.find { it.idHash == childHash && it.isVisible }
             if (childWidget != null) {
-                val info = childReduce(childWidget,guiState, activity, rotation, autAutMF, tempChildWidgetAttributePaths)
+                val info = childReduce(childWidget,guiState,isOptionsMenu,guiTreeRectangle, activity, rotation, autAutMF, tempChildWidgetAttributePaths)
                 siblingInfo += info.second
             }
         }

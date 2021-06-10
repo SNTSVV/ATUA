@@ -62,7 +62,7 @@ abstract class UiParser {
 		}
 	}
 
-	private val isClickableDescendant:(UiElementProperties)->Boolean = { it.hasClickableDescendant || it.clickable || it.selected.isEnabled() }
+	private val isClickableDescendant:(UiElementProperties)->Boolean= { it.hasClickableDescendant || it.clickable || it.selected.isEnabled() }
 	private fun AccessibilityNodeInfo.createWidget(w: DisplayedWindow, xPath: String, children: List<UiElementProperties>,
 	                                               img: Bitmap?, idHash: Int, parentH: Int, processedNodes: List<UiElementProperties>): UiElementProperties {
 		val nodeRect = Rect()

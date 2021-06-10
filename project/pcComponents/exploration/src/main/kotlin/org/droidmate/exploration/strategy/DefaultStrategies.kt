@@ -67,13 +67,14 @@ object DefaultStrategies: Logging {
 			return when{
 				cnt++ < 2 ->{
 					//delay(maxWaitTime)
-					GlobalAction(ActionType.FetchGUI) // try to refetch after waiting for some time
-				}
-				else -> /*explorationContext.resetApp()*/ {
 					val widgets = explorationContext.getCurrentState().widgets
-					widgets.find { it.resourceId == "android:id/aerr_close" }?.click()
-							?:widgets.filter { it.canInteractWith }.random().click()
+					val closeButton = widgets.find { it.resourceId == "android:id/aerr_close" }
+					if (closeButton != null) {
+						closeButton.click()
+					} else
+						GlobalAction(ActionType.FetchGUI) // try to refetch after waiting for some time
 				}
+				else -> explorationContext.resetApp()
 			}
 		}
 	}
@@ -189,6 +190,9 @@ object DefaultStrategies: Logging {
 			val s_res = eContext.getState(eContext.getLastAction().resState)
 			val s_prev = eContext.getState(eContext.getLastAction().prevState)
 			return when {
+				s.isHomeScreen -> {
+					eContext.launchApp()
+				}
 				lastActionType.isPressBack() -> {
 					// if previous action was back, terminate
 					if (s.isAppHasStoppedDialogBox) {
@@ -196,26 +200,22 @@ object DefaultStrategies: Logging {
 						waitForLaunch(eContext)
 					} else {
 						//some screens require pressback 2 times to exit activity
-						if (s.isHomeScreen) {
-							eContext.launchApp()
+						if (pressbackCnt < 2) {
+							log.debug("Cannot explore. Try pressback again")
+							pressbackCnt++
+							ExplorationAction.pressBack()
+						} else if (pressbackCnt < 3) {
+							// Try double pressback
+							pressbackCnt++
+							log.debug("Cannot explore. Try double pressback")
+							ActionQueue(arrayListOf(ExplorationAction.pressBack(), ExplorationAction.pressBack()), delay = 25)
 						} else {
-							if (pressbackCnt < 2) {
-								log.debug("Cannot explore. Try pressback again")
-								pressbackCnt++
-								ExplorationAction.pressBack()
-							} else if (pressbackCnt < 3) {
-								// Try double pressback
-								pressbackCnt++
-								log.debug("Cannot explore. Try double pressback")
-								ActionQueue(arrayListOf(ExplorationAction.pressBack(), ExplorationAction.pressBack()), delay = 25)
-							} else {
-								log.debug("Cannot explore. Last action was back. Returning 'Launch'")
-								eContext.launchApp()
-							}
+							log.debug("Cannot explore. Last action was back. Returning 'Launch'")
+							eContext.launchApp()
 						}
 					}
 				}
-				 lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
+				lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
 					when {  // last action was reset
 						s.isAppHasStoppedDialogBox -> {
 							log.debug("Cannot explore. Last action was reset. Currently on an 'App has stopped' dialog. Returning 'Terminate'")

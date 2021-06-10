@@ -8,6 +8,9 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowTransition
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.json.JSONArray
@@ -52,6 +55,7 @@ class EWTGDiff private constructor(){
         if (windowDifferentSets.containsKey("DeletionSet")) {
             for (deleted in (windowDifferentSets.get("DeletionSet")!! as DeletionSet<Window>).deletedElements) {
                 AbstractStateManager.instance.ABSTRACT_STATES.removeIf { it.window == deleted }
+                WindowManager.instance.baseModelWindows.remove(deleted)
             }
             val deletedWindows = (windowDifferentSets.get("DeletionSet")!! as DeletionSet<Window>).deletedElements
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
@@ -61,37 +65,12 @@ class EWTGDiff private constructor(){
                     }
                 }
             }
+            //We have to delete obsolete edges in DSTG
         }
         if (windowDifferentSets.containsKey("ReplacementSet")) {
             for (replacement in (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements) {
-                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.old }.forEach {
-                    it.window = replacement.new
-                }
-                atuamf.allTargetWindow_ModifiedMethods.remove(replacement.old)
-                replacement.old.widgets.filter { it.createdAtRuntime }.forEach {
-                    replacement.new.widgets.add(it)
-                    replacement.old.widgets.remove(it)
-                    it.window = replacement.new
-                }
-                replacement.old.inputs.filter { it.createdAtRuntime }.forEach {
-                    it.sourceWindow = replacement.new
-                    replacement.old.inputs.remove(it)
-                    replacement.new.inputs.add(it)
-                }
-                val toRemoveEdges = ArrayList<Edge<Window,WindowTransition>>()
-                atuamf.wtg.edges(replacement.old).forEach {
-                    atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
-                    toRemoveEdges.add(it)
-                }
-                atuamf.wtg.edges().forEach {
-                    if (it.destination?.data == replacement.old) {
-                        atuamf.wtg.add(it.source.data,replacement.new, it.label)
-                        toRemoveEdges.add(it)
-                    }
-                }
-                toRemoveEdges.forEach {
-                    atuamf.wtg.remove(it)
-                }
+                replaceWindow(replacement, atuamf)
+                WindowManager.instance.baseModelWindows.remove(replacement.old)
             }
             val replacements = (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
@@ -105,34 +84,8 @@ class EWTGDiff private constructor(){
         }
         if (windowDifferentSets.containsKey("RetainerSet")) {
             for (replacement in (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements) {
-                AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.old }.forEach {
-                    it.window = replacement.new
-                }
-                atuamf.allTargetWindow_ModifiedMethods.remove(replacement.old)
-                replacement.old.widgets.filter { it.createdAtRuntime }.forEach {
-                    replacement.old.widgets.remove(it)
-                    replacement.new.widgets.add(it)
-                    it.window = replacement.new
-                }
-                replacement.old.inputs.filter { it.createdAtRuntime }.forEach {
-                    it.sourceWindow = replacement.new
-                    replacement.old.inputs.remove(it)
-                    replacement.new.inputs.add(it)
-                }
-                val toRemoveEdges = ArrayList<Edge<Window,WindowTransition>>()
-                atuamf.wtg.edges(replacement.old).forEach {
-                    atuamf.wtg.add(replacement.new,it.destination?.data,it.label)
-                    toRemoveEdges.add(it)
-                }
-                atuamf.wtg.edges().forEach {
-                    if (it.destination?.data == replacement.old) {
-                        atuamf.wtg.add(it.source.data,replacement.new, it.label)
-                        toRemoveEdges.add(it)
-                    }
-                }
-                toRemoveEdges.forEach {
-                    atuamf.wtg.remove(it)
-                }
+                replaceWindow(replacement, atuamf)
+                WindowManager.instance.baseModelWindows.remove(replacement.old)
             }
 
             val replacements = (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
@@ -144,7 +97,20 @@ class EWTGDiff private constructor(){
                 }
             }
         }
-
+        WindowManager.instance.baseModelWindows.filter {
+                    it is Dialog || it is OutOfApp || it is Activity
+        }.forEach {w->
+            val exisitingWindow = WindowManager.instance.updatedModelWindows.find { it.javaClass == w.javaClass && it.classType == w.classType }
+            if (exisitingWindow != null) {
+                // replace old window with the exisiting one
+                replaceWindow(Replacement(w,exisitingWindow),atuamf)
+            } else {
+                val newWindow = w.copyToRunningModel()
+                replaceWindow(Replacement(w,newWindow),atuamf)
+                WindowManager.instance.updatedModelWindows.add(newWindow)
+                WindowManager.instance.baseModelWindows.remove(w)
+            }
+        }
         if (widgetDifferentSets.containsKey("DeletionSet")) {
             for (deleted in (widgetDifferentSets.get("DeletionSet")!! as DeletionSet<EWTGWidget>).deletedElements) {
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
@@ -200,6 +166,53 @@ class EWTGDiff private constructor(){
             toRemoveMappings.forEach { avm->
                 it.EWTGWidgetMapping.remove(avm)
             }
+        }
+    }
+
+    private fun resolveWindowNameConflict(window: Window): Boolean {
+        if (WindowManager.instance.updatedModelWindows.any {
+                    it != window
+                            && it.windowId == window.windowId
+                }) {
+            if (window is Dialog)
+                window.windowId = Dialog.getNodeId()
+            else if (window is OutOfApp)
+                window.windowId = OutOfApp.getNodeId()
+            else if (window is Activity)
+                window.windowId = Activity.getNodeId()
+            return true
+        } else
+            return false
+    }
+
+    private fun replaceWindow(replacement: Replacement<Window>, atuamf: ATUAMF) {
+        AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == replacement.old }.forEach {
+            it.window = replacement.new
+        }
+        atuamf.allTargetWindow_ModifiedMethods.remove(replacement.old)
+        replacement.old.widgets.filter { it.createdAtRuntime }.forEach {
+            replacement.new.widgets.add(it)
+            replacement.old.widgets.remove(it)
+            it.window = replacement.new
+        }
+        replacement.old.inputs.filter { it.createdAtRuntime }.forEach {
+            it.sourceWindow = replacement.new
+            replacement.old.inputs.remove(it)
+            replacement.new.inputs.add(it)
+        }
+        val toRemoveEdges = ArrayList<Edge<Window, WindowTransition>>()
+        atuamf.wtg.edges(replacement.old).forEach {
+            atuamf.wtg.add(replacement.new, it.destination?.data, it.label)
+            toRemoveEdges.add(it)
+        }
+        atuamf.wtg.edges().forEach {
+            if (it.destination?.data == replacement.old) {
+                atuamf.wtg.add(it.source.data, replacement.new, it.label)
+                toRemoveEdges.add(it)
+            }
+        }
+        toRemoveEdges.forEach {
+            atuamf.wtg.remove(it)
         }
     }
 

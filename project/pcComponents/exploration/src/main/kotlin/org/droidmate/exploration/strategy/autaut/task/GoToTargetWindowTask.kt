@@ -19,9 +19,9 @@ class GoToTargetWindowTask (
     override fun initPossiblePaths(currentState: State<*>, continueMode: Boolean) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
-                PathFindingHelper.PathType.INCLUDE_INFERED
-        else if (continueMode)
             PathFindingHelper.PathType.INCLUDE_INFERED
+        else if (continueMode)
+            PathFindingHelper.PathType.TRACE
         else
             computeNextPathType(currentPath!!.pathType,includeResetAction)
         
@@ -37,8 +37,8 @@ class GoToTargetWindowTask (
                 nextPathType = computeNextPathType(nextPathType,includeResetAction)
             }
         }
-        if (possiblePaths.isEmpty()) {
-            log.debug("Cannot identify path to target Window.")
+        if (possiblePaths.isEmpty() && destWindow!=null) {
+            log.debug("Cannot identify path to $destWindow")
         }
     }
 

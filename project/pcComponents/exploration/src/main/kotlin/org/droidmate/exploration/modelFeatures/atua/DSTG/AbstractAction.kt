@@ -9,7 +9,7 @@ import org.droidmate.explorationModel.interaction.Widget
 data class AbstractAction (
         val actionType: AbstractActionType,
         val attributeValuationMap: AttributeValuationMap?=null,
-        var extra: Any?=null
+        val extra: Any?=null
     ) {
     override fun hashCode(): Int {
         var hash = 31
@@ -119,20 +119,7 @@ data class AbstractAction (
             val swipeData = Helper.parseSwipeData(interaction.data)
             val begin = swipeData[0]!!
             val end = swipeData[1]!!
-            val swipeAction = if (begin.first == end.first) {
-                if (begin.second < end.second) {
-                    //swipe down
-                    "SwipeDown"
-                } else {
-                    //swipe up
-                    "SwipeUp"
-                }
-            } else if (begin.first < end.first) {
-                //siwpe right
-                "SwipeRight"
-            } else {
-                "SwipeLeft"
-            }
+            val swipeAction = Helper.getSwipeDirection(begin, end)
             return swipeAction
         }
 

@@ -10,6 +10,7 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
 import org.droidmate.explorationModel.config.ModelConfig
 import org.droidmate.explorationModel.interaction.State
+import org.droidmate.explorationModel.interaction.Widget
 import java.io.File
 import java.nio.file.Files
 
@@ -23,6 +24,7 @@ class WindowManager {
     val allMeaningWindows
         get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp }
 
+    val guiWidgetEWTGWidgetMappingByWindow = HashMap<Window, HashMap<Widget,EWTGWidget>>()
     fun dump(config: ModelConfig, atuaMF: ATUAMF) {
         val wtgFolder = config.baseDir.resolve("EWTG")
         Files.createDirectory(wtgFolder)

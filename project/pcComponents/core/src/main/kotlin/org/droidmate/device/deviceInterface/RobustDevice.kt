@@ -212,8 +212,9 @@ class RobustDevice : IRobustDevice {
 	}
 
 	override suspend fun uninstallApk(apkPackageName: String, ignoreFailure: Boolean) {
-		if (ignoreFailure)
+		if (ignoreFailure) {
 			device.uninstallApk(apkPackageName, ignoreFailure)
+		}
 		else {
 			try {
 				device.uninstallApk(apkPackageName, ignoreFailure)

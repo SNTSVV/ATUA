@@ -27,10 +27,8 @@ class TransitionPath(val root: AbstractState, val pathType: PathFindingHelper.Pa
 
 class PathTraverser (val transitionPath: TransitionPath) {
     var latestEdgeId: Int? = null
-    var destinationReached = false
     fun reset() {
         latestEdgeId = null
-        destinationReached = false
     }
     fun getCurrentTransition(): AbstractTransition? {
         if (latestEdgeId == null)
@@ -38,20 +36,17 @@ class PathTraverser (val transitionPath: TransitionPath) {
         return transitionPath.path[latestEdgeId!!]
     }
     fun next(): AbstractTransition? {
-        if(destinationReached)
+        if(finalStateAchieved())
             return null
         if (latestEdgeId == null)
             latestEdgeId = 0
         else
             latestEdgeId = latestEdgeId!! + 1
         val edge = transitionPath.path[latestEdgeId!!]
-        if (latestEdgeId!! == transitionPath.path!!.size-1) {
-            destinationReached = true
-        }
         return edge
     }
 
     fun finalStateAchieved(): Boolean {
-        return destinationReached
+        return latestEdgeId == transitionPath.path!!.size-1
     }
 }

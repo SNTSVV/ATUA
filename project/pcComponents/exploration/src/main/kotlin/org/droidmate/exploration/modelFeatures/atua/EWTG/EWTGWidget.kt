@@ -13,7 +13,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                   contentDesc: String,
                                   var window: Window,
                                   var createdAtRuntime: Boolean = false,
-                                  val widgetUUID: String = ""
+                                  var structure: String = ""
                                     ){
     var isUserLikeInput: Boolean = false
     val possibleTexts= ArrayList<String>()
@@ -53,7 +53,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                 resourceIdName = this.resourceIdName,
                 className = this.className,
                 wtgNode = newNode,
-                attributeValuationSetId = widgetUUID
+                structure = structure
         )
         newStaticWidget.possibleTexts.addAll( this.possibleTexts)
         newStaticWidget.possibleContentDescriptions.addAll(this.possibleContentDescriptions)
@@ -82,7 +82,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                                     resourceId: String = "",
                                     className: String,
                                     wtgNode: Window,
-                                    attributeValuationSetId: String = ""): EWTGWidget {
+                                    structure: String = ""): EWTGWidget {
             val returnWidget = allStaticWidgets.find{ it.widgetId==widgetId && it.window == wtgNode}
             if ( returnWidget == null) {
                 var staticWidget = EWTGWidget(widgetId = widgetId
@@ -91,7 +91,7 @@ open class EWTGWidget constructor(val widgetId: String,//sootandroid id
                         , className = className
                         , text = ""
                         , contentDesc = ""
-                        , widgetUUID = attributeValuationSetId)
+                        , structure = structure)
                 return staticWidget
             }
             else

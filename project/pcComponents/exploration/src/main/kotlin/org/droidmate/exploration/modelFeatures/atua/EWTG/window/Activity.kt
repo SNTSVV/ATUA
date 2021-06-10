@@ -6,6 +6,16 @@ class Activity(classType: String,
                nodeId: String = getNodeId(),
                runtimeCreated: Boolean,
                baseModel: Boolean): Window(classType,nodeId,runtimeCreated, baseModel){
+    override fun copyToRunningModel(): Window {
+        val newActivity = getOrCreateNode(
+                nodeId = getNodeId(),
+                classType = this.classType,
+                runtimeCreated = this.isRuntimeCreated,
+                isBaseMode = false
+        )
+        return newActivity
+    }
+
     override fun getWindowType(): String {
         return "Activity"
     }

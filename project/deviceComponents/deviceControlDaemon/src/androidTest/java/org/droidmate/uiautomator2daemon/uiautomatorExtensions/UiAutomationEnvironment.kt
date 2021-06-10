@@ -273,7 +273,7 @@ data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveT
 		}
 
 		if (lastDisplayDimension == displayDim) {
-			var canReuse =
+			/*var canReuse =
 				windows.size >= lastWindows.size // necessary since otherwise disappearing soft-keyboards would mark part of the app screen as invisible
 			var c = 0
 			while (canReuse && c < lastWindows.size && c < windows.size) {
@@ -289,7 +289,8 @@ data class UiAutomationEnvironment(val idleTimeout: Long = 100, val interactiveT
 						processedWindows[w.windowId] = this.apply { if (isExtracted()) rootNode = newW.root }
 					} else canReuse = false // no guarantees after we have one mismatching window
 				}
-			}
+			}*/
+			var canReuse = false
 			if (!canReuse) { // wo could only partially reuse windows or none
 				if (processedWindows.isNotEmpty()) Log.d(
 					logtag,

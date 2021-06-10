@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG.reducer
 
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
@@ -34,68 +35,98 @@ class AbstractionFunction (val root: DecisionNode) {
         }
     }
 
-    fun reduce(guiWidget: Widget, guiState: State<*>, windowClassType: String, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
+    fun Widget.isInteractiveLeaf(guiState: State<*>): Boolean {
+        if (!this.isInteractive)
+            return false
+        if (this.isLeaf())
+            return this.isInteractive
+        return this.childHashes.all { childHash->
+            val childWidget = guiState.widgets.find { it.idHash == childHash }!!
+            !childWidget.isInteractiveLeaf(guiState)
+        }
+    }
+
+    fun reduce(guiWidget: Widget, guiState: State<*>,isOptionsMenu:Boolean , guiTreeRectangle: Rectangle, windowClassType: String, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
                , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
-        val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
-        var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, autaut))
-                Helper.isOptionsMenuLayout(guiState)
-        else
-            false
+        val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
         var currentDecisionNode: DecisionNode?=null
-        var attributePath: AttributePath
+        var attributePath: AttributePath? = null
         var level = 0
         do {
             tempWidgetReduceMap.remove(guiWidget)
             //tempChildWidgetAttributePaths.clear()
             level += 1
             if (currentDecisionNode==null)
-                currentDecisionNode = root
+                currentDecisionNode=root
+            else if (currentDecisionNode.nextNode == null)
+                break
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,windowClassType,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, windowClassType,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            if (isOptionsMenu && isInteractiveLeaf && level <= 5) {
+                if (!currentDecisionNode.attributePaths.containsKey(windowClassType)) {
+                    currentDecisionNode.attributePaths.put(windowClassType, arrayListOf())
+                }
+                if (!currentDecisionNode!!.attributePaths.get(windowClassType)!!.contains(attributePath))
+                    currentDecisionNode!!.attributePaths.get(windowClassType)!!.add(attributePath)
+            }
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.containAttributePath(attributePath,windowClassType))
-        if (level==1 && isOptionsMenu) {
-            if (!currentDecisionNode.attributePaths.containsKey(windowClassType)) {
-                currentDecisionNode.attributePaths.put(windowClassType, arrayListOf())
-            }
-            currentDecisionNode!!.attributePaths.get(windowClassType)!!.add(attributePath)
-            attributePath = currentDecisionNode!!.nextNode!!.reducer.reduce(guiWidget, guiState, windowClassType,rotation,autaut, tempWidgetReduceMap, tempChildWidgetAttributePaths)
-        }
-        return attributePath
+                && currentDecisionNode.containAttributePath(attributePath!!,windowClassType))
+        return attributePath!!
     }
 
     /**
      * Increase the level of Reducer. Return [true] if it can be increased, otherwise [false]
      */
-    fun increaseReduceLevel(attributePath: AttributePath, activity: String, level2Maximum: Boolean): Boolean
+    fun increaseReduceLevel(guiWidget: Widget, guiState: State<*>, classType: String, rotation: Rotation, atuaMF: ATUAMF): Boolean
     {
-        var currentDecisionNode: DecisionNode? = null
-        var level = 1
+        val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
+        var currentDecisionNode: DecisionNode?=null
+        var attributePath: AttributePath? = null
+        val guiTreeRectangle = org.droidmate.exploration.modelFeatures.atua.EWTG.Helper.computeGuiTreeDimension(guiState)
+        var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, atuaMF))
+            Helper.isOptionsMenuLayout(guiState)
+        else
+            false
+        val tempWidgetReduceMap = HashMap<Widget,AttributePath>()
+        val tempChildWidgetAttributePaths = HashMap<Widget,AttributePath>()
+        var level = 0
         do {
-            if (level2Maximum && level == 2)
-                break
+            tempWidgetReduceMap.remove(guiWidget)
+            //tempChildWidgetAttributePaths.clear()
+            level += 1
             if (currentDecisionNode==null)
-                currentDecisionNode = root
+                currentDecisionNode=root
+            else if (currentDecisionNode.nextNode == null)
+                break
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            level++
-        }while (currentDecisionNode!!.nextNode!=null && currentDecisionNode.containAttributePath(attributePath, activity))
-        if (!currentDecisionNode!!.containAttributePath(attributePath, activity)) {
-            if (!currentDecisionNode.attributePaths.containsKey(activity)) {
-                currentDecisionNode.attributePaths.put(activity, arrayListOf())
+            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, classType,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            if (isOptionsMenu && isInteractiveLeaf && level <= 5) {
+                if (!currentDecisionNode.attributePaths.containsKey(classType)) {
+                    currentDecisionNode.attributePaths.put(classType, arrayListOf())
+                }
+                if (!currentDecisionNode!!.attributePaths.get(classType)!!.contains(attributePath))
+                    currentDecisionNode!!.attributePaths.get(classType)!!.add(attributePath)
             }
-            currentDecisionNode.attributePaths.get(activity)!!.add(attributePath)
-           /* val newAttributePath = reduce(guiWidget,guiState,activity, hashMapOf(), hashMapOf())
-            updateAllAttributePathsHavingParent(attributePath,newAttributePath,activity)*/
+        }
+        while (currentDecisionNode!!.nextNode!=null
+                && currentDecisionNode.containAttributePath(attributePath!!,classType))
+        if (currentDecisionNode!=null && !currentDecisionNode.containAttributePath(attributePath!!,classType)) {
+            if (!currentDecisionNode.attributePaths.containsKey(classType)) {
+                currentDecisionNode.attributePaths.put(classType, arrayListOf())
+            }
+            currentDecisionNode.attributePaths.get(classType)!!.add(attributePath)
+           /* val newAttributePath = reduce(guiWidget,guiState,classType, hashMapOf(), hashMapOf())
+            updateAllAttributePathsHavingParent(attributePath,newAttributePath,classType)*/
             return true
         }
         return false
 /*       else {
             if (attributePath.parentAttributePathId == emptyUUID)
                 return false
-            var parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,activity)
+            var parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,classType)
             var parentWidget: Widget? = guiState.widgets.find { it.idHash == guiWidget.parentHash }
             *//*while (parentAttributePath!!.parentAttributePath != null && parentWidget!=null) {
                 parentAttributePath = parentAttributePath!!.parentAttributePath
@@ -103,7 +134,7 @@ class AbstractionFunction (val root: DecisionNode) {
             }*//*
             if (parentWidget!=null) {
                 //increaseReduceLevel for parent
-                val result = increaseReduceLevel(parentAttributePath, activity, false, parentWidget, guiState)
+                val result = increaseReduceLevel(parentAttributePath, classType, false, parentWidget, guiState)
                 return result
             }
             return false

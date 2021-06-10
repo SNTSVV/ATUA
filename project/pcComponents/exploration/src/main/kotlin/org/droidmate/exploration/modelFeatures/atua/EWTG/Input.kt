@@ -120,8 +120,8 @@ open class Input (
         fun getOrCreateEvent(eventHandlers: Set<String>,
                              eventTypeString: String,
                              widget: EWTGWidget?,
-                             @Suppress activity: String,
-                             sourceWindow: Window): Input {
+                             sourceWindow: Window,
+                             createdAtRuntime: Boolean=false): Input {
             var event = Input.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
             if (event != null) {
@@ -129,7 +129,7 @@ open class Input (
             }
             event = Input(eventHandlers = HashSet(eventHandlers)
                     , eventType = EventType.valueOf(eventTypeString)
-                    , widget = widget, sourceWindow = sourceWindow)
+                    , widget = widget, sourceWindow = sourceWindow, createdAtRuntime = createdAtRuntime)
             return event
         }
     }

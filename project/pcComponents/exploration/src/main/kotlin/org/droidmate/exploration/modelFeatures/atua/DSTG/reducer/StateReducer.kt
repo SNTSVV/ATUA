@@ -43,14 +43,18 @@ class StateReducer
             }
             //toReduceWidgets.removeIf { derivedWidgets.contains(it) }
             //val toReduceWidgets = Helper.getVisibleWidgetsForAbstraction(guiState)
-
+            val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
+            var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, atuaMF))
+                Helper.isOptionsMenuLayout(guiState)
+            else
+                false
             toReduceWidgets .forEach {
                 val widgetAttributePath = if (tempFullAttrPaths.containsKey(it))
                 {
                     tempFullAttrPaths[it]!!
                 }
                 else {
-                    WidgetReducer.reduce(it, guiState, classType, rotation, atuaMF, tempFullAttrPaths, tempRelativeAttrPaths)
+                    WidgetReducer.reduce(it, guiState,isOptionsMenu,guiTreeRectangle, classType, rotation, atuaMF, tempFullAttrPaths, tempRelativeAttrPaths)
                 }
 
                 if (capturedWidgets.contains(it)) {

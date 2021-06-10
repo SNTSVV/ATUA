@@ -5,9 +5,21 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 class Dialog(classType: String,
              nodeId: String= getNodeId(),
              var dialogType: DialogType,
-             allocMethod: String,// can only acquired by ewtg
+             val allocMethod: String,// can only acquired by ewtg
              runtimeCreated: Boolean,
              isBaseModel:Boolean): Window(classType,nodeId,runtimeCreated,isBaseModel){
+    override fun copyToRunningModel(): Window {
+        val newDialog = Dialog.getOrCreateNode(
+                nodeId =  Dialog.getNodeId(),
+                classType = this.classType,
+                allocMethod = this.allocMethod,
+                runtimeCreated = this.isRuntimeCreated,
+                isBaseModel = false
+        )
+        newDialog.isInputDialog = this.isInputDialog
+        return newDialog
+    }
+
     var ownerActivitys: HashSet<Window> = HashSet();
     var isInputDialog: Boolean = false
     init {

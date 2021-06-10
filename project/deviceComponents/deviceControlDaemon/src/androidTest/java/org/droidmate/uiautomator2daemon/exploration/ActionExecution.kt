@@ -8,6 +8,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import android.support.test.uiautomator.By
 import android.support.test.uiautomator.UiDevice
@@ -16,6 +17,7 @@ import android.support.test.uiautomator.click
 import android.util.Log
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -26,7 +28,9 @@ import org.droidmate.uiautomator2daemon.uiautomatorExtensions.*
 import org.droidmate.uiautomator2daemon.uiautomatorExtensions.UiParser.Companion.computeIdHash
 import org.droidmate.uiautomator2daemon.uiautomatorExtensions.UiSelector.actableAppElem
 import org.droidmate.uiautomator2daemon.uiautomatorExtensions.UiSelector.isWebView
+import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
 import kotlin.math.max
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -193,12 +197,12 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 			}
 			//launch app
 			env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
-			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
-			//reset rotaion
 			env.automation.setRotation(0)
-			//close keyboard
 			if (env.isKeyboardOpen())
 				env.device.pressBack()
+			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
+			//reset rotaion
+
 			true
 		}
 		is ResetApp -> {
@@ -209,12 +213,10 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
             }
 			//launch app
             env.device.pressKeyCode(KeyEvent.KEYCODE_WAKEUP)
-			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
-			//reset rotaion
-			env.automation.setRotation(0)
-			//close keyboard
+			env.device.setOrientationNatural()
 			if (env.isKeyboardOpen())
 				env.device.pressBack()
+			env.device.launchApp(packageName, env, launchActivityDelay, timeout)
 			true
 		}
 		is Swipe -> env.device.twoPointAction(start,end){
@@ -489,10 +491,25 @@ private fun UiDevice.sendIntent(action: String, category: String, uriString: Str
 		category
 	intent.setAction(intentAction)
 	intent.addCategory(intentCategory)
-	intent.setData(Uri.parse(uriString))
+	if (uriString.startsWith("file://")) {
+		val fileName = uriString.substring("file://".length)
+		val openfile = File("/sdcard/$fileName")
+		if (!openfile.exists()) {
+			Log.d("SendIntent","${openfile} does not exist")
+			return false
+		}
+		val fileUri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName(), openfile);
+		intent.setData(fileUri)
+		Log.d("SendIntent",fileUri.toString())
+	} else
+	{
+		intent.setData(Uri.parse(uriString))
+	}
+
 	intent.setClassName(appPackageName,activityName)
 	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 	intent.addFlags(Intent.FLAG_FROM_BACKGROUND)
+	intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 	//intent.setComponent(ComponentName(appPackageName,activityName))
 	context.startActivity(intent)
 //	val pm = context.packageManager

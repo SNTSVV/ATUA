@@ -4,6 +4,10 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 
 class Launcher
     private constructor(): Window("","Launcher-0",true,false){
+    override fun copyToRunningModel(): Window {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun getWindowType(): String {
         return "Launcher"
     }

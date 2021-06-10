@@ -31,7 +31,7 @@ open class AbstractState(
         var window: Window,
         val EWTGWidgetMapping: HashMap<AttributeValuationMap, EWTGWidget> = HashMap(),
         val abstractTransitions: HashSet<AbstractTransition> = HashSet(),
-        val inputMappings: HashMap<AbstractAction, ArrayList<Input>> = HashMap(),
+        val inputMappings: HashMap<AbstractAction, HashSet<Input>> = HashMap(),
         val isHomeScreen: Boolean = false,
         val isOpeningKeyboard: Boolean = false,
         val isRequestRuntimePermissionDialogBox: Boolean = false,
@@ -117,21 +117,23 @@ open class AbstractState(
                     actionType = AbstractActionType.PRESS_BACK
             )
             actionCount.put(pressBackAction, 0)
-            if (!this.isMenusOpened && this.hasOptionsMenu && this.window !is Dialog) {
+            /*if (!this.isMenusOpened && this.hasOptionsMenu && this.window !is Dialog) {
                 val pressMenuAction = AbstractAction(
                         actionType = AbstractActionType.PRESS_MENU
                 )
                 actionCount.put(pressMenuAction, 0)
-            }
-            val minmaxAction = AbstractAction(
-                    actionType = AbstractActionType.MINIMIZE_MAXIMIZE
-            )
-            actionCount.put(minmaxAction, 0)
-            if (window is Activity || rotation == Rotation.LANDSCAPE) {
-                val rotationAction = AbstractAction(
-                        actionType = AbstractActionType.ROTATE_UI
+            }*/
+            if (!this.isMenusOpened) {
+                val minmaxAction = AbstractAction(
+                        actionType = AbstractActionType.MINIMIZE_MAXIMIZE
                 )
-                actionCount.put(rotationAction, 0)
+                actionCount.put(minmaxAction, 0)
+                if (window is Activity || rotation == Rotation.LANDSCAPE) {
+                    val rotationAction = AbstractAction(
+                            actionType = AbstractActionType.ROTATE_UI
+                    )
+                    actionCount.put(rotationAction, 0)
+                }
             }
             if (window is Dialog) {
                 val clickOutDialog = AbstractAction(
@@ -176,11 +178,22 @@ open class AbstractState(
         if (mappedAttributeValuationSet == null)
         {
             if (mappedWidget_AttributeValuationSet.any { it.key.uid == widget.uid }) {
-                val reducedAttributePath = WidgetReducer.reduce(widget,guiState,activity,rotation,atuaMF,HashMap(),HashMap())
+                val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
+                var isOptionsMenu = if (!Helper.isDialog(this.rotation,guiTreeRectangle, guiState, atuaMF))
+                    Helper.isOptionsMenuLayout(guiState)
+                else
+                    false
+                val reducedAttributePath = WidgetReducer.reduce(widget,guiState,isOptionsMenu,guiTreeRectangle,window.classType,rotation,atuaMF,HashMap(),HashMap())
                 val attributeValuationSet = attributeValuationMaps.find {
                     it.haveTheSameAttributePath(reducedAttributePath)
                 }
                 return attributeValuationSet
+            }
+            if (Helper.hasParentWithType(widget, guiState, "WebView")) {
+                val webViewWidget = Helper.tryGetParentHavingClassName(widget, guiState, "WebView")
+                if (webViewWidget != null) {
+                    return getAttributeValuationSet(webViewWidget, guiState, atuaMF)
+                }
             }
             return null
         }
@@ -209,7 +222,7 @@ open class AbstractState(
                     widget_WidgetGroupMap.put(w, wg)
             }
         }
-        unexcerisedActions.addAll(actionCount.filter {
+        /*unexcerisedActions.addAll(actionCount.filter {
             ( it.value == 0 )
                     && it.key.actionType != AbstractActionType.FAKE_ACTION
                     && it.key.actionType != AbstractActionType.LAUNCH_APP
@@ -221,8 +234,11 @@ open class AbstractState(
                     && !it.key.isWidgetAction()
                     && it.key.actionType != AbstractActionType.CLICK
                     && it.key.actionType != AbstractActionType.LONGCLICK
+                    && it.key.actionType != AbstractActionType.MINIMIZE_MAXIMIZE
+                    && it.key.actionType != AbstractActionType.SEND_INTENT
+                    && it.key.actionType != AbstractActionType.PRESS_MENU
         }
-                .map { it.key })
+                .map { it.key })*/
         val widgetActionCounts = if (currentState != null) {
             widget_WidgetGroupMap.values.filter { !it.isUserLikeInput() }.distinct()
                     .map { w -> w.actionCount }
@@ -347,6 +363,14 @@ open class AbstractState(
         return result
     }
 
+    fun isRequireRandomExploration():Boolean {
+        if (this.window is Dialog
+                || this.isMenusOpened
+                || this.window is OutOfApp
+                || this.window.classType.contains("ResolverActivity"))
+            return true
+        return false
+    }
     fun computeScore(autautMF: ATUAMF): Double {
         var localScore = 0.0
         val unexploredActions = getUnExercisedActions(null,autautMF).filterNot { it.attributeValuationMap == null }
@@ -360,7 +384,7 @@ open class AbstractState(
         }
         localScore += this.getActionCountMap().map { it.value }.sum()
         this.guiStates.forEach {
-            localScore += autautMF.getUnexploredWidget(it).size
+            localScore += autautMF.actionCount.getUnexploredWidget(it).size
         }
         /* actions.forEach {action ->
              autautMF.abstractTransitionGraph.edges(this).filter { edge->

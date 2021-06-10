@@ -1,57 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
   <component name="AndroidLogFilters">
     <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5c639742-9a77-4c75-ae1f-b87fa8f0eb0c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../../../.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../../.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../../../build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/buildSrcjar-classes.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/buildSrcjar-classes.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/build-history.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/build-history.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/inputs/source-to-output.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/file-to-id.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/id-to-file.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/caches-jvm/lookups/id-to-file.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/last-build.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileKotlin/last-build.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/build-history.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/build-history.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/inputs/source-to-output.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/jvm/kotlin/source-to-classes.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab.keystream" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab.keystream.len" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab_i" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/file-to-id.tab_i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/id-to-file.tab.values.at" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/caches-jvm/lookups/id-to-file.tab.values.at" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/last-build.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/kotlin/compileTestKotlin/last-build.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/libs/buildSrc-sources.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/libs/buildSrc-sources.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/libs/buildSrc.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/libs/buildSrc.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/classes/org.droidmate.buildsrc.BuildKtTest.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/classes/org.droidmate.buildsrc.BuildKtTest.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/packages/org.droidmate.buildsrc.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/reports/tests/test/packages/org.droidmate.buildsrc.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/test-results/test/TEST-org.droidmate.buildsrc.BuildKtTest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/test-results/test/TEST-org.droidmate.buildsrc.BuildKtTest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../buildSrc/build/test-results/test/binary/results.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../../../buildSrc/build/test-results/test/binary/results.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/res/xml/provider_paths.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ActionCount.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../.idea/.name" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../defaultConfig-RT.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../../../defaultConfig-RT.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_kotlin_kotlin_stdlib_1_3_41_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_kotlin_kotlin_stdlib_common_1_3_41_jar.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deviceControlDaemon.iml" beforeDir="false" afterPath="$PROJECT_DIR$/deviceControlDaemon.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/core/src/main/kotlin/org/droidmate/configuration/ConfigurationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/core/src/main/kotlin/org/droidmate/configuration/ConfigurationBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiAutomationEnvironment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiAutomationEnvironment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon-test.apk" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon-test.apk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon.apk" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon.apk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/ExplorationContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/ExplorationContext.kt" afterDir="false" />
@@ -61,28 +34,45 @@
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractState.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractStateManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractStateManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractTransition.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractTransition.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributePath.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributePath.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributeValuationMap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributeValuationMap.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/DSTG.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/DSTG.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractReducer.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractionFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractionFunction.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/BaseReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/BaseReducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/IncludeChildrenReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/IncludeChildrenReducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/StateReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/StateReducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/WidgetReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/WidgetReducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DialogBehaviorMonitor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DialogBehaviorMonitor.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/EWTG.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/EWTG.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/EWTGWidget.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/EWTGWidget.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Helper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Helper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Input.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Input.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/TransitionPath.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/TransitionPath.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/WindowManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/WindowManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Activity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Activity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/ContextMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/ContextMenu.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Dialog.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Dialog.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/FakeWindow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/FakeWindow.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Launcher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Launcher.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/OptionsMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/OptionsMenu.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/OutOfApp.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/OutOfApp.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Window.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Window.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ModelBackwardAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ModelBackwardAdapter.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/StaticAnalysisJSONParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/StaticAnalysisJSONParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ewtgdiff/EWTGDiff.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ewtgdiff/EWTGDiff.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/PathFindingHelper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/PathFindingHelper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/DefaultStrategies.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/DefaultStrategies.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/ATUATestingStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/ATUATestingStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/AbstractPhaseStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/AbstractPhaseStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseOneStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseOneStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseThreeStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseThreeStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseTwoStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseTwoStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/AbstractStrategyTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/AbstractStrategyTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ExerciseTargetComponentTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ExerciseTargetComponentTask.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToAnotherWindow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToAnotherWindow.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToTargetWindowTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToTargetWindowTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/PrepareContextTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/PrepareContextTask.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/RandomExplorationTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/RandomExplorationTask.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../../../settings.gradle" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -125,6 +115,13 @@
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="resourceFile" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
@@ -315,56 +312,81 @@
     </option>
   </component>
   <component name="WindowStateProjectService">
-    <state width="1611" height="336" key="GridCell.Tab.0.bottom" timestamp="1619727255327">
+    <state x="824" y="291" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1622701690826">
       <screen x="26" y="23" width="1654" height="1027" />
     </state>
-    <state width="1611" height="336" key="GridCell.Tab.0.bottom/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255327" />
-    <state width="1611" height="336" key="GridCell.Tab.0.center" timestamp="1619727255326">
+    <state x="824" y="291" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1622701690826" />
+    <state x="673" y="299" key="AndroidCreateResourceDirectoryDialog" timestamp="1622668250058">
       <screen x="26" y="23" width="1654" height="1027" />
     </state>
-    <state width="1611" height="336" key="GridCell.Tab.0.center/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255326" />
-    <state width="1611" height="336" key="GridCell.Tab.0.left" timestamp="1619727255326">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state x="673" y="299" key="AndroidCreateResourceDirectoryDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1622668250058" />
+    <state x="674" y="299" key="AndroidCreateResourceDirectoryDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1622584349551" />
+    <state x="674" y="299" key="AndroidCreateResourceFileDialog" timestamp="1622714880227">
+      <screen x="27" y="23" width="1653" height="1027" />
     </state>
-    <state width="1611" height="336" key="GridCell.Tab.0.left/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255326" />
-    <state width="1611" height="336" key="GridCell.Tab.0.right" timestamp="1619727255327">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state x="673" y="299" key="AndroidCreateResourceFileDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1622668267695" />
+    <state x="674" y="299" key="AndroidCreateResourceFileDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1622714880227" />
+    <state width="1059" height="336" key="GridCell.Tab.0.bottom" timestamp="1622127861886">
+      <screen x="25" y="23" width="1655" height="1027" />
     </state>
-    <state width="1611" height="336" key="GridCell.Tab.0.right/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255327" />
-    <state width="1611" height="336" key="GridCell.Tab.1.bottom" timestamp="1619727255328">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state width="1059" height="336" key="GridCell.Tab.0.bottom/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861886" />
+    <state width="1059" height="336" key="GridCell.Tab.0.bottom/26.23.1654.1027@26.23.1654.1027" timestamp="1622067626754" />
+    <state width="1059" height="336" key="GridCell.Tab.0.center" timestamp="1622127861885">
+      <screen x="25" y="23" width="1655" height="1027" />
     </state>
+    <state width="1059" height="336" key="GridCell.Tab.0.center/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861885" />
+    <state width="1059" height="336" key="GridCell.Tab.0.center/26.23.1654.1027@26.23.1654.1027" timestamp="1622067626743" />
+    <state width="1059" height="336" key="GridCell.Tab.0.left" timestamp="1622127861884">
+      <screen x="25" y="23" width="1655" height="1027" />
+    </state>
+    <state width="1059" height="336" key="GridCell.Tab.0.left/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861884" />
+    <state width="1059" height="336" key="GridCell.Tab.0.left/26.23.1654.1027@26.23.1654.1027" timestamp="1622067626743" />
+    <state width="1059" height="336" key="GridCell.Tab.0.right" timestamp="1622127861886">
+      <screen x="25" y="23" width="1655" height="1027" />
+    </state>
+    <state width="1059" height="336" key="GridCell.Tab.0.right/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861886" />
+    <state width="1059" height="336" key="GridCell.Tab.0.right/26.23.1654.1027@26.23.1654.1027" timestamp="1622067626753" />
+    <state width="1059" height="336" key="GridCell.Tab.1.bottom" timestamp="1622127861889">
+      <screen x="25" y="23" width="1655" height="1027" />
+    </state>
+    <state width="1059" height="336" key="GridCell.Tab.1.bottom/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861889" />
     <state width="1611" height="336" key="GridCell.Tab.1.bottom/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255328" />
-    <state width="1611" height="336" key="GridCell.Tab.1.center" timestamp="1619727255328">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state width="1059" height="336" key="GridCell.Tab.1.center" timestamp="1622127861887">
+      <screen x="25" y="23" width="1655" height="1027" />
     </state>
+    <state width="1059" height="336" key="GridCell.Tab.1.center/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861887" />
     <state width="1611" height="336" key="GridCell.Tab.1.center/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255328" />
-    <state width="1611" height="336" key="GridCell.Tab.1.left" timestamp="1619727255327">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state width="1059" height="336" key="GridCell.Tab.1.left" timestamp="1622127861887">
+      <screen x="25" y="23" width="1655" height="1027" />
     </state>
+    <state width="1059" height="336" key="GridCell.Tab.1.left/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861887" />
     <state width="1611" height="336" key="GridCell.Tab.1.left/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255327" />
-    <state width="1611" height="336" key="GridCell.Tab.1.right" timestamp="1619727255328">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state width="1059" height="336" key="GridCell.Tab.1.right" timestamp="1622127861888">
+      <screen x="25" y="23" width="1655" height="1027" />
     </state>
+    <state width="1059" height="336" key="GridCell.Tab.1.right/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861888" />
     <state width="1611" height="336" key="GridCell.Tab.1.right/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255328" />
-    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog" timestamp="1620854841641">
-      <screen x="28" y="23" width="1652" height="1027" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog" timestamp="1623172364678">
+      <screen x="27" y="23" width="1653" height="1027" />
     </state>
     <state x="224" y="138" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/0.23.1440.877/-2531.23.2531.1417@0.23.1440.877" timestamp="1620397920117" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/1680.23.2560.1417/28.23.1652.1027@1680.23.2560.1417" timestamp="1623144368164" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/1680.23.2560.1417/28.23.1652.1027@28.23.1652.1027" timestamp="1623139808406" />
     <state x="283" y="158" width="902" height="827" key="com.android.tools.idea.avdmanager.AvdListDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1619687189544" />
-    <state x="283" y="158" width="902" height="827" key="com.android.tools.idea.avdmanager.AvdListDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1619686580450" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1623172364678" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/28.23.1652.1027@28.23.1652.1027" timestamp="1620854841641" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620720462732" />
-    <state x="452" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1620656490760">
-      <screen x="29" y="23" width="1651" height="1027" />
+    <state x="451" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1622583584119">
+      <screen x="27" y="23" width="1653" height="1027" />
     </state>
     <state x="369" y="294" key="com.intellij.ide.util.TipDialog/0.23.1440.877/-2531.23.2531.1417@0.23.1440.877" timestamp="1620397902904" />
+    <state x="451" y="340" key="com.intellij.ide.util.TipDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1622583584119" />
     <state x="452" y="340" key="com.intellij.ide.util.TipDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620656490760" />
-    <state x="627" y="292" width="765" height="488" key="find.popup" timestamp="1621507253177">
+    <state x="627" y="292" width="765" height="488" key="find.popup" timestamp="1622762592636">
       <screen x="26" y="23" width="1654" height="1027" />
     </state>
     <state x="627" y="292" width="766" height="488" key="find.popup/25.23.1655.1027@25.23.1655.1027" timestamp="1619712475753" />
-    <state x="627" y="292" width="765" height="488" key="find.popup/26.23.1654.1027@26.23.1654.1027" timestamp="1621507253177" />
+    <state x="627" y="292" width="765" height="488" key="find.popup/26.23.1654.1027@26.23.1654.1027" timestamp="1622762592636" />
     <state x="628" y="292" width="765" height="488" key="find.popup/27.23.1653.1027@27.23.1653.1027" timestamp="1619702083607" />
     <state x="628" y="292" width="714" height="488" key="find.popup/28.23.1652.1027@28.23.1652.1027" timestamp="1617221336637" />
     <state x="519" y="250" width="670" height="676" key="search.everywhere.popup" timestamp="1620854815617">
@@ -378,7 +400,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt</url>
-          <line>472</line>
+          <line>474</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">

@@ -62,8 +62,8 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                     }
 
                     val target = transition["target"] as String
-                    log.debug("action: $action")
-                    log.debug("target: $target")
+                    // log.debug("action: $action")
+                    // log.debug("target: $target")
                     val targetInfo = StaticAnalysisJSONParser.windowParser(target)
                     val targetNode = getOrCreateWTGNode(targetInfo)
                     if (targetNode is OptionsMenu || sourceNode is Launcher) {
@@ -73,7 +73,7 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
 
                     if (ignoreWidget == false) {
                         val targetView = transition["widget"] as String
-                        log.info("parsing widget: $targetView")
+                        // log.info("parsing widget: $targetView")
                         val widgetInfo = StaticAnalysisJSONParser.widgetParser(targetView)
                         if (widgetInfo.containsKey("resourceId") && widgetInfo.containsKey("resourceIdName")) {
                             ewtgWidget = EWTGWidget.getOrCreateStaticWidget(widgetId = widgetInfo["id"]!!,
@@ -96,7 +96,6 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                 eventTypeString = action,
                                 eventHandlers = emptySet(),
                                 widget = ewtgWidget,
-                                activity = sourceNode.classType,
                                 sourceWindow = sourceNode
 
                         )
@@ -129,7 +128,6 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                         eventHandlers = emptySet(),
                                         eventTypeString = "item_click",
                                         widget = ewtgWidget,
-                                        activity = sourceNode.classType,
                                         sourceWindow = sourceNode)
 
                                 this.add(sourceNode, targetNode, WindowTransition(sourceNode,targetNode,itemClick,null))
@@ -140,7 +138,6 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                         eventHandlers = emptySet(),
                                         eventTypeString = "item_long_click",
                                         widget = ewtgWidget,
-                                        activity = sourceNode.classType,
                                         sourceWindow = sourceNode)
                                 this.add(sourceNode, targetNode, WindowTransition(sourceNode,targetNode,itemLongClick,null))
                             }

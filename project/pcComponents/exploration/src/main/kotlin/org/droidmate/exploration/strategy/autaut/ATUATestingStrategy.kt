@@ -23,7 +23,7 @@ import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 
 open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
-                                                         val budgetScale: Double = 1.0,
+                                                         val scaleFactor: Double = 1.0,
                                                          dictionary: List<String> = emptyList(),
                                                          useCoordinateClicks: Boolean = true
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
@@ -85,21 +85,21 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
             return ExplorationAction.rotate(-90)
         }
 
-        if(currentAbstractState.isOpeningKeyboard && !AbstractStateManager.instance.ABSTRACT_STATES.any { it !is VirtualAbstractState && it.window == currentAbstractState.window && !it.isOpeningKeyboard }) {
-            return GlobalAction(actionType = ActionType.CloseKeyboard)
-        }
+//        if(currentAbstractState.isOpeningKeyboard && !AbstractStateManager.instance.ABSTRACT_STATES.any { it !is VirtualAbstractState && it.window == currentAbstractState.window && !it.isOpeningKeyboard }) {
+//            return GlobalAction(actionType = ActionType.CloseKeyboard)
+//        }
 
         if (!phaseStrategy.hasNextAction(eContext.getCurrentState())) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
                 if (regressionWatcher.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
-                    phaseStrategy = PhaseTwoStrategy(this, budgetScale, delay, useCoordinateClicks, unreachableWindow)
+                    phaseStrategy = PhaseTwoStrategy(this, scaleFactor, delay, useCoordinateClicks, unreachableWindow)
                     regressionWatcher.updateStage1Info(eContext)
                 }
                     /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                     regressionWatcher.updateStage2Info(eContext)*/
             } else if (phaseStrategy is PhaseTwoStrategy) {
-                phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
+                phaseStrategy = PhaseThreeStrategy(this,scaleFactor, delay, useCoordinateClicks)
                 regressionWatcher.updateStage2Info(eContext)
             } else if (phaseStrategy is PhaseThreeStrategy) {
                 return ExplorationAction.terminateApp()
@@ -117,7 +117,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
         super.initialize(initialContext)
         eContext = initialContext
-        phaseStrategy = PhaseOneStrategy(this,budgetScale,delay, useCoordinateClicks)
+        phaseStrategy = PhaseOneStrategy(this,scaleFactor,delay, useCoordinateClicks)
     }
 
 

@@ -1,3 +1,4 @@
+
 package org.droidmate.exploration.strategy.autaut.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
@@ -70,7 +71,7 @@ class PrepareContextTask constructor(
     }
 
     private fun prepareFillActions(currentState: State<*>) {
-        val allInputWidgets = currentState.widgets.filter {it.isVisible && inputFillDecision[it]?:false }
+        val allInputWidgets = Helper.getVisibleWidgets(currentState).filter {inputFillDecision[it]?:false }
         val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         allInputWidgets.forEach {widget ->
             if (!widget.checked.isEnabled() && !widget.isInputField) {
@@ -175,7 +176,7 @@ class PrepareContextTask constructor(
     val inputFillDecision = HashMap<Widget,Boolean>()
 
     private fun hasInput(currentState: State<*>): Boolean {
-        return  Helper.getInputFields(currentState).isNotEmpty() || getUserLikeInputWidgets(currentState).isNotEmpty()
+        return  Helper.getUserInputFields(currentState).isNotEmpty() || getUserLikeInputWidgets(currentState).isNotEmpty()
 }
 
     var isOpeningInputDialog: Boolean = false
@@ -213,10 +214,10 @@ class PrepareContextTask constructor(
             stateInputCoverage.put(InputCoverage.FILL_RANDOM,false)
         }
         val inputCoverage = stateInputCoverages.get(uuid)!!
-        val inputCoverageType = if (!inputCoverage.get(InputCoverage.FILL_NONE)!!)
-            InputCoverage.FILL_NONE
-        else if (!inputCoverage.get(InputCoverage.FILL_ALL)!!) {
+        val inputCoverageType = if (!inputCoverage.get(InputCoverage.FILL_ALL)!!)
             InputCoverage.FILL_ALL
+        else if (!inputCoverage.get(InputCoverage.FILL_NONE)!!) {
+            InputCoverage.FILL_NONE
         } else if (!inputCoverage.get(InputCoverage.FILL_EMPTY)!!) {
             InputCoverage.FILL_EMPTY
         } else
@@ -227,7 +228,7 @@ class PrepareContextTask constructor(
         if (inputCoverageType == InputCoverage.FILL_NONE) {
             return inputFillDecision.isNotEmpty()
         }
-        val inputFields = Helper.getInputFields(currentState)
+        val inputFields = Helper.getUserInputFields(currentState)
         // we group widgets by its resourceId to easily deal with radio button
         val groupedInputWidgets = inputFields.groupBy { it.resourceId }
         groupedInputWidgets.forEach { resourceId, widgets ->
@@ -254,7 +255,7 @@ class PrepareContextTask constructor(
                                 // check if a click on this widget will go to another window
                                 val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
                                 val widgetGroup = abstractState.getAttributeValuationSet(widget = it, guiState = currentState,atuaMF = atuaMF)
-                                if (widgetGroup != null) {
+                                /*if (widgetGroup != null) {
                                     val isGoToAnotherWindow = atuaMF.DSTG.edges(abstractState).any {
                                         it.destination!!.data.window != it.source.data.window
                                                 && it.label.abstractAction.actionType == AbstractActionType.CLICK
@@ -266,7 +267,7 @@ class PrepareContextTask constructor(
                                         // any widget can lead to another window should be ignore.
                                         ignoreWidget = true
                                     }
-                                }
+                                }*/
                             }
                             if (!ignoreWidget) {
                                 inputFillDecision.put(it, false)
@@ -290,7 +291,7 @@ class PrepareContextTask constructor(
 
         }
 
-        return inputFillDecision.isNotEmpty()
+        return inputFillDecision.filter { it.value == true }.isNotEmpty()
     }
 
     private fun getUserLikeInputWidgets(currentState: State<*>): List<Widget> {

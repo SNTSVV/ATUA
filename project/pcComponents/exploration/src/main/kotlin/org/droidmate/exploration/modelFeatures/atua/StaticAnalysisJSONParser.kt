@@ -802,6 +802,7 @@ class StaticAnalysisJSONParser() {
                 if (key == "mimeType") {
                     mimeType = dataJson[key].toString()
                 }
+
                 if (key == "testData") {
                     testData.addAll(readIntentFilterDataTestInstance(dataJson[key] as JSONArray))
                 }

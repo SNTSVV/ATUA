@@ -6,6 +6,10 @@ class ContextMenu (classType: String,
                    nodeId: String= getNodeId(),
                    runtimeCreated:Boolean,
                    isBaseModel: Boolean): Window(classType,nodeId,runtimeCreated,isBaseModel){
+    override fun copyToRunningModel(): Window {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun getWindowType(): String {
         return "ContextMenu"
     }

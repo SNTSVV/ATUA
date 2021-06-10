@@ -83,8 +83,8 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
      val statementMethodInstrumentationMap = HashMap<String, String>() //statementid -> methodid
      val methodInstrumentationMap= HashMap<String, String>() //method id -> method
 
-    val modifiedMethodsList = ArrayList<String>()
-
+    val modifiedMethodsList = HashSet<String>()
+    val fullyCoveredMethods = HashSet<String>()
     val recentExecutedStatements: ArrayList<String> = ArrayList()
     val recentExecutedMethods: ArrayList<String> = ArrayList()
     val actionTraceCoverage = HashMap<Int,Int>()
@@ -171,7 +171,16 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                 val methodName = getMethodName(it)
                 log.info("New modified method: $methodName")
             }*/
+            recentExecutedMethods.forEach { m->
+                if (!fullyCoveredMethods.contains(m)) {
+                    val methodStatements = statementMethodInstrumentationMap.filter { it.value == m }.keys
+                    val executedStatements = executedStatementsMap.keys().toList().intersect(methodStatements)
+                    if (methodStatements.size == executedStatements.size) {
+                        fullyCoveredMethods.add(m)
+                    }
+                }
 
+            }
             log.info("Current statement coverage: ${"%.2f".format(getCurrentCoverage())}. Encountered statements: ${executedStatementsMap.size}/${statementInstrumentationMap.size}")
             log.info("Current method coverage: ${"%.2f".format(getCurrentMethodCoverage())}. Encountered methods: ${executedMethodsMap.size}/${methodInstrumentationMap.size}")
             log.info("Current modified method coverage: ${"%.2f".format(getCurrentModifiedMethodCoverage())}. Encountered modified methods: ${executedModifiedMethodsMap.size}/${modMethodInstrumentationMap.size}")
