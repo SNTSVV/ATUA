@@ -40,15 +40,18 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.streams.toList
 
-class AutAutModelLoader {
+class AppModelLoader {
     companion object {
         @JvmStatic
         val log: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
 
         fun loadModel(modelPath: Path, autAutMF: ATUAMF) {
-            if (!Files.exists(modelPath))
+            if (!Files.exists(modelPath)) {
+                log.debug("Base model does not exist")
                 return
+            }
             val ewtgFolderPath: Path = getEWTGFolderPath(modelPath)
+            log.info("Loading EWTG")
             loadEWTG(ewtgFolderPath,autAutMF)
             WindowManager.instance.baseModelWindows.forEach {
                 if (!AbstractStateManager.instance.ABSTRACT_STATES.any { it is VirtualAbstractState
@@ -58,6 +61,7 @@ class AutAutModelLoader {
                 }
             }
             val dstgFolderPath: Path = getDSTGFolderPath(modelPath)
+            log.info("Loading DSTG")
             loadDSTG(dstgFolderPath,autAutMF)
         }
 
@@ -118,13 +122,19 @@ class AutAutModelLoader {
         private fun loadDecisionNode(decisionNodeDataFilePath: Path, currentDecisionNode: DecisionNode) {
             val lines: List<String>
             lines = readAllLines(decisionNodeDataFilePath)
+            val parentAttributePaths = HashSet<Pair<UUID,String>>()
             lines.forEach {
-                parseDecisionNode(it,currentDecisionNode)
+                parseDecisionNode(it,currentDecisionNode,parentAttributePaths)
                 //currentDecisionNode.attributePaths.add(Pair(attributePath,attributePath.activity))
+            }
+            parentAttributePaths.forEach {
+                val attributePath = AttributePath.getAttributePathById(it.first,it.second)
+                if (attributePath == null)
+                    throw Exception()
             }
         }
 
-        private fun parseDecisionNode(line: String, currentDecisionNode: DecisionNode): AttributePath {
+        private fun parseDecisionNode(line: String, currentDecisionNode: DecisionNode, parentAttributePaths: HashSet<Pair<UUID,String>>): AttributePath {
             val data = splitCSVLineToField(line)
             val activity = data[0]
             val attributPathUid = UUID.fromString(data[1])
@@ -140,7 +150,9 @@ class AutAutModelLoader {
                 addAttributeIfNotNull(attributeType,value,attributes)
                 index++
             }
-
+            if (parentId != emptyUUID) {
+                parentAttributePaths.add(Pair(parentId,activity))
+            }
             val attributePath = AttributePath(
                    localAttributes = attributes,
                     parentAttributePathId = parentId,
@@ -235,7 +247,7 @@ class AutAutModelLoader {
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
                 )
-                autAutMF.DSTG.add(sourceState,destState,newAbstractTransition)
+                autAutMF.dstg.add(sourceState,destState,newAbstractTransition)
                 createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)
                 AbstractStateManager.instance.addImplicitAbstractInteraction(
                         abstractTransition = newAbstractTransition,
@@ -636,18 +648,20 @@ class AutAutModelLoader {
                 } else
                     null
                 if (widgetId != "null" && widget == null)
-                    throw Exception("Cannot find widget $widgetId in the window $window ")
-                val existingEvent = if (widgetId == "null")
+                    log.warn("Cannot find widget $widgetId in the window $window ")
+                if (widgetId == "null" || widget != null) {
+                    val existingEvent = if (widgetId == "null")
                         window.inputs.find { it.eventType.toString() == eventType }
-                else
-                {
-                    window.inputs.find { it.eventType.toString() == eventType && it.widget == widget }
+                    else
+                    {
+                        window.inputs.find { it.eventType.toString() == eventType && it.widget == widget }
+                    }
+                    val event = if (existingEvent == null) {
+                        createNewEvent(data,widget,window,createdAtRuntime)
+                    } else
+                        existingEvent
+                    updateHandlerAndModifiedMethods(event, data,window,autautMF)
                 }
-                val event = if (existingEvent == null) {
-                    createNewEvent(data,widget,window,createdAtRuntime)
-                } else
-                    existingEvent
-                updateHandlerAndModifiedMethods(event, data,window,autautMF)
             }
         }
 
@@ -707,13 +721,22 @@ class AutAutModelLoader {
                     it.lines().skip(1).toList()
                 }
             }
+            val widgetParentIdMap = HashMap<EWTGWidget,String>()
             lines.forEach { line ->
                 val data = splitCSVLineToField(line)
                 val widgetId = data[0]
                 val widget = window.widgets.find {it.widgetId == widgetId }
                 if (widget == null) {
                     //create new widget
-                    createNewWidget(data, window)
+                    createNewWidget(data, window,widgetParentIdMap)
+                }
+            }
+            window.widgets.forEach {
+                val parentId = widgetParentIdMap[it]
+                if (parentId!=null) {
+                    val parentWidget = window.widgets.find { it.widgetId == parentId }
+                    if (parentWidget!=null)
+                        it.parent = parentWidget
                 }
             }
 
@@ -721,7 +744,6 @@ class AutAutModelLoader {
 
         fun splitCSVLineToField(line: String): List<String> {
             // TODO too slow, reimplement without regex
-
             val data = ArrayList(line.split(";"))
             val result = ArrayList<String>()
             var startQuote = false
@@ -732,7 +754,7 @@ class AutAutModelLoader {
                         result.add(s)
                     } else {
                         if (s.length>1 && s.endsWith("\"")) {
-                            result.add(s)
+                            result.add(s.trim('"'))
                         }else {
                             startQuote = true
                             temp = s
@@ -752,13 +774,14 @@ class AutAutModelLoader {
             return result
         }
 
-        private fun createNewWidget(data: List<String>, window: Window): EWTGWidget {
+        private fun createNewWidget(data: List<String>, window: Window, widgetParentIdMap: HashMap<EWTGWidget,String>): EWTGWidget {
             val widgetId = data[0]
             val resourceIdName = data[1]
             val className = data[2]
+            val parentId = data[3]
             val activity = data[4]
             val createdAtRuntime = data[5].toBoolean()
-            val attributeValuationSetId = if (data[6] == "null") {
+            val structure = if (data[6] == "null") {
                 ""
             } else {
                 data[6]
@@ -771,9 +794,12 @@ class AutAutModelLoader {
                     window = window,
                     contentDesc = "",
                     text = "",
-                    structure = attributeValuationSetId
+                    structure = ""
             )
             widget.modelVersion = ModelVersion.BASE
+            if (parentId!="null") {
+                widgetParentIdMap.put(widget,parentId)
+            }
             return widget
         }
 

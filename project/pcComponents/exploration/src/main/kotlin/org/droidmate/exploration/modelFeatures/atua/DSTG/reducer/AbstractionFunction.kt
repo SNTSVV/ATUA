@@ -166,7 +166,6 @@ class AbstractionFunction (val root: DecisionNode) {
             all.write(header())
             val dumpedAttributeValuationSet = ArrayList<Pair<String, UUID>>()
             currentDecisionNode!!.attributePaths.forEach {
-                dumpedAttributeValuationSet.clear()
                 val activity = it.key
                 val captured = it.value
                 captured.forEach {

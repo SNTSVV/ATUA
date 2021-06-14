@@ -3,7 +3,9 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Interaction
+import org.droidmate.explorationModel.interaction.State
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -23,6 +25,7 @@ class AbstractTransition(
     init {
         source.abstractTransitions.add(this)
     }
+    val inputGUIStates = ArrayList<ConcreteId>()
     val guaranteedAVMs = ArrayList<AttributeValuationMap>() // guaranteedAVMsInDest
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,

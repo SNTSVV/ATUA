@@ -13,6 +13,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -369,10 +370,15 @@ class Helper {
                             false
                     }
                 }
-                matchedEWTGWidgets.addAll(candidates)
+                if (candidates.any{it.structure.isNotBlank()}) {
+                    matchedEWTGWidgets.addAll(candidates.filter { it.structure.isNotBlank()})
+                } else
+                    matchedEWTGWidgets.addAll(candidates)
             }
-            if (matchedEWTGWidgets.isEmpty() && guiWidget.resourceId.isBlank() && guiWidget.contentDesc.isNotBlank()) {
-                val candidates = window.widgets.filter {it.structure.isNotBlank()}.filter { w ->
+            if (matchedEWTGWidgets.isEmpty()
+                    && guiWidget.resourceId.isBlank()
+                    && guiWidget.contentDesc.isNotBlank()) {
+                val candidates = window.widgets.filter {it.structure.isNotBlank() }.filter { w ->
                     w.resourceIdName.isBlank() &&
                     w.structure == guiWidget.deriveStructure() &&
                     w.possibleContentDescriptions.contains(guiWidget.contentDesc)
@@ -391,6 +397,13 @@ class Helper {
                 val candidates = window.widgets.filter { it.structure.isNotBlank() }.filter { w ->
                     w.resourceIdName.isBlank() &&
                     guiWidget.deriveStructure() == w.structure
+                }
+                matchedEWTGWidgets.addAll(candidates)
+            }
+            if (matchedEWTGWidgets.isEmpty() && guiWidget.resourceId.isBlank()) {
+                val candidates = window.widgets.filter { it.structure.isBlank() }.filter { w ->
+                    w.resourceIdName.isBlank() &&
+                            w.className == guiWidget.className
                 }
                 matchedEWTGWidgets.addAll(candidates)
             }
@@ -450,18 +463,19 @@ class Helper {
                     guiWidgetId_ewtgWidgets[guiWidget.id]=newWidget
                 } else {
                     val matchedWidget = matchedEWTGWidgets.first()
-                    matchedWidget.structure = guiWidget.deriveStructure()
-                    val ancestorWidgetMatchedEWTGWidget: Widget? = findAncestorWidgetHavingMatchedEWTGWidget(guiWidget.parentId,guiState,guiWidgetId_ewtgWidgets)
-                    if (ancestorWidgetMatchedEWTGWidget != null) {
-                        val matchedAncestorEWTGWidget = guiWidgetId_ewtgWidgets.get(ancestorWidgetMatchedEWTGWidget.id)
-                        matchedWidget.parent = matchedAncestorEWTGWidget
-                    } else {
-                        val layoutRoots = window.widgets.filter { it.parent == null && it != matchedWidget}
-                        layoutRoots.forEach {
-                            it.parent = matchedWidget
+                    if (matchedWidget.structure.isBlank()) {
+                        matchedWidget.structure = guiWidget.deriveStructure()
+                        val ancestorWidgetMatchedEWTGWidget: Widget? = findAncestorWidgetHavingMatchedEWTGWidget(guiWidget.parentId, guiState, guiWidgetId_ewtgWidgets)
+                        if (ancestorWidgetMatchedEWTGWidget != null) {
+                            val matchedAncestorEWTGWidget = guiWidgetId_ewtgWidgets.get(ancestorWidgetMatchedEWTGWidget.id)
+                            matchedWidget.parent = matchedAncestorEWTGWidget
+                        } else {
+                            val layoutRoots = window.widgets.filter { it.parent == null && it != matchedWidget }
+                            layoutRoots.forEach {
+                                it.parent = matchedWidget
+                            }
                         }
                     }
-
                     if (guiWidget.text.isNotBlank())
                         matchedWidget.possibleTexts.add(guiWidget.text)
                     if (guiWidget.contentDesc.isNotBlank())
@@ -508,8 +522,7 @@ class Helper {
                 val matchingParentWidgets = arrayListOf(guiWidgetId_EWTGWidgets.get(traversingWidget.parentId!!)!!)
                 var totalCorrectnessDistance = 0.0
                 matchingParentWidgets.forEach {
-                    val traversedWidgets = ArrayList<EWTGWidget>()
-                    val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it,traversedWidgets)
+                    val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it, ArrayList(), ArrayList())
                     totalCorrectnessDistance += correctnessDistance
                 }
                 val averageCorrectness = totalCorrectnessDistance/matchingParentWidgets.size
@@ -529,7 +542,7 @@ class Helper {
                 val matchingParentWidgets = arrayListOf(avmEwtgwidgets.get(traversingAVM.parentAttributeValuationMapId)!!)
                 var totalCorrectnessDistance = 0.0
                 matchingParentWidgets.forEach {
-                    val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it, ArrayList())
+                    val correctnessDistance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget.parent!!,it, ArrayList(), ArrayList())
                     totalCorrectnessDistance += correctnessDistance
                 }
                 val averageCorrectness = totalCorrectnessDistance/matchingParentWidgets.size
@@ -539,22 +552,25 @@ class Helper {
         }
 
         private fun calculateEWTGWidgetAncestorCorrectness(ewtgWidget1: EWTGWidget, ewtgWidget2: EWTGWidget,
-                                                           traversedWidgets: ArrayList<EWTGWidget>): Double {
+                                                           traversedWidgets1: ArrayList<EWTGWidget>,traversedWidgets2: ArrayList<EWTGWidget>): Double {
             if (ewtgWidget1 == ewtgWidget2)
                 return 1.0
             if (ewtgWidget1.parent == ewtgWidget1) // avoid loop
                 return Double.POSITIVE_INFINITY
             var distance: Double = Double.POSITIVE_INFINITY
-            if (ewtgWidget1.parent!=null && !traversedWidgets.contains(ewtgWidget1.parent!!)) {
-                traversedWidgets.add(ewtgWidget1.parent!!)
-                distance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget1.parent!!, ewtgWidget2,traversedWidgets)
-                traversedWidgets.remove(ewtgWidget1.parent!!)
+            if (ewtgWidget1.parent!=null && !traversedWidgets1.contains(ewtgWidget1.parent!!)) {
+                traversedWidgets1.add(ewtgWidget1.parent!!)
+                distance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget1.parent!!, ewtgWidget2,traversedWidgets1,traversedWidgets2)
+                traversedWidgets1.remove(ewtgWidget1.parent!!)
             }
             if (distance == Double.POSITIVE_INFINITY && ewtgWidget2.parent!=null) {
                 if (ewtgWidget2.parent == ewtgWidget2)
                     return distance
-                distance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget2.parent!!,ewtgWidget1,traversedWidgets)
-
+                if (!traversedWidgets2.contains(ewtgWidget2.parent!!)) {
+                    traversedWidgets2.add(ewtgWidget2.parent!!)
+                    distance = calculateEWTGWidgetAncestorCorrectness(ewtgWidget2.parent!!, ewtgWidget1, traversedWidgets2,traversedWidgets1)
+                    traversedWidgets2.remove(ewtgWidget2.parent!!)
+                }
             }
             return 1.0+distance
         }
@@ -670,7 +686,7 @@ class Helper {
                 return qualifiedResourceId
             }
             val resourceIdPackage = qualifiedResourceId.substring(0, qualifiedResourceId.indexOf("/"))
-            if (resourceIdPackage != appPackage) {
+            if (!resourceIdPackage.startsWith(appPackage)) {
                 return qualifiedResourceId
             } else {
                 val unqualifiedResourceId = qualifiedResourceId.substring(qualifiedResourceId.indexOf("/") + 1)

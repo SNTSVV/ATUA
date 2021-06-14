@@ -2,6 +2,7 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
+import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
@@ -189,8 +190,25 @@ class ExerciseTargetComponentTask private constructor(
                 return randomExplorationTask.chooseAction(currentState)
             }*/
         }
-
-
+        if (currentState.widgets.any { it.isKeyboard }) {
+            if (random.nextBoolean()) {
+                return GlobalAction(actionType = ActionType.CloseKeyboard)
+            }
+            if (random.nextBoolean()) {
+                return doRandomKeyboard(currentState, null)!!
+            }
+            //find search button
+            val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
+            if (searchButtons.isNotEmpty()) {
+                //Give a 50/50 chance to click on the search button
+                if (random.nextBoolean()) {
+                    dataFilled = false
+                    val randomButton = searchButtons.random()
+                    log.info("Widget: $random")
+                    return randomButton.click()
+                }
+            }
+        }
        /* if (randomRefillingData
                 && originalEventList.size > eventList.size
                 && fillDataTask.isAvailable(currentState)) {

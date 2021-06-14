@@ -25,7 +25,7 @@ class AutAutModelOutput {
             AbstractStateManager.instance.dump(dstgFolder)
             ATUAMF.log.info("Dumping abstract states transition graph...")
             File(dstgFolder.resolve("DSTG.csv").toUri()).bufferedWriter().use { all ->
-                autautMF.DSTG.dump(autautMF.statementMF!!, all)
+                autautMF.dstg.dump(autautMF.statementMF!!, all)
             }
         }
 

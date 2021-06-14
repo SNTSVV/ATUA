@@ -113,6 +113,13 @@ class EWTGDiff private constructor(){
         }
         if (widgetDifferentSets.containsKey("DeletionSet")) {
             for (deleted in (widgetDifferentSets.get("DeletionSet")!! as DeletionSet<EWTGWidget>).deletedElements) {
+                deleted.window.widgets.remove(deleted)
+                val parent = deleted.parent
+                if (parent!=null)
+                    parent.children.remove(deleted)
+                deleted.children.forEach {
+                    it.parent = parent
+                }
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                     val toDeleteAvms = it.EWTGWidgetMapping.filter { it.value == deleted }.keys
                     toDeleteAvms.forEach { avm->
@@ -128,6 +135,15 @@ class EWTGDiff private constructor(){
                 replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
                     it.widget = replacement.new
                 }
+                // update EWTGWidget structure
+                replacement.old.children.forEach {
+                    it.parent = replacement.new
+                }
+                val parent = replacement.old.parent
+                if (parent!=null) {
+                    parent.children.remove(replacement.old)
+                    replacement.new.parent = parent
+                }
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                     val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.old }.keys
                     toBeReplacedAvms.forEach { avm->
@@ -141,6 +157,15 @@ class EWTGDiff private constructor(){
             for (replacement in (widgetDifferentSets.get("RetainerSet")!! as RetainerSet<EWTGWidget>).replacedElements) {
                 replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
                     it.widget = replacement.new
+                }
+                // update EWTGWidget structure
+                replacement.old.children.forEach {
+                    it.parent = replacement.new
+                }
+                val parent = replacement.old.parent
+                if (parent!=null) {
+                    parent.children.remove(replacement.old)
+                    replacement.new.parent = parent
                 }
                 AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                     val toBeReplacedAvms = it.EWTGWidgetMapping.filter { it.value == replacement.old }.keys

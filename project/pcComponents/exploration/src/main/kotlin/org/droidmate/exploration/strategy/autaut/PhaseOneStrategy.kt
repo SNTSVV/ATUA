@@ -295,13 +295,15 @@ class PhaseOneStrategy(
                 var coverCriteriaCount = 0
             if (autautMF.allTargetWindow_ModifiedMethods[it]!!.all { autautMF.allModifiedMethod[it] == true }
                     || untriggeredTargetInputs.filter { input -> input.sourceWindow == it}.isEmpty()) {
+                // all modified methods that could be triggered by this window are covered
+                // or all target inputs have been exercised
                 coverCriteriaCount++
             }
-            val untriggeredhandlers = autautMF.untriggeredTargetHandlers.intersect(
+            val untriggeredhandlers = autautMF.untriggeredTargetHiddenHandlers.intersect(
                     autautMF.windowHandlersHashMap[it] ?: emptyList()
             )
-            val untriggeredhandlernames = untriggeredhandlers.map { autautMF.statementMF!!.methodInstrumentationMap.get(it) }
             if (untriggeredhandlers.isEmpty()) {
+                // all target hidden handlers are triggered
                 coverCriteriaCount++
             }
             if (coverCriteriaCount==2) {
@@ -872,7 +874,7 @@ class PhaseOneStrategy(
         if (isTargetAbstractState(currentAbstractState)) {
             return true
         }
-        if (autautMF.untriggeredTargetHandlers.intersect(
+        if (autautMF.untriggeredTargetHiddenHandlers.intersect(
                         autautMF.windowHandlersHashMap[currentAbstractState.window] ?: emptyList()
                 ).isNotEmpty()) {
             if (hasBudgetLeft(currentAbstractState.window))

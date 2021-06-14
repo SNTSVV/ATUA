@@ -70,10 +70,11 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         }*/
         var chosenAction: ExplorationAction
         ExplorationTrace.widgetTargets.clear()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(eContext.getCurrentState())
+        val currentState = eContext.getCurrentState()
+        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (currentAbstractState == null) {
-            if (eContext.isEmpty()) {
-                return GlobalAction(ActionType.FetchGUI)
+            if (eContext.isEmpty() || currentState == eContext.model.emptyState) {
+                return eContext.launchApp()
             }
             log.info("Cannot retrieve current abstract state.")
             return eContext.resetApp()

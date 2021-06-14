@@ -208,18 +208,15 @@ class RandomExplorationTask constructor(
             atuaMF.getAbstractState(atuaMF.appPrevState!!) ?: currentAbstractState
         else
             currentAbstractState
-        if (isCameraOpening(currentState)) {
-            return dealWithCamera(currentState)
-        }
-        isClickedShutterButton = false
         if (goToLockedWindowTask != null) {
             // should go back to target Window
             //reset data filling
             if (!goToLockedWindowTask!!.isTaskEnd(currentState)) {
-                return goToLockedWindowTask!!.chooseAction(currentState)
+                if (recentGoToExploreState || lockedWindow != currentAbstractState.window)
+                    return goToLockedWindowTask!!.chooseAction(currentState)
             }
         } else {
-            if (lockedWindow != null && lockedWindow != currentAbstractState.window) {
+            if (lockedWindow != null && lockedWindow != currentAbstractState.window && !isCameraOpening(currentState)) {
                 dataFilled = false
                 if (!currentAbstractState.isRequireRandomExploration() || actionOnOutOfAppCount >= 5) {
                     goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
@@ -240,6 +237,10 @@ class RandomExplorationTask constructor(
             }
         }
         goToLockedWindowTask = null
+        if (isCameraOpening(currentState)) {
+            return dealWithCamera(currentState)
+        }
+        isClickedShutterButton = false
         val lastActionType = autautStrategy.eContext.getLastActionType()
 /*        if (lastActionType != "ResetApp" && lastActionType != "LaunchApp") {
             val allActions = autautStrategy.eContext.explorationTrace.getActions()
@@ -253,25 +254,19 @@ class RandomExplorationTask constructor(
             if (random.nextBoolean()) {
                 return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
-            val actionableWidgets = Helper.getActionableWidgetsWithoutKeyboard(currentState)
-            if (actionableWidgets.isEmpty()) {
-                //if keyboard is openning but there 's no special actions
-                //give a 50/50 chance to do a random click on keyboard
+            if (random.nextBoolean()) {
+                return doRandomKeyboard(currentState, null)!!
+            }
+            //find search button
+            val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
+            if (searchButtons.isNotEmpty()) {
+                //Give a 50/50 chance to click on the search button
                 if (random.nextBoolean()) {
-                    return doRandomKeyboard(currentState, null)!!
+                    dataFilled = false
+                    val randomButton = searchButtons.random()
+                    log.info("Widget: $random")
+                    return randomButton.click()
                 }
-                //find search button
-                val searchButtons = currentState.visibleTargets.filter { it.isKeyboard }.filter { it.contentDesc.toLowerCase().contains("search") }
-                if (searchButtons.isNotEmpty()) {
-                    //Give a 50/50 chance to click on the search button
-                    if (random.nextBoolean()) {
-                        dataFilled = false
-                        val randomButton = searchButtons.random()
-                        log.info("Widget: $random")
-                        return randomButton.click()
-                    }
-                }
-                return GlobalAction(actionType = ActionType.CloseKeyboard)
             }
         }
         if (isTrapActivity(currentAbstractState)) {

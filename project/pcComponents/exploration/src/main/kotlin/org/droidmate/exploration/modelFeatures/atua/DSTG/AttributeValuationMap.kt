@@ -1,6 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
-import org.droidmate.exploration.modelFeatures.atua.AutAutModelLoader
+import org.droidmate.exploration.modelFeatures.atua.AppModelLoader
 import org.droidmate.exploration.modelFeatures.atua.EWTG.DescendantLayoutDirection
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.explorationModel.emptyUUID
@@ -475,7 +475,7 @@ class AttributeValuationMap {
     }
 
     fun loadDumpedString(line: String) {
-        val splites = AutAutModelLoader.splitCSVLineToField(line)
+        val splites = AppModelLoader.splitCSVLineToField(line)
         val avmId = splites[0]
         val parentAVMId = splites[1]
         var index = 2

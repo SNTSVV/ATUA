@@ -71,8 +71,12 @@ object DefaultStrategies: Logging {
 					val closeButton = widgets.find { it.resourceId == "android:id/aerr_close" }
 					if (closeButton != null) {
 						closeButton.click()
-					} else
+					} else if (widgets.any { it.canInteractWith }){
+						widgets.filter { it.canInteractWith }.random().click()
+					}
+					else {
 						GlobalAction(ActionType.FetchGUI) // try to refetch after waiting for some time
+					}
 				}
 				else -> explorationContext.resetApp()
 			}

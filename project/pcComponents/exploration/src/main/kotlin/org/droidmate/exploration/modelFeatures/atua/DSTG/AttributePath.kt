@@ -15,14 +15,9 @@ data class AttributePath (
         val activity: String
         ){
 
-    val attributePathId: UUID by lazy { lazyIds.value }
-
-    protected open val lazyIds: Lazy<UUID> =
-            lazy {
-                listOf<Any>(parentAttributePathId,localAttributes.toSortedMap().toString(),childAttributePathIds.sorted().toString()).joinToString(separator = "<;>").toUUID()
-            }
-
+    val attributePathId: UUID
     init {
+        attributePathId = listOf<Any>(parentAttributePathId,localAttributes.toSortedMap().toString(),childAttributePathIds.sorted().toString()).joinToString(separator = "<;>").toUUID()
         if (!allAttributePaths.containsKey(activity)) {
             allAttributePaths.put(activity, HashMap())
         }
@@ -30,7 +25,6 @@ data class AttributePath (
             allAttributePaths.get(activity)!!.put(attributePathId, this)
         }
     }
-
 
     override fun equals(other: Any?): Boolean {
         if (other !is AttributePath)
@@ -95,10 +89,6 @@ data class AttributePath (
         dumpedAttributeValuationSets.add(Pair(activity,attributePathId))
         if (parentAttributePathId!= emptyUUID && !dumpedAttributeValuationSets.contains(Pair(activity,parentAttributePathId))) {
             val parentAttributePath = getAttributePathById(parentAttributePathId,activity)
-            if (parentAttributePath==null)
-            {
-                throw Exception("")
-            }
             parentAttributePath?.dump(activity, dumpedAttributeValuationSets, bufferedWriter,capturedAttributePaths)
         }
         bufferedWriter.newLine()

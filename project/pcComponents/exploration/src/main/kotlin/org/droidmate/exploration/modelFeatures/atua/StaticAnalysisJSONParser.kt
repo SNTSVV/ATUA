@@ -51,7 +51,7 @@ class StaticAnalysisJSONParser() {
                 readWindowHandlers(jObj,atuaMF.windowHandlersHashMap,atuaMF.wtg,atuaMF.statementMF!!)
                 ATUAMF.log.debug("Reading modified method invocation")
                 readModifiedMethodTopCallers(jObj, atuaMF.modifiedMethodTopCallersMap,atuaMF.statementMF!!,
-                        atuaMF.allTargetHandlers,atuaMF.windowHandlersHashMap,atuaMF.allTargetWindow_ModifiedMethods,atuaMF.untriggeredTargetHandlers)
+                        atuaMF.allTargetHandlers,atuaMF.windowHandlersHashMap,atuaMF.allTargetWindow_ModifiedMethods,atuaMF.untriggeredTargetHiddenHandlers)
                 readModifiedMethodInvocation(jObj, atuaMF.wtg, atuaMF.allTargetInputs,atuaMF.allTargetStaticWidgets,
                         atuaMF.statementMF!!,atuaMF.allTargetWindow_ModifiedMethods,atuaMF.targetItemEvents)
                 readUnreachableModfiedMethods(jObj, atuaMF.unreachableModifiedMethods )

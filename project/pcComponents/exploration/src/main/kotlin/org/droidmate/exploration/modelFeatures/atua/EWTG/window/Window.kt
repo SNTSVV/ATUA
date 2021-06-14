@@ -18,7 +18,6 @@ abstract class Window(var classType: String,
     //var activityClass = ""
     val widgets = arrayListOf<EWTGWidget>()
     val inputs = arrayListOf<Input>()
-    val widgetState = HashMap<EWTGWidget, Boolean>()
     val mappedStates = arrayListOf<AbstractState>()
     var portraitDimension: Rectangle = Rectangle.empty()
     var landscapeDimension: Rectangle = Rectangle.empty()
@@ -46,14 +45,7 @@ abstract class Window(var classType: String,
 
     fun dumpStructure(windowsFolder: Path) {
         val obsoleteWidgets = ArrayList<EWTGWidget>()
-        val visualizedWidgets = ArrayList<EWTGWidget>()
-        AbstractStateManager.instance.ABSTRACT_STATES.forEach {
-            it.EWTGWidgetMapping.map { it.value }.forEach {
-                if (!visualizedWidgets.contains(it)) {
-                    visualizedWidgets.add(it)
-                }
-            }
-        }
+        val visualizedWidgets = WindowManager.instance.guiWidgetEWTGWidgetMappingByWindow.get(this)?.values?.distinct()?: emptyList()
         this.widgets.filter { !visualizedWidgets.contains(it) }.forEach {
             obsoleteWidgets.add(it)
         }

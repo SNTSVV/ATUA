@@ -51,13 +51,13 @@ class PathFindingHelper {
                             >?
                     >()
             val targetTraces = if (pathType == PathType.TRACE) {
-                val edgesToTarget = autautMF.DSTG.edges().filter { it.label.dest == finalTarget }
+                val edgesToTarget = autautMF.dstg.edges().filter { it.label.dest == finalTarget }
                 edgesToTarget.map { it.label.tracing }.flatten().map { it.first }.distinct()
             } else {
                 emptyList()
             }
             val inEdgesTrace =  if (pathType == PathType.TRACE) {
-                val edgesToTarget = autautMF.DSTG.edges().filter { it.label.dest == finalTarget }
+                val edgesToTarget = autautMF.dstg.edges().filter { it.label.dest == finalTarget }
                 edgesToTarget.map { it.label.tracing }.flatten()
             } else {
                 emptyList()
@@ -198,7 +198,7 @@ class PathFindingHelper {
                                            pathType: PathType,
                                            targetTraces: List<Int>
         ) {
-            val graph = autautMF.DSTG
+            val graph = autautMF.dstg
             val nextTransitions = ArrayList<Int>()
             if (prevEdgeIds.isEmpty()) {
                 if (depth == 0) {
@@ -672,7 +672,7 @@ class PathFindingHelper {
                 val destination = transition.dest
                 fullPath.path.put(transitionId,transition)
                 //fullPath.edgeConditions[edge] = pathTracking[backwardNode]!!.third
-                val graphEdge = autautMF.DSTG.edge(source,destination,transition)
+                val graphEdge = autautMF.dstg.edge(source,destination,transition)
                 path.removeFirst()
                 transitionId++
             }
