@@ -23,7 +23,7 @@ open class Input (
 
 
     init {
-        allStaticEvents.add(this)
+        allInputs.add(this)
         sourceWindow.inputs.add(this)
     }
 
@@ -63,7 +63,7 @@ open class Input (
         return "$sourceWindow-->$eventType-->[$widget]"
     }
     companion object{
-        val allStaticEvents = arrayListOf<Input>()
+        val allInputs = arrayListOf<Input>()
         fun isNoWidgetEvent(action: String): Boolean {
             return (action == EventType.implicit_back_event.name
                     || action == EventType.implicit_rotate_event.name
@@ -122,7 +122,7 @@ open class Input (
                              widget: EWTGWidget?,
                              sourceWindow: Window,
                              createdAtRuntime: Boolean=false): Input {
-            var event = Input.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }
+            var event = allInputs.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }
             //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
             if (event != null) {
                 return event

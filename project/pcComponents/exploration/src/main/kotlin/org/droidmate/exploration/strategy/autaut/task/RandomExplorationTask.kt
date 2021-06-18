@@ -436,7 +436,7 @@ class RandomExplorationTask constructor(
                     }.toHashSet()
                     if (targetStates.isNotEmpty()) {
                         goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = autautStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
-                        if (goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, true, true)) {
+                        if (goToLockedWindowTask!!.isAvailable(currentState, currentAbstractState.window, true, false, true)) {
                             recentGoToExploreState = true
                             goToLockedWindowTask!!.initialize(currentState)
                             return goToLockedWindowTask!!.chooseAction(currentState)

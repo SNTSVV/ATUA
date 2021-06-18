@@ -18,7 +18,6 @@ import org.droidmate.exploration.strategy.autaut.task.AbstractStrategyTask
 import org.droidmate.explorationModel.interaction.State
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.math.exp
 
 abstract class AbstractPhaseStrategy(
         val atuaTestingStrategy: ATUATestingStrategy,
@@ -28,7 +27,7 @@ abstract class AbstractPhaseStrategy(
         val useCoordinateClicks: Boolean
 ) {
     lateinit var phaseState: PhaseState
-    lateinit var autautMF: ATUAMF
+    lateinit var atuaMF: ATUAMF
 
     var strategyTask: AbstractStrategyTask? = null
     var fullControl: Boolean = false
@@ -63,12 +62,12 @@ abstract class AbstractPhaseStrategy(
                         || it.isAppHasStoppedDialogBox
                         || it.attributeValuationMaps.isEmpty()
                         || it.guiStates.isEmpty()
-                        || it.guiStates.all { autautMF.actionCount.getUnexploredWidget(it).isEmpty() }
+                        || it.guiStates.all { atuaMF.actionCount.getUnexploredWidget(it).isEmpty() }
                 }
         return runtimeAbstractStates
     }
     fun hasUnexploreWidgets(currentState: State<*>): Boolean {
-        return autautMF.actionCount.getUnexploredWidget(currentState).isNotEmpty()
+        return atuaMF.actionCount.getUnexploredWidget(currentState).isNotEmpty()
     }
     open fun getPathsToWindowToExplore(currentState: State<*>, targetWindow: Window, pathType: PathFindingHelper.PathType, explore: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
@@ -81,13 +80,14 @@ abstract class AbstractPhaseStrategy(
                     && (it is VirtualAbstractState || it.attributeValuationMaps.isNotEmpty())
         }.toHashSet()
         if (explore) {
-            targetStates.removeIf { it is VirtualAbstractState && it.getUnExercisedActions(null,autautMF).isEmpty() }
+            targetStates.removeIf { it is VirtualAbstractState && it.getUnExercisedActions(null,atuaMF).isEmpty() }
             if (targetStates.isEmpty()) {
                 targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
                     it.window == targetWindow
                             && it != currentAbstractState
-                            && it.guiStates.any { autautMF.actionCount.getUnexploredWidget(it).isNotEmpty() }
+                            && it.guiStates.any { atuaMF.actionCount.getUnexploredWidget(it).isNotEmpty() }
                             && it !is VirtualAbstractState
+                            && it.getUnExercisedActions(null,atuaMF).isNotEmpty()
                 }.toHashSet()
             }
         }
@@ -199,7 +199,7 @@ abstract class AbstractPhaseStrategy(
                     , allPaths = transitionPaths
                     , shortest = shortest
                     , pathCountLimitation = pathCountLimitation
-                    , autautMF = autautMF
+                    , autautMF = atuaMF
                     , pathType = pathType)
             //windowStates.remove(abstractState)
             candidateStates.remove(abstractState)

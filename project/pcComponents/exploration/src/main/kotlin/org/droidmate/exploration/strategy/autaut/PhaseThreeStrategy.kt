@@ -69,18 +69,19 @@ class PhaseThreeStrategy(
     var needResetApp = false
     init {
         phaseState = PhaseState.P3_INITIAL
-        autautMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
+        atuaMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         statementMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
-        autautMF.updateMethodCovFromLastChangeCount = 0
-        autautMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
+        atuaMF.updateMethodCovFromLastChangeCount = 0
+        atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
             val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = autautMF.allTargetInputs.filter {it.sourceWindow == window}
+                targetWindowsCount.put(window, 0)
+                /*val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {
                     targetWindowsCount.put(window, 0)
-                }
+                }*/
             }
         }
 
@@ -111,14 +112,14 @@ class PhaseThreeStrategy(
 
     override fun hasNextAction(currentState: State<*>): Boolean {
 
-        if (autautMF.lastUpdatedStatementCoverage == 1.0) {
+        if (atuaMF.lastUpdatedStatementCoverage == 1.0) {
             return false
         }
-        autautMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher
+        atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher
                 && !targetWindowsCount.containsKey(it)}.forEach {window ->
             val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = autautMF.allTargetInputs.filter {it.sourceWindow == window}
+                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {
@@ -127,15 +128,15 @@ class PhaseThreeStrategy(
             }
         }
         targetWindowsCount.entries.removeIf {
-            !autautMF.allTargetWindow_ModifiedMethods.containsKey(it.key)
+            !atuaMF.allTargetWindow_ModifiedMethods.containsKey(it.key)
         }
         return true
     }
 
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
-        if (autautMF == null)
+        if (atuaMF == null)
         {
-            autautMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
+            atuaMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
         }
         var chosenAction:ExplorationAction
 
@@ -144,7 +145,7 @@ class PhaseThreeStrategy(
                 && needReset(currentState)) {
             return eContext.resetApp()
         }
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
         if (targetWindow == null) {
             while (targetEvent==null) {
                 selectTargetWindow(currentState, 0, 0)
@@ -185,7 +186,7 @@ class PhaseThreeStrategy(
         }
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).fillingData != true
-                && (strategyTask as RandomExplorationTask).goToLockedWindowTask != null
+                && (strategyTask as RandomExplorationTask).goToLockedWindowTask == null
                 && phaseState == PhaseState.P3_EXPLORATION_IN_RELATED_WINDOW
                 && isCountAction(chosenAction)) {
             randomBudgetLeft--
@@ -203,8 +204,8 @@ class PhaseThreeStrategy(
         if (targetWindow==null)
             return emptyList()
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbState = autautMF.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
+        val currentAbState = atuaMF.getAbstractState(currentState)
+        val prevAbstractState = AbstractStateManager.instance.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
         val runtimeAbstractStates = getUnexhaustedExploredAbstractState(currentState)
@@ -212,7 +213,7 @@ class PhaseThreeStrategy(
 
         val stateByActionCount = HashMap<AbstractState,Double>()
         abstratStateCandidates.forEach {
-            val weight =  it.computeScore(autautMF)
+            val weight =  it.computeScore(atuaMF)
             if (weight>0.0) {
                 stateByActionCount.put(it, weight)
             }
@@ -226,7 +227,7 @@ class PhaseThreeStrategy(
 
     override fun getPathsToTargetWindows(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(autautMF.appPrevState!!)
+        val prevAbstractState = AbstractStateManager.instance.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState==null)
             return emptyList()
 
@@ -264,7 +265,7 @@ class PhaseThreeStrategy(
         val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow && targetEvent!=null)
         {
-            val abstractActions = autautMF.validateEvent(targetEvent!!,currentState)
+            val abstractActions = atuaMF.validateEvent(targetEvent!!,currentState)
             if (abstractActions.isNotEmpty())
             {
                 targetEvents.put(targetEvent!!, abstractActions)
@@ -277,12 +278,12 @@ class PhaseThreeStrategy(
     var exercisedRelatedWindow: Boolean = false
     fun chooseTask(eContext: ExplorationContext<*, *, *>, currentState: State<*>){
         log.debug("Choosing Task")
-        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, atuaTestingStrategy,delay, useCoordinateClicks)
+        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val randomExplorationTask = RandomExplorationTask.getInstance(atuaMF, atuaTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
-        val currentAppState = autautMF!!.getAbstractState(currentState)!!
+        val currentAppState = atuaMF!!.getAbstractState(currentState)!!
         if (windowBudgetLeft < 0) {
             targetEvent = null
             while (targetEvent==null) {
@@ -684,8 +685,8 @@ class PhaseThreeStrategy(
             windowBudgetLeft = targetInputScores.size
         else
         {
-            val undiscoverdTargetHiddenHandlers = autautMF.untriggeredTargetHiddenHandlers.filter {
-                autautMF.windowHandlersHashMap.get(targetWindow!!)?.contains(it) ?: false
+            val undiscoverdTargetHiddenHandlers = atuaMF.untriggeredTargetHiddenHandlers.filter {
+                atuaMF.windowHandlersHashMap.get(targetWindow!!)?.contains(it) ?: false
             }
             windowBudgetLeft = undiscoverdTargetHiddenHandlers.size
         }
@@ -779,7 +780,7 @@ class PhaseThreeStrategy(
     fun selectTargetStaticEvent(currentState: State<*>){
         val windowEvents = getWindowAvailableTargetInputs()
         val leastExerciseEventsCount = windowEvents
-                .minBy { it.value }!!.value
+                .minBy { it.value }?.value?: emptyMap<Input,Int>()
         val leastExerciseEvents = windowEvents.filter { it.value == leastExerciseEventsCount }
         val leastExerciseEventScores = targetInputScores.filter { leastExerciseEvents.containsKey(it.key) }
         if (leastExerciseEventScores.isNotEmpty()) {
@@ -796,7 +797,7 @@ class PhaseThreeStrategy(
         budgetCalculated = false
         randomBudgetLeft = -1
         windowBudgetLeft--
-        autautMF.updateMethodCovFromLastChangeCount = 0
+        atuaMF.updateMethodCovFromLastChangeCount = 0
 
     }
 
@@ -865,8 +866,8 @@ class PhaseThreeStrategy(
 
     fun computeEventWindowCorrelation() {
         eventWindowCorrelation.clear()
-        val eventsTerms = autautMF!!.accumulateEventsDependency()
-        val ir = InformationRetrieval<Window,String>(autautMF!!.windowTermsHashMap)
+        val eventsTerms = atuaMF!!.accumulateEventsDependency()
+        val ir = InformationRetrieval<Window,String>(atuaMF!!.windowTermsHashMap)
         eventsTerms.forEach {
             val result = ir.searchSimilarDocuments(it.value,10)
             val correlation = HashMap<Window, Double>()
@@ -883,12 +884,12 @@ class PhaseThreeStrategy(
         modifiedMethodTriggerCount.clear()
         appStateModifiedMethodMap.clear()
         modifiedMethodWeights.clear()
-        val allTargetInputs = ArrayList(autautMF.allTargetInputs)
+        val allTargetInputs = ArrayList(atuaMF.allTargetInputs)
 
         val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {
             val methodName = statementMF!!.getMethodName(it)
-            if (!autautMF.unreachableModifiedMethods.contains(methodName))
+            if (!atuaMF.unreachableModifiedMethods.contains(methodName))
             {
                 modifiedMethodTriggerCount.put(it,0)
                 val statements = statementMF!!.getMethodStatements(it)
@@ -908,7 +909,7 @@ class PhaseThreeStrategy(
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<AbstractState, AbstractTransition>>()
         appStateList.forEach { appState ->
-            edges.addAll(autautMF.dstg.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
+            edges.addAll(atuaMF.dstg.edges(appState).filter { it.label.isExplicit() || it.label.fromWTG })
             appStateModifiedMethodMap.put(appState, HashSet())
             appState.abstractTransitions.map { it.modifiedMethods}.forEach { hmap ->
                 hmap.forEach { m, v ->
@@ -924,7 +925,7 @@ class PhaseThreeStrategy(
             val coveredMethods = edge.label.methodCoverage
             if (coveredMethods!=null)
                 coveredMethods.forEach {
-                    if (autautMF.statementMF!!.isModifiedMethod(it)) {
+                    if (atuaMF.statementMF!!.isModifiedMethod(it)) {
                         if (modifiedMethodTriggerCount.containsKey(it)) {
                             modifiedMethodTriggerCount[it] = modifiedMethodTriggerCount[it]!! + edge.label.interactions.size
                         }
@@ -993,9 +994,9 @@ class PhaseThreeStrategy(
 
             }
 
-            if (autautMF.windowHandlersHashMap.containsKey(n)) {
-                autautMF.windowHandlersHashMap[n]!!.forEach { handler ->
-                    val methods = autautMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
+            if (atuaMF.windowHandlersHashMap.containsKey(n)) {
+                atuaMF.windowHandlersHashMap[n]!!.forEach { handler ->
+                    val methods = atuaMF.modifiedMethodTopCallersMap.filter { it.value.contains(handler) }.map { it.key }
                     modifiedMethods.addAll(methods)
                 }
             }

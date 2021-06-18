@@ -2,7 +2,6 @@ package org.droidmate.exploration.strategy.autaut.task
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
-import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.rotate
@@ -242,7 +241,7 @@ open class GoToAnotherWindow constructor(
              }
 
              if (expectedAbstractState1 !is VirtualAbstractState) {
-                 if (expectedAbstractState1!!.isMenusOpened != currentAbState.isMenusOpened) {
+                 if (expectedAbstractState1!!.isOpeningMenus != currentAbState.isOpeningMenus) {
                      tmpPathTraverser.next()
                      continue
                  }

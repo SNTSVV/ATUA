@@ -87,8 +87,8 @@ fun UiElementPropertiesI.click(): ExplorationAction = (visibleAreas.firstCenter(
 		?: visibleBounds.center).let{ (x,y) -> Click(x,y) }
 
 fun Widget.clickCoordinate(): Pair<Int, Int> {
-	if (visibleAreas.firstCenter()!=null)
-		return visibleAreas.firstCenter()!!
+	/*if (visibleAreas.firstCenter()!=null)
+		return visibleAreas.firstCenter()!!*/
 	if (visibleBounds.height==0 || visibleBounds.width==0)
 		return boundaries.center
 	return visibleBounds.center

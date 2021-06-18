@@ -63,13 +63,13 @@ class PhaseOneStrategy(
     var delayCheckingBlockStates = 0
     init {
         phaseState = PhaseState.P1_INITIAL
-        autautMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
-        attemps = autautMF.allTargetWindow_ModifiedMethods.size
-        autautMF.allTargetWindow_ModifiedMethods.keys.forEach {
+        atuaMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
+        attemps = atuaMF.allTargetWindow_ModifiedMethods.size
+        atuaMF.allTargetWindow_ModifiedMethods.keys.forEach {
                 targetWindowTryCount.put(it,0)
         }
 
-        autautMF.allTargetInputs.forEach {
+        atuaMF.allTargetInputs.forEach {
             untriggeredTargetInputs.add(it)
         }
     }
@@ -104,10 +104,10 @@ class PhaseOneStrategy(
         //For debug, end phase one after 100 actions
         /*if (autAutTestingStrategy.eContext.explorationTrace.getActions().size > 100)
             return true*/
-        if (autautMF.lastUpdatedStatementCoverage == 1.0) {
+        if (atuaMF.lastUpdatedStatementCoverage == 1.0) {
             return false
         }
-        if (autautMF.appPrevState!!.isRequestRuntimePermissionDialogBox
+        if (atuaMF.appPrevState!!.isRequestRuntimePermissionDialogBox
                 && atuaTestingStrategy.eContext.getLastActionType() != "ResetApp") {
             if (recentTargetEvent!=null) {
                 untriggeredTargetInputs.add(recentTargetEvent!!)
@@ -123,7 +123,7 @@ class PhaseOneStrategy(
         updateUnreachableWindows(currentState)
         if (forceEnd)
             return false
-        val currentAbstractState = autautMF.getAbstractState(currentState)
+        val currentAbstractState = atuaMF.getAbstractState(currentState)
         if (currentAbstractState!=null && (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp))
             return true
         val remaingTargetWindows = targetWindowTryCount.filterNot{fullyCoveredWindows.contains(it.key) || outofbudgetWindows.contains(it.key)}
@@ -150,14 +150,14 @@ class PhaseOneStrategy(
     }
 
     private fun updateReachedWindows(currentState: State<*>) {
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
         if (!reachedWindow.contains(currentAppState.window)) {
             reachedWindow.add(currentAppState.window)
         }
     }
 
     private fun updateUnreachableWindows(currentState: State<*>) {
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
         if (unreachableWindows.contains(currentAppState.window)) {
             unreachableWindows.remove(currentAppState.window)
         }
@@ -182,7 +182,7 @@ class PhaseOneStrategy(
 
     private fun updateBudgetForWindow(currentState: State<*>) {
         //val currentAppState = autautMF.getAbstractState(currentState)!!
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
         val window = currentAppState.window
         if (window is Launcher) {
             return
@@ -271,11 +271,11 @@ class PhaseOneStrategy(
             if (windowRandomExplorationBudgetUsed[it.key]!! > windowRandomExplorationBudget[it.key]!!) {
               outofbudgetWindows.add(it.key)
               if (it.key is Activity) {
-                  val optionsMenu = autautMF.wtg.getOptionsMenu(it.key)
+                  val optionsMenu = atuaMF.wtg.getOptionsMenu(it.key)
                   if (optionsMenu!=null) {
                       outofbudgetWindows.add(optionsMenu)
                   }
-                  val dialogs = autautMF.wtg.getDialogs(it.key)
+                  val dialogs = atuaMF.wtg.getDialogs(it.key)
                   outofbudgetWindows.addAll(dialogs)
               }
           }/*else {
@@ -289,19 +289,23 @@ class PhaseOneStrategy(
 
     private fun updateTargetWindows() {
         targetWindowTryCount.entries.removeIf {
-            !autautMF.allTargetWindow_ModifiedMethods.containsKey(it.key)
+            !atuaMF.allTargetWindow_ModifiedMethods.containsKey(it.key)
         }
         targetWindowTryCount.keys.filterNot { fullyCoveredWindows.contains(it) }.forEach {
                 var coverCriteriaCount = 0
-            if (autautMF.allTargetWindow_ModifiedMethods[it]!!.all { autautMF.allModifiedMethod[it] == true }
+            if (atuaMF.allTargetWindow_ModifiedMethods[it]!!.all { atuaMF.allModifiedMethod[it] == true }
                     || untriggeredTargetInputs.filter { input -> input.sourceWindow == it}.isEmpty()) {
                 // all modified methods that could be triggered by this window are covered
                 // or all target inputs have been exercised
                 coverCriteriaCount++
             }
-            val untriggeredhandlers = autautMF.untriggeredTargetHiddenHandlers.intersect(
-                    autautMF.windowHandlersHashMap[it] ?: emptyList()
+            val untriggeredhandlers = atuaMF.untriggeredTargetHiddenHandlers.intersect(
+                    atuaMF.windowHandlersHashMap[it] ?: emptyList()
             )
+
+            // debug
+            val untriggeredHandlerNames = untriggeredhandlers.map { atuaMF.statementMF!!.getMethodName(it) }
+
             if (untriggeredhandlers.isEmpty()) {
                 // all target hidden handlers are triggered
                 coverCriteriaCount++
@@ -321,7 +325,7 @@ class PhaseOneStrategy(
     private fun isBlocked(abstractState: AbstractState,currentState: State<*>): Boolean {
         val transitionPath = ArrayList<TransitionPath>()
         val abstractStates = HashMap<AbstractState,Double>()
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         if (abstractState == currentAbstractState)
             return false
         abstractStates.put(abstractState,1.0)
@@ -341,7 +345,7 @@ class PhaseOneStrategy(
         //TODO Update target windows
 
         val currentState = eContext.getCurrentState()
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
         if (phaseState != PhaseState.P1_EXERCISE_TARGET_NODE
@@ -446,14 +450,14 @@ class PhaseOneStrategy(
 
     private fun chooseTask_P1(eContext: ExplorationContext<*, *, *>, currentState: State<*>) {
         log.debug("Choosing Task")
-        val fillDataTask = PrepareContextTask.getInstance(autautMF,atuaTestingStrategy,delay, useCoordinateClicks)
-        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val goToAnotherNode = GoToAnotherWindow.getInstance(autautMF, atuaTestingStrategy, delay, useCoordinateClicks)
-        val randomExplorationTask = RandomExplorationTask.getInstance(autautMF, atuaTestingStrategy,delay, useCoordinateClicks)
-        val openNavigationBarTask = OpenNavigationBarTask.getInstance(autautMF,atuaTestingStrategy,delay, useCoordinateClicks)
+        val fillDataTask = PrepareContextTask.getInstance(atuaMF,atuaTestingStrategy,delay, useCoordinateClicks)
+        val exerciseTargetComponentTask = ExerciseTargetComponentTask.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToTargetNodeTask = GoToTargetWindowTask.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val goToAnotherNode = GoToAnotherWindow.getInstance(atuaMF, atuaTestingStrategy, delay, useCoordinateClicks)
+        val randomExplorationTask = RandomExplorationTask.getInstance(atuaMF, atuaTestingStrategy,delay, useCoordinateClicks)
+        val openNavigationBarTask = OpenNavigationBarTask.getInstance(atuaMF,atuaTestingStrategy,delay, useCoordinateClicks)
         val currentState = eContext.getCurrentState()
-        val currentAppState = autautMF.getAbstractState(currentState)!!
+        val currentAppState = atuaMF.getAbstractState(currentState)!!
 
         log.debug("${currentAppState.window} - Budget: ${windowRandomExplorationBudgetUsed[currentAppState.window]}/${windowRandomExplorationBudget[currentAppState.window]}")
 
@@ -870,12 +874,12 @@ class PhaseOneStrategy(
 
 
     override fun isTargetState(currentState: State<*>): Boolean {
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         if (isTargetAbstractState(currentAbstractState)) {
             return true
         }
-        if (autautMF.untriggeredTargetHiddenHandlers.intersect(
-                        autautMF.windowHandlersHashMap[currentAbstractState.window] ?: emptyList()
+        if (atuaMF.untriggeredTargetHiddenHandlers.intersect(
+                        atuaMF.windowHandlersHashMap[currentAbstractState.window] ?: emptyList()
                 ).isNotEmpty()) {
             if (hasBudgetLeft(currentAbstractState.window))
                 return true
@@ -957,7 +961,7 @@ class PhaseOneStrategy(
 
         val stateByActionCount = HashMap<AbstractState,Double>()
         abstratStateCandidates.forEach {
-            val weight =  it.computeScore(autautMF)
+            val weight =  it.computeScore(atuaMF)
             if (weight>0.0) {
                 stateByActionCount.put(it, weight)
             }
@@ -982,7 +986,7 @@ class PhaseOneStrategy(
                             &&
                             (pathType==PathFindingHelper.PathType.ANY
                                     || pathType == PathFindingHelper.PathType.WTG))) {
-                val score = it.computeScore(autautMF)
+                val score = it.computeScore(atuaMF)
                 stateScores.put(it, score)
             }
         }
@@ -992,11 +996,11 @@ class PhaseOneStrategy(
 
     override fun getCurrentTargetEvents(currentState: State<*>): Set<AbstractAction> {
         val targetEvents = HashMap<Input,List<AbstractAction>>()
-        if (autautMF.getAbstractState(currentState)!!.window != targetWindow)
+        if (atuaMF.getAbstractState(currentState)!!.window != targetWindow)
             return emptySet<AbstractAction>()
         val currentWindowTargetEvents = untriggeredTargetInputs.filter { it.sourceWindow == targetWindow }
         currentWindowTargetEvents.forEach {
-            val abstractInteractions = autautMF.validateEvent(it, currentState)
+            val abstractInteractions = atuaMF.validateEvent(it, currentState)
 
             if (abstractInteractions.isNotEmpty())
             {
@@ -1035,7 +1039,7 @@ class PhaseOneStrategy(
     var numOfContinousTry = 0
 
 
-    private fun shouldChangeTargetWindow() = autautMF.updateMethodCovFromLastChangeCount > 25 * scaleFactor
+    private fun shouldChangeTargetWindow() = atuaMF.updateMethodCovFromLastChangeCount > 25 * scaleFactor
 
     private fun setFullyRandomExplorationInTargetWindow(randomExplorationTask: RandomExplorationTask, currentState: State<*>, currentAppState: AbstractState) {
         setFullyRandomExploration(randomExplorationTask, currentState, currentAppState)
@@ -1070,7 +1074,7 @@ class PhaseOneStrategy(
                                      currentState: State<*>,
                                      stopWhenTestPathIdentified: Boolean = false,
                                      lockWindow: Boolean = false) {
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
             it.stopWhenHavingTestPath = stopWhenTestPathIdentified
@@ -1111,7 +1115,7 @@ class PhaseOneStrategy(
     }
 
     private fun setRandomExplorationInTargetWindow(randomExplorationTask: RandomExplorationTask, currentState: State<*>) {
-        val currentAbstractState = autautMF.getAbstractState(currentState)!!
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         strategyTask = randomExplorationTask.also {
             it.initialize(currentState)
             it.lockTargetWindow(targetWindow!!)

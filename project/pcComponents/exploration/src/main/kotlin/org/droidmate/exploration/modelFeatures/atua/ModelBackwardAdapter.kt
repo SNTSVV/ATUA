@@ -71,16 +71,19 @@ class ModelBackwardAdapter {
             }*/
         }
         if(!backwardEquivalenceFound) {
-            val baseAbstractTransitions = ArrayList<AbstractTransition>()
-            baseAbstractTransitions.addAll(abstractTransition.source.abstractTransitions.filter {
+            val obsoleteBaseAbstractTransitions = ArrayList<AbstractTransition>()
+            obsoleteBaseAbstractTransitions.addAll(abstractTransition.source.abstractTransitions.filter {
                 it.abstractAction == abstractTransition.abstractAction
                         && (it.prevWindow == abstractTransition.prevWindow
                         || it.prevWindow == null)
+                        && it.dependentAbstractState == abstractTransition.dependentAbstractState
                         && it.modelVersion == ModelVersion.BASE
+                        && it.interactions.isEmpty()
                         && it.dest.guiStates.isEmpty() // which means that the destination has not observed before
             })
-            if (baseAbstractTransitions.isNotEmpty()) {
-                baseAbstractTransitions.forEach {
+            abstractTransition.source.abstractTransitions.removeIf { obsoleteBaseAbstractTransitions.contains(it) }
+            if (obsoleteBaseAbstractTransitions.isNotEmpty()) {
+                obsoleteBaseAbstractTransitions.forEach {
                     val dest = it.dest
                     if (observedAbstractState == dest) {
                         backwardEquivalenceFound = true
@@ -96,8 +99,10 @@ class ModelBackwardAdapter {
                 }
             } else {
                 val candidates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
-                    it !is VirtualAbstractState && it.window == observedAbstractState.window
-                            && it.modelVersion == ModelVersion.BASE
+                    it.modelVersion == ModelVersion.BASE && it !is VirtualAbstractState && it.window == observedAbstractState.window
+                            && it.rotation == observedAbstractState.rotation
+                            && it.isOpeningMenus == observedAbstractState.isOpeningMenus
+                            && it.isOpeningKeyboard == observedAbstractState.isOpeningKeyboard
                 }
                 candidates.forEach {
                     if (observedAbstractState == it) {
@@ -233,10 +238,16 @@ class ModelBackwardAdapter {
         } else {
             val unmatchedWidgets1 =  unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
             val unmatchedWidgets2 = unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) }
-            val updateWindowCreatedRuntimeWidgets = observedAbstractState.window.widgets.filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.RUNNING }
-            val baseWindowCreatedRuntimeWidgets = expectedAbstractState.window.widgets.filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.BASE }
-            val condition1 = if (unmatchedWidgets1.isNotEmpty()) unmatchedWidgets1.all {updateWindowCreatedRuntimeWidgets.contains(it) } else true
-            val condition2 = if (unmatchedWidgets2.isNotEmpty()) unmatchedWidgets2.all {baseWindowCreatedRuntimeWidgets.contains(it) } else true
+            val updateWindowCreatedRuntimeWidgets = observedAbstractState.window.widgets
+                    .filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.RUNNING }
+            val baseWindowCreatedRuntimeWidgets = expectedAbstractState.window.widgets
+                    .filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.BASE }
+            val condition1 = if (unmatchedWidgets1.isNotEmpty()) unmatchedWidgets1.all {
+                updateWindowCreatedRuntimeWidgets.contains(it)
+                        && !baseWindowCreatedRuntimeWidgets.contains(it)} else true
+            val condition2 = if (unmatchedWidgets2.isNotEmpty()) unmatchedWidgets2.all {
+                baseWindowCreatedRuntimeWidgets.contains(it)
+                        && !updateWindowCreatedRuntimeWidgets.contains(it)} else true
             if (condition1 && condition2) {
                 return true
             }

@@ -508,7 +508,6 @@ class StaticAnalysisJSONParser() {
                                         eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
                                         widget = ewtgWidget,
-                                        activity = wtgNode.classType,
                                         sourceWindow = wtgNode,
                                         allTargetInputs = HashSet())
                                 allEventHandlers.addAll(event.eventHandlers)
@@ -534,7 +533,6 @@ class StaticAnalysisJSONParser() {
                                                 eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_click",
                                                 widget = ewtgWidget,
-                                                activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
                                                 allTargetInputs = HashSet())
                                         allEventHandlers.addAll(itemClick.eventHandlers)
@@ -546,7 +544,6 @@ class StaticAnalysisJSONParser() {
                                                 eventHandlers = jsonEventHandlers.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                                 eventTypeString = "item_long_click",
                                                 widget = ewtgWidget,
-                                                activity = wtgNode.classType,
                                                 sourceWindow = wtgNode,
                                                 allTargetInputs = HashSet())
                                         allEventHandlers.addAll(itemLongClick.eventHandlers)
@@ -622,7 +619,6 @@ class StaticAnalysisJSONParser() {
                                         eventHandlers = jsonEventHandler.map { statementCoverageMF.getMethodId(it as String) }.toSet(),
                                         eventTypeString = jsonEventType,
                                         widget = ewtgWidget,
-                                        activity = sourceNode.classType,
                                         sourceWindow = sourceNode,
                                         allTargetInputs = allTargetInputs)
                                 val methods = jsonEvent["modMethods"] as JSONArray
@@ -668,22 +664,9 @@ class StaticAnalysisJSONParser() {
         fun getOrCreateTargetEvent(eventHandlers: Set<String>,
                                    eventTypeString: String,
                                    widget: EWTGWidget?,
-                                   @Suppress activity: String,
                                    sourceWindow: Window,
                                    allTargetInputs: HashSet<Input>): Input {
-            var event = Input.allStaticEvents.firstOrNull { it.eventType.equals(EventType.valueOf(eventTypeString)) && it.widget == widget && it.sourceWindow == sourceWindow }
-            //var event = allTargetStaticEvents.firstOrNull {it.eventTypeString.equals(eventTypeString) && (it.widget!!.equals(widget)) }
-            if (event != null) {
-                event.eventHandlers.addAll(eventHandlers)
-                if (!allTargetInputs.contains(event)) {
-
-                    allTargetInputs.add(event)
-                }
-                return event
-            }
-            event = Input(eventHandlers = HashSet(eventHandlers)
-                    , eventType = EventType.valueOf(eventTypeString)
-                    , widget = widget, sourceWindow = sourceWindow)
+            val event = Input.getOrCreateEvent(eventHandlers, eventTypeString, widget, sourceWindow)
             allTargetInputs.add(event)
             return event
         }
@@ -848,15 +831,13 @@ class StaticAnalysisJSONParser() {
                                 ewtgWidget = null
                             }
                         }
-                        var event: Input? = Input.allStaticEvents.filter { e -> wtg.edges(sourceNode).any { it.label.input == e } }.find { it.widget == ewtgWidget && it.eventType.name == eventType }
-                        if (event == null) {
-                            event = Input(
-                                    eventType = EventType.valueOf(eventType),
-                                    eventHandlers = HashSet(),
-                                    widget = ewtgWidget,
-                                    sourceWindow = sourceNode
-                            )
-                        }
+                        val event = Input.getOrCreateEvent(
+                                eventHandlers = HashSet(),
+                                eventTypeString = eventType,
+                                sourceWindow = sourceNode,
+                                widget = ewtgWidget
+                        )
+
                         val correlation = HashMap<Window, Double>()
                         val jsonCorrelaions = jsonEventCorrelation["correlations"] as JSONArray
                         jsonCorrelaions.forEach { item ->

@@ -92,6 +92,7 @@ class AttributeValuationMap {
                         attributeValuationMap = this
                 )
                 actionCount.putIfAbsent(itemAbstractAction,0)
+
                 val itemLongClickAbstractAction = AbstractAction(
                         actionType = AbstractActionType.ITEM_LONGCLICK,
                         attributeValuationMap = this
@@ -420,7 +421,7 @@ class AttributeValuationMap {
             }
             val abstractParentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(abstractAttributeValuationMap.parentAttributeValuationMapId)
             if (abstractParentAttributeValuationSet == null) {
-                throw Exception("Cannot find attributeValuationSet $parentAttributeValuationMapId")
+                //throw Exception("Cannot find attributeValuationSet $parentAttributeValuationMapId")
                 return false
             }
             if (!parentAttributeValuationSet.isDerivedFrom(abstractParentAttributeValuationSet)) {

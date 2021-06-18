@@ -40,23 +40,24 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
     }
 
     private fun header(): String {
-        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;EventHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionIDs;modelVersion"
+        return "SourceState;ResultingState;ActionType;InteractedAVS;Data;PrevWindow;EventHandlers;CoveredUpdatedMethods;CoveredUpdatedStatements;GUITransitionIDs;DependentAbstractState,modelVersion"
     }
 
     fun recursiveDump(sourceAbstractState: AbstractState, statementCoverageMF: StatementCoverageMF, dumpedSourceStates: ArrayList<AbstractState> , bufferedWriter: BufferedWriter) {
         dumpedSourceStates.add(sourceAbstractState)
-        val explicitEdges = this.edges(sourceAbstractState).filter { it.label.isExplicit() && it.destination!=null }
+        val explicitEdges = this.edges(sourceAbstractState).filter { it.label.isExplicit()
+                && it.destination!=null
+                && sourceAbstractState.abstractTransitions.contains(it.label)}
         val nextSources = ArrayList<AbstractState>()
         explicitEdges.forEach { edge ->
             if (!nextSources.contains(edge.destination!!.data) && !dumpedSourceStates.contains(edge.destination!!.data)) {
-
                 nextSources.add(edge.destination!!.data)
             }
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.destination!!.data.abstractStateId};" +
                     "${edge.label.abstractAction.actionType};${edge.label.abstractAction.attributeValuationMap?.avmId};${edge.label.data};" +
                     "${edge.label.prevWindow?.windowId};\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
-                    "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\";${edge.label.modelVersion}"
+                    "\"${edge.label.interactions.map { it.actionId }.joinToString(separator = ";")}\";${edge.label.dependentAbstractState?.abstractStateId};${edge.label.modelVersion}"
             bufferedWriter.write(abstractTransitionInfo)
 
         }

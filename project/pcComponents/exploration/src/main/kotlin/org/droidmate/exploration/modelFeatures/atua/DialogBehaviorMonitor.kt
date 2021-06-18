@@ -2,10 +2,8 @@ package org.droidmate.exploration.modelFeatures.atua
 
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.DialogType
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
@@ -18,7 +16,7 @@ class DialogBehaviorMonitor {
         val prevAbstractState = abstractTransition.source
         val currentAbstractState = abstractTransition.dest
         if (checkingDialog!=null) {
-            if (abstractTransition.abstractAction.isLaunchOrReset() || abstractTransition.source.isMenusOpened) {
+            if (abstractTransition.abstractAction.isLaunchOrReset() || abstractTransition.source.isOpeningMenus) {
                 reset()
                 return
             }
@@ -41,7 +39,7 @@ class DialogBehaviorMonitor {
         }
         if (!abstractTransition!!.abstractAction.isWidgetAction())
             return
-        if (abstractTransition!!.source.isMenusOpened)
+        if (abstractTransition!!.source.isOpeningMenus)
             return
         if (currentAbstractState.window is Dialog && (currentAbstractState.window as Dialog).isInputDialog == false) {
             if (prevAbstractState.window is Activity && (currentAbstractState.window as Dialog).ownerActivitys.contains(prevAbstractState.window)) {

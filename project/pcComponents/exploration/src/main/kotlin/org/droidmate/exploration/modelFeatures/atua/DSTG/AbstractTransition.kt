@@ -35,6 +35,7 @@ class AbstractTransition(
     val statementCoverage = HashSet<String>()
     val methodCoverage = HashSet<String>()
     val changeEffects = HashSet<ChangeEffect>()
+    var dependentAbstractState: AbstractState? = null
     fun isExplicit() = !isImplicit
 
     fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {
@@ -51,7 +52,8 @@ class AbstractTransition(
         methodCoverage.add(methodId!!)
     }
 
-    fun copyPotentialInfo(other: AbstractTransition) {
+    fun copyPotentialInfoFrom(other: AbstractTransition) {
+        this.dependentAbstractState = other.dependentAbstractState
         this.userInputs.addAll(other.userInputs)
         this.tracing.addAll(other.tracing)
         this.handlers.putAll(other.handlers)

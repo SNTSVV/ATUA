@@ -228,10 +228,12 @@ class AppModelLoader {
             val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}
             // val prevWindowAbstractStateId = data[6]
             // val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
-            val guiTransitionIds = data[9]!!
+            val guiTransitionIds = data[9]
             if (guiTransitionIds.isBlank()) {
                 return
             }
+
+
             val abstractTransition = sourceState.abstractTransitions.find {
                 it.isExplicit() && it.dest == destState && it.abstractAction == abstractAction
                         && it.prevWindow == prevWindow
@@ -247,6 +249,18 @@ class AppModelLoader {
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
                 )
+                val dependentAbstractStateId = data[10]
+                if (dependentAbstractStateId != "null") {
+                    val dependentAbstractState = if(updatedAbstractStateId.containsKey(dependentAbstractStateId)) {
+                        val newUUID = updatedAbstractStateId.get(dependentAbstractStateId)
+                        AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == newUUID }
+                    } else {
+                        AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == dependentAbstractStateId }
+                    }
+                    if (dependentAbstractState!=null) {
+                        newAbstractTransition.dependentAbstractState = dependentAbstractState
+                    }
+                }
                 autAutMF.dstg.add(sourceState,destState,newAbstractTransition)
                 createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)
                 AbstractStateManager.instance.addImplicitAbstractInteraction(
@@ -431,7 +445,6 @@ class AppModelLoader {
                 }
             }
             val abstractState = AbstractState(
-                    id = uuid,
                     activity = activity,
                     isOutOfApplication = isOutOfApp,
                     isHomeScreen = isHomeScreen,
@@ -441,7 +454,7 @@ class AppModelLoader {
                     isAppHasStoppedDialogBox = isAppHasStoppedDialogBox,
                     attributeValuationMaps = ArrayList(attributeValuationSets),
                     EWTGWidgetMapping = widgetMapping,
-                    isMenusOpened = isMenuOpen,
+                    isOpeningMenus = isMenuOpen,
                     window = window,
                     loadedFromModel = true,
                     modelVersion = ModelVersion.BASE

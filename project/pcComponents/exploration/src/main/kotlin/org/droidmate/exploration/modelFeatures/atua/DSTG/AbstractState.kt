@@ -8,7 +8,6 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
@@ -24,7 +23,6 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 open class AbstractState(
-        id: String? = null,
         val activity: String,
         val attributeValuationMaps: ArrayList<AttributeValuationMap> = arrayListOf(),
         val guiStates: ArrayList<State<*>> = ArrayList(),
@@ -37,7 +35,7 @@ open class AbstractState(
         val isRequestRuntimePermissionDialogBox: Boolean = false,
         val isAppHasStoppedDialogBox: Boolean = false,
         val isOutOfApplication: Boolean = false,
-        var isMenusOpened: Boolean = false,
+        var isOpeningMenus: Boolean = false,
         var rotation: Rotation,
         var loadedFromModel: Boolean = false,
         var modelVersion: ModelVersion = ModelVersion.RUNNING,
@@ -59,7 +57,7 @@ open class AbstractState(
         }
 
         countAVMFrequency()
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,window, rotation)
         abstractStateIdByWindow.putIfAbsent(window,HashSet())
         if (reuseAbstractStateId!=null
                 && abstractStateIdByWindow[window]!!.contains(reuseAbstractStateId)) {
@@ -76,7 +74,7 @@ open class AbstractState(
     }
 
     fun updateHashCode() {
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,activity, rotation)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,window, rotation)
     }
 
      fun countAVMFrequency() {
@@ -102,28 +100,67 @@ open class AbstractState(
                 actionType = AbstractActionType.RESET_APP
         )
         actionCount.put(resetAction,0)
+        if(!window.inputs.any { it.eventType == EventType.resetApp }) {
+            val newInput = Input(
+                    eventType = EventType.resetApp,
+                    eventHandlers = HashSet(),
+                    widget = null,
+                    sourceWindow = window,
+                    createdAtRuntime = true
+            )
+        }
         val launchAction = AbstractAction(
                 actionType = AbstractActionType.LAUNCH_APP
         )
         actionCount.put(launchAction,0)
+        if (!window.inputs.any { it.eventType == EventType.implicit_launch_event }) {
+            val newInput = Input(
+                    eventType = EventType.implicit_launch_event,
+                    eventHandlers = HashSet(),
+                    widget = null,
+                    sourceWindow = window,
+                    createdAtRuntime = true
+            )
+
+        }
         if (isOpeningKeyboard) {
             val closeKeyboardAction = AbstractAction(
                     actionType = AbstractActionType.CLOSE_KEYBOARD
             )
             actionCount.put(closeKeyboardAction, 0)
-            return
+
+            if (!window.inputs.any { it.eventType == EventType.closeKeyboard }) {
+                val newInput = Input(
+                        eventType = EventType.closeKeyboard,
+                        eventHandlers = HashSet(),
+                        widget = null,
+                        sourceWindow = window,
+                        createdAtRuntime = true
+                )
+
+            }
         } else {
             val pressBackAction = AbstractAction(
                     actionType = AbstractActionType.PRESS_BACK
             )
             actionCount.put(pressBackAction, 0)
+            if (!window.inputs.any { it.eventType == EventType.press_back }) {
+                val newInput = Input(
+                        eventType = EventType.press_back,
+                        eventHandlers = HashSet(),
+                        widget = null,
+                        sourceWindow = window,
+                        createdAtRuntime = true
+                )
+
+            }
             /*if (!this.isMenusOpened && this.hasOptionsMenu && this.window !is Dialog) {
                 val pressMenuAction = AbstractAction(
                         actionType = AbstractActionType.PRESS_MENU
                 )
                 actionCount.put(pressMenuAction, 0)
             }*/
-            if (!this.isMenusOpened) {
+            if (!this.isOpeningMenus) {
                 val minmaxAction = AbstractAction(
                         actionType = AbstractActionType.MINIMIZE_MAXIMIZE
                 )
@@ -133,6 +170,17 @@ open class AbstractState(
                             actionType = AbstractActionType.ROTATE_UI
                     )
                     actionCount.put(rotationAction, 0)
+                    if (!window.inputs.any { it.eventType == EventType.implicit_rotate_event }) {
+                        val newInput = Input(
+                                eventType = EventType.implicit_rotate_event,
+                                eventHandlers = HashSet(),
+                                widget = null,
+                                sourceWindow = window,
+                                createdAtRuntime = true
+                        )
+
+                    }
+
                 }
             }
             if (window is Dialog) {
@@ -147,6 +195,94 @@ open class AbstractState(
         attributeValuationMaps.forEach {
             //it.actionCount.clear()
             it.initActions()
+        }
+        EWTGWidgetMapping.forEach { avm, ewgtwidget ->
+            avm.actionCount.keys.forEach { abstractAction->
+                if (abstractAction.actionType==AbstractActionType.CLICK) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.click
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.click,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+                if (abstractAction.actionType==AbstractActionType.LONGCLICK) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.long_click
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.long_click,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+                if (abstractAction.actionType==AbstractActionType.ITEM_CLICK) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.item_click
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.item_click,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+                if (abstractAction.actionType==AbstractActionType.ITEM_LONGCLICK) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.item_long_click
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.item_long_click,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+                if (abstractAction.actionType==AbstractActionType.TEXT_INSERT) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.enter_text
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.enter_text,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+                if (abstractAction.actionType==AbstractActionType.SWIPE) {
+                    if (!window.inputs.any { it.widget == ewgtwidget
+                                    && it.eventType == EventType.swipe
+                            }) {
+                        val newInput = Input(
+                                eventType = EventType.swipe,
+                                widget = ewgtwidget,
+                                eventHandlers = HashSet(),
+                                createdAtRuntime = true,
+                                sourceWindow = window
+                        )
+
+                    }
+                }
+            }
         }
 
     }
@@ -222,7 +358,7 @@ open class AbstractState(
                     widget_WidgetGroupMap.put(w, wg)
             }
         }
-        /*unexcerisedActions.addAll(actionCount.filter {
+        unexcerisedActions.addAll(actionCount.filter {
             ( it.value == 0 )
                     && it.key.actionType != AbstractActionType.FAKE_ACTION
                     && it.key.actionType != AbstractActionType.LAUNCH_APP
@@ -230,15 +366,12 @@ open class AbstractState(
                     && it.key.actionType != AbstractActionType.ENABLE_DATA
                     && it.key.actionType != AbstractActionType.DISABLE_DATA
                     && it.key.actionType != AbstractActionType.WAIT
-                    && it.key.actionType != AbstractActionType.PRESS_BACK
                     && !it.key.isWidgetAction()
                     && it.key.actionType != AbstractActionType.CLICK
                     && it.key.actionType != AbstractActionType.LONGCLICK
-                    && it.key.actionType != AbstractActionType.MINIMIZE_MAXIMIZE
                     && it.key.actionType != AbstractActionType.SEND_INTENT
                     && it.key.actionType != AbstractActionType.PRESS_MENU
-        }
-                .map { it.key })*/
+        }.map { it.key })
         val widgetActionCounts = if (currentState != null) {
             widget_WidgetGroupMap.values.filter { !it.isUserLikeInput() }.distinct()
                     .map { w -> w.actionCount }
@@ -365,7 +498,7 @@ open class AbstractState(
 
     fun isRequireRandomExploration():Boolean {
         if (this.window is Dialog
-                || this.isMenusOpened
+                || this.isOpeningMenus
                 || this.window is OutOfApp
                 || this.window.classType.contains("ResolverActivity"))
             return true
@@ -467,7 +600,7 @@ open class AbstractState(
 
     companion object {
         val abstractStateIdByWindow = HashMap<Window, HashSet<UUID>>()
-        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, activity: String, rotation: Rotation): Int {
+        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, window: Window, rotation: Rotation): Int {
             return attributeValuationMaps.sortedBy { it.avmId }.fold(emptyUUID) { id, avs ->
                 /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
                 // however different selectable auto-completion proposes are only 'rendered'
@@ -475,7 +608,7 @@ open class AbstractState(
 
                 //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
                 id + avs.hashCode.toUUID()
-            }.plus(listOf<String>(rotation.toString(),activity).joinToString("<;>").toUUID()).hashCode()
+            }.plus(listOf<String>(rotation.toString(),window.classType).joinToString("<;>").toUUID()).hashCode()
         }
 
         internal operator fun UUID.plus(uuid: UUID?): UUID {
@@ -500,7 +633,7 @@ class VirtualAbstractState(activity: String,
         rotation = Rotation.PORTRAIT,
         isHomeScreen = isHomeScreen,
         isOutOfApplication = (staticNode is OutOfApp),
-        isMenusOpened = false
+        isOpeningMenus = false
 )
 
 class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT)

@@ -16,6 +16,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.strategy.AExplorationStrategy
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.ExplorationTrace
@@ -29,7 +30,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
-    protected val regressionWatcher: ATUAMF
+    protected val atuaMF: ATUAMF
         get() = (eContext.findWatcher { it is ATUAMF } as ATUAMF)
 
     protected val statementWatcher: StatementCoverageMF
@@ -93,15 +94,17 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         if (!phaseStrategy.hasNextAction(eContext.getCurrentState())) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
-                if (regressionWatcher.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
+                if (atuaMF.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, scaleFactor, delay, useCoordinateClicks, unreachableWindow)
-                    regressionWatcher.updateStage1Info(eContext)
+                    atuaMF.updateStage1Info(eContext)
                 }
                     /*phaseStrategy = PhaseThreeStrategy(this,budgetScale, delay, useCoordinateClicks)
                     regressionWatcher.updateStage2Info(eContext)*/
             } else if (phaseStrategy is PhaseTwoStrategy) {
-                phaseStrategy = PhaseThreeStrategy(this,scaleFactor, delay, useCoordinateClicks)
-                regressionWatcher.updateStage2Info(eContext)
+                if (targetInputAvailable()) {
+                    phaseStrategy = PhaseThreeStrategy(this, scaleFactor, delay, useCoordinateClicks)
+                    atuaMF.updateStage2Info(eContext)
+                }
             } else if (phaseStrategy is PhaseThreeStrategy) {
                 return ExplorationAction.terminateApp()
             }
@@ -111,8 +114,23 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.filter{it !is VirtualAbstractState}.size}")
         val availableWidgets = eContext.getCurrentState().widgets
         chosenAction = phaseStrategy.nextAction(eContext)
-        prevNode = regressionWatcher.getAbstractState(eContext.getCurrentState())
+        prevNode = atuaMF.getAbstractState(eContext.getCurrentState())
         return chosenAction
+    }
+
+    private fun targetInputAvailable(): Boolean {
+        atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
+            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            if (abstractStates.isNotEmpty()) {
+                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
+                val realisticTargetInputs = targetInputs.intersect(realisticInputs)
+                if (realisticTargetInputs.isNotEmpty()) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     override fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> initialize(initialContext: ExplorationContext<M, S, W>) {
