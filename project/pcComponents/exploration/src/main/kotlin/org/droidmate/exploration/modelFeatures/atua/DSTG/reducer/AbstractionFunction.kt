@@ -31,8 +31,9 @@ class AbstractionFunction (val root: DecisionNode) {
             abstractTransition.abstractAction.attributeValuationMap?.equals(it.abstractAction.attributeValuationMap!!)?:false
                     && abstractTransition.source.equals(it.source)
                     && abstractTransition.dest.equals(it.dest)
-                    && abstractTransition.prevWindow == it.prevWindow
+                    /*&& abstractTransition.prevWindow == it.prevWindow*/
         }
+        // TODO check
     }
 
     fun Widget.isInteractiveLeaf(guiState: State<*>): Boolean {

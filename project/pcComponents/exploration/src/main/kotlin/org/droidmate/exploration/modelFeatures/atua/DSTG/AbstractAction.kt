@@ -100,19 +100,8 @@ data class AbstractAction (
             }
             return abstractActionType
         }
+
         fun computeAbstractActionExtraData(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState, atuaMF: ATUAMF): Any? {
-            if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
-                return interaction.targetWidget
-            }
-            if (actionType == AbstractActionType.TEXT_INSERT) {
-                val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState,atuaMF)
-                if (avm!=null && avm.localAttributes.containsKey(AttributeType.text)) {
-                    return interaction.data
-                }
-                return null
-            }
-            if (actionType == AbstractActionType.SEND_INTENT)
-                return interaction.data
             if (actionType != AbstractActionType.SWIPE) {
                 return null
             }
@@ -127,6 +116,34 @@ data class AbstractAction (
             return AbstractAction(
                     actionType = AbstractActionType.LAUNCH_APP
             )
+        }
+
+        fun getOrCreateAbstractAction(actionType: AbstractActionType,
+                                      interaction: Interaction<Widget>,
+                                      guiState: State<Widget>,
+                                      abstractState: AbstractState,
+                                      attributeValuationMap: AttributeValuationMap?,
+                                      atuaMF: ATUAMF): AbstractAction {
+            val actionData = computeAbstractActionExtraData(actionType, interaction, guiState, abstractState, atuaMF)
+
+            val abstractAction: AbstractAction
+            val availableAction = abstractState.getAvailableActions().find {
+                it.actionType == actionType
+                        && it.attributeValuationMap == attributeValuationMap
+                        && it.extra == actionData
+            }
+
+            if (availableAction == null) {
+                abstractAction = AbstractAction(
+                        actionType = actionType,
+                        attributeValuationMap = attributeValuationMap,
+                        extra = actionData
+                )
+                abstractState.addAction(abstractAction)
+            } else {
+                abstractAction = availableAction
+            }
+            return abstractAction
         }
     }
 

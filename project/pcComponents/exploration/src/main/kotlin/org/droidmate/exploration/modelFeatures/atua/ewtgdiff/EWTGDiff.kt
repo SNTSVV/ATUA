@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.ewtgdiff
 
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
@@ -24,6 +25,7 @@ class EWTGDiff private constructor(){
     val windowDifferentSets: HashMap<String,DifferentSet<Window>> = HashMap()
     val widgetDifferentSets: HashMap<String,DifferentSet<EWTGWidget>> = HashMap()
     val transitionDifferentSets: HashMap<String, DifferentSet<Edge<Window,WindowTransition>>> = HashMap()
+    val removedAbstractStates = ArrayList<AbstractState>()
     fun getWidgetAdditions(): List<EWTGWidget> {
         if (widgetDifferentSets.containsKey("AdditionSet")) {
             return (widgetDifferentSets["AdditionSet"]!! as AdditionSet<EWTGWidget>).addedElements
@@ -54,15 +56,18 @@ class EWTGDiff private constructor(){
         }
         if (windowDifferentSets.containsKey("DeletionSet")) {
             for (deleted in (windowDifferentSets.get("DeletionSet")!! as DeletionSet<Window>).deletedElements) {
-                AbstractStateManager.instance.ABSTRACT_STATES.removeIf { it.window == deleted }
+                val toRemoves = AbstractStateManager.instance.ABSTRACT_STATES.filter { it.window == deleted }
+                removedAbstractStates.addAll(toRemoves)
+                AbstractStateManager.instance.ABSTRACT_STATES.removeAll(toRemoves)
                 WindowManager.instance.baseModelWindows.remove(deleted)
             }
             val deletedWindows = (windowDifferentSets.get("DeletionSet")!! as DeletionSet<Window>).deletedElements
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                 it.abstractTransitions.forEach {
-                    if (deletedWindows.contains(it.prevWindow)) {
+                    /*if (deletedWindows.contains(it.prevWindow)) {
                         it.prevWindow = null
-                    }
+                    }*/
+                    // TODO check
                 }
             }
             //We have to delete obsolete edges in DSTG
@@ -75,9 +80,10 @@ class EWTGDiff private constructor(){
             val replacements = (windowDifferentSets.get("ReplacementSet")!! as ReplacementSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                 it.abstractTransitions.forEach {
-                    if (replacements.contains(it.prevWindow)) {
+                    /*if (replacements.contains(it.prevWindow)) {
                         it.prevWindow = replacements.get(it.prevWindow)
-                    }
+                    }*/
+                    // TODO check
                 }
             }
 
@@ -91,9 +97,10 @@ class EWTGDiff private constructor(){
             val replacements = (windowDifferentSets.get("RetainerSet")!! as RetainerSet<Window>).replacedElements.map { Pair(it.old,it.new) }.toMap()
             AbstractStateManager.instance.ABSTRACT_STATES.forEach {
                 it.abstractTransitions.forEach {
-                    if (replacements.contains(it.prevWindow)) {
+                    /*if (replacements.contains(it.prevWindow)) {
                         it.prevWindow = replacements.get(it.prevWindow)
-                    }
+                    }*/
+                    // TODO check
                 }
             }
         }
@@ -132,8 +139,15 @@ class EWTGDiff private constructor(){
         if (widgetDifferentSets.containsKey("ReplacementSet")) {
             for (replacement in (widgetDifferentSets.get("ReplacementSet")!! as ReplacementSet<EWTGWidget>).replacedElements) {
                 // update avm-ewtgwidget mapping
-                replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
-                    it.widget = replacement.new
+                replacement.old.window.inputs.filter { it.widget == replacement.old }.forEach {input->
+                    val existingInputInUpdateVers = replacement.new.window.inputs
+                            .find { it.widget == replacement.new && it.eventType == input.eventType}
+                    if (existingInputInUpdateVers==null)
+                        input.widget = replacement.new
+                    else {
+                        replacement.new.window.inputs.remove(input)
+                        existingInputInUpdateVers.eventHandlers.addAll(input.eventHandlers)
+                    }
                 }
                 // update EWTGWidget structure
                 replacement.old.children.forEach {
@@ -155,8 +169,15 @@ class EWTGDiff private constructor(){
         }
         if (widgetDifferentSets.containsKey("RetainerSet")) {
             for (replacement in (widgetDifferentSets.get("RetainerSet")!! as RetainerSet<EWTGWidget>).replacedElements) {
-                replacement.new.window.inputs.filter { it.widget == replacement.old }.forEach {
-                    it.widget = replacement.new
+                replacement.old.window.inputs.filter { it.widget == replacement.old }.forEach {input->
+                    val existingInputInUpdateVers = replacement.new.window.inputs
+                            .find { it.widget == replacement.new && it.eventType == input.eventType}
+                    if (existingInputInUpdateVers==null)
+                        input.widget = replacement.new
+                    else {
+                        replacement.new.window.inputs.remove(input)
+                        existingInputInUpdateVers.eventHandlers.addAll(input.eventHandlers)
+                    }
                 }
                 // update EWTGWidget structure
                 replacement.old.children.forEach {

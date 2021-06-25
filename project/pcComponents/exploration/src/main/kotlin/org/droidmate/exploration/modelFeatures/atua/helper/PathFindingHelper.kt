@@ -362,21 +362,17 @@ class PathFindingHelper {
                         if (depth == 0)
                             possibleTransitions.addAll(edges)
                     } else {
-                        var selectedAtLeastOne = false
-                        val groupByPreWindow = edges.groupBy { it.label.prevWindow }
-                        groupByPreWindow.forEach { prevWindow, groupedEdges1 ->
-                            if (prevWindow == null && includeWTG) {
-                                possibleTransitions.addAll(groupedEdges1)
-                                selectedAtLeastOne = true
-                            } else if (prevWindow != null && !selectedAtLeastOne) {
-                                if (isTheSamePrevWindow(windowStack.peek(), prevWindow)) {
-                                    possibleTransitions.addAll(groupedEdges1)
-                                    selectedAtLeastOne = true
+                        edges.forEach {
+                            val prevWindows = it.label.dependentAbstractStates.map { it.window }
+                            if (prevWindows.isEmpty() && includeWTG) {
+                                possibleTransitions.add(it)
+                            } else {
+                                prevWindows.forEach { prevWindow->
+                                    if (isTheSamePrevWindow(windowStack.peek(), prevWindow)) {
+                                        possibleTransitions.add(it)
+                                    }
                                 }
                             }
-                        }
-                        if (!selectedAtLeastOne) {
-                            possibleTransitions.addAll(edges)
                         }
                     }
                 }
@@ -409,9 +405,10 @@ class PathFindingHelper {
                 }
             }
             possibleTransitions.groupBy({ it.label.abstractAction }, { it })
-                    .forEach { interaction, u ->
-                        if ((interaction.isLaunchOrReset() || interaction.actionType == AbstractActionType.SEND_INTENT) && depth == 0)
-                            selectedTransition.addAll(u)
+                    .forEach { abstractAction, u ->
+                        if ((abstractAction.isLaunchOrReset() || abstractAction.actionType == AbstractActionType.SEND_INTENT) && depth == 0) {
+                            selectedTransition.addAll(u.filter { it.label.isImplicit })
+                        }
                         else {
                             val explicitTransition = u.filter { !it.label.isImplicit }
                             val implicitTransitions = u.filter { it.label.isImplicit }
@@ -447,9 +444,8 @@ class PathFindingHelper {
                                 else {
                                     explicitTransition.filter {
                                         prevAbstractTransition.first.guaranteedAVMs.containsAll(it.label.source.attributeValuationMaps)
-                                                && (it.label.dependentAbstractState == null ||
-                                                (it.label.dependentAbstractState!=null
-                                                        && ancestorAbstractStates.contains(it.label.dependentAbstractState!!)))
+                                                && (it.label.dependentAbstractStates.isEmpty() ||
+                                                it.label.dependentAbstractStates.intersect(ancestorAbstractStates).isNotEmpty())
                                     }.let{
                                         selectedTransition.addAll(it)
                                     }
@@ -911,7 +907,7 @@ class PathFindingHelper {
                     }
 
                 }
-                if (edge1.abstractAction == edge2.abstractAction && edge1.prevWindow == edge2.prevWindow) {
+                if (edge1.abstractAction == edge2.abstractAction && edge1.dependentAbstractStates.intersect(edge2.dependentAbstractStates).isNotEmpty()) {
                     continue
                 } else {
                     samePrefix = false

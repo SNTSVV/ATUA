@@ -152,8 +152,8 @@ class ATUAMF(private val appName: String,
     var transitionId = 0
 
     val interactionsTracing = HashMap<List<Interaction<*>>, Pair<Int, Int>>()
-
-
+    val prevWindowStateMapping = HashMap<State<*>,State<*>>()
+    val interactionPrevWindowStateMapping = HashMap<Interaction<Widget>,State<*>>()
 
 
 
@@ -424,6 +424,7 @@ class ATUAMF(private val appName: String,
                 fromLaunch = true
                 windowStack.clear()
                 windowStack.push(Launcher.getOrCreateNode())
+//                abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher}!!,stateList.findLast { it.isHomeScreen } ))
             } else {
                 fromLaunch = false
             }
@@ -433,6 +434,7 @@ class ATUAMF(private val appName: String,
             if (prevState == context.model.emptyState) {
                 if (windowStack.isEmpty()) {
                     windowStack.push(Launcher.getOrCreateNode())
+//                    abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher}!!,stateList.findLast { it.isHomeScreen } ))
                 }
             } else {
                 appPrevState = prevState
@@ -474,6 +476,7 @@ class ATUAMF(private val appName: String,
             }
             if (windowStack.isEmpty()) {
                 windowStack.push(Launcher.getOrCreateNode())
+//                abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher}!!,stateList.findLast { it.isHomeScreen } ))
             }
             if (newState != context.model.emptyState) {
                 if (newState.isAppHasStoppedDialogBox) {
@@ -532,49 +535,90 @@ class ATUAMF(private val appName: String,
     private fun updateWindowStack(prevAbstractState: AbstractState?, prevState: State<*>, currentAbstractState: AbstractState, currentState: State<*>, isLaunch: Boolean) {
         if (isLaunch) {
             windowStack.clear()
-            abstractStateStack.clear()
+//            abstractStateStack.clear()
             windowStack.push(Launcher.getOrCreateNode())
-            abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher }!!,stateList.findLast { it.isHomeScreen }))
-            if (prevAbstractState != null && !prevAbstractState.isHomeScreen) {
-                val homeScreenState = stateList.findLast { it.isHomeScreen }
-                if (homeScreenState != null) {
-                    stateList.add(homeScreenState)
-                }
+//            abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher }!!,stateList.findLast { it.isHomeScreen }))
+            val homeScreenState = stateList.findLast { it.isHomeScreen }
+            if (homeScreenState != null) {
+                stateList.add(homeScreenState)
+                prevWindowStateMapping.put(currentState,homeScreenState)
             }
-            return
-        }
-        if (prevAbstractState != null) {
+        } else if (prevAbstractState != null) {
             if (windowStack.contains(currentAbstractState.window) && windowStack.size > 1) {
                 // Return to the prev window
                 // Pop the window
-                abstractStateStack.pop()
+//                abstractStateStack.pop()
                 while (windowStack.pop() != currentAbstractState.window) {
-                    abstractStateStack.pop()
+//                    abstractStateStack.pop()
                 }
+
             } else {
                 if (currentAbstractState.window is Launcher) {
                     windowStack.clear()
-                    abstractStateStack.clear()
-                    windowStack.push(Launcher.getOrCreateNode())
-                    abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher}!!,stateList.findLast { it.isHomeScreen }))
+//                    abstractStateStack.clear()
                 } else if (currentAbstractState.window != prevAbstractState.window) {
                     if (prevAbstractState.window is Activity || prevAbstractState.window is OutOfApp) {
                         windowStack.push(prevAbstractState.window)
-                        abstractStateStack.push(Pair(prevAbstractState,prevState))
+//                        abstractStateStack.push(Pair(prevAbstractState,prevState))
+                        prevWindowStateMapping.put(currentState,prevState)
                     }
-                } else if (currentAbstractState.isOpeningKeyboard || currentAbstractState.isOpeningMenus) {
+                }/* else if (currentAbstractState.isOpeningKeyboard || currentAbstractState.isOpeningMenus) {
                     windowStack.push(currentAbstractState.window)
-                    abstractStateStack.push(Pair(currentAbstractState,currentState))
-                }
+
+                    *//*abstractStateStack.push(Pair(currentAbstractState,currentState))*//*
+                }*/
             }
         }
-        if (currentAbstractState.window !is OutOfApp) {
+        /*if (currentAbstractState.window !is OutOfApp) {
 
-        }
-        if (windowStack.isEmpty()) {
+        } */
+/*        if (windowStack.isEmpty()) {
             windowStack.push(Launcher.getOrCreateNode())
             abstractStateStack.push(Pair(AbstractStateManager.instance.ABSTRACT_STATES.find { it.window is Launcher}!!,stateList.findLast { it.isHomeScreen } ))
             return
+        }*/
+    }
+
+    private fun registerPrevWindowState(prevState: State<*>, currentState: State<*>, lastInteraction: Interaction<Widget>) {
+        if (windowStack.isEmpty())
+            return
+        val prevWindow = windowStack.peek()
+        if (prevWindow is Launcher) {
+            val prevLaucherState = stateList.findLast { it.isHomeScreen }
+            if (prevLaucherState!=null) {
+                prevWindowStateMapping.put(currentState,prevLaucherState)
+                interactionPrevWindowStateMapping.put(lastInteraction,prevLaucherState)
+            }
+            return
+        }
+        var tempCandidate: State<*>? = null
+        for (i in transitionId downTo 1) {
+            val traveredInteraction = interactionsTracing.entries.find { it.value == Pair(traceId, i) }
+            if (traveredInteraction == null)
+                throw Exception()
+            val prevWindowState = stateList.find { it.stateId == traveredInteraction.key.first().prevState }!!
+            val prevWindowAbstractState = getAbstractState(prevWindowState)!!
+            if (prevWindowAbstractState.window == prevWindow
+                    && !prevWindowAbstractState.isOpeningKeyboard
+                    && !prevWindowAbstractState.isOpeningMenus) {
+                prevWindowStateMapping.put(currentState, prevWindowState)
+                interactionPrevWindowStateMapping.put(lastInteraction,prevWindowState)
+                break
+            }
+            if (tempCandidate!=null && prevWindowAbstractState.window != prevWindow) {
+                prevWindowStateMapping.put(currentState, tempCandidate)
+                interactionPrevWindowStateMapping.put(lastInteraction,tempCandidate)
+                break
+            }
+            if (prevWindowAbstractState.window == prevWindow
+                    && !prevWindowAbstractState.isOpeningMenus
+                    && prevWindowAbstractState.isOpeningKeyboard) {
+                tempCandidate = prevWindowState
+            }
+            if (i==1)
+            {
+                throw Exception()
+            }
         }
     }
 
@@ -629,7 +673,7 @@ class ATUAMF(private val appName: String,
                     abstractAction = abstractAction,
                     interactions = HashSet(),
                     isImplicit = false,
-                    prevWindow = windowStack.peek(),
+                    /*prevWindow = windowStack.peek(),*/
                     data = data,
                     source = prevAbstractState,
                     dest = currentAbstractState)
@@ -665,6 +709,15 @@ class ATUAMF(private val appName: String,
             log.debug("Abstract state: " + currentAbstractState)
             log.debug("Gui state: " + interaction.resState)
         }
+        /*val prevWindowAbstractState = if (!fromLaunch) {
+            if (prevWindowStateMapping.containsKey(prevState))
+                getAbstractState(prevWindowStateMapping.get(prevState)!!)
+            else
+                null
+        } else
+            null*/
+        val prevWindowAbstractState: AbstractState? = getPrevWindowAbstractState()
+
         if (isRecentPressMenu) {
             if (prevAbstractState != currentAbstractState) {
                 if (prevAbstractState.hasOptionsMenu)
@@ -678,7 +731,7 @@ class ATUAMF(private val appName: String,
         }
         var actionType: AbstractActionType = AbstractAction.normalizeActionType(interaction, prevState)
         val actionData = AbstractAction.computeAbstractActionExtraData(actionType, interaction, prevState, prevAbstractState, this)
-
+        val interactionData = AbstractTransition.computeAbstractTransitionData(actionType,interaction,prevState,prevAbstractState,this)
         when (actionType) {
             AbstractActionType.LAUNCH_APP -> {
                 AbstractStateManager.instance.launchStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH] = currentState
@@ -698,87 +751,30 @@ class ATUAMF(private val appName: String,
         if (interaction.targetWidget == null) {
             val allAbstractTransitions = dstg.edges(prevAbstractState)
             if (actionType == AbstractActionType.RESET_APP || actionType == AbstractActionType.LAUNCH_APP) {
-                setNewTrace()
-                processLaunchOrResetInteraction( prevState, allAbstractTransitions, actionType, actionData, currentAbstractState, interaction, prevAbstractState)
+                if (actionType == AbstractActionType.RESET_APP)
+                    setNewTrace()
+                deriveLaunchOrResetInteraction( prevState, allAbstractTransitions, actionType, null, currentAbstractState, interaction, prevAbstractState)
             } else {
-                processNonLaunchAndResetNullTargetInteraction(prevState, allAbstractTransitions, actionType, actionData, currentAbstractState, interaction, prevAbstractState)
+                deriveNonLaunchAndResetNullTargetInteraction(prevState, allAbstractTransitions, actionType ,actionData , interactionData, currentAbstractState, interaction, prevAbstractState,prevWindowAbstractState)
             }
         } else {
             actionCount.updateWidgetActionCounter(prevAbstractState, prevState, interaction)
             var widgetGroup = prevAbstractState.getAttributeValuationSet(interaction.targetWidget!!, prevState, this)
             if (widgetGroup != null) {
-                val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
-                val existingTransition = explicitInteractions.find {
-                    it.abstractAction.actionType == actionType
-                            && it.abstractAction.attributeValuationMap == widgetGroup
-                            && it.abstractAction.extra == actionData
-                            && it.prevWindow == windowStack.peek()
-                            && it.isImplicit == false
-                            && it.dest == currentAbstractState
-                }
-                if (existingTransition != null) {
-                    lastExecutedTransition = existingTransition
-                    lastExecutedTransition!!.interactions.add(interaction)
-                } else {
-                    //No recored abstract interaction before
-                    //Or the abstractInteraction is implicit
-                    //Record new AbstractInteraction
-                    createNewAbstractTransition( actionType, interaction, prevState, prevAbstractState, widgetGroup, actionData, currentAbstractState)
-                }
+                deriveWidgetInteraction(prevAbstractState, actionType, widgetGroup, actionData, currentAbstractState, interaction, interactionData, prevWindowAbstractState, prevState)
             } else {
                 if (Helper.hasParentWithType(interaction.targetWidget!!, prevState, "WebView")) {
-                    val webViewWidget = Helper.tryGetParentHavingClassName(interaction.targetWidget!!,prevState,"WebView")
-                    if (webViewWidget != null) {
-                        var avm = prevAbstractState.getAttributeValuationSet(webViewWidget, prevState, this)
-                        if (avm == null)
-                            throw Exception("Should not happen")
-                        else {
-                            val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
-                            val existingTransition = explicitInteractions.find {
-                                it.abstractAction.actionType == actionType
-                                        && it.abstractAction.attributeValuationMap == avm
-                                        && it.abstractAction.extra == actionData
-                                        && it.prevWindow == windowStack.peek()
-                                        && it.isImplicit == false
-                                        && it.dest == currentAbstractState
-                            }
-                            if (existingTransition != null) {
-                                lastExecutedTransition = existingTransition
-                                lastExecutedTransition!!.interactions.add(interaction)
-                            } else {
-                                //No recored abstract interaction before
-                                //Or the abstractInteraction is implicit
-                                //Record new AbstractInteraction
-                                createNewAbstractTransition(actionType, interaction, prevState, prevAbstractState, avm, actionData, currentAbstractState)
-                            }
-                        }
-                    }
+                    deriveWebViewInteraction(interaction, prevState, prevAbstractState, actionType, actionData, currentAbstractState, interactionData, prevWindowAbstractState)
                 }
                 else if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
-                    val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
-                    val existingTransition = explicitInteractions.find {
-                        it.abstractAction.actionType == actionType
-                                && it.abstractAction.extra == actionData
-                                && it.prevWindow == windowStack.peek()
-                                && it.isImplicit == false
-                                && it.dest == currentAbstractState
-                    }
-                    if (existingTransition != null) {
-                        lastExecutedTransition = existingTransition
-                        lastExecutedTransition!!.interactions.add(interaction)
-                    } else {
-                        //No recored abstract interaction before
-                        //Or the abstractInteraction is implicit
-                        //Record new AbstractInteraction
-                        createNewAbstractTransition(actionType, interaction, prevState, prevAbstractState, null, actionData, currentAbstractState)
-                    }
+                    deriveKeyboardInteraction(prevAbstractState, actionType, actionData, interactionData, currentAbstractState, interaction, prevState,prevWindowAbstractState)
                 } else {
                     log.debug("Cannot find the target widget's AVM")
                 }
             }
         }
         if (lastExecutedTransition!=null) {
-            if (isActivityResult) {
+           /* if (isActivityResult) {
                 var prevSameWindowAbstractState: AbstractState? = null
                 for (i in transitionId-1 downTo 1) {
                     val traveredInteraction = interactionsTracing.entries.find { it.value == Pair(traceId,i) }
@@ -796,7 +792,7 @@ class ATUAMF(private val appName: String,
                 if (prevSameWindowAbstractState!=null) {
                      lastExecutedTransition!!.dependentAbstractState = prevSameWindowAbstractState
                 }
-            }
+            }*/
             if (!lastExecutedTransition!!.source.guiStates.any { it.stateId == interaction.prevState })
                 throw Exception("Missing GUI States for interaction")
             if (!lastExecutedTransition!!.dest.guiStates.any { it.stateId == interaction.resState })
@@ -804,6 +800,112 @@ class ATUAMF(private val appName: String,
             updateActionScore(currentState, prevState, interaction)
         } else {
             log.warn("No abstract transition derived")
+        }
+    }
+
+    private fun getPrevWindowAbstractState(): AbstractState? {
+        val prevWindowAbstractState: AbstractState?
+        if (transitionId <= 1) {
+            prevWindowAbstractState = null
+        } else {
+            val traveredInteraction = interactionsTracing.entries.find { it.value == Pair(traceId, transitionId) }
+            if (traveredInteraction == null)
+                throw Exception()
+            if (!interactionPrevWindowStateMapping.containsKey(traveredInteraction.key.last())) {
+                prevWindowAbstractState = null
+            } else {
+                val prevWindowState = interactionPrevWindowStateMapping.get(traveredInteraction.key.last())!!
+                prevWindowAbstractState = getAbstractState(prevWindowState)
+            }
+        }
+        return prevWindowAbstractState
+    }
+
+    private fun deriveKeyboardInteraction(prevAbstractState: AbstractState, actionType: AbstractActionType, actionData: Any?, interactionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, prevState: State<*>, prevWindowAbstractState: AbstractState?) {
+        val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
+        val existingTransition = AbstractTransition.findExistingAbstractTransitions(
+                explicitInteractions,
+                AbstractAction(actionType,null,actionData),
+                interactionData,
+                prevAbstractState,
+                currentAbstractState,
+                prevWindowAbstractState,
+                false
+        )
+        if (existingTransition != null) {
+            lastExecutedTransition = existingTransition
+            updateExistingAbstractTransition(existingTransition, interaction, interactionData, prevWindowAbstractState)
+        } else {
+            //No recored abstract interaction before
+            //Or the abstractInteraction is implicit
+            //Record new AbstractInteraction
+            createNewAbstractTransition(actionType, interaction, prevState, prevAbstractState, null, interactionData, currentAbstractState,prevWindowAbstractState)
+        }
+    }
+
+    private fun deriveWebViewInteraction(interaction: Interaction<Widget>, prevState: State<*>, prevAbstractState: AbstractState, actionType: AbstractActionType, actionData: Any?, currentAbstractState: AbstractState, interactionData: Any?, prevWindowAbstractState: AbstractState?) {
+        val webViewWidget = Helper.tryGetParentHavingClassName(interaction.targetWidget!!, prevState, "WebView")
+        if (webViewWidget != null) {
+            var avm = prevAbstractState.getAttributeValuationSet(webViewWidget, prevState, this)
+            if (avm == null)
+                throw Exception("Should not happen")
+            else {
+                val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
+                val existingTransition = AbstractTransition.findExistingAbstractTransitions(
+                        abstractTransitionSet = explicitInteractions,
+                        abstractAction = AbstractAction(actionType, avm, actionData),
+                        source = prevAbstractState,
+                        dest = currentAbstractState,
+                        interactionData = interactionData,
+                        prevWindowAbstractState = prevWindowAbstractState,
+                        isImplicit = false
+                )
+                if (existingTransition != null) {
+                    lastExecutedTransition = existingTransition
+                    updateExistingAbstractTransition(existingTransition, interaction, interactionData, prevWindowAbstractState)
+                } else {
+                    //No recored abstract interaction before
+                    //Or the abstractInteraction is implicit
+                    //Record new AbstractInteraction
+                    createNewAbstractTransition(actionType, interaction, prevState, prevAbstractState, avm, interactionData, currentAbstractState, prevWindowAbstractState)
+                }
+            }
+        }
+    }
+
+    private fun deriveWidgetInteraction(prevAbstractState: AbstractState, actionType: AbstractActionType, widgetGroup: AttributeValuationMap?, actionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, interactionData: Any?, prevWindowAbstractState: AbstractState?, prevState: State<*>) {
+        val explicitInteractions = prevAbstractState.abstractTransitions.filter { it.isImplicit == false }
+
+        val existingTransition = AbstractTransition.findExistingAbstractTransitions(
+                explicitInteractions,
+                AbstractAction(actionType,widgetGroup,actionData),
+                interactionData,
+                prevAbstractState,
+                currentAbstractState,
+                prevWindowAbstractState,
+                false
+        )
+        if (existingTransition != null) {
+            lastExecutedTransition = existingTransition
+            updateExistingAbstractTransition(
+                    existingTransition, interaction, interactionData, prevWindowAbstractState
+            )
+        } else {
+            //No recored abstract interaction before
+            //Or the abstractInteraction is implicit
+            //Record new AbstractInteraction
+            createNewAbstractTransition(actionType, interaction, prevState, prevAbstractState, widgetGroup, interactionData, currentAbstractState,prevWindowAbstractState)
+        }
+    }
+
+    private fun updateExistingAbstractTransition(existingTransition: AbstractTransition, interaction: Interaction<Widget>, interactionData: Any?, prevWindowAbstractState: AbstractState?) {
+        existingTransition.interactions.add(interaction)
+        if (interactionData != null) {
+            existingTransition.data = interactionData
+            // TODO update data to array
+        }
+        if (prevWindowAbstractState != null && !existingTransition.dependentAbstractStates.contains(prevWindowAbstractState)) {
+            existingTransition.dependentAbstractStates.add(prevWindowAbstractState)
         }
     }
 
@@ -957,85 +1059,82 @@ class ATUAMF(private val appName: String,
 
 
 
-    private fun processNonLaunchAndResetNullTargetInteraction(prevState: State<*>, allAbstractTransitions: List<Edge<AbstractState, AbstractTransition>>, actionType: AbstractActionType, actionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, prevAbstractState: AbstractState) {
-        val abstractTransition = allAbstractTransitions.find {
-            it.label.abstractAction.actionType == actionType
-                    && it.label.abstractAction.attributeValuationMap == null
-                    && it.label.abstractAction.extra == actionData
-                    && it.label.prevWindow == windowStack.peek()
-                    && it.label.isImplicit == false
-                    && it.label.dest == currentAbstractState
-        }
+    private fun deriveNonLaunchAndResetNullTargetInteraction(prevState: State<*>,
+                                                             allAbstractTransitions: List<Edge<AbstractState, AbstractTransition>>,
+                                                             actionType: AbstractActionType,
+                                                             actionData: Any?,
+                                                             interactionData: Any?,
+                                                             currentAbstractState: AbstractState,
+                                                             interaction: Interaction<Widget>,
+                                                             prevAbstractState: AbstractState,
+                                                             prevWindowAbstractState: AbstractState?) {
+        val abstractTransition = AbstractTransition.findExistingAbstractTransitions(
+                abstractTransitionSet = allAbstractTransitions.map { it.label },
+                abstractAction = AbstractAction(actionType,null,actionData),
+                interactionData = interactionData,
+                source = prevAbstractState,
+                dest = currentAbstractState,
+                prevWindowAbstractState = prevWindowAbstractState,
+                isImplicit = false)
         if (abstractTransition != null) {
-            lastExecutedTransition = abstractTransition.label
-            lastExecutedTransition!!.interactions.add(interaction)
-
+            lastExecutedTransition = abstractTransition
+            updateExistingAbstractTransition(
+                    abstractTransition,interaction, interactionData, prevWindowAbstractState
+            )
         } else {
-            createNewAbstractTransition( actionType, interaction, prevState, prevAbstractState, null, actionData, currentAbstractState)
+            createNewAbstractTransition( actionType, interaction, prevState, prevAbstractState, null, interactionData, currentAbstractState,prevWindowAbstractState)
         }
 
     }
 
-    private fun processLaunchOrResetInteraction(prevGuiState: State<Widget>, allAbstractTransitions: List<Edge<AbstractState, AbstractTransition>>, actionType: AbstractActionType, actionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, prevAbstractState: AbstractState) {
+    private fun deriveLaunchOrResetInteraction(prevGuiState: State<Widget>, allAbstractTransitions: List<Edge<AbstractState, AbstractTransition>>, actionType: AbstractActionType, actionData: Any?, currentAbstractState: AbstractState, interaction: Interaction<Widget>, prevAbstractState: AbstractState) {
         if (actionType == AbstractActionType.LAUNCH_APP) {
-            val abstractTransition = allAbstractTransitions.find {
-                it.label.abstractAction.actionType == actionType
-                        && it.label.abstractAction.attributeValuationMap == null
-                        && it.label.abstractAction.extra == actionData
-                        && it.label.dest == currentAbstractState
-                        && it.label.isImplicit == false
-            }
+            val abstractTransition = AbstractTransition.findExistingAbstractTransitions(
+                    allAbstractTransitions.map { it.label },
+                    AbstractAction(actionType,null,null),
+                    null,
+                    prevAbstractState,
+                    currentAbstractState,
+                    null,
+                    false
+            )
             if (abstractTransition != null) {
-                lastExecutedTransition = abstractTransition.label
+                lastExecutedTransition = abstractTransition
                 lastExecutedTransition!!.interactions.add(interaction)
             } else {
                 val attributeValuationMap: AttributeValuationMap? = null
-                createNewAbstractTransition( actionType, interaction, prevGuiState, prevAbstractState, attributeValuationMap, actionData, currentAbstractState)
+                createNewAbstractTransition( actionType, interaction, prevGuiState, prevAbstractState, attributeValuationMap, null,currentAbstractState,null)
             }
         }
         AbstractStateManager.instance.updateLaunchAndResetTransition()
     }
 
-    private fun createNewAbstractTransition(actionType: AbstractActionType, interaction: Interaction<Widget>, prevGuiState: State<Widget>, prevAbstractState: AbstractState, attributeValuationMap: AttributeValuationMap?, actionData: Any?, currentAbstractState: AbstractState) {
-        val lastExecutedAction = getOrCreateAbstractAction(actionType, interaction, prevGuiState, prevAbstractState, attributeValuationMap)
+    private fun createNewAbstractTransition(actionType: AbstractActionType,
+                                            interaction: Interaction<Widget>,
+                                            prevGuiState: State<Widget>,
+                                            prevAbstractState: AbstractState,
+                                            attributeValuationMap: AttributeValuationMap?,
+                                            interactionData: Any? ,
+                                            currentAbstractState: AbstractState,
+                                            prevWindowAbstractState: AbstractState?) {
+        val lastExecutedAction = AbstractAction.getOrCreateAbstractAction(actionType, interaction, prevGuiState, prevAbstractState, attributeValuationMap,this)
         val prevWindow = windowStack.peek()
         val newAbstractInteraction = AbstractTransition(
                 abstractAction = lastExecutedAction,
                 interactions = HashSet(),
                 isImplicit = false,
-                prevWindow = prevWindow,
-                data = actionData,
+                /*prevWindow = prevWindow,*/
+                data = interactionData,
                 source = prevAbstractState,
                 dest = currentAbstractState)
         newAbstractInteraction.interactions.add(interaction)
+        if (prevWindowAbstractState!=null)
+            newAbstractInteraction.dependentAbstractStates.add(prevWindowAbstractState)
         dstg.add(prevAbstractState, currentAbstractState, newAbstractInteraction)
         lastExecutedTransition = newAbstractInteraction
     }
 
     var prevAbstractStateRefinement: Int = 0
-    private fun getOrCreateAbstractAction(actionType: AbstractActionType, interaction: Interaction<Widget>, guiState: State<Widget>, abstractState: AbstractState, attributeValuationMap: AttributeValuationMap?): AbstractAction {
-        val actionData = AbstractAction.computeAbstractActionExtraData(actionType, interaction, guiState, abstractState, this)
-        val abstractAction: AbstractAction
-        val availableAction = abstractState.getAvailableActions().find {
-            it.actionType == actionType
-                    && it.attributeValuationMap == attributeValuationMap
-                    && it.extra == actionData
-        }
-
-        if (availableAction == null) {
-            abstractAction = AbstractAction(
-                    actionType = actionType,
-                    attributeValuationMap = attributeValuationMap,
-                    extra = actionData
-            )
-            abstractState.addAction(abstractAction)
-        } else {
-            abstractAction = availableAction
-        }
-        return abstractAction
-    }
-
-
 
     private fun normalizeActionType(actionName: String): AbstractActionType {
         val actionType = actionName
@@ -1173,6 +1272,7 @@ class ATUAMF(private val appName: String,
             if (newState.isAppHasStoppedDialogBox) {
                 necessaryCheckModel = false
             }
+
             if (lastInteractions.isNotEmpty()) {
                 lastExecutedTransition = null
                 isActivityResult = false
@@ -1183,15 +1283,15 @@ class ATUAMF(private val appName: String,
                     isActivityResult = true
                 }
                 deriveAbstractInteraction(ArrayList(lastInteractions), prevState, newState, statementCovered)
-                updateWindowStack(prevAbstractState,prevState, currentAbstractState,newState, fromLaunch)
+
                 //update lastExecutedEvent
                 if (lastExecutedTransition == null) {
                     log.debug("lastExecutedEvent is null")
                     updated = false
                 } else {
-                    updated = updateAppModelWithLastExecutedEvent(prevState, newState, lastInteractions)
                     if (reuseBaseModel) {
-                        ModelBackwardAdapter.instance.checkingEquivalence(currentAbstractState, lastExecutedTransition!!,dstg)
+                        val prevWindowAbstractState: AbstractState? = getPrevWindowAbstractState()
+                        ModelBackwardAdapter.instance.checkingEquivalence(currentAbstractState, lastExecutedTransition!!,prevWindowAbstractState ,dstg)
                     }
                     if (prevAbstractState!!.belongToAUT() && currentAbstractState.isOutOfApplication && lastInteractions.size > 1) {
                         lastOpeningAnotherAppInteraction = lastInteractions.single()
@@ -1199,7 +1299,10 @@ class ATUAMF(private val appName: String,
                     if (!prevAbstractState.belongToAUT() && currentAbstractState.belongToAUT()) {
                         lastOpeningAnotherAppInteraction = null
                     }
+                    updated = updateAppModelWithLastExecutedEvent(prevState, newState, lastInteractions)
+
                 }
+
                 // derive dialog type
                 if (prevAbstractState != null && lastExecutedTransition != null) {
                     DialogBehaviorMonitor.instance.detectDialogType(lastExecutedTransition!!, prevState, newState)
@@ -1214,19 +1317,8 @@ class ATUAMF(private val appName: String,
                 } else {
                     log.debug("Return to a previous state. Do not need refine model.")
                 }
-
-                // debug
-                val allAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES.filter {
-                    it !is VirtualAbstractState
-                            && it.guiStates.isNotEmpty()
-                }.map { it.abstractTransitions }.flatten().distinct()
-                        .filter {
-                            it.isExplicit()
-                                    && it.dependentAbstractState!=null
-                                    && it.interactions.isNotEmpty()}
-                if (allAbstractTransitions.any { it.dependentAbstractState!!.guiStates.isEmpty() }) {
-                    throw Exception()
-                }
+                updateWindowStack(prevAbstractState,prevState, currentAbstractState,newState, fromLaunch)
+                registerPrevWindowState(prevState,newState,lastInteractions.last())
             } else {
                 updated = false
             }
@@ -1374,12 +1466,25 @@ class ATUAMF(private val appName: String,
             newInput.data = abstractTransition.abstractAction.extra
             newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
 
-            wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
-                    prevAbstractState.window,
-                    newAbstractState.window,
-                    newInput,
-                    abstractTransition.prevWindow
-            ))
+            val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
+
+            if(prevWindows.isNotEmpty()) {
+                prevWindows.forEach { prevWindow->
+                    wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                            prevAbstractState.window,
+                            newAbstractState.window,
+                            newInput!!,
+                            prevWindow
+                    ))
+                }
+            } else {
+                wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                        prevAbstractState.window,
+                        newAbstractState.window,
+                        newInput!!,
+                        null
+                ))
+            }
             if (!prevAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
                 prevAbstractState.inputMappings.put(abstractTransition.abstractAction, hashSetOf())
             }
@@ -1436,12 +1541,25 @@ class ATUAMF(private val appName: String,
                 newInput.data = abstractTransition.abstractAction.extra
                 newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
 
-                wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
-                        prevAbstractState.window,
-                        newAbstractState.window,
-                        newInput,
-                        abstractTransition.prevWindow
-                ))
+                val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
+
+                if(prevWindows.isNotEmpty()) {
+                    prevWindows.forEach { prevWindow->
+                        wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                                prevAbstractState.window,
+                                newAbstractState.window,
+                                newInput!!,
+                                prevWindow
+                        ))
+                    }
+                } else {
+                    wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                            prevAbstractState.window,
+                            newAbstractState.window,
+                            newInput!!,
+                            null
+                    ))
+                }
                 if (!prevAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
                     prevAbstractState.inputMappings.put(abstractTransition.abstractAction, hashSetOf())
                 }
@@ -1549,21 +1667,27 @@ class ATUAMF(private val appName: String,
     }
 
     private fun updateStaticEventHandlersAndModifiedMethods(input: Input, abstractTransition: AbstractTransition, coverageIncreased: Int) {
-        //update ewtg transition
-        val existingTransition = wtg.edge(abstractTransition.source.window, abstractTransition.dest.window, WindowTransition(
-                abstractTransition.source.window,
-                abstractTransition.dest.window,
-                input,
-                abstractTransition.prevWindow
-        ))
-        if (existingTransition == null) {
-            wtg.add(abstractTransition.source.window, abstractTransition.dest.window, WindowTransition(
-                    abstractTransition.source.window,
-                    abstractTransition.dest.window,
-                    input,
-                    abstractTransition.prevWindow
-            ))
+        val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
+        if (prevWindows.isNotEmpty()) {
+            prevWindows.forEach { prevWindow->
+                val existingTransition = wtg.edge(abstractTransition.source.window, abstractTransition.dest.window, WindowTransition(
+                        abstractTransition.source.window,
+                        abstractTransition.dest.window,
+                        input,
+                        prevWindow
+                ))
+                if (existingTransition == null) {
+                    wtg.add(abstractTransition.source.window, abstractTransition.dest.window, WindowTransition(
+                            abstractTransition.source.window,
+                            abstractTransition.dest.window,
+                            input,
+                            prevWindow
+                    ))
+                }
+            }
         }
+        //update ewtg transition
+
         // process event handlers
         abstractTransition.handlers.filter { it.value == true }.forEach {
             input.verifiedEventHandlers.add(it.key)
@@ -1588,23 +1712,6 @@ class ATUAMF(private val appName: String,
                 input.eventHandlers.addAll(input.verifiedEventHandlers)
 
         }
-
-/*        val eventhandlers = ArrayList(input.eventHandlers)
-        eventhandlers.forEach {
-            if (!input.verifiedEventHandlers.contains(it)) {
-                if (!abstractTransition.handlers.containsKey(it)) {
-                    input.eventHandlers.remove(it)
-                } else if (abstractTransition.handlers[it] == false) {
-                    input.eventHandlers.remove(it)
-                } else {
-                    if (!input.eventHandlers.contains(it)) {
-                        input.eventHandlers.add(it)
-                    }
-                    input.verifiedEventHandlers.add(it)
-                }
-            }
-        }*/
-
 
         abstractTransition.modifiedMethods.forEach {
             val methodId = it.key
@@ -1634,8 +1741,6 @@ class ATUAMF(private val appName: String,
             //log.debug(newCoveredStatements.toString())
         }
         input.coverage.put(dateFormater.format(System.currentTimeMillis()), input.modifiedMethodStatement.filterValues { it == true }.size)
-
-
         removeUnreachableModifiedMethods(input)
 
     }
@@ -2072,58 +2177,77 @@ class ATUAMF(private val appName: String,
         ATUAMF.log.info("Finished writing report in ${outputFile.fileName}")
 
         if (reuseBaseModel) {
-            val sb2 = StringBuilder()
-            val totalBaseAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
-                it.modelVersion == ModelVersion.BASE
-            }
-            sb2.appendln("Total base astract states;${totalBaseAbstractStates.size}")
-            val reusedAbstractState = ModelBackwardAdapter.instance.remappedBaseAbstractState
-            sb2.appendln("Reused abstract state;${reusedAbstractState.size}")
-            reusedAbstractState.forEach {
+            produceModelBackwardReport(context)
+        }
+    }
+
+    private fun produceModelBackwardReport(context: ExplorationContext<*, *, *>) {
+        val sb2 = StringBuilder()
+
+        val keptBaseAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+            it.modelVersion == ModelVersion.BASE
+                    && it !is VirtualAbstractState
+        }
+        val initialBaseAbstractStates = EWTGDiff.instance.removedAbstractStates.plus(keptBaseAbstractStates)
+        val newlyCreatedAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+            it.modelVersion == ModelVersion.RUNNING
+                    && it !is VirtualAbstractState
+                    && it.guiStates.isNotEmpty()
+
+        }
+        sb2.appendln("Initial base astract states;${initialBaseAbstractStates.size}")
+        sb2.appendln("Total base astract states;${keptBaseAbstractStates.size}")
+        sb2.appendln("Newly created astract states;${newlyCreatedAbstractStates.size}")
+        val reusedAbstractState = ModelBackwardAdapter.instance.observedBaseAbstractState
+        sb2.appendln("Reused abstract state;${reusedAbstractState.size}")
+        reusedAbstractState.forEach {
+            sb2.appendln(it.abstractStateId)
+        }
+        sb2.appendln("Backward equivalence identification;${ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.size}")
+        ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.forEach { newState, baseStates ->
+            sb2.appendln("---")
+            sb2.appendln("New state;${newState.abstractStateId}")
+            sb2.appendln("Base states count;${baseStates.size}")
+            baseStates.forEach {
                 sb2.appendln(it.abstractStateId)
             }
-            sb2.appendln("Backward equivalence identification;${ModelBackwardAdapter.instance.backwardEquivalentMapping.size}")
-            ModelBackwardAdapter.instance.backwardEquivalentMapping.forEach { newState, baseStates ->
-                sb2.appendln("---")
-                sb2.appendln("New state;${newState.abstractStateId}")
-                sb2.appendln("Base states count;${baseStates.size}")
-                baseStates.forEach {
-                    sb2.appendln(it.abstractStateId)
-                }
-            }
-            val totalBaseAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
-                    .filter { it.modelVersion==ModelVersion.BASE }
-                    .flatMap { it.abstractTransitions }
-                    .filter { it.isExplicit() && it.modelVersion == ModelVersion.BASE }
-            sb2.appendln("Total base abstract transitions;${totalBaseAbstractTransitions.size}")
-            val correctAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
-                    .map { it.abstractTransitions }
-                    .flatten().filter {
-                        it.isExplicit()
-                                && it.modelVersion == ModelVersion.BASE
-                                && it.interactions.isNotEmpty()
-                    }
-            sb2.appendln("Correct abstract transitions count;${correctAbstractTransitions.size}")
-            correctAbstractTransitions.forEach {
-                sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
-                        "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};" +
-                        "${it.prevWindow?.windowId}")
-            }
-            val incorrectAbstractTransitions = ModelBackwardAdapter.instance.incorrectTransition
-            sb2.appendln("Incorrect abstract transitions count;${incorrectAbstractTransitions.size}")
-            incorrectAbstractTransitions.forEach {
-                sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
-                        "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};" +
-                        "${it.prevWindow?.windowId}")
-            }
-            val modelbackwardReport = context.model.config.baseDir.resolve("backwardEquivalenceReport.txt")
-            ATUAMF.log.info("Prepare writing backward equivalence report file: " +
-                    "\n- File name: ${modelbackwardReport.fileName}" +
-                    "\n- Absolute path: ${modelbackwardReport.toAbsolutePath().fileName}")
-
-            Files.write(modelbackwardReport, sb2.lines())
-            ATUAMF.log.info("Finished writing report in ${modelbackwardReport.fileName}")
         }
+        val totalBaseAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
+                .filter { it.modelVersion == ModelVersion.BASE }
+                .flatMap { it.abstractTransitions }
+                .filter { it.isExplicit() && it.modelVersion == ModelVersion.BASE }
+        sb2.appendln("Total base abstract transitions;${totalBaseAbstractTransitions.size}")
+        val newAbstractTransitions =  AbstractStateManager.instance.ABSTRACT_STATES
+                .flatMap { it.abstractTransitions }
+                .filter { it.isExplicit() && it.modelVersion == ModelVersion.RUNNING }
+        sb2.appendln("New abstract transitions;${newAbstractTransitions.size}")
+        val correctAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
+                .map { it.abstractTransitions }
+                .flatten().filter {
+                    it.isExplicit()
+                            && it.modelVersion == ModelVersion.BASE
+                            && it.interactions.isNotEmpty()
+                }
+        sb2.appendln("Correct abstract transitions count;${correctAbstractTransitions.size}")
+        correctAbstractTransitions.forEach {
+            sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
+                    "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};" /*+
+                    "${it.prevWindow}"*/)
+        }
+        val incorrectAbstractTransitions = ModelBackwardAdapter.instance.incorrectTransitions
+        sb2.appendln("Incorrect abstract transitions count;${incorrectAbstractTransitions.size}")
+        incorrectAbstractTransitions.forEach {
+            sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
+                    "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};"/* +
+                    "${it.prevWindow?.windowId}"*/)
+        }
+        val modelbackwardReport = context.model.config.baseDir.resolve("backwardEquivalenceReport.txt")
+        log.info("Prepare writing backward equivalence report file: " +
+                "\n- File name: ${modelbackwardReport.fileName}" +
+                "\n- Absolute path: ${modelbackwardReport.toAbsolutePath().fileName}")
+
+        Files.write(modelbackwardReport, sb2.lines())
+        log.info("Finished writing report in ${modelbackwardReport.fileName}")
     }
 
     //Widget override

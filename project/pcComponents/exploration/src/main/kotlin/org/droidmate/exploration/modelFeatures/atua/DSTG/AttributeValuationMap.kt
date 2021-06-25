@@ -400,7 +400,7 @@ class AttributeValuationMap {
             if (!localAttributes.containsKey(it.key))
                 return false
             if (localAttributes[it.key] != it.value)
-                return false
+                return  false
         }
 /*        if (childAttributeValuationSetIds.isEmpty() && !abstractAttributeValuationMap.childAttributeValuationSetIds.isEmpty()) {
             return false

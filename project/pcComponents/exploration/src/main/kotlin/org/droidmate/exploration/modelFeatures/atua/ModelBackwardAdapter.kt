@@ -18,9 +18,11 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class ModelBackwardAdapter {
-    val backwardEquivalentMapping = HashMap<AbstractState, HashSet<AbstractState>>()
-    val remappedBaseAbstractState = HashSet<AbstractState>()
-    val incorrectTransition = HashSet<AbstractTransition>()
+    val backwardEquivalentAbstractStateMapping = HashMap<AbstractState, HashSet<AbstractState>>()
+    val backwardEquivalentAbstractTransitionMapping = HashMap<AbstractTransition, AbstractTransition>()
+    val observedBaseAbstractState = HashSet<AbstractState>()
+    val incorrectTransitions = HashSet<AbstractTransition>()
+    val correctTransitions = HashSet<AbstractTransition>()
     val quasibackwardEquivalentMapping = HashMap<Pair<AbstractState, AbstractAction>,HashSet<Pair<AbstractState,AbstractState>>>()
 
     val checkingQuasibackwardEquivalent = Stack<Triple<AbstractState,AbstractAction,AbstractState>> ()
@@ -28,38 +30,44 @@ class ModelBackwardAdapter {
     fun runtimeAdaptation() {
     }
 
-    fun checkingEquivalence(observedAbstractState: AbstractState, abstractTransition: AbstractTransition, dstg: DSTG) {
+    fun checkingEquivalence(observedAbstractState: AbstractState, abstractTransition: AbstractTransition, prevWindowAbstractState: AbstractState?, dstg: DSTG) {
         if (!isConsideringAbstractAction(abstractTransition.abstractAction)) {
             return
         }
+        if (observedAbstractState.isHomeScreen)
+            return
         /*if (abstractTransition.abstractAction.actionType == AbstractActionType.RESET_APP) {
             checkingQuasibackwardEquivalent.clear()
         }*/
-        if (observedAbstractState.modelVersion == ModelVersion.BASE) {
-            remappedBaseAbstractState.add(observedAbstractState)
-            return
-        }
         if (abstractTransition.modelVersion == ModelVersion.BASE) {
+            correctTransitions.add(abstractTransition)
             return
         }
-
-        if (backwardEquivalentMapping.values.any {it.contains(observedAbstractState)}) {
+        if (observedAbstractState.modelVersion == ModelVersion.BASE) {
+            observedBaseAbstractState.add(observedAbstractState)
+            return
+        }
+        if (backwardEquivalentAbstractStateMapping.containsKey(observedAbstractState)) {
             return
         }
         var backwardEquivalenceFound = false
+        val matchedAVMs1 = HashMap<AttributeValuationMap,AttributeValuationMap>() // observered - expected
+        val matchedAVMs2 = HashMap<AttributeValuationMap,AttributeValuationMap>() // expected - observered
         if (abstractTransition.abstractAction.isLaunchOrReset()) {
             val baseModelInitialStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
                 it.isInitalState && it.modelVersion == ModelVersion.BASE
             }
             baseModelInitialStates.forEach {baseModelInitialState->
                 val expectedAbstractState = baseModelInitialState
+                matchedAVMs1.clear()
+                matchedAVMs2.clear()
                 if (observedAbstractState == expectedAbstractState) {
                     backwardEquivalenceFound = true
                 }
-                else if (isBackwardEquivant(observedAbstractState, expectedAbstractState)) {
-                    backwardEquivalentMapping.putIfAbsent(expectedAbstractState, HashSet())
-                    backwardEquivalentMapping[expectedAbstractState]!!.add(observedAbstractState)
-                    copyAbstractTransitions(observedAbstractState, expectedAbstractState,dstg)
+                else if (isBackwardEquivant(observedAbstractState, expectedAbstractState,matchedAVMs1,matchedAVMs2,false)) {
+                    backwardEquivalentAbstractStateMapping.putIfAbsent(observedAbstractState, HashSet())
+                    backwardEquivalentAbstractStateMapping[observedAbstractState]!!.add(expectedAbstractState)
+                    copyAbstractTransitions(observedAbstractState, expectedAbstractState,dstg,matchedAVMs2)
                     backwardEquivalenceFound = true
                 }
             }
@@ -74,27 +82,40 @@ class ModelBackwardAdapter {
             val obsoleteBaseAbstractTransitions = ArrayList<AbstractTransition>()
             obsoleteBaseAbstractTransitions.addAll(abstractTransition.source.abstractTransitions.filter {
                 it.abstractAction == abstractTransition.abstractAction
-                        && (it.prevWindow == abstractTransition.prevWindow
-                        || it.prevWindow == null)
-                        && it.dependentAbstractState == abstractTransition.dependentAbstractState
+                        /*&& (it.prevWindow == abstractTransition.prevWindow
+                        || it.prevWindow == null)*/
+                       /* && ( it.dependentAbstractState == abstractTransition.dependentAbstractState
+                        || backwardEquivalentAbstractStateMapping.get(abstractTransition.dependentAbstractState)?.contains(it.dependentAbstractState)?:false)*/
+                        && (it.dependentAbstractStates.isEmpty()
+                            || (prevWindowAbstractState!=null &&
+                                (it.dependentAbstractStates.contains(prevWindowAbstractState)
+                                    || it.dependentAbstractStates.any { it == backwardEquivalentAbstractStateMapping.get(prevWindowAbstractState) })))
                         && it.modelVersion == ModelVersion.BASE
                         && it.interactions.isEmpty()
-                        && it.dest.guiStates.isEmpty() // which means that the destination has not observed before
             })
+            // TODO check
             abstractTransition.source.abstractTransitions.removeIf { obsoleteBaseAbstractTransitions.contains(it) }
+            obsoleteBaseAbstractTransitions.forEach {
+                val edge = dstg.edge(it.source,it.dest,it)
+                if (edge!=null)
+                    dstg.remove(edge)
+            }
             if (obsoleteBaseAbstractTransitions.isNotEmpty()) {
                 obsoleteBaseAbstractTransitions.forEach {
                     val dest = it.dest
+                    matchedAVMs1.clear()
+                    matchedAVMs2.clear()
                     if (observedAbstractState == dest) {
                         backwardEquivalenceFound = true
-                    } else if (isBackwardEquivant(observedAbstractState, dest)) {
-                        backwardEquivalentMapping.putIfAbsent(dest, HashSet())
-                        backwardEquivalentMapping[dest]!!.add(observedAbstractState)
-                        copyAbstractTransitions(observedAbstractState, dest,dstg)
+                    } else if (isBackwardEquivant(observedAbstractState, dest,matchedAVMs1,matchedAVMs2,false)) {
+                        backwardEquivalentAbstractStateMapping.putIfAbsent(observedAbstractState, HashSet())
+                        backwardEquivalentAbstractStateMapping[observedAbstractState]!!.add(dest)
+                        copyAbstractTransitions(observedAbstractState, dest,dstg,matchedAVMs2)
                         backwardEquivalenceFound = true
+                        correctTransitions.add(it)
                     } else {
                         abstractTransition.source.abstractTransitions.remove(it)
-                        incorrectTransition.add(it)
+                        incorrectTransitions.add(it)
                     }
                 }
             } else {
@@ -105,12 +126,14 @@ class ModelBackwardAdapter {
                             && it.isOpeningKeyboard == observedAbstractState.isOpeningKeyboard
                 }
                 candidates.forEach {
+                    matchedAVMs1.clear()
+                    matchedAVMs2.clear()
                     if (observedAbstractState == it) {
                         backwardEquivalenceFound = true
-                    } else if (isBackwardEquivant(observedAbstractState, it)) {
-                        backwardEquivalentMapping.putIfAbsent(it, HashSet())
-                        backwardEquivalentMapping[it]!!.add(observedAbstractState)
-                        copyAbstractTransitions(observedAbstractState, it,dstg)
+                    } else if (isBackwardEquivant(observedAbstractState, it,matchedAVMs1,matchedAVMs2,true)) {
+                        backwardEquivalentAbstractStateMapping.putIfAbsent(observedAbstractState, HashSet())
+                        backwardEquivalentAbstractStateMapping[observedAbstractState]!!.add(it)
+                        copyAbstractTransitions(observedAbstractState, it,dstg,matchedAVMs2)
                         backwardEquivalenceFound = true
                     }
                 }
@@ -132,50 +155,112 @@ class ModelBackwardAdapter {
     private fun isConsideringAbstractAction(abstractAction: AbstractAction): Boolean {
         val result = when (abstractAction.actionType) {
             AbstractActionType.WAIT -> false
+            AbstractActionType.PRESS_HOME -> false
             else -> true
         }
         return result
     }
 
-    private fun copyAbstractTransitions(destination: AbstractState, source: AbstractState,dstg: DSTG) {
+    private fun copyAbstractTransitions(destination: AbstractState,
+                                        source: AbstractState,dstg: DSTG,
+                                        sourceDestAVMMatching: Map<AttributeValuationMap,AttributeValuationMap>) {
         source.abstractTransitions.filter { it.isExplicit()  }. forEach {sourceTransition->
-            val existingAbstractTransition = destination.abstractTransitions.find {
-                it.abstractAction == sourceTransition.abstractAction
-                        && it.dest == sourceTransition.dest
-                        && it.prevWindow == sourceTransition.prevWindow
-                        && it.isImplicit == false
-                        && it.modelVersion == ModelVersion.BASE
-            }
-            if (existingAbstractTransition == null) {
-                // create new Abstract Transition
-                val newAbstractTransition = AbstractTransition(
-                        source = destination,
-                        dest = sourceTransition.dest,
-                        prevWindow = sourceTransition.prevWindow,
-                        abstractAction = sourceTransition.abstractAction,
-                        isImplicit = sourceTransition.isImplicit,
-                        modelVersion = ModelVersion.BASE
-                )
-                dstg.add(newAbstractTransition.source,newAbstractTransition.dest,newAbstractTransition)
-                newAbstractTransition.userInputs.addAll(sourceTransition.userInputs)
-                sourceTransition.handlers.forEach { handler, _ ->
-                    newAbstractTransition.handlers.putIfAbsent(handler,false)
+            var destAbstractAction: AbstractAction? = null
+            if (!sourceTransition.abstractAction.isWidgetAction())
+                destAbstractAction = sourceTransition.abstractAction
+            else
+            {
+                val destAVM = sourceDestAVMMatching.get(sourceTransition.abstractAction.attributeValuationMap!!)
+                if (destAVM!=null) {
+                    destAbstractAction = AbstractAction(
+                            actionType = sourceTransition.abstractAction.actionType,
+                            attributeValuationMap = destAVM,
+                            extra = sourceTransition.abstractAction.extra
+                    )
                 }
-            } else {
-                // copy additional information
-                existingAbstractTransition.userInputs.addAll(sourceTransition.userInputs)
-                sourceTransition.handlers.forEach { handler, _ ->
-                    existingAbstractTransition.handlers.putIfAbsent(handler,false)
+            }
+            if (destAbstractAction!=null) {
+                val dependendAbstractStates = ArrayList<AbstractState>()
+                for (dependentAbstractState in sourceTransition.dependentAbstractStates) {
+                    if (dependentAbstractState.guiStates.isNotEmpty())
+                        dependendAbstractStates.add(dependentAbstractState)
+                    else{
+                        val equivalences = backwardEquivalentAbstractStateMapping.filter { it.value.contains(dependentAbstractState) }
+                        if (equivalences.isEmpty()) {
+                            dependendAbstractStates.add(dependentAbstractState)
+                        } else {
+                            equivalences.forEach { t, _ ->
+                                dependendAbstractStates.add(t)
+                            }
+
+                        }
+                    }
+                }
+              /*  val dependentAbstractState = if (sourceTransition.dependentAbstractState!=null) {
+                    if (sourceTransition.dependentAbstractState!!.guiStates.isNotEmpty()) {
+                        sourceTransition.dependentAbstractState
+                    } else {
+                        backwardEquivalentAbstractStateMapping.get(sourceTransition.dependentAbstractState!!)?.firstOrNull()?:sourceTransition.dependentAbstractState
+                    }
+                } else
+                    null*/
+                val dest = if (sourceTransition.dest.guiStates.isNotEmpty())
+                    sourceTransition.dest
+                else
+                    backwardEquivalentAbstractStateMapping.get(sourceTransition.dest)?.firstOrNull()?:sourceTransition.dest
+                val existingAbstractTransition = destination.abstractTransitions.find {
+                    it.modelVersion == ModelVersion.BASE
+                            && it.abstractAction == destAbstractAction
+                            && it.dest == dest
+                            /*&& it.prevWindow == sourceTransition.prevWindow*/
+                            && it.isImplicit == false
+                           /* && it.dependentAbstractState == dependentAbstractState*/
+                }
+                // TODO check
+                if (existingAbstractTransition == null) {
+                    // create new Abstract Transition
+                    val newAbstractTransition = AbstractTransition(
+                            source = destination,
+                            dest = sourceTransition.dest,
+                            /*prevWindow = sourceTransition.prevWindow,*/
+                            abstractAction = destAbstractAction,
+                            isImplicit = sourceTransition.isImplicit,
+                            modelVersion = ModelVersion.BASE,
+                            data = sourceTransition.data
+                    )
+                    // TODO check
+                    newAbstractTransition.dependentAbstractStates.addAll(dependendAbstractStates)
+                    dstg.add(newAbstractTransition.source, newAbstractTransition.dest, newAbstractTransition)
+                    newAbstractTransition.userInputs.addAll(sourceTransition.userInputs)
+                    sourceTransition.handlers.forEach { handler, _ ->
+                        newAbstractTransition.handlers.putIfAbsent(handler, false)
+                    }
+                    backwardEquivalentAbstractTransitionMapping.put(newAbstractTransition,sourceTransition)
+                } else {
+                    // copy additional information
+                    existingAbstractTransition.userInputs.addAll(sourceTransition.userInputs)
+                    sourceTransition.handlers.forEach { handler, _ ->
+                        existingAbstractTransition.handlers.putIfAbsent(handler, false)
+                    }
+                    existingAbstractTransition.dependentAbstractStates.addAll(dependendAbstractStates)
                 }
             }
         }
     }
 
-    private fun isBackwardEquivant(observedAbstractState: AbstractState, expectedAbstractState: AbstractState): Boolean {
+    private fun isBackwardEquivant(observedAbstractState: AbstractState,
+                                   expectedAbstractState: AbstractState,
+                                   matchedAVMs1: HashMap<AttributeValuationMap,AttributeValuationMap>,
+                                   matchedAVMs2: HashMap<AttributeValuationMap,AttributeValuationMap>,
+                                   strict: Boolean): Boolean {
+        if (observedAbstractState.isOpeningKeyboard != expectedAbstractState.isOpeningKeyboard)
+            return false
+        if (observedAbstractState.isOpeningMenus != expectedAbstractState.isOpeningMenus)
+            return false
+        if (observedAbstractState.rotation != expectedAbstractState.rotation)
+            return false
         val observedAbstractStateAVMCount = observedAbstractState.attributeValuationMaps.size
         val expectedAbstractStateAVMCount = expectedAbstractState.attributeValuationMaps.size
-        val matchedAVMs1 = HashMap<AttributeValuationMap,AttributeValuationMap>() // observered - expected
-        val matchedAVMs2 = HashMap<AttributeValuationMap,AttributeValuationMap>() // expected - observered
         val unmatchedAVMs1 = ArrayList<AttributeValuationMap>() // observered
         val unmatchedAVMs2 = ArrayList<AttributeValuationMap>() // expected
         val addedAVMS = ArrayList<AttributeValuationMap>()
@@ -238,6 +323,11 @@ class ModelBackwardAdapter {
         } else {
             val unmatchedWidgets1 =  unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
             val unmatchedWidgets2 = unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) }
+            if (!strict) {
+                if (unmatchedWidgets1.intersect(unmatchedWidgets2).isEmpty())
+                    return true
+                return false
+            }
             val updateWindowCreatedRuntimeWidgets = observedAbstractState.window.widgets
                     .filter { it.createdAtRuntime &&  it.modelVersion == ModelVersion.RUNNING }
             val baseWindowCreatedRuntimeWidgets = expectedAbstractState.window.widgets
@@ -251,8 +341,8 @@ class ModelBackwardAdapter {
             if (condition1 && condition2) {
                 return true
             }
+            return false
         }
-        return false
     }
 
     companion object {

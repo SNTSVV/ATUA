@@ -7,6 +7,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.AbstractLocalReducer
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV1
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV3
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
@@ -36,11 +37,13 @@ open class IncludeChildrenReducer(
         localAttributes.put(AttributeType.childrenText,childText)
         if (childrenReducer is LocalReducerLV3) {
             var siblingInfos = ""
-            val siblings = guiState.widgets.filter { it.parentId == guiWidget.parentId && it!= guiWidget }
-            siblings.forEach { sibling ->
-                if (sibling.className != guiWidget.className) {
-                    val siblingInfo = siblingReduce(sibling, guiState, isOptionsMenu, guiTreeRectangle, classType, rotation, autAutMF, tempChildWidgetAttributePaths)
-                    siblingInfos += siblingInfo
+            if (needSiblingInfos(guiState,guiWidget)) {
+                val siblings = guiState.widgets.filter { it.parentId == guiWidget.parentId && it != guiWidget }
+                siblings.forEach { sibling ->
+                    if (sibling.className != guiWidget.className) {
+                        val siblingInfo = siblingReduce(sibling, guiState, isOptionsMenu, guiTreeRectangle, classType, rotation, autAutMF, tempChildWidgetAttributePaths)
+                        siblingInfos += siblingInfo
+                    }
                 }
             }
             localAttributes.put(AttributeType.siblingsInfo,siblingInfos)
@@ -53,6 +56,14 @@ open class IncludeChildrenReducer(
         )
         tempWidgetReduceMap.put(guiWidget,attributePath)
         return attributePath
+    }
+
+    private fun needSiblingInfos(guiState: State<*>, guiWidget: Widget): Boolean {
+        // if guiWidget is not contained in a RecyclerView or ListView, it does not need the sibling infos
+        if (Helper.hasParentWithType(guiWidget,guiState, "RecyclerView")
+                || Helper.hasParentWithType(guiWidget,guiState, "ListView"))
+            return true
+        return false
     }
 
     fun childReduce(widget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, activity: String, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): Pair<String,String> {

@@ -212,6 +212,8 @@ class AppModelLoader {
             if (destState == null)
                 return
             val actionType = AbstractActionType.values().first { it.name == data[2] }
+            if (actionType == AbstractActionType.LAUNCH_APP)
+                return
             val interactedAVSId = if (data[3] == "null") {
                 ""
             } else {
@@ -222,45 +224,55 @@ class AppModelLoader {
             } else {
                 data[4]
             }
+            val interactionData = if (data[5] == "null") {
+                null
+            } else {
+                data[5]
+            }
 
             val abstractAction = createAbstractAction(actionType,interactedAVSId,actionData,sourceState)
-            val prevWindowId = data[5]
-            val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}
+
+            /*val prevWindowId = data[6]
+            val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}*/
             // val prevWindowAbstractStateId = data[6]
             // val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
-            val guiTransitionIds = data[9]
+            val guiTransitionIds = data[10]
             if (guiTransitionIds.isBlank()) {
                 return
             }
-
-
-            val abstractTransition = sourceState.abstractTransitions.find {
-                it.isExplicit() && it.dest == destState && it.abstractAction == abstractAction
-                        && it.prevWindow == prevWindow
-            }
-
-            if (abstractTransition == null) {
-                val newAbstractTransition = AbstractTransition(
-                        source = sourceState,
-                        dest = destState,
-                        fromWTG = false,
-                        prevWindow = prevWindow,
-                        isImplicit = false,
-                        abstractAction = abstractAction,
-                        modelVersion = ModelVersion.BASE
-                )
-                val dependentAbstractStateId = data[10]
+            val dependentAbstractStateIds = splitCSVLineToField(data[11])
+            val dependentAbstractStates = ArrayList<AbstractState>()
+            dependentAbstractStateIds.forEach { dependentAbstractStateId->
+                var dependentAbstractState: AbstractState? = null
                 if (dependentAbstractStateId != "null") {
-                    val dependentAbstractState = if(updatedAbstractStateId.containsKey(dependentAbstractStateId)) {
+                    dependentAbstractState = if(updatedAbstractStateId.containsKey(dependentAbstractStateId)) {
                         val newUUID = updatedAbstractStateId.get(dependentAbstractStateId)
                         AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == newUUID }
                     } else {
                         AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == dependentAbstractStateId }
                     }
-                    if (dependentAbstractState!=null) {
-                        newAbstractTransition.dependentAbstractState = dependentAbstractState
-                    }
                 }
+                if (dependentAbstractState!=null)
+                    dependentAbstractStates.add(dependentAbstractState)
+            }
+
+            val abstractTransition = sourceState.abstractTransitions.find {
+                it.abstractAction == abstractAction
+                        && it.isImplicit == false
+                        && it.source == sourceState
+                        && it.dest == destState
+                        && it.dependentAbstractStates.containsAll(dependentAbstractStates)
+            }
+            if (abstractTransition == null) {
+                val newAbstractTransition = AbstractTransition(
+                        source = sourceState,
+                        dest = destState,
+                        fromWTG = false,
+                        isImplicit = false,
+                        abstractAction = abstractAction,
+                        modelVersion = ModelVersion.BASE
+                )
+
                 autAutMF.dstg.add(sourceState,destState,newAbstractTransition)
                 createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)
                 AbstractStateManager.instance.addImplicitAbstractInteraction(
@@ -297,12 +309,23 @@ class AppModelLoader {
                 abstractTransition.source.inputMappings.get(abstractTransition.abstractAction)!!
             else
                 createNewInput(abstractTransition,atuaMF)
+            val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
             inputs.forEach { input ->
-                atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window, WindowTransition(
-                       abstractTransition.source.window,
-                        abstractTransition.dest.window,
-                        input,
-                        abstractTransition.prevWindow))
+                if (prevWindows.isEmpty())
+                    atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window, WindowTransition(
+                            abstractTransition.source.window,
+                            abstractTransition.dest.window,
+                            input,
+                            null))
+                else
+                    prevWindows.forEach { prevWindow ->
+                        atuaMF.wtg.add(abstractTransition.source.window,abstractTransition.dest.window, WindowTransition(
+                                abstractTransition.source.window,
+                                abstractTransition.dest.window,
+                                input,
+                                prevWindow))
+
+                    }
             }
 
         }
