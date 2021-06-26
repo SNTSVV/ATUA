@@ -2217,17 +2217,16 @@ class ATUAMF(private val appName: String,
                 .flatMap { it.abstractTransitions }
                 .filter { it.isExplicit() && it.modelVersion == ModelVersion.BASE }
         sb2.appendln("Total base abstract transitions;${totalBaseAbstractTransitions.size}")
+        val transferedAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
+                .filter { it.modelVersion == ModelVersion.RUNNING }
+                .flatMap { it.abstractTransitions }
+                .filter { it.isExplicit() && it.modelVersion == ModelVersion.BASE }
+        sb2.appendln("Transfered abstract transitions;${transferedAbstractTransitions.size}")
         val newAbstractTransitions =  AbstractStateManager.instance.ABSTRACT_STATES
                 .flatMap { it.abstractTransitions }
                 .filter { it.isExplicit() && it.modelVersion == ModelVersion.RUNNING }
         sb2.appendln("New abstract transitions;${newAbstractTransitions.size}")
-        val correctAbstractTransitions = AbstractStateManager.instance.ABSTRACT_STATES
-                .map { it.abstractTransitions }
-                .flatten().filter {
-                    it.isExplicit()
-                            && it.modelVersion == ModelVersion.BASE
-                            && it.interactions.isNotEmpty()
-                }
+        val correctAbstractTransitions = ModelBackwardAdapter.instance.correctTransitions
         sb2.appendln("Correct abstract transitions count;${correctAbstractTransitions.size}")
         correctAbstractTransitions.forEach {
             sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +

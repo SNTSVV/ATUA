@@ -197,6 +197,9 @@ object DefaultStrategies: Logging {
 				s.isHomeScreen -> {
 					eContext.launchApp()
 				}
+				s.widgets.any { it.resourceId == "android:id/aerr_close" } -> {
+					s.widgets.find { it.resourceId == "android:id/aerr_close"  }!!.click()
+				}
 				lastActionType.isPressBack() -> {
 					// if previous action was back, terminate
 					if (s.isAppHasStoppedDialogBox) {

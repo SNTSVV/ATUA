@@ -15,8 +15,10 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.ModelBackwardAdapter
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -73,6 +75,8 @@ open class GoToAnotherWindow constructor(
     }
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
+        // update testing path
+
         if (atuaMF.prevAbstractStateRefinement>0)
             return true
         if (pathTraverser==null)
@@ -101,29 +105,9 @@ open class GoToAnotherWindow constructor(
         if (expectedNextAbState!=null) {
             if (!isReachExpectedNode(currentState)) {
                 // Try another path if current state is not target node
-                /*if (currentAppState.window != targetWindow && regressionTestingMF.prevAbstractStateRefinement == 0) {
-                    log.debug("Fail to reach expected node")
-                    addIncorrectPath()
-                }*/
 
                 log.debug("Fail to reach $expectedNextAbState" )
                 addIncorrectPath(currentAppState)
-                /*if (!expectedNextAbState!!.isOutOfApplication && !expectedNextAbState!!.isRequestRuntimePermissionDialogBox
-                ) {
-
-                    if (!currentAppState.isOutOfApplication)
-                        addIncorrectPath(currentAppState)
-                }
-                if (expectedNextAbState!!.isRequestRuntimePermissionDialogBox || expectedNextAbState!!.isOutOfApplication) {
-                    //check current abstract is in the path
-                    if (currentPath!!.getVertices().map { it.data }.contains(currentAppState)) {
-                        expectedNextAbState == currentAppState
-                        currentEdge = currentPath!!.edges().filter { it.destination?.data == expectedNextAbState!! }.firstOrNull()
-                        return false
-                    } else {
-                        addIncorrectPath(currentAppState)
-                    }
-                }*/
                 if (pathTraverser!!.finalStateAchieved() && currentPath!!.destination.window == currentAppState.window)
                     return true
                 if (retryTimes <5*autautStrategy.scaleFactor) {
@@ -229,6 +213,23 @@ open class GoToAnotherWindow constructor(
              if (expectedAbstractState1 == currentAbState) {
                  reached = true
                  break
+             }
+             if (expectedAbstractState1.modelVersion == ModelVersion.BASE && expectedAbstractState1.guiStates.isEmpty()) {
+                 // check the current state is backward equivalent to expectedAbstractState
+                 if (ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.containsKey(currentAbState)) {
+                     val backwardEquivalences = ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.get(currentAbState)!!
+                     if (backwardEquivalences.contains(expectedAbstractState1)) {
+                         reached = true
+                         val toUpdateTransition = tmpPathTraverser.transitionPath.path[tmpPathTraverser.latestEdgeId!!+1]
+                         if (toUpdateTransition!=null && toUpdateTransition.modelVersion == ModelVersion.BASE) {
+                             if (ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.containsKey(toUpdateTransition)) {
+                                 val equivalentTransition = ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.get(toUpdateTransition)!!
+                                 currentPath!!.path.put(tmpPathTraverser.latestEdgeId!!+1,equivalentTransition)
+                             }
+                         }
+                         break
+                     }
+                 }
              }
              if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(expectedAbstractState1)) {
                  val equivalentAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {

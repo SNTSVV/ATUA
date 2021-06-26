@@ -1393,6 +1393,7 @@ class AbstractStateManager() {
         if (destinationAbstractState == null) {
             throw Exception("Cannot find new resState's abstract state")
         }
+        val modelVersion = oldAbstractEdge.label.modelVersion
         val newAbstractTransition = AbstractTransition(
                 abstractAction = oldAbstractEdge.label.abstractAction,
                 data = oldAbstractEdge.label.data,
@@ -1401,7 +1402,8 @@ class AbstractStateManager() {
                 fromWTG = oldAbstractEdge.label.fromWTG,
                 source = sourceAbstractState,
                 dest = destinationAbstractState,
-                isImplicit = false
+                isImplicit = false,
+                modelVersion = modelVersion
         )
         newAbstractTransition.copyPotentialInfoFrom(oldAbstractEdge.label)
         sourceAbstractState.abstractTransitions.add(newAbstractTransition)
@@ -1718,13 +1720,15 @@ class AbstractStateManager() {
                                                                prevWindowAbstractState: AbstractState?): Pair<AbstractTransition?, Edge<AbstractState, AbstractTransition>?> {
         var newAbstractionTransition1 = newAbstractionTransition
         var newEdge1 = newEdge
+        val modelVersion = oldAbstractEdge.label.modelVersion
         newAbstractionTransition1 = AbstractTransition(
                 abstractAction = abstractAction,
                 isImplicit = false,
                 /*prevWindow = oldAbstractEdge.label.prevWindow,*/
                 data = interactionData,
                 source = sourceAbstractState,
-                dest = destinationAbstractState
+                dest = destinationAbstractState,
+                modelVersion = modelVersion
         )
 
         newAbstractionTransition1.interactions.add(interaction)
@@ -1760,13 +1764,15 @@ class AbstractStateManager() {
                                                                    prevWindowAbstractState: AbstractState?): Pair<AbstractTransition?, Edge<AbstractState, AbstractTransition>?> {
         var newAbstractionTransition1 = newAbstractionTransition
         var newEdge1 = newEdge
+        val modeVersion = oldAbstractEdge.label.modelVersion
         newAbstractionTransition1 = AbstractTransition(
                 abstractAction = abstractAction,
                 isImplicit = false,
                 /*prevWindow = oldAbstractEdge.label.prevWindow,*/
                 data = interactionData,
                 source = sourceAbstractState,
-                dest = destinationAbstractState
+                dest = destinationAbstractState,
+                modelVersion = modeVersion
         )
         newAbstractionTransition1.interactions.add(interaction)
         if (prevWindowAbstractState!=null)

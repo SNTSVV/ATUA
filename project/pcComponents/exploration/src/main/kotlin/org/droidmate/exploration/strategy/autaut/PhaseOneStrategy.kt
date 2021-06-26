@@ -812,13 +812,13 @@ class PhaseOneStrategy(
             setGoToTarget(goToTargetNodeTask, currentState)
             return
         }
-        if (goToAnotherNode.isAvailable(currentState)) {
-            setGoToExploreState(goToAnotherNode, currentState)
-            return
-        }
         if (hasBudgetLeft(currentAppState.window) ) {
             if (goToWindowToExploreOrRandomExploration(currentAppState, goToAnotherNode, currentState, randomExplorationTask))
                 return
+        }
+        if (goToAnotherNode.isAvailable(currentState)) {
+            setGoToExploreState(goToAnotherNode, currentState)
+            return
         }
         val oldTarget = targetWindow
         selectTargetNode(currentState, 0)

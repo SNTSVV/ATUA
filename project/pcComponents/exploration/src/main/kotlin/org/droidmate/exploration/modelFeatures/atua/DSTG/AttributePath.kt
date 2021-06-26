@@ -41,8 +41,8 @@ data class AttributePath (
     fun contains(containedAttributePath: AttributePath, activity: String): Boolean {
         if (this.attributePathId == containedAttributePath.attributePathId)
             return true
-        return false
-        /*//check parent first
+//        return false
+        //check parent first
         if (parentAttributePathId!= emptyUUID && containedAttributePath.parentAttributePathId!= emptyUUID) {
             val parentAttributePath = allAttributePaths.get(activity)!!.get(parentAttributePathId)!!
             val containedParentAttributePath = allAttributePaths.get(activity)!!.get(containedAttributePath.parentAttributePathId)
@@ -81,7 +81,7 @@ data class AttributePath (
             }
         }
 
-        return true*/
+        return true
 
     }
 
