@@ -8,7 +8,7 @@ import java.io.BufferedWriter
 import kotlin.collections.ArrayList
 
 class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
-                              Graph(AbstractStateManager.instance.appResetState,
+                              Graph(AbstractStateManager.INSTANCE.appResetState,
                                       stateComparison = { a, b -> a == b },
                                       labelComparison = { a, b ->
                                         a==b
@@ -35,7 +35,7 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
         //val fromResetAbstractState = AbstractStateManager.instance.getAbstractState(fromResetState)!!
         val dumpedSourceStates = ArrayList<AbstractState>()
         this.getVertices().filter{it.data.guiStates.isNotEmpty()
-                || AbstractStateManager.instance.usefulUnseenBaseAbstractStates.contains(it.data)
+                || AbstractStateManager.INSTANCE.usefulUnseenBaseAbstractStates.contains(it.data)
         }.forEach {
             recursiveDump(it.data,statementCoverageMF,dumpedSourceStates, bufferedWriter)
         }
@@ -49,7 +49,7 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
         dumpedSourceStates.add(sourceAbstractState)
         val explicitEdges = this.edges(sourceAbstractState).filter { it.label.isExplicit()
                 && it.destination!=null
-                && sourceAbstractState.abstractTransitions.contains(it.label)}
+                && sourceAbstractState.abstractTransitions.contains(it.label) }
         val nextSources = ArrayList<AbstractState>()
         explicitEdges.map { it.label }.distinct().forEach { edge ->
             if (!nextSources.contains(edge.dest) && !dumpedSourceStates.contains(edge.dest)) {

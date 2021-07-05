@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua
 
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.AbstractionFunction
+import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.AbstractionFunction2
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 import org.droidmate.explorationModel.config.ModelConfig
 import java.io.File
@@ -20,9 +20,9 @@ class AutAutModelOutput {
             val dstgFolder = config.baseDir.resolve("DSTG")
             Files.createDirectory(dstgFolder)
             ATUAMF.log.info("Dumping abstraction function...")
-            AbstractionFunction.INSTANCE.dump(dstgFolder)
+            AbstractionFunction2.INSTANCE.dump(dstgFolder)
             ATUAMF.log.info("Dumping abstract states...")
-            AbstractStateManager.instance.dump(dstgFolder)
+            AbstractStateManager.INSTANCE.dump(dstgFolder)
             ATUAMF.log.info("Dumping abstract states transition graph...")
             File(dstgFolder.resolve("DSTG.csv").toUri()).bufferedWriter().use { all ->
                 autautMF.dstg.dump(autautMF.statementMF!!, all)

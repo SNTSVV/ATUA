@@ -19,23 +19,17 @@ class GoToTargetWindowTask (
     override fun initPossiblePaths(currentState: State<*>, continueMode: Boolean) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
-            PathFindingHelper.PathType.INCLUDE_INFERED
-        else if (continueMode)
-            PathFindingHelper.PathType.TRACE
+            PathFindingHelper.PathType.NORMAL
+        /*else if (continueMode)
+            PathFindingHelper.PathType.PARTIAL_TRACE*/
         else
             computeNextPathType(currentPath!!.pathType,includeResetAction)
-        
+        val currentPathType = nextPathType
         while (possiblePaths.isEmpty()) {
             possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
-            if (nextPathType == PathFindingHelper.PathType.WTG)
+            nextPathType = computeNextPathType(nextPathType,includeResetAction)
+            if (nextPathType == currentPathType)
                 break
-            if (continueMode)
-                break
-            if (!includeResetAction && nextPathType == PathFindingHelper.PathType.INCLUDE_INFERED) {
-                break
-            } else {
-                nextPathType = computeNextPathType(nextPathType,includeResetAction)
-            }
         }
         if (possiblePaths.isEmpty() && destWindow!=null) {
             log.debug("Cannot identify path to $destWindow")

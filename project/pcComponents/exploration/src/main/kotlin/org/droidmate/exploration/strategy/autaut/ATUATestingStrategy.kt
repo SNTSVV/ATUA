@@ -16,6 +16,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
+import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.strategy.AExplorationStrategy
 import org.droidmate.exploration.strategy.autaut.task.*
@@ -72,7 +73,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         var chosenAction: ExplorationAction
         ExplorationTrace.widgetTargets.clear()
         val currentState = eContext.getCurrentState()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (currentAbstractState == null) {
             if (eContext.isEmpty() || currentState == eContext.model.emptyState) {
                 return eContext.launchApp()
@@ -81,8 +82,8 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
             return eContext.resetApp()
         }
 
-        if ((AbstractStateManager.instance.launchStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
-                || AbstractStateManager.instance.launchStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
+        if ((AbstractStateManager.INSTANCE.launchStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
+                || AbstractStateManager.INSTANCE.launchStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
                 && currentAbstractState.rotation == Rotation.LANDSCAPE) {
             return ExplorationAction.rotate(-90)
         }
@@ -111,7 +112,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         }
 
         log.info("Current abstract state: ${currentAbstractState}")
-        log.info("Abstract State counts: ${AbstractStateManager.instance.ABSTRACT_STATES.filter{it !is VirtualAbstractState}.size}")
+        log.info("Abstract State counts: ${AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter{it !is VirtualAbstractState}.size}")
         val availableWidgets = eContext.getCurrentState().widgets
         chosenAction = phaseStrategy.nextAction(eContext)
         prevNode = atuaMF.getAbstractState(eContext.getCurrentState())
@@ -120,9 +121,10 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
 
     private fun targetInputAvailable(): Boolean {
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
-            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window && it.eventType!=EventType.implicit_launch_event
+                        && it.eventType != EventType.resetApp}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {

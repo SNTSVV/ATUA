@@ -13,7 +13,6 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
-import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -35,7 +34,20 @@ class Helper {
             val processed = ArrayList<Widget>()
             val workingList: LinkedList<Widget> = LinkedList<Widget>()
             val addedToWorkingList = HashSet<ConcreteId>()
-            val unmappedWidgets = guiState.widgets.filterNot { it.isKeyboard }. filter { it.isVisible || it.visibleAreas.isNotEmpty() }
+            // -----DEBUG----
+            val trivialWebViewItem = guiState.widgets.filterNot {
+                it.isKeyboard
+            }.filter { isVisibleWidget(it) }.filter{
+                isTrivialWebViewContent(it, guiState)
+            }
+            // -----END_DEBUG----
+
+
+            val unmappedWidgets = guiState.widgets.filterNot {
+                it.isKeyboard
+            }.filter { isVisibleWidget(it) }.filterNot {
+                hasParentWithType(it,guiState,"WebView") && it.resourceId.isBlank()
+            }
             unmappedWidgets.filter { it.childHashes.isEmpty() }.forEach {
                 workingList.add(it)
                 addedToWorkingList.add(it.id)
@@ -101,6 +113,9 @@ class Helper {
                 }
             }
         }
+
+        private fun isTrivialWebViewContent(it: Widget, guiState: State<*>) =
+                hasParentWithType(it, guiState, "WebView") && it.resourceId.isBlank()
 
         fun calculateMatchScoreForEachNode2(guiState: State<*>, allPossibleNodes: List<Window>, appPackage: String, isMenuOpen: Boolean): HashMap<Window, Double> {
             val matchWidgetsPerWindow = HashMap<Window, HashMap<Widget, EWTGWidget>>()
@@ -211,9 +226,9 @@ class Helper {
             }
             if (result.isEmpty()) {
                 if (guiState.widgets.any { it.isKeyboard }) {
-                    val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
+                    val abstractState = AbstractStateManager.INSTANCE.getAbstractState(guiState)
                     if (abstractState!=null) {
-                        val nonKeyboardAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
+                        val nonKeyboardAbstractStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES
                                 .filter { it.window == abstractState.window && !it.isOpeningKeyboard }
                         val nonKeyboardGUIStates = nonKeyboardAbstractStates.map { it.guiStates }.flatten()
                         val nonKeyboardRelatedWidgets = nonKeyboardGUIStates.map { it.widgets }.flatten().map { it.uid }.distinct()
@@ -333,7 +348,7 @@ class Helper {
                 it.enabled &&  isWellVisualized(it) && it.metaInfo.contains("visibleToUser = true")
 
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
-            val result = ArrayList(getActionableWidgetsWithoutKeyboard(state))
+            val result = ArrayList(getActionableWidgetsWithoutKeyboard(state).filterNot { isTrivialWebViewContent(it,state) })
             val potentialLayoutWidgets = state.widgets.filterNot{result.contains(it)}.filter {
                 it.isVisible && (it.childHashes.isNotEmpty()
                         && (it.className.contains("ListView") || it.className.contains("RecyclerView"))) || it.className.contains("android.webkit.WebView")
@@ -498,7 +513,7 @@ class Helper {
             return findAncestorWidgetHavingMatchedEWTGWidget(parentWidget.parentId,guiState, guiWidget_Ewtgwidgets)
         }
 
-        private fun findAncestorAVMHavingMatchedEWTGWidget(parentAvmId: String, avmEwtgwidgets: HashMap<String,EWTGWidget>,activity: String): AttributeValuationMap? {
+/*        private fun findAncestorAVMHavingMatchedEWTGWidget(parentAvmId: String, avmEwtgwidgets: HashMap<String,EWTGWidget>,activity: String): AttributeValuationMap? {
             if (parentAvmId == "")
                 return null
             val parentAVM = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP[activity]!!.get(parentAvmId)!!
@@ -508,7 +523,7 @@ class Helper {
                 }
             }
             return findAncestorAVMHavingMatchedEWTGWidget(parentAVM.parentAttributeValuationMapId,avmEwtgwidgets,activity)
-        }
+        }*/
 
         private fun verifyMatchingHierchyWindowLayout2(guiWidget: Widget, ewtgWidget: EWTGWidget, wtgNode: Window, guiState: State<*>, guiWidgetId_EWTGWidgets: HashMap<ConcreteId,EWTGWidget>): Double {
             if (guiWidget.parentId == null && ewtgWidget.parent == null)
@@ -530,7 +545,7 @@ class Helper {
             }
             return Double.POSITIVE_INFINITY
         }
-        private fun verifyMatchingHierchyWindowLayout(avm: AttributeValuationMap, ewtgWidget: EWTGWidget, wtgNode: Window, avmEwtgwidgets: HashMap<String, EWTGWidget>): Double {
+/*        private fun verifyMatchingHierchyWindowLayout(avm: AttributeValuationMap, ewtgWidget: EWTGWidget, wtgNode: Window, avmEwtgwidgets: HashMap<String, EWTGWidget>): Double {
             if (avm.parentAttributeValuationMapId == "" && ewtgWidget.parent == null)
                 return 1.0
             var traversingAVM: AttributeValuationMap = avm
@@ -549,7 +564,7 @@ class Helper {
                 return averageCorrectness
             }
             return Double.POSITIVE_INFINITY
-        }
+        }*/
 
         private fun calculateEWTGWidgetAncestorCorrectness(ewtgWidget1: EWTGWidget, ewtgWidget2: EWTGWidget,
                                                            traversedWidgets1: ArrayList<EWTGWidget>,traversedWidgets2: ArrayList<EWTGWidget>): Double {

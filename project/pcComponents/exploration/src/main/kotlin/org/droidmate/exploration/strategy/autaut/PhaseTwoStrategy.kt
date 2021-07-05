@@ -12,6 +12,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
+import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
@@ -86,7 +87,7 @@ class PhaseTwoStrategy(
         statementMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         atuaMF.updateMethodCovFromLastChangeCount = 0
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
-            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
                 targetWindowsCount.put(window, 0)
                 /*val targetInputs = atuaMF.allTargetInputs.filter { it.sourceWindow == window }
@@ -103,7 +104,7 @@ class PhaseTwoStrategy(
     }
 
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
         if (!abstractState.inputMappings.containsKey(abstractAction)) {
             return
@@ -123,7 +124,7 @@ class PhaseTwoStrategy(
             return false
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher
                 && !targetWindowsCount.containsKey(it)}.forEach {window ->
-            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
                 val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
                 if (abstractStates.any { it.inputMappings.values.intersect(targetInputs).isNotEmpty() }) {
@@ -214,7 +215,7 @@ class PhaseTwoStrategy(
                     && !(strategyTask as ExerciseTargetComponentTask).isDoingRandomExplorationTask) {
                 budgetLeft--
             }
-            if (phaseState == PhaseState.P2_RANDOM_IN_EXERCISE_TARGET_NODE) {
+            /*if (phaseState == PhaseState.P2_RANDOM_IN_EXERCISE_TARGET_NODE) {
                 if (strategyTask is RandomExplorationTask
                         && !(strategyTask as RandomExplorationTask).fillingData
                         && (strategyTask as RandomExplorationTask).goToLockedWindowTask == null
@@ -223,7 +224,7 @@ class PhaseTwoStrategy(
                     if (isCountAction(choosenAction))
                         budgetLeft--
                 }
-            }
+            }*/
         }
         if (budgetType == 2) {
             if (strategyTask is RandomExplorationTask && !(strategyTask as RandomExplorationTask).fillingData)
@@ -240,13 +241,14 @@ class PhaseTwoStrategy(
                     && chosenAction !is Swipe
 
     override fun getPathsToTargetWindows(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
-        val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(atuaMF.appPrevState!!)
+        val currentAbState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
+        val prevAbstractState = AbstractStateManager.INSTANCE.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState == null)
             return emptyList()
         val targetAbstractStatesPbMap = HashMap<AbstractState, Double>()
         val targetAbstractStatesProbability = abstractStateProbabilityByWindow[targetWindow]?.filter {
-            AbstractStateManager.instance.ABSTRACT_STATES.contains(it.first)
+            AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(it.first)
+                    && it.first != currentAbState
         }
         //targetAbstractStatesProbability.removeIf { it.first == currentAbState }
         if (targetAbstractStatesProbability != null) {
@@ -255,8 +257,9 @@ class PhaseTwoStrategy(
             }
         }
         if (targetAbstractStatesPbMap.isEmpty()) {
-            val windowAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
-                it.window == targetWindow!!
+            val windowAbstractStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
+                it !is VirtualAbstractState && it.window == targetWindow!!
+                        && it != currentAbState
                         && it.attributeValuationMaps.isNotEmpty()
             }
             windowAbstractStates.forEach {
@@ -271,7 +274,7 @@ class PhaseTwoStrategy(
 
     override fun getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         val abstratStateCandidates = getUnexhaustedExploredAbstractState(currentState)
         val stateByActionCount = HashMap<AbstractState, Double>()
         abstratStateCandidates.forEach {
@@ -287,7 +290,7 @@ class PhaseTwoStrategy(
         val targetEvents = HashMap<Input, List<AbstractAction>>()
         targetEvents.clear()
 
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow) {
             val availableEvents = abstractState.inputMappings.map { it.value }.flatten()
             val targetWindowEvents = phase2TargetEvents.filter {
@@ -437,13 +440,13 @@ class PhaseTwoStrategy(
         //val inputWidgetCount = 1
         val targetEvents = phase2TargetEvents.filter { it.key.sourceWindow == targetWindow && it.key.verifiedEventHandlers.isNotEmpty() }
         var targetEventCount = targetEvents.size
-        val allInputMappings = AbstractStateManager.instance.ABSTRACT_STATES.map { it.inputMappings }
+        if (targetEventCount == 0)
+            targetEventCount = 1
+        val allInputMappings = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter { it.guiStates.isNotEmpty() }.map { it.inputMappings }
         if (inputWidgetCount == 0) {
             targetEvents.filter { it.key.widget != null }.forEach { event, _ ->
-                val allAVMs = allInputMappings.filter { it.values.any { it.contains(event) } }.map { it.keys }.flatten().filter { it.isWidgetAction() }.map { it.attributeValuationMap!! }.distinct()
-                if (allAVMs.any { it.cardinality == Cardinality.MANY }) {
-                    targetEventCount += (2).toInt()
-                }
+                val allAVMs = allInputMappings.filter { it.values.any { it.contains(event) } }.map { it.keys }.flatten().filter { it.isWidgetAction() }.map { it.attributeValuationMap!! }
+                val num = allAVMs.size
             }
         }
         val undiscoverdTargetHiddenHandlers = atuaMF.untriggeredTargetHiddenHandlers.filter {
@@ -763,7 +766,7 @@ class PhaseTwoStrategy(
         }
         //get all AppState
         val appStateList = ArrayList<AbstractState>()
-        AbstractStateManager.instance.getPotentialAbstractStates().forEach { appStateList.add(it) }
+        AbstractStateManager.INSTANCE.getPotentialAbstractStates().forEach { appStateList.add(it) }
 
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<AbstractState, AbstractTransition>>()

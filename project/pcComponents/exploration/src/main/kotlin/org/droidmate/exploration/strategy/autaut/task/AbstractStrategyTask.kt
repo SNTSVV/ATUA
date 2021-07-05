@@ -205,6 +205,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 AbstractActionType.CLICK_OUTBOUND -> doClickOutbound(currentState,abstractAction!!)
                 AbstractActionType.ACTION_QUEUE -> doActionQueue(data,currentState)
                 AbstractActionType.CLICK -> doClickWithoutTarget(data,currentState)
+                AbstractActionType.UNDERIVED -> doUnderivedAction(data,currentState)
                 else -> ExplorationAction.pressBack()
             }
         }
@@ -221,6 +222,40 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         }
     }
 
+    private fun doUnderivedAction(data: Any?, currentState: State<*>): ExplorationAction? {
+        val interaction = data as Interaction<Widget>
+        var action: ExplorationAction?=null
+        if (interaction.targetWidget==null) {
+            action = when (interaction.actionType) {
+                "PressBack" -> ExplorationAction.pressBack()
+                "PressHome" -> ExplorationAction.pressMenu()
+                "PressEnter" -> ExplorationAction.pressEnter()
+                "Swipe" -> {
+                    val swipeData = Helper.parseSwipeData(interaction.data)
+                    ExplorationAction.swipe(swipeData[0], swipeData[1],25)
+                }
+                else -> ExplorationAction.pressEnter()
+            }
+        } else {
+            val widget = currentState.widgets.find { it.uid == interaction.targetWidget!!.uid }
+            if (widget!=null) {
+                action = when (interaction.actionType) {
+                    "Click" -> widget.availableActions(25,useCoordinateClicks).filter {
+                        it.name.isClick() }.singleOrNull()
+                    "LongClick" -> widget.availableActions(25,useCoordinateClicks).filter {
+                        it.name.isLongClick()}.singleOrNull()
+                    "Swipe" -> {
+                        val swipeData = Helper.parseSwipeData(interaction.data)
+                        ExplorationTrace.widgetTargets.add(widget)
+                        Swipe(swipeData[0],swipeData[1],25,true)
+                    }
+                    else -> widget.availableActions(0,useCoordinateClicks).random()
+                }
+            }
+        }
+        return action
+    }
+
     private fun doClickOutbound(currentState: State<*>, abstractAction: AbstractAction): ExplorationAction? {
         val guiDimension = Helper.computeGuiTreeDimension(currentState)
         if (guiDimension.leftX - 50 < 0) {
@@ -228,7 +263,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         }
         if (guiDimension.topY - 50 < 0)
             return Click (guiDimension.leftX-50,y=guiDimension.topY)
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         abstractState.increaseActionCount2(abstractAction,false)
         return Click (guiDimension.leftX-50,y=guiDimension.topY-50)
     }
@@ -537,7 +572,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
             }
             return null
         }
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         if (abstractAction!=null)
             abstractState.increaseActionCount2(abstractAction,false)
         if (chosenWidget.className == "android.webkit.WebView") {

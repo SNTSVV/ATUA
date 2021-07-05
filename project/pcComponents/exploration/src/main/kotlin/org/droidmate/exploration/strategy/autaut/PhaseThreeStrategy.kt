@@ -73,15 +73,15 @@ class PhaseThreeStrategy(
         statementMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         atuaMF.updateMethodCovFromLastChangeCount = 0
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
-            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                targetWindowsCount.put(window, 0)
-                /*val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                /*targetWindowsCount.put(window, 0)*/
+                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {
                     targetWindowsCount.put(window, 0)
-                }*/
+                }
             }
         }
 
@@ -97,7 +97,7 @@ class PhaseThreeStrategy(
     }
 
     override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
         val staticEvents = abstractState.inputMappings[abstractAction]
@@ -117,7 +117,7 @@ class PhaseThreeStrategy(
         }
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher
                 && !targetWindowsCount.containsKey(it)}.forEach {window ->
-            val abstractStates = AbstractStateManager.instance.getPotentialAbstractStates().filter { it.window == window }
+            val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
                 val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
@@ -205,7 +205,7 @@ class PhaseThreeStrategy(
             return emptyList()
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbState = atuaMF.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(atuaMF.appPrevState!!)
+        val prevAbstractState = AbstractStateManager.INSTANCE.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
         val runtimeAbstractStates = getUnexhaustedExploredAbstractState(currentState)
@@ -226,8 +226,8 @@ class PhaseThreeStrategy(
     }
 
     override fun getPathsToTargetWindows(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
-        val currentAbState = AbstractStateManager.instance.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.instance.getAbstractState(atuaMF.appPrevState!!)
+        val currentAbState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
+        val prevAbstractState = AbstractStateManager.INSTANCE.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState==null)
             return emptyList()
 
@@ -245,7 +245,7 @@ class PhaseThreeStrategy(
                 targetScores.put(it.first,it.second)
             }
         }*/
-        AbstractStateManager.instance.ABSTRACT_STATES.filter {
+        AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
             it.window == targetWindow
                     && it.attributeValuationMaps.isNotEmpty()
         }.filterNot { it is VirtualAbstractState }.filter{
@@ -262,7 +262,7 @@ class PhaseThreeStrategy(
         val targetEvents = HashMap<Input,List<AbstractAction>>()
         targetEvents.clear()
 
-        val abstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow && targetEvent!=null)
         {
             val abstractActions = atuaMF.validateEvent(targetEvent!!,currentState)
@@ -725,16 +725,14 @@ class PhaseThreeStrategy(
         var leastExercise = targetWindowsCount.values.min()
         var leastTriedWindows = targetWindowsCount.filter { windowScores.containsKey(it.key) }.map { Pair<Window, Int>(first = it.key, second = it.value) }.filter { it.second == leastExercise }
 
-        if (leastTriedWindows.isEmpty()) {
+        /*if (leastTriedWindows.isEmpty()) {
             leastTriedWindows = targetWindowsCount.map { Pair<Window, Int>(first = it.key, second = it.value) }.filter { it.second == leastExercise }
-        }
+        }*/
         val leastTriedWindowScore = leastTriedWindows.associate { Pair(it.first, windowScores.get(it.first) ?: 1.0) }
         if (leastTriedWindowScore.isNotEmpty()) {
             val pb = ProbabilityDistribution<Window>(leastTriedWindowScore)
             val targetNode = pb.getRandomVariable()
             targetWindow = targetNode
-        } else {
-            targetWindow = targetWindowsCount.map { it.key }.random()
         }
 /*        if (tarqetWindowCandidates.isNotEmpty()) {
             leastTryTargetWindows = tarqetWindowCandidates.map { Pair<Window, Int>(first = it.key, second = it.value) }
@@ -786,10 +784,8 @@ class PhaseThreeStrategy(
         if (leastExerciseEventScores.isNotEmpty()) {
             val pdForTargetEvents = ProbabilityDistribution<Input>(leastExerciseEventScores)
             targetEvent = pdForTargetEvents.getRandomVariable()
-
         } else {
             targetEvent = leastExerciseEvents.keys.random()
-
         }
         allTargetInputs[targetEvent!!] = allTargetInputs[targetEvent!!]!! + 1
         //select related window
@@ -904,7 +900,7 @@ class PhaseThreeStrategy(
         }
         //get all AppState
         val appStateList = ArrayList<AbstractState>()
-        AbstractStateManager.instance.getPotentialAbstractStates().forEach { appStateList.add(it) }
+        AbstractStateManager.INSTANCE.getPotentialAbstractStates().forEach { appStateList.add(it) }
 
         //get all AppState's edges and appState's modified method
         val edges = ArrayList<Edge<AbstractState, AbstractTransition>>()

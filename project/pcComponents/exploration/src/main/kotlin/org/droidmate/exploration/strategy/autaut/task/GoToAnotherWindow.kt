@@ -126,8 +126,8 @@ open class GoToAnotherWindow constructor(
                     } else {
                     }*/
                     log.debug("Reidentify paths to the destination.")
-                    if (currentPath!!.pathType==PathFindingHelper.PathType.TRACE
-                            || currentPath!!.pathType==PathFindingHelper.PathType.RESET) {
+                    if (currentPath!!.pathType==PathFindingHelper.PathType.PARTIAL_TRACE
+                            || currentPath!!.pathType==PathFindingHelper.PathType.FULLTRACE) {
                         initPossiblePaths(currentState, true)
                         val currentPathLeft = currentPath!!.path.size - (pathTraverser!!.latestEdgeId!! + 1)
                         if (!possiblePaths.any { it.path.size < currentPathLeft-1 }) {
@@ -180,8 +180,9 @@ open class GoToAnotherWindow constructor(
              return true
          if (expectedAbstractState == currentAbState)
              return true
-         if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(expectedAbstractState)) {
-             val equivalentAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {
+         if (expectedAbstractState.modelVersion!=ModelVersion.BASE
+                 && !AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(expectedAbstractState)) {
+             val equivalentAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
                  it.hashCode == expectedAbstractState!!.hashCode
              }
              if (equivalentAbstractState!= null && equivalentAbstractState == currentAbState) {
@@ -231,8 +232,8 @@ open class GoToAnotherWindow constructor(
                      }
                  }
              }
-             if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(expectedAbstractState1)) {
-                 val equivalentAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {
+             if (!AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(expectedAbstractState1)) {
+                 val equivalentAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
                      it.hashCode == expectedAbstractState1!!.hashCode
                  }
                  if (equivalentAbstractState!= null && equivalentAbstractState == currentAbState) {
@@ -262,8 +263,8 @@ open class GoToAnotherWindow constructor(
                      break
                  } else {
                      if (nextTransition.abstractAction.actionType == AbstractActionType.SWIPE
-                             && currentPath!!.pathType != PathFindingHelper.PathType.RESET
-                             && currentPath!!.pathType != PathFindingHelper.PathType.TRACE) {
+                             && currentPath!!.pathType != PathFindingHelper.PathType.FULLTRACE
+                             && currentPath!!.pathType != PathFindingHelper.PathType.PARTIAL_TRACE) {
                          val tmpPathTraverser2 = PathTraverser(tmpPathTraverser.transitionPath)
                          tmpPathTraverser2.latestEdgeId = tmpPathTraverser.latestEdgeId
                          var notSwipeTransition: AbstractTransition? = null
@@ -307,8 +308,8 @@ open class GoToAnotherWindow constructor(
                      else if (destState == currentAbState) {
                          reached = true
                      }
-                     else if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(destState)) {
-                         val equivalentAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {
+                     else if (!AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(destState)) {
+                         val equivalentAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
                              it.hashCode == destState!!.hashCode
                          }
                          if (equivalentAbstractState!= null && equivalentAbstractState == currentAbState) {
@@ -414,9 +415,7 @@ open class GoToAnotherWindow constructor(
     open protected fun initPossiblePaths(currentState: State<*>, continueMode:Boolean = false) {
         possiblePaths.clear()
         var nextPathType = if (currentPath == null)
-                PathFindingHelper.PathType.INCLUDE_INFERED
-        else if (continueMode)
-                PathFindingHelper.PathType.TRACE
+                PathFindingHelper.PathType.NORMAL
         else
             computeNextPathType(currentPath!!.pathType,includeResetAction)
 
@@ -434,17 +433,12 @@ open class GoToAnotherWindow constructor(
                 }
             }
         } else {
+            val curentPathType = nextPathType
             while (possiblePaths.isEmpty()) {
                 possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToExploreStates(currentState,nextPathType))
-                if (nextPathType == PathFindingHelper.PathType.WTG)
+                nextPathType = computeNextPathType(nextPathType,includeResetAction)
+                if (nextPathType == curentPathType) // no path found
                     break
-                if (continueMode)
-                    break
-                if (!includeResetAction && nextPathType == PathFindingHelper.PathType.INCLUDE_INFERED) {
-                    break
-                } else {
-                    nextPathType = computeNextPathType(nextPathType,includeResetAction)
-                }
             }
 
            /* if (possiblePaths.isEmpty()) {
@@ -457,11 +451,11 @@ open class GoToAnotherWindow constructor(
     fun computeNextPathType(pathType: PathFindingHelper.PathType, includeResetApp: Boolean): PathFindingHelper.PathType {
         return when (pathType) {
             PathFindingHelper.PathType.INCLUDE_INFERED -> PathFindingHelper.PathType.NORMAL
-            PathFindingHelper.PathType.NORMAL -> PathFindingHelper.PathType.TRACE
-            PathFindingHelper.PathType.TRACE ->
-                if (includeResetApp) PathFindingHelper.PathType.RESET else PathFindingHelper.PathType.WTG
-            PathFindingHelper.PathType.RESET -> PathFindingHelper.PathType.WTG
-            PathFindingHelper.PathType.WTG -> PathFindingHelper.PathType.INCLUDE_INFERED
+            PathFindingHelper.PathType.NORMAL -> PathFindingHelper.PathType.WTG
+            PathFindingHelper.PathType.WTG -> PathFindingHelper.PathType.PARTIAL_TRACE
+            PathFindingHelper.PathType.PARTIAL_TRACE ->
+                if (includeResetApp) PathFindingHelper.PathType.FULLTRACE else PathFindingHelper.PathType.INCLUDE_INFERED
+            PathFindingHelper.PathType.FULLTRACE -> PathFindingHelper.PathType.INCLUDE_INFERED
             else -> PathFindingHelper.PathType.ANY
         }
     }
@@ -544,7 +538,7 @@ open class GoToAnotherWindow constructor(
                 //log.info("Event: ${currentEdge!!.label.abstractAction.actionName} on ${currentEdge!!.label.abstractAction.widgetGroup}")
                 //Fill text input (if required)
                 //TODO Need save swipe action data
-                if (pathTraverser!!.transitionPath.pathType==PathFindingHelper.PathType.RESET && nextTransition!!.userInputs.isNotEmpty()?:false)
+                if (pathTraverser!!.transitionPath.pathType==PathFindingHelper.PathType.FULLTRACE && nextTransition!!.userInputs.isNotEmpty()?:false)
                 {
                     val inputData = nextTransition!!.userInputs.random()
                     inputData.forEach {

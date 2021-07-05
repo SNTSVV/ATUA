@@ -25,6 +25,7 @@ import kotlin.collections.HashSet
 open class AbstractState(
         val activity: String,
         val attributeValuationMaps: ArrayList<AttributeValuationMap> = arrayListOf(),
+        val avmCardinalities: HashMap<AttributeValuationMap,Cardinality>,
         val guiStates: ArrayList<State<*>> = ArrayList(),
         var window: Window,
         val EWTGWidgetMapping: HashMap<AttributeValuationMap, EWTGWidget> = HashMap(),
@@ -57,7 +58,7 @@ open class AbstractState(
         }
 
         countAVMFrequency()
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,window, rotation)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,avmCardinalities, window, rotation)
         abstractStateIdByWindow.putIfAbsent(window,HashSet())
         if (reuseAbstractStateId!=null
                 && abstractStateIdByWindow[window]!!.contains(reuseAbstractStateId)) {
@@ -74,14 +75,14 @@ open class AbstractState(
     }
 
     fun updateHashCode() {
-        hashCode = computeAbstractStateHashCode(attributeValuationMaps,window, rotation)
+        hashCode = computeAbstractStateHashCode(attributeValuationMaps,avmCardinalities, window, rotation)
     }
 
      fun countAVMFrequency() {
-        if (!AbstractStateManager.instance.attrValSetsFrequency.containsKey(window)) {
-            AbstractStateManager.instance.attrValSetsFrequency.put(window, HashMap())
+        if (!AbstractStateManager.INSTANCE.attrValSetsFrequency.containsKey(window)) {
+            AbstractStateManager.INSTANCE.attrValSetsFrequency.put(window, HashMap())
         }
-        val widgetGroupFrequency = AbstractStateManager.instance.attrValSetsFrequency[window]!!
+        val widgetGroupFrequency = AbstractStateManager.INSTANCE.attrValSetsFrequency[window]!!
         attributeValuationMaps.forEach {
             if (!widgetGroupFrequency.containsKey(it)) {
                 widgetGroupFrequency.put(it, 1)
@@ -307,7 +308,7 @@ open class AbstractState(
     fun getAttributeValuationSet(widget: Widget, guiState: State<*>, atuaMF: ATUAMF): AttributeValuationMap? {
         if (!guiStates.contains(guiState))
             return null
-        val mappedWidget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[window]
+        val mappedWidget_AttributeValuationSet = AttributeValuationMap.allWidgetAVMHashMap[window]
         if (mappedWidget_AttributeValuationSet == null)
             return null
         val mappedAttributeValuationSet = mappedWidget_AttributeValuationSet.get(widget)
@@ -319,7 +320,8 @@ open class AbstractState(
                     Helper.isOptionsMenuLayout(guiState)
                 else
                     false
-                val reducedAttributePath = WidgetReducer.reduce(widget,guiState,isOptionsMenu,guiTreeRectangle,window.classType,rotation,atuaMF,HashMap(),HashMap())
+                val reducedAttributePath = WidgetReducer.reduce(widget,guiState,isOptionsMenu,guiTreeRectangle,window,rotation,atuaMF,HashMap(),HashMap())
+                val ewtgWidget = WindowManager.instance.guiWidgetEWTGWidgetMappingByWindow.get(window)!!.get(widget)
                 val attributeValuationSet = attributeValuationMaps.find {
                     it.haveTheSameAttributePath(reducedAttributePath)
                 }
@@ -332,6 +334,8 @@ open class AbstractState(
                 }
             }
             return null
+        } else {
+
         }
         val attributeValuationSet = attributeValuationMaps.find {
             it.haveTheSameAttributePath(mappedAttributeValuationSet)
@@ -380,7 +384,7 @@ open class AbstractState(
                     .filter { !it.isUserLikeInput() }.map { w -> w.actionCount }
         }
         widgetActionCounts.forEach {
-            val actions = it.filter { it.value == 0 || (it.key.attributeValuationMap?.cardinality==Cardinality.MANY && it.value < 2) }.map { it.key }
+            val actions = it.filter { it.value == 0 || (avmCardinalities.get(it.key.attributeValuationMap)==Cardinality.MANY && it.value < 2) }.map { it.key }
             unexcerisedActions.addAll(actions)
 
         }
@@ -411,7 +415,7 @@ open class AbstractState(
         this.increaseActionCount(abstractAction)
         if (updateSimilarAbstractStates) {
             if (!abstractAction.isWidgetAction()) {
-                AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
                     it != this
                             && it.window == this.window
                 }.forEach {
@@ -456,7 +460,7 @@ open class AbstractState(
             }
         }
         if (action.isWidgetAction()) {
-            val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES
+            val virtualAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES
                     .find { it.window == this.window && it is VirtualAbstractState }
             if (virtualAbstractState!=null) {
                 if (!virtualAbstractState.attributeValuationMaps.contains(action.attributeValuationMap!!)) {
@@ -471,7 +475,7 @@ open class AbstractState(
     }
 
     fun increaseSimilarActionCount(action: AbstractAction) {
-        AbstractStateManager.instance.ABSTRACT_STATES
+        AbstractStateManager.INSTANCE.ABSTRACT_STATES
                 .filter { it.window == this.window && it!=this}
                 .forEach {
                     if (it.getAvailableActions().contains(action)) {
@@ -507,7 +511,7 @@ open class AbstractState(
     fun computeScore(autautMF: ATUAMF): Double {
         var localScore = 0.0
         val unexploredActions = getUnExercisedActions(null,autautMF).filterNot { it.attributeValuationMap == null }
-        val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[this.window]!!
+        val windowWidgetFrequency = AbstractStateManager.INSTANCE.attrValSetsFrequency[this.window]!!
         unexploredActions.forEach {
             val actionScore = it.getScore()
             if (windowWidgetFrequency.containsKey(it.attributeValuationMap!!))
@@ -600,14 +604,14 @@ open class AbstractState(
 
     companion object {
         val abstractStateIdByWindow = HashMap<Window, HashSet<UUID>>()
-        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, window: Window, rotation: Rotation): Int {
-            return attributeValuationMaps.sortedBy { it.avmId }.fold(emptyUUID) { id, avs ->
+        fun computeAbstractStateHashCode(attributeValuationMaps: List<AttributeValuationMap>, avmCardinality: Map<AttributeValuationMap, Cardinality>, window: Window, rotation: Rotation): Int {
+            return attributeValuationMaps.sortedBy { it.hashCode }.fold(emptyUUID) { id, avs ->
                 /*// e.g. keyboard elements are ignored for uid computation within [addRelevantId]
                 // however different selectable auto-completion proposes are only 'rendered'
                 // such that we have to include the img id (part of configId) to ensure different state configuration id's if these are different*/
 
                 //ConcreteId(addRelevantId(id, widget), configId + widget.uid + widget.id.configId)
-                id + avs.hashCode.toUUID()
+                id + avs.hashCode.toUUID() + avmCardinality.get(avs)!!.ordinal.toUUID()
             }.plus(listOf<String>(rotation.toString(),window.classType).joinToString("<;>").toUUID()).hashCode()
         }
 
@@ -630,10 +634,11 @@ class VirtualAbstractState(activity: String,
                            isHomeScreen: Boolean = false) : AbstractState(
         activity = activity,
         window = staticNode,
+        avmCardinalities = HashMap(),
         rotation = Rotation.PORTRAIT,
         isHomeScreen = isHomeScreen,
         isOutOfApplication = (staticNode is OutOfApp),
         isOpeningMenus = false
 )
 
-class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT)
+class LauncherAbstractState() : AbstractState(activity = "", window = Launcher.getOrCreateNode(), rotation = Rotation.PORTRAIT,avmCardinalities = HashMap())

@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.toUUID
 import org.slf4j.Logger
@@ -12,17 +13,17 @@ data class AttributePath (
         val localAttributes: HashMap<AttributeType, String> = HashMap(),
         val parentAttributePathId: UUID = emptyUUID,
         val childAttributePathIds: HashSet<UUID> = HashSet(),
-        val activity: String
+        var window: Window
         ){
 
     val attributePathId: UUID
     init {
         attributePathId = listOf<Any>(parentAttributePathId,localAttributes.toSortedMap().toString(),childAttributePathIds.sorted().toString()).joinToString(separator = "<;>").toUUID()
-        if (!allAttributePaths.containsKey(activity)) {
-            allAttributePaths.put(activity, HashMap())
+        if (!allAttributePaths.containsKey(window)) {
+            allAttributePaths.put(window, HashMap())
         }
-        if (!allAttributePaths.get(activity)!!.containsKey(attributePathId)) {
-            allAttributePaths.get(activity)!!.put(attributePathId, this)
+        if (!allAttributePaths.get(window)!!.containsKey(attributePathId)) {
+            allAttributePaths.get(window)!!.put(attributePathId, this)
         }
     }
 
@@ -38,18 +39,18 @@ data class AttributePath (
         return attributePathId.hashCode()
     }
 
-    fun contains(containedAttributePath: AttributePath, activity: String): Boolean {
+    fun contains(containedAttributePath: AttributePath, window: Window): Boolean {
         if (this.attributePathId == containedAttributePath.attributePathId)
             return true
 //        return false
         //check parent first
         if (parentAttributePathId!= emptyUUID && containedAttributePath.parentAttributePathId!= emptyUUID) {
-            val parentAttributePath = allAttributePaths.get(activity)!!.get(parentAttributePathId)!!
-            val containedParentAttributePath = allAttributePaths.get(activity)!!.get(containedAttributePath.parentAttributePathId)
+            val parentAttributePath = allAttributePaths.get(window)!!.get(parentAttributePathId)!!
+            val containedParentAttributePath = allAttributePaths.get(window)!!.get(containedAttributePath.parentAttributePathId)
             if (containedParentAttributePath == null) {
                 return false
             }
-            if (!parentAttributePath.contains(containedParentAttributePath,activity)) {
+            if (!parentAttributePath.contains(containedParentAttributePath,window)) {
                 return false
             }
         }
@@ -70,13 +71,13 @@ data class AttributePath (
         if (containedAttributePath.childAttributePathIds.isEmpty())
             return true
         val childAttributePaths = childAttributePathIds.map {
-            allAttributePaths.get(activity)!!.get(it)!!
+            allAttributePaths.get(window)!!.get(it)!!
         }
         val containedChildAttributePaths = containedAttributePath.childAttributePathIds.map {
-            allAttributePaths.get(activity)!!.get(it)!!
+            allAttributePaths.get(window)!!.get(it)!!
         }
        containedChildAttributePaths.forEach { containedChildAttributePath ->
-            if (!childAttributePaths.any { it.contains(containedChildAttributePath,activity) }) {
+            if (!childAttributePaths.any { it.contains(containedChildAttributePath,window) }) {
                 return false
             }
         }
@@ -85,14 +86,14 @@ data class AttributePath (
 
     }
 
-    fun dump(activity: String, dumpedAttributeValuationSets: ArrayList<Pair<String, UUID>>, bufferedWriter: BufferedWriter,capturedAttributePaths: List<AttributePath>) {
-        dumpedAttributeValuationSets.add(Pair(activity,attributePathId))
-        if (parentAttributePathId!= emptyUUID && !dumpedAttributeValuationSets.contains(Pair(activity,parentAttributePathId))) {
-            val parentAttributePath = getAttributePathById(parentAttributePathId,activity)
-            parentAttributePath?.dump(activity, dumpedAttributeValuationSets, bufferedWriter,capturedAttributePaths)
+    fun dump(window: Window, dumpedAttributeValuationSets: ArrayList<Pair<Window, UUID>>, bufferedWriter: BufferedWriter,capturedAttributePaths: List<AttributePath>) {
+        dumpedAttributeValuationSets.add(Pair(window,attributePathId))
+        if (parentAttributePathId!= emptyUUID && !dumpedAttributeValuationSets.contains(Pair(window,parentAttributePathId))) {
+            val parentAttributePath = getAttributePathById(parentAttributePathId,window)
+            parentAttributePath?.dump(window, dumpedAttributeValuationSets, bufferedWriter,capturedAttributePaths)
         }
         bufferedWriter.newLine()
-        bufferedWriter.write("$activity;")
+        bufferedWriter.write("${window.windowId};")
         bufferedWriter.write(dump())
         if(capturedAttributePaths.contains(this)) {
             bufferedWriter.write(";TRUE")
@@ -101,9 +102,9 @@ data class AttributePath (
         }
         if (childAttributePathIds.isNotEmpty()) {
             childAttributePathIds.forEach {
-                if (!dumpedAttributeValuationSets.contains(Pair(activity,it))) {
-                    val childAttributePath = allAttributePaths.get(activity)!!.get(it)!!
-                    childAttributePath.dump(activity,dumpedAttributeValuationSets,bufferedWriter,capturedAttributePaths)
+                if (!dumpedAttributeValuationSets.contains(Pair(window,it))) {
+                    val childAttributePath = allAttributePaths.get(window)!!.get(it)!!
+                    childAttributePath.dump(window,dumpedAttributeValuationSets,bufferedWriter,capturedAttributePaths)
                 }
             }
         }
@@ -170,12 +171,12 @@ data class AttributePath (
         }
     }
     companion object {
-        val allAttributePaths = HashMap<String, HashMap<UUID, AttributePath>>()
+        val allAttributePaths = HashMap<Window, HashMap<UUID, AttributePath>>()
 
-        fun getAttributePathById(uuid: UUID, activity: String): AttributePath? {
-            if (!allAttributePaths.get(activity)!!.containsKey(uuid))
+        fun getAttributePathById(uuid: UUID, window: Window): AttributePath? {
+            if (!allAttributePaths.get(window)!!.containsKey(uuid))
                 return null
-            return allAttributePaths.get(activity)!!.get(uuid)!!
+            return allAttributePaths.get(window)!!.get(uuid)!!
         }
     }
 }

@@ -4,6 +4,8 @@ import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.AbstractLocalReducer
+import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
@@ -14,24 +16,23 @@ open class BaseReducer(
 )
     : AbstractReducer(localReducer = localReducer)
 {
-    override fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, classType: String, rotation: Rotation, atuaMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>
+    override fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, window: Window, rotation: Rotation, atuaMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>
                         , tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath {
         val localAttributes = localReducer.reduce(guiWidget,guiState)
-        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, classType,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
 
         val attributePath = AttributePath(
                 localAttributes = localAttributes,
                 parentAttributePathId = parentAttributePath?.attributePathId?: emptyUUID,
-                activity = classType
+                window = window
         )
         tempWidgetReduceMap.put(guiWidget,attributePath)
         return attributePath
     }
 
-    fun parentReduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, classType: String, rotation: Rotation, atuaMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>,
+    fun parentReduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, window: Window, rotation: Rotation, atuaMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>,
                      tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath?{
         var currentWidget = guiWidget
-        var parentGUIWidget = guiState.widgets.find { it.id == guiWidget.parentId }
 /*        while (parentGUIWidget!=null &&
                 parentGUIWidget.text.isBlank()
                         && parentGUIWidget.resourceId.isBlank()
@@ -52,7 +53,8 @@ open class BaseReducer(
             {
                 return tempWidgetReduceMap[parentWidget]
             }
-            val parentAttributePath: AttributePath = AbstractionFunction.INSTANCE.reduce(parentWidget,guiState,isOptionsMenu,guiTreeRectangle, classType,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+            val ewtgWidget = WindowManager.instance.guiWidgetEWTGWidgetMappingByWindow.get(window)!!.get(parentWidget)
+            val parentAttributePath: AttributePath = AbstractionFunction2.INSTANCE.reduce(parentWidget,guiState, ewtgWidget, isOptionsMenu,guiTreeRectangle,window, rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
             //tempWidgetReduceMap.put(parentWidget,parentAttributePath)
             return parentAttributePath
         }

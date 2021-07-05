@@ -3,11 +3,15 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG
 import org.droidmate.exploration.modelFeatures.atua.AppModelLoader
 import org.droidmate.exploration.modelFeatures.atua.EWTG.DescendantLayoutDirection
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.explorationModel.emptyUUID
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.droidmate.explorationModel.toUUID
 import java.io.BufferedWriter
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -15,53 +19,60 @@ class AttributeValuationMap {
     var avmId: String
     val localAttributes: HashMap<AttributeType, String> = HashMap()
     var parentAttributeValuationMapId: String = ""
-    var cardinality: Cardinality
-    var windowClassType: String
+    var window: Window
     var exerciseCount: Int = 0
     val actionCount = HashMap<AbstractAction, Int>()
     var captured = false
     var hashCode: Int = 0
-
-    constructor(avmId: String, localAttributes: Map<AttributeType,String>, parentAVMId: String, cardinality: Cardinality, windowClassType: String) {
+    var timestamp: String = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+    var fullAttributeValuationMap: String = ""
+    constructor(avmId: String, localAttributes: Map<AttributeType,String>, parentAVMId: String, window: Window) {
         this.avmId = avmId
         this.localAttributes.putAll(localAttributes)
         this.parentAttributeValuationMapId = parentAVMId
-        this.cardinality = cardinality
-        this.windowClassType = windowClassType
-        hashCode = this.fullAttributeValuationMap().hashCode()
-        if (!ALL_ATTRIBUTE_VALUATION_MAP.containsKey(windowClassType)) {
-            ALL_ATTRIBUTE_VALUATION_MAP.put(windowClassType, HashMap())
+        this.window = window
+        if (!ALL_ATTRIBUTE_VALUATION_MAP.containsKey(window)) {
+            ALL_ATTRIBUTE_VALUATION_MAP.put(window, HashMap())
         }
-        ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.put(avmId,this)
+        ALL_ATTRIBUTE_VALUATION_MAP[window]!!.put(avmId,this)
+        maxId++
     }
-    constructor(attributePath: AttributePath, cardinality: Cardinality, windowClassType: String, attributPath_cardinality: HashMap<AttributePath,Cardinality>) {
-        if (!ALL_ATTRIBUTE_VALUATION_MAP.containsKey(windowClassType)) {
-            ALL_ATTRIBUTE_VALUATION_MAP.put(windowClassType, HashMap())
+
+    constructor(attributePath: AttributePath, window: Window) {
+        if (!ALL_ATTRIBUTE_VALUATION_MAP.containsKey(window)) {
+            ALL_ATTRIBUTE_VALUATION_MAP.put(window, HashMap())
         }
+        attributePath_AttributeValuationMap.putIfAbsent(window, HashMap())
         localAttributes.putAll(attributePath.localAttributes)
         avmId = "${localAttributes.get(AttributeType.className)}_${localAttributes.get(AttributeType.resourceId)}_${maxId++}"
 
         if (attributePath.parentAttributePathId == emptyUUID) {
             parentAttributeValuationMapId = ""
         } else {
-            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,windowClassType)
+            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,window)
             if (parentAttributePath == null)
             {
                 throw Exception()
             }
-            if (ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.any { it.value.haveTheSameAttributePath(parentAttributePath) }) {
-                parentAttributeValuationMapId = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.map {it.value}.find{ it.haveTheSameAttributePath(parentAttributePath) }!!.avmId
+            val parentAVM = getExistingObject(parentAttributePath,window)
+            if (parentAVM != null) {
+                parentAttributeValuationMapId = parentAVM.avmId
+            } else {
+                val newParentAttributeValuationSet = AttributeValuationMap(parentAttributePath, window)
+                parentAttributeValuationMapId = newParentAttributeValuationSet.avmId
+            }
+            /*if (ALL_ATTRIBUTE_VALUATION_MAP[window]!!.any { it.value.haveTheSameAttributePath(parentAttributePath) }) {
+                parentAttributeValuationMapId = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.map {it.value}.find{ it.haveTheSameAttributePath(parentAttributePath) }!!.avmId
             } else {
                 var parentCardinality =  attributPath_cardinality.filterKeys { it.attributePathId == attributePath.parentAttributePathId }.values.firstOrNull()
                 if (parentCardinality == null)
                     parentCardinality = Cardinality.ONE
                 val newParentAttributeValuationSet = AttributeValuationMap(parentAttributePath,
-                        parentCardinality, windowClassType,attributPath_cardinality)
+                        parentCardinality, window,attributPath_cardinality)
                 parentAttributeValuationMapId = newParentAttributeValuationSet.avmId
-            }
+            }*/
         }
-        this.cardinality = cardinality
-        this.windowClassType = windowClassType
+        this.window = window
         //TODO
 /*        if (attributePath.childAttributePathIds.isNotEmpty()) {
             attributePath.childAttributePathIds.map { AttributePath.getAttributePathById(it,activity) }.forEach {
@@ -71,17 +82,15 @@ class AttributeValuationMap {
         }*/
         //TODO
 
-
-        if (avmId == parentAttributeValuationMapId) {
-            ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.put(avmId,this)
-        } else {
-            ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.put(avmId, this)
-        }
+        ALL_ATTRIBUTE_VALUATION_MAP[window]!!.put(avmId,this)
+        attributePath_AttributeValuationMap[window]!!.put(attributePath,this)
         hashCode = this.fullAttributeValuationMap().hashCode()
 
     }
 
-
+    fun computeHashCode() {
+        hashCode = this.fullAttributeValuationMap().hashCode()
+    }
     fun initActions() {
         /*if (!AbstractStateManager.instance.activity_attrValSetsMap.containsKey(activity))
             AbstractStateManager.instance.activity_attrValSetsMap.put(activity, ArrayList())*/
@@ -295,25 +304,25 @@ class AttributeValuationMap {
                 selectedGuiWidgets.add(it)
             }
         }
-        if (selectedGuiWidgets.isEmpty()) {
+        /*if (selectedGuiWidgets.isEmpty()) {
             Helper.getVisibleWidgets(guiState).forEach {
                 if (isAbstractRepresentationOf(it,guiState,true)) {
                     selectedGuiWidgets.add(it)
                 }
             }
-        }
+        }*/
         return selectedGuiWidgets
     }
 
     fun isAbstractRepresentationOf(widget: Widget, guiState: State<*>, compareDerived: Boolean): Boolean
     {
-        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(guiState)
         if (abstractState == null)
             return false
         val window = abstractState.window
-        if (!AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap.containsKey(window))
+        if (!allWidgetAVMHashMap.containsKey(window))
             return false
-        val widget_AttributeValuationSet = AbstractStateManager.instance.activity_widget_AttributeValuationSetHashMap[window]!!
+        val widget_AttributeValuationSet = allWidgetAVMHashMap[window]!!
         if (!widget_AttributeValuationSet.containsKey(widget))
             return false
         val derivedAttributeValuationSet = widget_AttributeValuationSet.get(widget)!!
@@ -348,13 +357,14 @@ class AttributeValuationMap {
      fun isParent(attributeValuationMap: AttributeValuationMap): Boolean {
         if (attributeValuationMap.parentAttributeValuationMapId== "")
             return false
-         val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(attributeValuationMap.parentAttributeValuationMapId)!!
+         val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.get(attributeValuationMap.parentAttributeValuationMapId)!!
         if (haveTheSameAttributePath(parentAttributeValuationSet))
             return true
         return false
     }
 
     fun haveTheSameAttributePath(attributePath: AttributePath): Boolean {
+
         if (localAttributes.hashCode() != attributePath.localAttributes.hashCode()) {
             return false
         }
@@ -376,8 +386,8 @@ class AttributeValuationMap {
             if (attributePath.parentAttributePathId == emptyUUID) {
                 return false
             }
-            val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(parentAttributeValuationMapId)!!
-            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,windowClassType)
+            val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.get(parentAttributeValuationMapId)!!
+            val parentAttributePath = AttributePath.getAttributePathById(attributePath.parentAttributePathId,window)
             if (parentAttributePath==null) {
                 throw Exception()
             }
@@ -389,7 +399,7 @@ class AttributeValuationMap {
     }
 
     fun haveTheSameAttributePath(cmpAttributeValuationMap: AttributeValuationMap): Boolean {
-        if (avmId != cmpAttributeValuationMap.avmId)
+        if (this.hashCode != cmpAttributeValuationMap.hashCode)
             return false
         return true
     }
@@ -414,12 +424,12 @@ class AttributeValuationMap {
             }
         }*/
         if (parentAttributeValuationMapId!= "" && abstractAttributeValuationMap.parentAttributeValuationMapId!= "") {
-            val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(parentAttributeValuationMapId)
+            val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.get(parentAttributeValuationMapId)
             if (parentAttributeValuationSet == null) {
                 throw Exception("Cannot find attributeValuationSet $parentAttributeValuationMapId")
                 return false
             }
-            val abstractParentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(abstractAttributeValuationMap.parentAttributeValuationMapId)
+            val abstractParentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.get(abstractAttributeValuationMap.parentAttributeValuationMapId)
             if (abstractParentAttributeValuationSet == null) {
                 //throw Exception("Cannot find attributeValuationSet $parentAttributeValuationMapId")
                 return false
@@ -429,16 +439,6 @@ class AttributeValuationMap {
             }
         }
         return true
-    }
-
-    override fun hashCode(): Int {
-        return hashCode
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (other !is AttributeValuationMap)
-            return false
-        return this.hashCode==other.hashCode
     }
 
     override fun toString(): String {
@@ -453,7 +453,12 @@ class AttributeValuationMap {
     }
 
     fun fullAttributeValuationMap(): String {
-        val s =  listOf<String>(parentAttributeValuationMapId.toString(),localAttributes.toSortedMap().toString(),cardinality.toString(),windowClassType).joinToString("<;>")
+        val parentAttributeValuationMapString =  if (parentAttributeValuationMapId!="")
+            ALL_ATTRIBUTE_VALUATION_MAP.get(window)!!.get(parentAttributeValuationMapId)!!.fullAttributeValuationMap()
+        else
+            ""
+        val s =  listOf<String>(parentAttributeValuationMapString,localAttributes.toSortedMap().toString()).joinToString("<;>")
+        fullAttributeValuationMap = s
         return s
     }
     /**
@@ -462,9 +467,9 @@ class AttributeValuationMap {
     fun dump(abstractState: AbstractState): String {
         //testReloadAttributes()
         val dumpedString = listOf<String>(avmId,parentAttributeValuationMapId,dumpLocalAttributes()
-                ,cardinality.toString(),captured.toString(),
+                ,abstractState.avmCardinalities.get(this)?.toString()?:Cardinality.UNKNOWN.toString(),captured.toString(),
                 abstractState.EWTGWidgetMapping[this]?.widgetId?:"",hashCode.toString()).joinToString(";")
-        loadDumpedString(dumpedString)
+        // loadDumpedString(dumpedString)
         return dumpedString
         /*return "${avmId};${getClassName()};${getResourceId()};" +
                 "\"${localAttributes.get(AttributeType.contentDesc)}\";\"${localAttributes.get(AttributeType.text)}\";${isEnable()};" +
@@ -486,15 +491,13 @@ class AttributeValuationMap {
             addAttributeIfNotNull(attributeType,value,localAttributes)
             index++
         }
-        val cardinality = Cardinality.values().find { it.toString() == splites[index]!! }!!
         val captured = splites[index+1]!!
         val hashcode = splites[index+3]!!.toInt()
         val newAttributeValuationMap = AttributeValuationMap(
                 avmId = avmId,
                 localAttributes = localAttributes,
                 parentAVMId = parentAVMId,
-                cardinality = cardinality,
-                windowClassType = windowClassType
+                window = window
         )
         assert(hashcode==newAttributeValuationMap.hashCode)
     }
@@ -574,8 +577,6 @@ class AttributeValuationMap {
             dumpParentUUID()
         else
             ""
-
-        val cardinality = Cardinality.values().find { it.name == cardinality.toString() }!!
         val oldFullAttributeValuationSet = fullAttributeValuationMap()
 
         val oldUUID = oldFullAttributeValuationSet.toUUID()
@@ -596,7 +597,7 @@ class AttributeValuationMap {
         if (parentAttributeValuationMapId!= "") {
             if (!dumpedAttributeValuationSets.contains(parentAttributeValuationMapId)) {
                 bufferedWriter.newLine()
-                val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[windowClassType]!!.get(parentAttributeValuationMapId)!!
+                val parentAttributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP[window]!!.get(parentAttributeValuationMapId)!!
                 parentAttributeValuationSet.dump(bufferedWriter, dumpedAttributeValuationSets,abstractState)
             }
         }
@@ -611,17 +612,23 @@ class AttributeValuationMap {
 
 
     companion object {
-       val ALL_ATTRIBUTE_VALUATION_MAP: HashMap<String, HashMap<String,AttributeValuationMap>> = HashMap()
-        val allWidgetAVMHashMap: HashMap<String, HashMap<Widget,AttributeValuationMap>> = HashMap();
+       val ALL_ATTRIBUTE_VALUATION_MAP: HashMap<Window, HashMap<String,AttributeValuationMap>> = HashMap()
+        val attributePath_AttributeValuationMap: HashMap<Window, HashMap<AttributePath,AttributeValuationMap>> = HashMap()
+        val allWidgetAVMHashMap: HashMap<Window, HashMap<Widget,AttributeValuationMap>> = HashMap();
         var maxId: Long = 0
-        /* fun createOrGetExisitingObject(attributePath: AttributePath, cardinality: Cardinality, activity: String): AttributeValuationSet {
-
-        }*/
+        fun getExistingObject(attributePath: AttributePath, window: Window): AttributeValuationMap? {
+            var attributeValuationSet =  attributePath_AttributeValuationMap.get(window)!!.get(attributePath)
+            if (attributeValuationSet == null) {
+                // find the same AVM
+                attributeValuationSet = ALL_ATTRIBUTE_VALUATION_MAP.get(window)!!.values.find { it.haveTheSameAttributePath(attributePath) }
+            }
+            return attributeValuationSet
+        }
     }
 }
 
 enum class Cardinality{
-    ZERO,
+    UNKNOWN,
     ONE,
     MANY
 }

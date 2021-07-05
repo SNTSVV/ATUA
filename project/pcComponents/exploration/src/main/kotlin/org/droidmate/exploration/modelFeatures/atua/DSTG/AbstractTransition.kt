@@ -24,9 +24,6 @@ class AbstractTransition(
         val dest: AbstractState,
         val modelVersion: ModelVersion = ModelVersion.RUNNING
 ) {
-    init {
-        source.abstractTransitions.add(this)
-    }
     val inputGUIStates = ArrayList<ConcreteId>()
     val guaranteedAVMs = ArrayList<AttributeValuationMap>() // guaranteedAVMsInDest
     val modifiedMethods = HashMap<String,Boolean>() //method id,
@@ -39,6 +36,11 @@ class AbstractTransition(
     val changeEffects = HashSet<ChangeEffect>()
     var dependentAbstractStates = ArrayList<AbstractState>()
     var requiringPermissionRequestTransition: AbstractTransition? = null
+    init {
+        source.abstractTransitions.add(this)
+        guaranteedAVMs.addAll(dest.attributeValuationMaps)
+    }
+
     fun isExplicit() = !isImplicit
 
     fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {
@@ -88,10 +90,8 @@ class AbstractTransition(
 
         fun findExistingAbstractTransitions(abstractTransitionSet: List<AbstractTransition>,
                                                      abstractAction: AbstractAction,
-                                                     interactionData: Any?,
                                                      source: AbstractState,
                                                      dest: AbstractState,
-                                                     prevWindowAbstractState: AbstractState?,
                                                     isImplicit: Boolean): AbstractTransition? {
             var existingAbstractTransition: AbstractTransition? = null
           /*  if (prevWindowAbstractState!=null)

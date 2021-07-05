@@ -61,8 +61,10 @@ class ExerciseTargetComponentTask private constructor(
             }
             return false
         }*/
-        if (isDoingRandomExplorationTask && randomExplorationTask.isTaskEnd(currentState)) {
-            return true
+        if (currentAbstractState.isOpeningKeyboard)
+            return false
+        if (isDoingRandomExplorationTask && !randomExplorationTask.isTaskEnd(currentState)) {
+            return false
         }
         if (currentAbstractState.window != targetWindow) {
             if (randomBudget>=0)
@@ -111,7 +113,7 @@ class ExerciseTargetComponentTask private constructor(
                     else -> AbstractActionType.CLICK
                 }
                 currentAbstractState!!.getAvailableActions().filter { it.attributeValuationMap == childWidget && it.actionType == childActionType }.forEach {
-                    if (it.attributeValuationMap!!.cardinality == Cardinality.MANY) {
+                    if (currentAbstractState.avmCardinalities.get(it.attributeValuationMap!!) == Cardinality.MANY) {
                         val itemActionAttempt = 3 * autautStrategy.scaleFactor
                         for (i in 1..itemActionAttempt.toInt()) {
                             eventList.add(it)

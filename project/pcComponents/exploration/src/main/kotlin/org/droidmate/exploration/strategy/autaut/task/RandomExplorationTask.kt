@@ -83,6 +83,7 @@ class RandomExplorationTask constructor(
         recentGoToExploreState = false
         qlearningRunning = false
         qlearningSteps = 0
+        goToLockedWindowTask = null
     }
 
     override fun initialize(currentState: State<*>) {
@@ -103,6 +104,9 @@ class RandomExplorationTask constructor(
         if (fillingData == true) {
             return false
         }
+        val currentAbstractState = atuaMF.getAbstractState(currentState)!!
+        if (currentAbstractState.isOpeningKeyboard)
+            return false
         if (attemptCount >= maximumAttempt) {
             return true
         }
@@ -224,6 +228,11 @@ class RandomExplorationTask constructor(
                         goToLockedWindowTask!!.initialize(currentState)
                         return goToLockedWindowTask!!.chooseAction(currentState)
                     }
+                    else if (actionOnOutOfAppCount >= 11) {
+                        return autautStrategy.eContext.resetApp()
+                    } else if (actionOnOutOfAppCount >= 10) {
+                        return autautStrategy.eContext.launchApp()
+                    }
                     else if (actionOnOutOfAppCount >= 5){
                         return ExplorationAction.pressBack()
                     } else {
@@ -231,9 +240,16 @@ class RandomExplorationTask constructor(
                     }
                 }
             } else {
+                if (actionOnOutOfAppCount >= 11) {
+                    return autautStrategy.eContext.resetApp()
+                }
+                if (actionOnOutOfAppCount >= 10) {
+                    return autautStrategy.eContext.launchApp()
+                }
                 if (actionOnOutOfAppCount >= 5) {
                     return ExplorationAction.pressBack()
                 }
+
             }
         }
         goToLockedWindowTask = null
@@ -426,7 +442,7 @@ class RandomExplorationTask constructor(
                 }
             } else {
                 if (!isPureRandom && !currentAbstractState.isRequireRandomExploration() && !recentGoToExploreState ) {
-                    var targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                    var targetStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
                         it.window == currentAbstractState.window
                                 && it != currentAbstractState
                                 && it !is VirtualAbstractState
@@ -489,12 +505,16 @@ class RandomExplorationTask constructor(
                                 return bestCandidates.filter { it.key==null }.values.flatten().random()
                         }
                         val widgetActionCandidates = bestCandidates.filter { it.key!=null }
-                        val widgetCandidates = runBlocking {getCandidates(widgetActionCandidates.keys.toList() as List<Widget>)  }
-                        val selectedWidget = widgetCandidates.random()
-                        val selectedAction = widgetActionCandidates[selectedWidget]!!.random()
-                        ExplorationTrace.widgetTargets.add(selectedWidget)
-                        log.info("Widget: ${selectedWidget}")
-                        return selectedAction
+                        if (widgetActionCandidates.isNotEmpty()) {
+                            val widgetCandidates = runBlocking { getCandidates(widgetActionCandidates.keys.toList() as List<Widget>) }
+                            val selectedWidget = widgetCandidates.random()
+                            val selectedAction = widgetActionCandidates[selectedWidget]!!.random()
+                            ExplorationTrace.widgetTargets.add(selectedWidget)
+                            log.info("Widget: ${selectedWidget}")
+                            return selectedAction
+                        } else {
+                            return bestCandidates.values.random().random()
+                        }
                     }
 
                     /*val attributeValuationSet = currentAbstractState.getAttributeValuationSet(chosenWidget, currentState)
@@ -702,7 +722,7 @@ class RandomExplorationTask constructor(
 
             //prioritize the less frequent widget
             val actionByScore = HashMap<AbstractAction, Double>()
-            val windowWidgetFrequency = AbstractStateManager.instance.attrValSetsFrequency[currentAbstractState.window]!!
+            val windowWidgetFrequency = AbstractStateManager.INSTANCE.attrValSetsFrequency[currentAbstractState.window]!!
             candidateActions.forEach {
                 var actionScore = it.getScore()
                 val widgetGroup = it.attributeValuationMap!!

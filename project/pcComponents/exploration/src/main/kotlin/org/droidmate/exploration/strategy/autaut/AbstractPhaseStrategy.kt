@@ -50,10 +50,10 @@ abstract class AbstractPhaseStrategy(
     }
 
     fun getUnexhaustedExploredAbstractState(currentState: State<*>): List<AbstractState> {
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (currentAbstractState==null)
             return emptyList()
-        val runtimeAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
+        val runtimeAbstractStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES
                 .filterNot { it is VirtualAbstractState
                         || it == currentAbstractState
                         || it.window is Launcher
@@ -73,10 +73,10 @@ abstract class AbstractPhaseStrategy(
 
     open fun getPathsToWindowToExplore(currentState: State<*>, targetWindow: Window, pathType: PathFindingHelper.PathType, explore: Boolean): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (currentAbstractState==null)
             return transitionPaths
-        var targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+        var targetStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
             it.window == targetWindow
                     && it != currentAbstractState
                     && (it is VirtualAbstractState || it.attributeValuationMaps.isNotEmpty())
@@ -85,7 +85,7 @@ abstract class AbstractPhaseStrategy(
             targetStates.removeIf {
                 it is VirtualAbstractState || it.getUnExercisedActions(null,atuaMF).isEmpty() }
             if (targetStates.isEmpty()) {
-                targetStates = AbstractStateManager.instance.ABSTRACT_STATES.filter {
+                targetStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
                     it.window == targetWindow
                             && it != currentAbstractState
                             && it.guiStates.any { atuaMF.actionCount.getUnexploredWidget(it).isNotEmpty() }
@@ -141,7 +141,7 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        pathType = PathFindingHelper.PathType.RESET,
+                        pathType = PathFindingHelper.PathType.FULLTRACE,
                         shortest = shortest,
                         pathCountLimitation = 5)
             }
@@ -161,7 +161,7 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        pathType = PathFindingHelper.PathType.TRACE,
+                        pathType = PathFindingHelper.PathType.PARTIAL_TRACE,
                         shortest = shortest,
                         pathCountLimitation = 5)
             }

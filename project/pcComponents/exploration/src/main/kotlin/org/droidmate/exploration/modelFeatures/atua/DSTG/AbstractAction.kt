@@ -64,12 +64,7 @@ data class AbstractAction (
         }
         if (attributeValuationMap == null)
             return actionScore
-        val cardinalityScore = when (attributeValuationMap!!.cardinality) {
-            Cardinality.ONE -> 1
-            Cardinality.MANY -> 2
-            else -> 1
-        }
-        return actionScore*cardinalityScore.toDouble()
+        return actionScore
     }
 
     companion object {
@@ -172,6 +167,7 @@ enum class AbstractActionType(val actionName: String) {
     ACTION_QUEUE("ActionQueue"),
     PRESS_HOME("PressHome"),
     RANDOM_KEYBOARD("RandomKeyboard"),
+    UNDERIVED("Underived"),
     FAKE_ACTION("FakeAction"),
     TERMINATE("Terminate"),
     WAIT("FetchGUI")

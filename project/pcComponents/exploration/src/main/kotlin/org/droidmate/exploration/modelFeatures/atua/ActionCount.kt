@@ -17,7 +17,7 @@ class ActionCount  {
     private val wCnt = HashMap<UUID, MutableMap<String, Int>>()
     val widgetCount = HashMap<ConcreteId,MutableMap<String,Int>>()
     fun widgetnNumExplored(s: State<*>, selection: Collection<Widget>): Map<Widget, Int> {
-        val abstractState = AbstractStateManager.instance.getAbstractState(s)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(s)!!
         val activity = abstractState.window.classType
         return selection.map {
             it to (wCnt[it.uid]?.get(activity) ?: 0)
@@ -25,7 +25,7 @@ class ActionCount  {
     }
 
     fun widgetNumExplored2(s: State<*>, selection: Collection<Widget>): Map<Widget,Int> {
-        val abstractState = AbstractStateManager.instance.getAbstractState(s)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(s)!!
         val activity = abstractState.window.classType
         return selection.map {
             it to (widgetCount[it.id]?.get(activity) ?: 0)
@@ -34,7 +34,7 @@ class ActionCount  {
 
     fun getUnexploredWidget(guiState: State<Widget>): List<Widget> {
         val unexploredWidget = ArrayList<Widget>()
-        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(guiState)!!
         val activity = abstractState.window.classType
         Helper.getActionableWidgetsWithoutKeyboard(guiState).forEach {
             val widgetUid = it.uid
@@ -50,7 +50,7 @@ class ActionCount  {
     }
 
      fun initWidgetActionCounterForNewState(newState: State<*>) {
-        val newAbstractState: AbstractState = AbstractStateManager.instance.getAbstractState(newState)!!
+        val newAbstractState: AbstractState = AbstractStateManager.INSTANCE.getAbstractState(newState)!!
         Helper.getActionableWidgetsWithoutKeyboard(newState).filter { it.clickable }. forEach {
             val widgetUid = it.uid
             if (!wCnt.containsKey(widgetUid)) {

@@ -11,6 +11,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV1
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV2
 import org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer.LocalReducerLV3
+import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
@@ -23,7 +24,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class AbstractionFunction (val root: DecisionNode) {
+class AbstractionFunction2 (val root: DecisionNode2) {
     val abandonedAbstractTransitions: ArrayList<AbstractTransition> = ArrayList()
 
     fun isAbandonedAbstractTransition(activity: String, abstractTransition: AbstractTransition):Boolean {
@@ -48,10 +49,12 @@ class AbstractionFunction (val root: DecisionNode) {
         }
     }
 
-    fun reduce(guiWidget: Widget, guiState: State<*>,isOptionsMenu:Boolean , guiTreeRectangle: Rectangle, window: Window, rotation: Rotation, autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap()
-               , tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
+    fun reduce(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget?, isOptionsMenu:Boolean ,
+               guiTreeRectangle: Rectangle, window: Window, rotation: Rotation,
+               autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap(),
+               tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
         val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
-        var currentDecisionNode: DecisionNode?=null
+        var currentDecisionNode: DecisionNode2?=null
         var attributePath: AttributePath? = null
         var level = 0
         do {
@@ -64,27 +67,25 @@ class AbstractionFunction (val root: DecisionNode) {
                 break
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+
             if (isOptionsMenu && isInteractiveLeaf && level <= 5) {
-                if (!currentDecisionNode.attributePaths.containsKey(window.classType)) {
-                    currentDecisionNode.attributePaths.put(window.classType, arrayListOf())
-                }
-                if (!currentDecisionNode!!.attributePaths.get(window.classType)!!.contains(attributePath))
-                    currentDecisionNode!!.attributePaths.get(window.classType)!!.add(attributePath)
+               if (ewtgWidget!=null && !currentDecisionNode!!.ewtgWidgets.contains(ewtgWidget))
+                   currentDecisionNode!!.ewtgWidgets.add(ewtgWidget)
             }
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.containAttributePath(attributePath!!,window.classType))
+                && currentDecisionNode.ewtgWidgets.contains(ewtgWidget))
+        attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,autaut, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         return attributePath!!
     }
 
     /**
      * Increase the level of Reducer. Return [true] if it can be increased, otherwise [false]
      */
-    fun increaseReduceLevel(guiWidget: Widget, guiState: State<*>, window: Window, rotation: Rotation, atuaMF: ATUAMF): Boolean
+    fun increaseReduceLevel(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget, classType: String, rotation: Rotation, atuaMF: ATUAMF): Boolean
     {
         val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
-        var currentDecisionNode: DecisionNode?=null
+        var currentDecisionNode: DecisionNode2?=null
         var attributePath: AttributePath? = null
         val guiTreeRectangle = org.droidmate.exploration.modelFeatures.atua.EWTG.Helper.computeGuiTreeDimension(guiState)
         var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, atuaMF))
@@ -104,22 +105,11 @@ class AbstractionFunction (val root: DecisionNode) {
                 break
             else
                 currentDecisionNode = currentDecisionNode.nextNode
-            attributePath = currentDecisionNode!!.reducer.reduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
-            if (isOptionsMenu && isInteractiveLeaf && level <= 5) {
-                if (!currentDecisionNode.attributePaths.containsKey(window.classType)) {
-                    currentDecisionNode.attributePaths.put(window.classType, arrayListOf())
-                }
-                if (!currentDecisionNode!!.attributePaths.get(window.classType)!!.contains(attributePath))
-                    currentDecisionNode!!.attributePaths.get(window.classType)!!.add(attributePath)
-            }
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.containAttributePath(attributePath!!,window.classType))
-        if (currentDecisionNode!=null && !currentDecisionNode.containAttributePath(attributePath!!,window.classType)) {
-            if (!currentDecisionNode.attributePaths.containsKey(window.classType)) {
-                currentDecisionNode.attributePaths.put(window.classType, arrayListOf())
-            }
-            currentDecisionNode.attributePaths.get(window.classType)!!.add(attributePath)
+                && currentDecisionNode.ewtgWidgets.contains(ewtgWidget))
+        if (currentDecisionNode!=null && !currentDecisionNode!!.ewtgWidgets.contains(ewtgWidget)) {
+            currentDecisionNode.ewtgWidgets.add(ewtgWidget)
            /* val newAttributePath = reduce(guiWidget,guiState,classType, hashMapOf(), hashMapOf())
             updateAllAttributePathsHavingParent(attributePath,newAttributePath,classType)*/
             return true
@@ -144,11 +134,10 @@ class AbstractionFunction (val root: DecisionNode) {
     }
 
 
-/*
     fun dump(dstgFolder: Path) {
         val parentDirectory = Files.createDirectory(dstgFolder.resolve("AbstractionFunction"))
         var level = 1
-        var currentDecisionNode: DecisionNode? = root
+        var currentDecisionNode: DecisionNode2? = root
         do {
             dumpDecisionNode(parentDirectory, level, currentDecisionNode)
             currentDecisionNode = currentDecisionNode!!.nextNode
@@ -163,26 +152,20 @@ class AbstractionFunction (val root: DecisionNode) {
             }
         }
     }
-*/
 
-/*    private fun dumpDecisionNode(parentDirectory: Path, level: Int, currentDecisionNode: DecisionNode?) {
+    private fun dumpDecisionNode(parentDirectory: Path, level: Int, currentDecisionNode: DecisionNode2?) {
         File(parentDirectory.resolve("DecisionNode_LV${level}.csv").toUri()).bufferedWriter().use { all ->
             all.write(header())
             val dumpedAttributeValuationSet = ArrayList<Pair<String, UUID>>()
-            currentDecisionNode!!.attributePaths.forEach {
-                val activity = it.key
-                val captured = it.value
-                captured.forEach {
-                    if (!dumpedAttributeValuationSet.contains(Pair(activity,it.attributePathId))) {
-                        it.dump(window = a, dumpedAttributeValuationSets = dumpedAttributeValuationSet, bufferedWriter = all,capturedAttributePaths = captured)
-                    }
-                }
+            currentDecisionNode!!.ewtgWidgets.forEach {
+                all.newLine()
+                all.write("${it.widgetId};${it.resourceIdName};${it.className};${it.parent?.widgetId};${it.window.classType};${it.createdAtRuntime}")
             }
         }
-    }*/
+    }
 
     private fun header(): String  {
-        return "Activity;AttributeValuationSetID;parentAttributeValutionSetID;${localAttributesHeader()}"
+        return "[1]widgetId;[2]resourceIdName;[3]className;[4]parent;[5]activity;[6]createdAtRuntime"
     }
     private fun localAttributesHeader(): String {
         var result = ""
@@ -195,45 +178,45 @@ class AbstractionFunction (val root: DecisionNode) {
     }
 
     companion object{
-        var INSTANCE: AbstractionFunction
+        var INSTANCE: AbstractionFunction2
         init {
-            val root = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV1() ))
-            val lv2Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV2()))
+            val root = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV1() ))
+            val lv2Node = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV2()))
             root.nextNode = lv2Node
-            val lv3Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV3()))
+            val lv3Node = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV3()))
             lv2Node.nextNode = lv3Node
-            val lv4Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV1()))
+            val lv4Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV1()))
             lv3Node.nextNode = lv4Node
-            val lv5Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
+            val lv5Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
             lv4Node.nextNode = lv5Node
-            val lv6Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
+            val lv6Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
             lv5Node.nextNode = lv6Node
-            INSTANCE = AbstractionFunction(root)
+            INSTANCE = AbstractionFunction2(root)
         }
-        private var backupAbstractionFunction: AbstractionFunction? = null
+        private var backupAbstractionFunction: AbstractionFunction2? = null
         //val backupAbstractStateList = ArrayList<Pair<State<*>,AbstractState>>()
         fun backup( autMF: ATUAMF){
             //backupAbstractStateList.clear()
             //backupAbstractStateList.addAll(autMF.abstractStateList)
 
-            val root = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV1() ))
-            val lv2Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV2()))
+            val root = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV1()))
+            val lv2Node = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV2()))
             root.nextNode = lv2Node
-            val lv3Node = DecisionNode(reducer = BaseReducer(localReducer = LocalReducerLV3()))
+            val lv3Node = DecisionNode2(reducer = BaseReducer(localReducer = LocalReducerLV3()))
             lv2Node.nextNode = lv3Node
-            val lv4Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV1()))
+            val lv4Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV1()))
             lv3Node.nextNode = lv4Node
-            val lv5Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
+            val lv5Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV2()))
             lv4Node.nextNode = lv5Node
-            val lv6Node = DecisionNode(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
+            val lv6Node = DecisionNode2(reducer = IncludeChildrenReducer(localReducer = LocalReducerLV3(),childrenReducer = LocalReducerLV3()))
             lv5Node.nextNode = lv6Node
-            backupAbstractionFunction = AbstractionFunction(root)
-            var decisionNode: DecisionNode? = INSTANCE.root
-            var backupDecisionNode: DecisionNode? = backupAbstractionFunction!!.root
+            backupAbstractionFunction = AbstractionFunction2(root)
+            var decisionNode: DecisionNode2? = INSTANCE.root
+            var backupDecisionNode: DecisionNode2? = backupAbstractionFunction!!.root
             while (decisionNode!=null && backupDecisionNode!=null)
             {
-                decisionNode.attributePaths.forEach { t, u ->
-                    backupDecisionNode!!.attributePaths.put(t, ArrayList(u))
+                decisionNode.ewtgWidgets.forEach {
+                    backupDecisionNode!!.ewtgWidgets.add(it)
                 }
                 decisionNode = decisionNode.nextNode
                 backupDecisionNode = backupDecisionNode.nextNode

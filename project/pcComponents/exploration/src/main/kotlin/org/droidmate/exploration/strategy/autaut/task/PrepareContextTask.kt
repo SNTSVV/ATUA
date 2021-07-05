@@ -253,7 +253,7 @@ class PrepareContextTask constructor(
                             var ignoreWidget = false
                             if (!it.isInputField) {
                                 // check if a click on this widget will go to another window
-                                val abstractState = AbstractStateManager.instance.getAbstractState(currentState)!!
+                                val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
                                 val widgetGroup = abstractState.getAttributeValuationSet(widget = it, guiState = currentState,atuaMF = atuaMF)
                                 /*if (widgetGroup != null) {
                                     val isGoToAnotherWindow = atuaMF.DSTG.edges(abstractState).any {

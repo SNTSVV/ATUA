@@ -77,7 +77,7 @@ class PhaseOneStrategy(
     var recentTargetEvent: Input?=null
     override fun registerTriggeredEvents( abstractAction: AbstractAction, guiState: State<*>)
     {
-        val abstractState = AbstractStateManager.instance.getAbstractState(guiState)!!
+        val abstractState = AbstractStateManager.INSTANCE.getAbstractState(guiState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
         val staticEvents = abstractState.inputMappings[abstractAction]
@@ -164,7 +164,7 @@ class PhaseOneStrategy(
     }
 
     private fun isAvailableAbstractStatesExisting(currentState: State<*>): Boolean {
-        val availableAbstractStates = AbstractStateManager.instance.ABSTRACT_STATES
+        val availableAbstractStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES
                 .filter {
                     it !is VirtualAbstractState
                             && it.attributeValuationMaps.isNotEmpty()
@@ -259,7 +259,7 @@ class PhaseOneStrategy(
         toRemove.forEach {
             outofbudgetWindows.remove(it)
         }
-        val availableAbState_Window =  AbstractStateManager.instance.ABSTRACT_STATES
+        val availableAbState_Window =  AbstractStateManager.INSTANCE.ABSTRACT_STATES
                 .filter { it !is VirtualAbstractState &&
                         it.window !is OutOfApp && it.window !is Launcher &&
                         it.attributeValuationMaps.isNotEmpty()
@@ -293,24 +293,28 @@ class PhaseOneStrategy(
         }
         targetWindowTryCount.keys.filterNot { fullyCoveredWindows.contains(it) }.forEach {
                 var coverCriteriaCount = 0
-            if (atuaMF.allTargetWindow_ModifiedMethods[it]!!.all { atuaMF.allModifiedMethod[it] == true }
-                    || untriggeredTargetInputs.filter { input -> input.sourceWindow == it}.isEmpty()) {
-                // all modified methods that could be triggered by this window are covered
-                // or all target inputs have been exercised
-                coverCriteriaCount++
-            }
-            val untriggeredhandlers = atuaMF.untriggeredTargetHiddenHandlers.intersect(
+            val windowTargetHandlers = atuaMF.allTargetHandlers.intersect(
                     atuaMF.windowHandlersHashMap[it] ?: emptyList()
             )
-
+            val untriggeredHandlers = windowTargetHandlers.subtract(atuaMF.statementMF!!.executedMethodsMap.keys)
             // debug
-            val untriggeredHandlerNames = untriggeredhandlers.map { atuaMF.statementMF!!.getMethodName(it) }
-
-            if (untriggeredhandlers.isEmpty()) {
+            val windowTargetHandlerNames = windowTargetHandlers.map { atuaMF.statementMF!!.getMethodName(it) }
+            val untriggeredTargetHandlerNames = untriggeredHandlers.map { atuaMF.statementMF!!.getMethodName(it) }
+            if (untriggeredHandlers.isEmpty()) {
                 // all target hidden handlers are triggered
                 coverCriteriaCount++
             }
-            if (coverCriteriaCount==2) {
+            if (coverCriteriaCount==0) {
+                if (atuaMF.allTargetWindow_ModifiedMethods[it]!!.all { atuaMF.allModifiedMethod[it] == true }
+                        || untriggeredTargetInputs.filter { input -> input.sourceWindow == it }.isEmpty()) {
+                    // all modified methods that could be triggered by this window are covered
+                    // or all target inputs have been exercised
+                    coverCriteriaCount++
+                }
+            }
+
+
+            if (coverCriteriaCount>=1) {
                 if (!fullyCoveredWindows.contains(it)) {
                     fullyCoveredWindows.add(it)
                     if (targetWindow == it) {
@@ -335,7 +339,7 @@ class PhaseOneStrategy(
                 currentAbstractState = currentAbstractState,
                 shortest = false,
                 pathCountLimitation = 10,
-                pathType = PathFindingHelper.PathType.TRACE
+                pathType = PathFindingHelper.PathType.FULLTRACE
                 )
 
         return false
@@ -949,7 +953,7 @@ class PhaseOneStrategy(
 
     override fun  getPathsToExploreStates(currentState: State<*>, pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (currentAbstractState==null)
             return transitionPaths
         val runtimeAbstractStates = ArrayList(getUnexhaustedExploredAbstractState(currentState))
@@ -974,7 +978,7 @@ class PhaseOneStrategy(
 
     override fun getPathsToTargetWindows(currentState: State<*>,pathType: PathFindingHelper.PathType): List<TransitionPath> {
         val transitionPaths = ArrayList<TransitionPath>()
-        val currentAbstractState = AbstractStateManager.instance.getAbstractState(currentState)
+        val currentAbstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (currentAbstractState==null)
             return transitionPaths
         val targetStates = getTargetAbstractStates(currentNode = currentAbstractState)
@@ -1138,11 +1142,11 @@ class PhaseOneStrategy(
             return ArrayList()
         val candidates = ArrayList<AbstractState>()
         val excludedNodes = arrayListOf<AbstractState>(currentNode)
-        if (!AbstractStateManager.instance.ABSTRACT_STATES.any {
+        if (!AbstractStateManager.INSTANCE.ABSTRACT_STATES.any {
                     it !is VirtualAbstractState && it.window == targetWindow
                             && it.attributeValuationMaps.isNotEmpty()
                 }) {
-            val virtualAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find {
+            val virtualAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
                 it is VirtualAbstractState && it.window == targetWindow
             }
             if (virtualAbstractState != null) {
@@ -1152,7 +1156,7 @@ class PhaseOneStrategy(
             }
         } else {
             //Get all AbstractState contain target events
-            AbstractStateManager.instance.ABSTRACT_STATES
+            AbstractStateManager.INSTANCE.ABSTRACT_STATES
                     .filter {
                         it !is VirtualAbstractState &&
                         it.window == targetWindow
@@ -1169,7 +1173,7 @@ class PhaseOneStrategy(
                             excludedNodes.add(it)
                     }
             if (candidates.isEmpty()) {
-                AbstractStateManager.instance.ABSTRACT_STATES
+                AbstractStateManager.INSTANCE.ABSTRACT_STATES
                         .filter {
                             it.window == targetWindow
                                     && it !is VirtualAbstractState

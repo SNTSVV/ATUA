@@ -54,8 +54,8 @@ class DSTGModelParser (val dstgFolderPath: Path,
         val prevWindow = data[5]
         val handlers = data[6].split(';')
 
-        val sourceState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == sourceStateID }
-        val resState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == resStateID }
+        val sourceState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find { it.abstractStateId == sourceStateID }
+        val resState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find { it.abstractStateId == resStateID }
         if (sourceState == null) {
             val sourceStateFilePath: Path = getAbstractStateFilePath(sourceStateID)
             loadAbstractStateFile(sourceStateFilePath)

@@ -10,9 +10,9 @@ class DecisionNode (
 ) {
     fun containAttributePath(attributePath: AttributePath, activity: String): Boolean {
         attributePaths.get(activity)?.forEach {
-            if (attributePath.contains(it,activity)) {
+           /* if (attributePath.contains(it,activity)) {
                 return true
-            }
+            }*/
         }
         return false
     }
