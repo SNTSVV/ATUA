@@ -68,8 +68,7 @@ abstract class Window(var classType: String,
         return this !is Launcher
                 && this !is OutOfApp
                 && (this !is Dialog ||
-                (
-                        ((this as Dialog).dialogType == DialogType.APPLICATION_DIALOG
+                (((this as Dialog).dialogType == DialogType.APPLICATION_DIALOG
                                 || (this as Dialog).dialogType == DialogType.DIALOG_FRAGMENT)))
     }
     fun dumpEvents(windowsFolder: Path, atuaMF: ATUAMF) {

@@ -127,7 +127,9 @@ class PhaseOneStrategy(
         if (currentAbstractState!=null && (currentAbstractState.window is Dialog || currentAbstractState.window is OptionsMenu || currentAbstractState.window is OutOfApp))
             return true
         val remaingTargetWindows = targetWindowTryCount.filterNot{fullyCoveredWindows.contains(it.key) || outofbudgetWindows.contains(it.key)}
-        if (remaingTargetWindows.isEmpty()) {
+        if (remaingTargetWindows.isEmpty()
+                && targetWindowTryCount.isNotEmpty()
+                && atuaMF.statementMF!!.executedModifiedMethodsMap.size == atuaMF.statementMF!!.modMethodInstrumentationMap.size) {
             return false
         }
         if (delayCheckingBlockStates > 0) {
@@ -211,8 +213,7 @@ class PhaseOneStrategy(
                 widgets.add(w)
                 newWidgets.add(w)
             }
-        } else
-        {
+        } else {
             interactableWidgets.filter { it.resourceId.isNotBlank() }.forEach { w ->
             //interactableWidgets.filter { w -> !widgets.any { it.uid == w.uid } }.forEach { w ->
                 if (!widgets.any { w.resourceId == it.resourceId }) {

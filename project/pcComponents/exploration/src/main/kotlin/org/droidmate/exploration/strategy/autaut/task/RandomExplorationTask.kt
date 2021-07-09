@@ -20,6 +20,7 @@ import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 import kotlin.math.min
 
 class RandomExplorationTask constructor(
@@ -28,7 +29,7 @@ class RandomExplorationTask constructor(
         delay: Long, useCoordinateClicks: Boolean,
         private var randomScroll: Boolean,
         private var maximumAttempt: Int) : AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF, delay, useCoordinateClicks) {
-    private val MAX_ATTEMP_EACH_EXECUTION = 10
+    private val MAX_ATTEMP_EACH_EXECUTION = (5*atuaTestingStrategy.scaleFactor).toInt()
     private var prevAbState: AbstractState? = null
     private val BACK_PROB = 0.1
     private val PRESSMENU_PROB = 0.2
@@ -129,10 +130,10 @@ class RandomExplorationTask constructor(
              return true*/
     }
 
-    fun setMaxiumAttempt(currentState: State<*>, attempt: Int) {
+    fun setMaxiumAttempt(currentState: State<*>, minAttempt: Int) {
         val actionBasedAttempt = (atuaMF.getAbstractState(currentState)?.getUnExercisedActions(currentState,atuaMF)?.size
                 ?: 1)
-        maximumAttempt = min(actionBasedAttempt, attempt)
+        maximumAttempt = max(actionBasedAttempt, minAttempt)
     }
 
     fun setMaxiumAttempt(attempt: Int) {

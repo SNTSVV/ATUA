@@ -87,10 +87,10 @@ class StateReducer
                 var attributeValuationSet =  AttributeValuationMap.getExistingObject(element,window)
                 if (attributeValuationSet == null)
                     attributeValuationSet =  AttributeValuationMap(element,window)
-                val similarAVMs = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.get(window)!!.values.filter { it!=attributeValuationSet && it.haveTheSameAttributePath(attributeValuationSet) }
+                /*val similarAVMs = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.get(window)!!.values.filter { it!=attributeValuationSet && it.haveTheSameAttributePath(attributeValuationSet) }
                 if (similarAVMs.isNotEmpty()) {
                     throw Exception()
-                }
+                }*/
                 widgetReduceMap.filter { it.value.equals(element) }.forEach { w, _ ->
                     if (capturedAttributePaths.contains(element)) {
                         widgetAVMHashMap.put(w, attributeValuationSet!!)

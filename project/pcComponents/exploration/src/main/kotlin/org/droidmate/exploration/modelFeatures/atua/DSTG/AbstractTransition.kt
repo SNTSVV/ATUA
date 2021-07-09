@@ -2,6 +2,7 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.ConcreteId
@@ -24,18 +25,23 @@ class AbstractTransition(
         val dest: AbstractState,
         val modelVersion: ModelVersion = ModelVersion.RUNNING
 ) {
-    val inputGUIStates = ArrayList<ConcreteId>()
+
     val guaranteedAVMs = ArrayList<AttributeValuationMap>() // guaranteedAVMsInDest
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,
     val handlers = HashMap<String,Boolean>() // handler method id
     val tracing = HashSet<Pair<Int,Int>>() // list of traceId-transitionId
-    val userInputs = ArrayList<HashMap<UUID,String>>()
     val statementCoverage = HashSet<String>()
     val methodCoverage = HashSet<String>()
     val changeEffects = HashSet<ChangeEffect>()
+    // ----------Guard
+    val userInputs = ArrayList<HashMap<UUID,String>>()
+    val inputGUIStates = ArrayList<ConcreteId>()
     var dependentAbstractStates = ArrayList<AbstractState>()
     var requiringPermissionRequestTransition: AbstractTransition? = null
+
+    var guardEnabled: Boolean = false
+    // --------------
     init {
         source.abstractTransitions.add(this)
         guaranteedAVMs.addAll(dest.attributeValuationMaps)
@@ -59,6 +65,7 @@ class AbstractTransition(
 
     fun copyPotentialInfoFrom(other: AbstractTransition) {
         this.dependentAbstractStates.addAll(other.dependentAbstractStates)
+        this.guardEnabled = guardEnabled
         this.userInputs.addAll(other.userInputs)
         this.tracing.addAll(other.tracing)
         this.handlers.putAll(other.handlers)
@@ -66,6 +73,15 @@ class AbstractTransition(
         this.modifiedMethodStatement.putAll(other.modifiedMethodStatement)
         this.methodCoverage.addAll(other.methodCoverage)
         this.statementCoverage.addAll(other.statementCoverage)
+    }
+
+    fun updateGuardEnableStatus() {
+        val input = source.inputMappings.get(abstractAction)
+        if (input != null) {
+            if (AbstractStateManager.INSTANCE.guardedTransitions.contains(Pair(source.window, input.first()))) {
+                guardEnabled = true
+            }
+        }
     }
 
     companion object{
@@ -87,6 +103,7 @@ class AbstractTransition(
             }
             return interaction.data
         }
+
 
         fun findExistingAbstractTransitions(abstractTransitionSet: List<AbstractTransition>,
                                                      abstractAction: AbstractAction,

@@ -1,7 +1,12 @@
 package org.droidmate.exploration.modelFeatures.atua.EWTG
 
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.explorationModel.interaction.Interaction
+import org.droidmate.explorationModel.interaction.Widget
 
 
 open class Input (
@@ -131,6 +136,137 @@ open class Input (
                     , eventType = EventType.valueOf(eventTypeString)
                     , widget = widget, sourceWindow = sourceWindow, createdAtRuntime = createdAtRuntime)
             return event
+        }
+        fun createStaticEventFromAbstractInteraction(prevAbstractState: AbstractState, newAbstractState: AbstractState, abstractTransition: AbstractTransition, interaction: Interaction<Widget>?, wtg: EWTG) {
+            val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
+            if (eventType == EventType.fake_action || eventType == EventType.resetApp || eventType == EventType.implicit_launch_event)
+                return
+            if (interaction != null && interaction.targetWidget != null && interaction.targetWidget!!.isKeyboard)
+                return
+            var newInput: Input?
+            if (abstractTransition.abstractAction.attributeValuationMap == null) {
+                newInput = Input.getOrCreateEvent(
+                        eventHandlers = emptySet(),
+                        eventTypeString = eventType.toString(),
+                        widget = null,
+                        sourceWindow = prevAbstractState.window,
+                        createdAtRuntime = true
+                )
+                /*newInput = Input(
+                        eventType = eventType,
+                        widget = null,
+                        sourceWindow = prevAbstractState.window,
+                        eventHandlers = HashSet(),
+                        createdAtRuntime = true
+                )*/
+                newInput.data = abstractTransition.abstractAction.extra
+                newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
+
+                val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
+
+                if(prevWindows.isNotEmpty()) {
+                    prevWindows.forEach { prevWindow->
+                        wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                                prevAbstractState.window,
+                                newAbstractState.window,
+                                newInput!!,
+                                prevWindow
+                        ))
+                    }
+                } else {
+                    wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                            prevAbstractState.window,
+                            newAbstractState.window,
+                            newInput!!,
+                            null
+                    ))
+                }
+                if (!prevAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
+                    prevAbstractState.inputMappings.put(abstractTransition.abstractAction, hashSetOf())
+                }
+                prevAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
+                AbstractStateManager.INSTANCE.ABSTRACT_STATES.filterNot { it == prevAbstractState }.filter { it.window == prevAbstractState.window }.forEach {
+                    val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
+                    if (similarAbstractAction != null) {
+                        it.inputMappings.put(similarAbstractAction, hashSetOf(newInput!!))
+                    }
+                }
+            } else {
+                val attributeValuationSet = abstractTransition.abstractAction.attributeValuationMap
+                if (!prevAbstractState.EWTGWidgetMapping.containsKey(attributeValuationSet)) {
+                    val attributeValuationSetId = if (attributeValuationSet.getResourceId().isBlank())
+                        ""
+                    else
+                        attributeValuationSet.avmId
+                    // create new static widget and add to the abstract state
+                    val staticWidget = EWTGWidget(
+                            widgetId = attributeValuationSet.avmId.toString(),
+                            resourceIdName = attributeValuationSet.getResourceId(),
+                            window = prevAbstractState.window,
+                            className = attributeValuationSet.getClassName(),
+                            text = attributeValuationSet.getText(),
+                            contentDesc = attributeValuationSet.getContentDesc(),
+                            createdAtRuntime = true,
+                            structure = attributeValuationSetId
+                    )
+                    prevAbstractState.EWTGWidgetMapping.put(attributeValuationSet, staticWidget)
+                    AbstractStateManager.INSTANCE.ABSTRACT_STATES.filterNot { it == prevAbstractState }.filter { it.window == prevAbstractState.window }.forEach {
+                        val similarWidget = it.attributeValuationMaps.find { it == attributeValuationSet }
+                        if (similarWidget != null) {
+                            it.EWTGWidgetMapping.put(similarWidget, staticWidget)
+                        }
+                    }
+                }
+                if (prevAbstractState.EWTGWidgetMapping.contains(attributeValuationSet)) {
+                    val staticWidget = prevAbstractState.EWTGWidgetMapping[attributeValuationSet]!!
+                    newInput = Input.getOrCreateEvent(
+                            eventHandlers = emptySet(),
+                            eventTypeString = eventType.toString(),
+                            widget = staticWidget,
+                            sourceWindow = prevAbstractState.window,
+                            createdAtRuntime = true
+                    )
+                    /*newInput = Input(
+                            eventType = eventType,
+                            widget = staticWidget,
+                            sourceWindow = prevAbstractState.window,
+                            eventHandlers = HashSet(),
+                            createdAtRuntime = true
+                    )*/
+                    newInput.data = abstractTransition.abstractAction.extra
+                    newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
+
+                    val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
+
+                    if(prevWindows.isNotEmpty()) {
+                        prevWindows.forEach { prevWindow->
+                            wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                                    prevAbstractState.window,
+                                    newAbstractState.window,
+                                    newInput!!,
+                                    prevWindow
+                            ))
+                        }
+                    } else {
+                        wtg.add(prevAbstractState.window, newAbstractState.window, WindowTransition(
+                                prevAbstractState.window,
+                                newAbstractState.window,
+                                newInput!!,
+                                null
+                        ))
+                    }
+                    if (!prevAbstractState.inputMappings.containsKey(abstractTransition.abstractAction)) {
+                        prevAbstractState.inputMappings.put(abstractTransition.abstractAction, hashSetOf())
+                    }
+                    prevAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)
+                    AbstractStateManager.INSTANCE.ABSTRACT_STATES.filterNot { it == prevAbstractState }.filter { it.window == prevAbstractState.window }.forEach {
+                        val similarAbstractAction = it.getAvailableActions().find { it == abstractTransition.abstractAction }
+                        if (similarAbstractAction != null) {
+                            it.inputMappings.put(similarAbstractAction, hashSetOf(newInput))
+                        }
+                    }
+                }
+            }
         }
     }
 }

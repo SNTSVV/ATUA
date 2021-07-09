@@ -115,7 +115,7 @@ class Helper {
         }
 
         private fun isTrivialWebViewContent(it: Widget, guiState: State<*>) =
-                hasParentWithType(it, guiState, "WebView") && it.resourceId.isBlank()
+                !it.className.contains("WebView") && hasParentWithType(it, guiState, "WebView") && it.resourceId.isBlank()
 
         fun calculateMatchScoreForEachNode2(guiState: State<*>, allPossibleNodes: List<Window>, appPackage: String, isMenuOpen: Boolean): HashMap<Window, Double> {
             val matchWidgetsPerWindow = HashMap<Window, HashMap<Widget, EWTGWidget>>()

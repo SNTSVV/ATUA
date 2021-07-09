@@ -437,7 +437,7 @@ class PathFindingHelper {
                                         selectedTransition.addAll(implicitTransitions)
                                     else if (prevAbstractTransition.first.isImplicit && !prevAbstractTransition.first.abstractAction.isLaunchOrReset()) {
                                         implicitTransitions.filter {
-                                            (it.label.dependentAbstractStates.isEmpty() ||
+                                            (it.label.dependentAbstractStates.isEmpty() || !it.label.guardEnabled ||
                                                     it.label.dependentAbstractStates.intersect(ancestorAbstractStates).isNotEmpty())
                                         }.let {
                                             selectedTransition.addAll(it)
@@ -451,7 +451,7 @@ class PathFindingHelper {
                                     selectedTransition.addAll(explicitTransitions)
                                 } else if (pathType == PathType.PARTIAL_TRACE) {
                                     explicitTransitions.filter {
-                                                (it.label.dependentAbstractStates.isEmpty() ||
+                                                (it.label.dependentAbstractStates.isEmpty() || !it.label.guardEnabled ||
                                                 it.label.dependentAbstractStates.intersect(ancestorAbstractStates).isNotEmpty())
                                     }.let{
                                         selectedTransition.addAll(it)
@@ -462,7 +462,7 @@ class PathFindingHelper {
                                         selectedTransition.addAll(explicitTransitions)
                                     else{
                                         explicitTransitions.filter {
-                                                    (it.label.dependentAbstractStates.isEmpty() ||
+                                            (it.label.dependentAbstractStates.isEmpty() || !it.label.guardEnabled ||
                                                     it.label.dependentAbstractStates.intersect(ancestorAbstractStates).isNotEmpty())
                                         }.let{
                                             selectedTransition.addAll(it)

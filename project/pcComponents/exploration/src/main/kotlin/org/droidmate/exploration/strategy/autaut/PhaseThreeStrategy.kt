@@ -457,7 +457,12 @@ class PhaseThreeStrategy(
                 phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
                 return
             }
+            if (targetEvent == null) {
+                setRandomExploration(randomExplorationTask, currentState)
+                phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
+            }
         }
+
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).stopWhenHavingTestPath
                 && !currentAppState.isRequireRandomExploration()) {
@@ -776,18 +781,23 @@ class PhaseThreeStrategy(
     val targetInputScores = HashMap<Input, Double>()
 
     fun selectTargetStaticEvent(currentState: State<*>){
-        val windowEvents = getWindowAvailableTargetInputs()
-        val leastExerciseEventsCount = windowEvents
-                .minBy { it.value }?.value?: emptyMap<Input,Int>()
-        val leastExerciseEvents = windowEvents.filter { it.value == leastExerciseEventsCount }
-        val leastExerciseEventScores = targetInputScores.filter { leastExerciseEvents.containsKey(it.key) }
-        if (leastExerciseEventScores.isNotEmpty()) {
-            val pdForTargetEvents = ProbabilityDistribution<Input>(leastExerciseEventScores)
-            targetEvent = pdForTargetEvents.getRandomVariable()
+        val windowTargetEvents = getWindowAvailableTargetInputs()
+        if (windowTargetEvents.isEmpty()) {
+            targetEvent = null
+
         } else {
-            targetEvent = leastExerciseEvents.keys.random()
+            val leastExerciseEventsCount = windowTargetEvents
+                    .minBy { it.value }?.value ?: emptyMap<Input, Int>()
+            val leastExerciseEvents = windowTargetEvents.filter { it.value == leastExerciseEventsCount }
+            val leastExerciseEventScores = targetInputScores.filter { leastExerciseEvents.containsKey(it.key) }
+            if (leastExerciseEventScores.isNotEmpty()) {
+                val pdForTargetEvents = ProbabilityDistribution<Input>(leastExerciseEventScores)
+                targetEvent = pdForTargetEvents.getRandomVariable()
+            } else {
+                targetEvent = leastExerciseEvents.keys.random()
+            }
+            allTargetInputs[targetEvent!!] = allTargetInputs[targetEvent!!]!! + 1
         }
-        allTargetInputs[targetEvent!!] = allTargetInputs[targetEvent!!]!! + 1
         //select related window
         selectRelatedWindow(currentState,0,0)
         budgetCalculated = false
@@ -828,7 +838,9 @@ class PhaseThreeStrategy(
         } else {
             maxTry
         }
-        if (eventWindowCorrelation.containsKey(targetEvent) && eventWindowCorrelation[targetEvent!!]!!.isNotEmpty()) {
+        if (targetEvent!=null
+                && eventWindowCorrelation.containsKey(targetEvent!!)
+                && eventWindowCorrelation[targetEvent!!]!!.isNotEmpty()) {
             val currentEventWindowCorrelation = eventWindowCorrelation[targetEvent!!]!!.filter {  it.key != targetWindow!! }
             if (currentEventWindowCorrelation.isNotEmpty()) {
                 val pdForRelatedWindows = ProbabilityDistribution<Window>(currentEventWindowCorrelation)
@@ -862,7 +874,7 @@ class PhaseThreeStrategy(
 
     fun computeEventWindowCorrelation() {
         eventWindowCorrelation.clear()
-        val eventsTerms = atuaMF!!.accumulateEventsDependency()
+        val eventsTerms = atuaMF!!.accumulateTargetEventsDependency()
         val ir = InformationRetrieval<Window,String>(atuaMF!!.windowTermsHashMap)
         eventsTerms.forEach {
             val result = ir.searchSimilarDocuments(it.value,10)
@@ -872,6 +884,11 @@ class PhaseThreeStrategy(
             }
             eventWindowCorrelation.put(it.key,correlation)
         }
+    }
+
+    val windowsCorrelation = HashMap<Window, HashMap<Window,Double>>()
+    fun computeWindowsCorrelation() {
+
     }
 
     fun computeAppStatesScore(){

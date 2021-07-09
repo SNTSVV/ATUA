@@ -225,7 +225,7 @@ open class GoToAnotherWindow constructor(
                          if (toUpdateTransition!=null && toUpdateTransition.modelVersion == ModelVersion.BASE) {
                              if (ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.containsKey(toUpdateTransition)) {
                                  val equivalentTransition = ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.get(toUpdateTransition)!!
-                                 currentPath!!.path.put(tmpPathTraverser.latestEdgeId!!+1,equivalentTransition)
+                                 currentPath!!.path.put(tmpPathTraverser.latestEdgeId!!+1,equivalentTransition.first())
                              }
                          }
                          break

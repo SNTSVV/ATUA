@@ -82,7 +82,7 @@ class AbstractionFunction2 (val root: DecisionNode2) {
     /**
      * Increase the level of Reducer. Return [true] if it can be increased, otherwise [false]
      */
-    fun increaseReduceLevel(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget, classType: String, rotation: Rotation, atuaMF: ATUAMF): Boolean
+    fun increaseReduceLevel(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget, classType: String, rotation: Rotation, atuaMF: ATUAMF, maxlevel: Int=6): Boolean
     {
         val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
         var currentDecisionNode: DecisionNode2?=null
@@ -107,7 +107,7 @@ class AbstractionFunction2 (val root: DecisionNode2) {
                 currentDecisionNode = currentDecisionNode.nextNode
         }
         while (currentDecisionNode!!.nextNode!=null
-                && currentDecisionNode.ewtgWidgets.contains(ewtgWidget))
+                && currentDecisionNode.ewtgWidgets.contains(ewtgWidget) && level <= maxlevel)
         if (currentDecisionNode!=null && !currentDecisionNode!!.ewtgWidgets.contains(ewtgWidget)) {
             currentDecisionNode.ewtgWidgets.add(ewtgWidget)
            /* val newAttributePath = reduce(guiWidget,guiState,classType, hashMapOf(), hashMapOf())

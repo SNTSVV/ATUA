@@ -87,8 +87,12 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     val fullyCoveredMethods = HashSet<String>()
     val recentExecutedStatements: ArrayList<String> = ArrayList()
     val recentExecutedMethods: ArrayList<String> = ArrayList()
-    val actionTraceCoverage = HashMap<Int,Int>()
-    val actionIncreaseCoverage = HashMap<Int,Int>()
+
+
+    val actionCoverageTracking = HashMap<Int,Set<String>>()
+    val actionIncreaseCoverageTracking = HashMap<Int,Set<String>>()
+
+    val actionUpdatedCoverageTracking = HashMap<Int,Set<String>>()
 
     var prevUpdateCoverage: Int = 0
     var prevCoverage: Int = 0
@@ -124,6 +128,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     override suspend fun onContextUpdate(context: ExplorationContext<*, *, *>) {
         statementRead = false
         val newExecutedStatements = HashSet<String>()
+        val newUpdatedExecutedStatements = HashSet<String>()
         prevUpdateCoverage = executedModifiedMethodStatementsMap.size
         prevCoverage = executedStatementsMap.size
         mutex.withLock {
@@ -131,40 +136,41 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
             recentExecutedMethods.clear()
             recentExecutedStatements.clear()
             val readStatements = readStatements()
-            val newModifiedMethod = HashSet<String>()
             readStatements
                     .forEach { statement ->
                         //goto [?= staticinvoke <org.droidmate.runtime.Runtime: void statementPoint(java.lang.String,java.lang.String,int)>(\"$z0 = interfaceinvoke $r5.<java.util.Iterator: boolean hasNext()>() methodId=03e25164-164b-4836-9ea3-6ea4cb01d87d uuid=20986538-c7d0-4b28-8e3b-959a1affcbf9\", \"/data/local/tmp/coverage_port.tmp\", 0)] methodId=03e25164-164b-4836-9ea3-6ea4cb01d87d uuid=1477a349-7f31-45c7-8597-976aec10e111"
+                        //val parts2 = parts[0].split(" methodId=".toRegex())
                         val timestamp = statement[0]
                         val tms = dateFormat.parse(timestamp)
                         //NGO
                         val uuidIndex = statement[1].toString().lastIndexOf(" uuid=")
                         //val parts = statement[1].toString().split(" uuid=".toRegex()).toTypedArray()
                         val statementId = statement[1].toString().substring(uuidIndex+" uuid=".length)
+                        val fullStatement = statement[1].toString().substring(0,uuidIndex)
+                        // val l = "9946a686-9ef6-494f-b893-ac8b78efb667"
+                        val methodIdIndex = fullStatement.lastIndexOf(" methodId=")
+                        //val methodId = parts2.last()
+                        val methodId = fullStatement.substring(methodIdIndex+" methodId=".length)
+                        // Add the statement if it wasn't executed before
+                        if (!recentExecutedMethods.contains(methodId))
+                            recentExecutedMethods.add(methodId)
+                        val methodFound = executedMethodsMap.containsKey(methodId)
+                        if (!methodFound)
+                        {
+                            executedMethodsMap[methodId] = tms
+                        }
+                        val isUpdatedMethod = isModifiedMethod(methodId)
                         if (!recentExecutedStatements.contains(statementId))
                             recentExecutedStatements.add(statementId)
                         var found = executedStatementsMap.containsKey(statementId)
                         if (!found /*&& instrumentationMap.containsKey(id)*/) {
                             executedStatementsMap[statementId] = tms
                             newExecutedStatements.add(statementId)
-                        }
-                        //val parts2 = parts[0].split(" methodId=".toRegex())
-                        val fullStatement = statement[1].toString().substring(0,uuidIndex)
-                        if (/*parts2.size > 1*/ true)
-                        {
-                            // val l = "9946a686-9ef6-494f-b893-ac8b78efb667"
-                            val methodIdIndex = fullStatement.lastIndexOf(" methodId=")
-                            //val methodId = parts2.last()
-                            val methodId = fullStatement.substring(methodIdIndex+" methodId=".length)
-                            // Add the statement if it wasn't executed before
-                            if (!recentExecutedMethods.contains(methodId))
-                                recentExecutedMethods.add(methodId)
-                            found = executedMethodsMap.containsKey(methodId)
-                            if (!found)
-                            {
-                                executedMethodsMap[methodId] = tms
+                            if (isUpdatedMethod) {
+                                newUpdatedExecutedStatements.add(statementId)
                             }
                         }
+
                     }
 
            /* newModifiedMethod.forEach {
@@ -197,8 +203,9 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         statementRead = true
 
         val lastAction = context.getLastAction()
-        actionTraceCoverage.put(lastAction.actionId,getAllExecutedStatements().size)
-        actionIncreaseCoverage.put(lastAction.actionId,newExecutedStatements.size)
+        actionCoverageTracking.put(lastAction.actionId,recentExecutedStatements.toSet())
+        actionIncreaseCoverageTracking.put(lastAction.actionId,newExecutedStatements)
+        actionUpdatedCoverageTracking.put(lastAction.actionId,newUpdatedExecutedStatements)
     }
     /**
      * Fetch the statement data form the device. Afterwards, it parses the data and updates [executedStatementsMap].
@@ -449,6 +456,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         produceModMethodCoverageOutput(context)
         dumpActionTraceWithCoverage(context)
     }
+
     fun produceStatementCoverageOutput(context: ExplorationContext<*,*,*>){
         val sb = StringBuilder()
         sb.appendln("Total statements: ${statementInstrumentationMap.size}")
@@ -544,9 +552,24 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     }
 
     fun dumpActionTraceWithCoverage(context: ExplorationContext<*, *, *>) {
-        launch(CoroutineName("trace-coverage-dump")) {
-            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionTraceCoverage, actionIncreaseCoverage = actionIncreaseCoverage)
+        runBlocking {
+            val outputFile = File(context.model.config.baseDir.resolve("actionCoverage.csv").toAbsolutePath().toString()).bufferedWriter()
+            outputFile.write("ActionId;ActionType;SourceState;ResultState;Data;ExecutedStatements;NewExecutedStatements;NewUpdatedExecutedStatements")
+            outputFile.newLine()
+            val actions = context.explorationTrace.P_getActions()
+            actions.forEach { action ->
+                outputFile.write("${action.actionId.toString()};${action.actionType};${action.prevState};${action.resState};\"${action.data}\"")
+                outputFile.write(";${actionCoverageTracking.get(action.actionId)?.size};${actionIncreaseCoverageTracking.get(action.actionId)?.size};${actionUpdatedCoverageTracking.get(action.actionId)?.size};")
+                outputFile.newLine()
+            }
+            outputFile.close()
+            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionCoverageTracking, actionIncreaseCoverage = actionIncreaseCoverageTracking,actionUpdatedStmtCoverage = actionUpdatedCoverageTracking)
+
         }
+/*        launch(CoroutineName("trace-coverage-dump")) {
+
+            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionCoverageTracking, actionIncreaseCoverage = actionIncreaseCoverageTracking,actionUpdatedStmtCoverage = actionUpdatedCoverageTracking)
+        }*/
 
     }
     companion object {
@@ -569,15 +592,16 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
 }
 
-private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(config:ModelConfig, actionTraceCoverage: HashMap<Int, Int>, actionIncreaseCoverage: HashMap<Int, Int>) {
+private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(config:ModelConfig, actionTraceCoverage: HashMap<Int, Set<String>>, actionIncreaseCoverage: HashMap<Int, Set<String>>, actionUpdatedStmtCoverage: HashMap<Int,Set<String>>) {
     File(config.traceFile2(id.toString())).bufferedWriter().use { out ->
         out.write(StringCreator.actionHeader(config[ConfigProperties.ModelProperties.dump.sep]))
-        out.write(";newExecutedStatements;OverallExecutedStatements")
+        out.write(";executedStatements;newExecutedStatements;newUpdatedExecutedStatements")
         out.newLine()
         // ensure that our trace is complete before dumping it by calling blocking getActions
-        P_getActions().forEach { action ->
+        val actions = ArrayList(P_getActions())
+        actions.forEach { action ->
             out.write(StringCreator.createActionString(action, config[ConfigProperties.ModelProperties.dump.sep]))
-            out.write(";${actionIncreaseCoverage.get(action.actionId)};${actionTraceCoverage.get(action.actionId)}")
+            out.write(";${actionTraceCoverage.get(action.actionId)?.size};${actionIncreaseCoverage.get(action.actionId)?.size};${actionUpdatedStmtCoverage.get(action.actionId)?.size}")
             out.newLine()
         }
     }
@@ -586,6 +610,6 @@ private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(co
 private fun ModelConfig.traceFile2(traceId: String): String {
     val oldtraceFile = traceFile(traceId).toString()
     val traceFileExtension = Paths.get(oldtraceFile).getExtension()
-    val newTraceFile = oldtraceFile.toString().removeSuffix(".{$traceFileExtension}")+"_autaut.csv"
+    val newTraceFile = oldtraceFile.toString().replace(".$traceFileExtension","")+"_atua.csv"
     return newTraceFile
 }

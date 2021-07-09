@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua
 
+import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
@@ -12,6 +13,7 @@ import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.AdditionSet
 import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.slf4j.LoggerFactory
+import java.nio.file.Files
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -19,10 +21,9 @@ import kotlin.collections.HashSet
 
 class ModelBackwardAdapter {
     val backwardEquivalentAbstractStateMapping = HashMap<AbstractState, HashSet<AbstractState>>()
-    val backwardEquivalentAbstractTransitionMapping = HashMap<AbstractTransition, AbstractTransition>()
+    val backwardEquivalentAbstractTransitionMapping = HashMap<AbstractTransition, HashSet<AbstractTransition>>()
     val observedBaseAbstractState = HashSet<AbstractState>()
     val incorrectTransitions = HashSet<AbstractTransition>()
-    val backwardEquivalentAbstractTransitions = HashSet<AbstractTransition>()
     val observedBasedAbstractTransitions = HashSet<AbstractTransition>()
     val initialBaseAbstractTransitions = HashSet<AbstractTransition>()
     val keptBaseAbstractTransitions = HashSet<AbstractTransition>()
@@ -92,7 +93,7 @@ class ModelBackwardAdapter {
                         || it.prevWindow == null)*/
                        /* && ( it.dependentAbstractState == abstractTransition.dependentAbstractState
                         || backwardEquivalentAbstractStateMapping.get(abstractTransition.dependentAbstractState)?.contains(it.dependentAbstractState)?:false)*/
-                        && (it.dependentAbstractStates.isEmpty()
+                        && (!it.guardEnabled || it.dependentAbstractStates.isEmpty()
                             || (prevWindowAbstractState!=null &&
                                 (it.dependentAbstractStates.contains(prevWindowAbstractState)
                                     || it.dependentAbstractStates.any { it == backwardEquivalentAbstractStateMapping.get(prevWindowAbstractState) })))
@@ -116,7 +117,8 @@ class ModelBackwardAdapter {
                     } else if (isBackwardEquivant(observedAbstractState, expected,matchedAVMs1,matchedAVMs2,false)) {
                         registerBackwardEquivalence(observedAbstractState, expected, dstg, matchedAVMs2)
                         backwardEquivalenceFound = true
-                        backwardEquivalentAbstractTransitions.add(it)
+                        backwardEquivalentAbstractTransitionMapping.putIfAbsent(abstractTransition,HashSet())
+                        backwardEquivalentAbstractTransitionMapping.get(abstractTransition)!!.add(it)
                     } else {
                         abstractTransition.source.abstractTransitions.remove(it)
                         incorrectTransitions.add(it)
@@ -249,7 +251,7 @@ class ModelBackwardAdapter {
             baseTransition.handlers.forEach { handler, _ ->
                 newAbstractTransition.handlers.putIfAbsent(handler, false)
             }
-            backwardEquivalentAbstractTransitionMapping.put(newAbstractTransition, baseTransition)
+            // backwardEquivalentAbstractTransitionMapping.put(newAbstractTransition, baseTransition)
         } else {
             // copy additional information
             existingAbstractTransition.userInputs.addAll(baseTransition.userInputs)
@@ -423,6 +425,110 @@ class ModelBackwardAdapter {
         }
     }
 
+    fun outputBackwardEquivalentResult(){
+
+    }
+     fun produceReport(context: ExplorationContext<*,*,*>) {
+            val sb2 = StringBuilder()
+
+            val keptBaseAbstractStates = ModelBackwardAdapter.instance.keptBaseAbstractStates
+            val initialBaseAbstractStates = ModelBackwardAdapter.instance.initialBaseAbstractStates
+            sb2.appendln("Initial base astract states;${initialBaseAbstractStates.size}")
+            sb2.appendln("Kept base astract states;${keptBaseAbstractStates.size}")
+            val newlyCreatedAbstractStates = AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
+                it.modelVersion == ModelVersion.RUNNING
+                        && it !is VirtualAbstractState
+                        && it.guiStates.isNotEmpty()
+
+            }
+            val testedWindowsInBaseModel = initialBaseAbstractStates.map { it.window }.distinct()
+            val newAbstractStatesOfUntestedWindowsInBaseModel = newlyCreatedAbstractStates.filter { !testedWindowsInBaseModel.contains(it.window) }
+            sb2.appendln("Total new astract states;${newlyCreatedAbstractStates.size}")
+            newlyCreatedAbstractStates.forEach {
+                sb2.appendln(it.abstractStateId)
+            }
+            sb2.appendln("New abstract states of untested windows in base model;${newAbstractStatesOfUntestedWindowsInBaseModel.size}")
+            val reusedAbstractState = ModelBackwardAdapter.instance.observedBaseAbstractState
+            sb2.appendln("Observered abstract state;${reusedAbstractState.size}")
+            reusedAbstractState.forEach {
+                sb2.appendln(it.abstractStateId)
+            }
+            sb2.appendln("Backward equivalence identification;${ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.size}")
+            ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.forEach { newState, baseStates ->
+                sb2.appendln("---")
+                sb2.appendln("New state;${newState.abstractStateId}")
+                sb2.appendln("Base states count;${baseStates.size}")
+                baseStates.forEach {
+                    sb2.appendln(it.abstractStateId)
+                }
+            }
+            val initialBaseAbstractTransitions = ModelBackwardAdapter.instance.initialBaseAbstractTransitions
+            sb2.appendln("Initial base abstract transitions;${initialBaseAbstractTransitions.size}")
+            val keptBaseAbstractTransitions = ModelBackwardAdapter.instance.keptBaseAbstractTransitions
+            sb2.appendln("Kept base abstract transitions;${keptBaseAbstractTransitions.size}")
+            val transferedAbstractTransitions = AbstractStateManager.INSTANCE.ABSTRACT_STATES
+                    .filter { it.modelVersion == ModelVersion.RUNNING }
+                    .flatMap { it.abstractTransitions }
+                    .filter { it.isExplicit() && it.modelVersion == ModelVersion.BASE }
+            sb2.appendln("Transfered abstract transitions;${transferedAbstractTransitions.size}")
+            val newAbstractTransitions =  AbstractStateManager.INSTANCE.ABSTRACT_STATES
+                    .flatMap { it.abstractTransitions }
+                    .filter { it.isExplicit() && it.modelVersion == ModelVersion.RUNNING }
+            sb2.appendln("Total new abstract transitions;${newAbstractTransitions.size}")
+            val newATsBaseToBaseAS = newAbstractTransitions.filter {
+                (it.source.modelVersion == ModelVersion.BASE
+                        || backwardEquivalentAbstractStateMapping.containsKey(it.source))
+                        && (it.dest.modelVersion == ModelVersion.BASE
+                        || backwardEquivalentAbstractStateMapping.contains(it.dest))}
+            val newATsBaseToNewAs = newAbstractTransitions.filter {
+                (it.source.modelVersion == ModelVersion.BASE
+                        || backwardEquivalentAbstractStateMapping.containsKey(it.source))
+                        && (it.dest.modelVersion == ModelVersion.RUNNING
+                        && !backwardEquivalentAbstractStateMapping.contains(it.dest))}
+            val newATsNewToBaseAS = newAbstractTransitions.filter {
+                (it.source.modelVersion == ModelVersion.RUNNING
+                        && !backwardEquivalentAbstractStateMapping.containsKey(it.source))
+                        && (it.dest.modelVersion == ModelVersion.BASE
+                        || backwardEquivalentAbstractStateMapping.contains(it.dest))}
+            val newATsNewToNewAs = newAbstractTransitions.filter {
+                (it.source.modelVersion == ModelVersion.RUNNING
+                        && !backwardEquivalentAbstractStateMapping.containsKey(it.source))
+                        && (it.dest.modelVersion == ModelVersion.RUNNING
+                        && !backwardEquivalentAbstractStateMapping.contains(it.dest))}
+            sb2.appendln("Base-Base abstract transitions;${newATsBaseToBaseAS.size}")
+            sb2.appendln("Base-New abstract transitions;${newATsBaseToNewAs.size}")
+            sb2.appendln("New-Base abstract transitions;${newATsNewToBaseAS.size}")
+            sb2.appendln("New-New abstract transitions;${newATsNewToNewAs.size}")
+            val observedAbstractTransitions = observedBasedAbstractTransitions
+
+            sb2.appendln("Observed abstract transitions count;${observedAbstractTransitions.size}")
+            observedAbstractTransitions.forEach {
+                sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
+                        "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};" /*+
+                    "${it.prevWindow}"*/)
+            }
+            val correctAbstractTransitions = ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping
+            sb2.appendln("Backward Equivalent abstract transitions count;${correctAbstractTransitions.size}")
+            /*correctAbstractTransitions.forEach {
+                sb2.appendln("${it.key.source.abstractStateId};${it.dest.abstractStateId};" +
+                        "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};" *//*+
+                    "${it.prevWindow}"*//*)
+            }*/
+            val incorrectAbstractTransitions = ModelBackwardAdapter.instance.incorrectTransitions
+            sb2.appendln("Incorrect abstract transitions count;${incorrectAbstractTransitions.size}")
+            incorrectAbstractTransitions.forEach {
+                sb2.appendln("${it.source.abstractStateId};${it.dest.abstractStateId};" +
+                        "${it.abstractAction.actionType};${it.abstractAction.attributeValuationMap?.avmId};${it.data};"/* +
+                    "${it.prevWindow?.windowId}"*/)
+            }
+            val modelbackwardReport = context.model.config.baseDir.resolve("backwardEquivalenceReport.txt")
+            ATUAMF.log.info("Prepare writing backward equivalence report file: " +
+                    "\n- File name: ${modelbackwardReport.fileName}" +
+                    "\n- Absolute path: ${modelbackwardReport.toAbsolutePath().fileName}")
+
+            Files.write(modelbackwardReport, sb2.lines())
+            ATUAMF.log.info("Finished writing report in ${modelbackwardReport.fileName}")
+    }
     companion object {
         val instance: ModelBackwardAdapter by lazy {
             ModelBackwardAdapter()
