@@ -4,6 +4,7 @@ import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
@@ -11,7 +12,6 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
@@ -126,7 +126,7 @@ class PhaseTwoStrategy(
                 && !targetWindowsCount.containsKey(it)}.forEach {window ->
             val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                val targetInputs = atuaMF.notFullyExercisedTargetInputs.filter {it.sourceWindow == window}
                 if (abstractStates.any { it.inputMappings.values.intersect(targetInputs).isNotEmpty() }) {
                     targetWindowsCount.put(window, 0)
                 }
@@ -152,19 +152,19 @@ class PhaseTwoStrategy(
             atuaMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
         }
         val currentState = eContext.getCurrentState()
-        if (phaseState != PhaseState.P2_EXERCISE_TARGET_NODE
+        /*if (phaseState != PhaseState.P2_EXERCISE_TARGET_NODE
                 && phaseState != PhaseState.P2_GO_TO_TARGET_NODE
                 && phaseState != PhaseState.P2_GO_TO_EXPLORE_STATE
                 && needReset(currentState)) {
             return eContext.resetApp()
-        }
+        }*/
         targetWindowsCount.entries.removeIf {
             !atuaMF.allTargetWindow_ModifiedMethods.containsKey(it.key)
         }
         if (!targetWindowsCount.containsKey(targetWindow)) {
             targetWindow = null
         }
-        var chosenAction: ExplorationAction
+        var chosenAction: ExplorationAction?
 
 
         val currentAppState = atuaMF.getAbstractState(currentState)
@@ -201,6 +201,8 @@ class PhaseTwoStrategy(
             log.debug("No task seleted. It might be a bug.")
             chosenAction = eContext.resetApp()
         }
+        if (chosenAction == null)
+            return ExplorationAction.pressBack()
         budgetConsume(chosenAction,currentAppState)
 /*        if (strategyTask is RandomExplorationTask && (strategyTask as RandomExplorationTask).fillingData == false) {
             budgetLeft--
@@ -335,7 +337,10 @@ class PhaseTwoStrategy(
             setTestBudget = true
         }*/
         if (isBudgetAvailable()) {
-            log.info("Exercise budget left: $budgetLeft")
+            if (budgetType != 2)
+                log.info("Exercise budget left: $budgetLeft")
+            else
+                log.info("Random budget left: $randomBudgetLeft")
             if (phaseState == PhaseState.P2_INITIAL) {
                 nextActionOnInitial(currentAppState, exerciseTargetComponentTask, currentState, randomExplorationTask, goToTargetNodeTask, goToAnotherNode)
                 return
@@ -396,6 +401,11 @@ class PhaseTwoStrategy(
                 setExerciseTarget(exerciseTargetComponentTask, currentState)
                 return
             }
+            val targetWindowEvents = phase2TargetEvents.filter {
+                it.key.sourceWindow == targetWindow!!
+            }
+            if (targetWindowEvents.isEmpty())
+                setRandomExplorationBudget(currentState)
             setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
             return
             /*
@@ -467,6 +477,10 @@ class PhaseTwoStrategy(
         if (currentAppState.isRequireRandomExploration()) {
             setRandomExploration(randomExplorationTask, currentState, currentAppState, true, lockWindow = false)
         }
+        if (goToTargetNodeTask.isAvailable(currentState,targetWindow!!,true,false,false)) {
+            setGoToTarget(goToTargetNodeTask, currentState)
+            return
+        }
         if (goToTargetNodeTask.isAvailable(currentState)) {
             setGoToTarget(goToTargetNodeTask, currentState)
             return
@@ -479,6 +493,11 @@ class PhaseTwoStrategy(
                     return
                 }
             }
+            val targetWindowEvents = phase2TargetEvents.filter {
+                it.key.sourceWindow == targetWindow!!
+            }
+            if (targetWindowEvents.isEmpty())
+                setRandomExplorationBudget(currentState)
             setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
             return
         }
@@ -512,6 +531,11 @@ class PhaseTwoStrategy(
                     return
                 }
             }
+            val targetWindowEvents = phase2TargetEvents.filter {
+                it.key.sourceWindow == targetWindow!!
+            }
+            if (targetWindowEvents.isEmpty())
+                setRandomExplorationBudget(currentState)
             setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
         }
         if (currentAppState.window is Dialog || currentAppState.window is OptionsMenu || currentAppState.window is OutOfApp) {
@@ -545,6 +569,11 @@ class PhaseTwoStrategy(
                     return
                 }
             }
+            val targetWindowEvents = phase2TargetEvents.filter {
+                it.key.sourceWindow == targetWindow!!
+            }
+            if (targetWindowEvents.isEmpty())
+                setRandomExplorationBudget(currentState)
             setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
             return
         }
@@ -563,6 +592,11 @@ class PhaseTwoStrategy(
                     return
                 }
             } else {
+                val targetWindowEvents = phase2TargetEvents.filter {
+                    it.key.sourceWindow == targetWindow!!
+                }
+                if (targetWindowEvents.isEmpty())
+                    setRandomExplorationBudget(currentState)
                 setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                 return
             }
@@ -599,6 +633,11 @@ class PhaseTwoStrategy(
                     return true
                 }
             } else {
+                val targetWindowEvents = phase2TargetEvents.filter {
+                    it.key.sourceWindow == targetWindow!!
+                }
+                if (targetWindowEvents.isEmpty())
+                    setRandomExplorationBudget(currentState)
                 setRandomExplorationInTargetWindow(randomExplorationTask, currentState)
                 return true
             }
@@ -747,7 +786,7 @@ class PhaseTwoStrategy(
         modifiedMethodTriggerCount.clear()
         appStateModifiedMethodMap.clear()
         modifiedMethodWeights.clear()
-        val allTargetInputs = ArrayList(atuaMF.allTargetInputs)
+        val allTargetInputs = ArrayList(atuaMF.notFullyExercisedTargetInputs)
 
         val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {

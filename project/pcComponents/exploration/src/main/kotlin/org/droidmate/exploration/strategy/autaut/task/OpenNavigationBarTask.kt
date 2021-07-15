@@ -42,7 +42,7 @@ class OpenNavigationBarTask constructor(
         val chosenWidget = chooseWidgets(currentState).firstOrNull()
         if (chosenWidget == null)
             return ExplorationAction.pressBack()
-        return autautStrategy.eContext.navigateTo(chosenWidget,{chosenWidget.click()})
+        return atuaStrategy.eContext.navigateTo(chosenWidget,{chosenWidget.click()})
                 .also { executedCount++ }?:ExplorationAction.pressBack()
     }
 

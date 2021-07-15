@@ -5,6 +5,7 @@ import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.availableActions
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.atua.DSTG.*
 import org.droidmate.exploration.modelFeatures.atua.EWTG.*
@@ -69,7 +70,7 @@ class PhaseOneStrategy(
                 targetWindowTryCount.put(it,0)
         }
 
-        atuaMF.allTargetInputs.forEach {
+        atuaMF.notFullyExercisedTargetInputs.forEach {
             untriggeredTargetInputs.add(it)
         }
     }
@@ -339,7 +340,7 @@ class PhaseOneStrategy(
                 currentState = currentState,
                 currentAbstractState = currentAbstractState,
                 shortest = false,
-                pathCountLimitation = 10,
+                pathCountLimitation = 1,
                 pathType = PathFindingHelper.PathType.FULLTRACE
                 )
 
@@ -353,13 +354,13 @@ class PhaseOneStrategy(
         val currentAppState = atuaMF.getAbstractState(currentState)!!
         log.info("Current abstract state: $currentAppState")
         log.info("Current window: ${currentAppState.window}")
-        if (phaseState != PhaseState.P1_EXERCISE_TARGET_NODE
+        /*if (phaseState != PhaseState.P1_EXERCISE_TARGET_NODE
                 && phaseState != PhaseState.P1_GO_TO_EXPLORE_STATE
                 && phaseState != PhaseState.P1_GO_TO_TARGET_NODE
                 && needReset(currentState)) {
             return eContext.resetApp()
-        }
-        var chosenAction:ExplorationAction
+        }*/
+        var chosenAction:ExplorationAction?
         if (targetWindow!=null && outofbudgetWindows.contains(targetWindow!!)) {
             targetWindow = null
             resetStrategyTask(currentState)
@@ -426,6 +427,8 @@ class PhaseOneStrategy(
         if (strategyTask != null) {
             log.debug(phaseState.name)
             chosenAction = strategyTask!!.chooseAction(currentState)
+            if (chosenAction == null)
+                return ExplorationAction.pressBack()
             if (isCountAction(chosenAction)
                     && windowRandomExplorationBudgetUsed.containsKey(currentAppState.window)
                     && (strategyTask is RandomExplorationTask && (strategyTask as RandomExplorationTask).fillingData == false)) {

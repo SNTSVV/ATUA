@@ -72,12 +72,12 @@ class UiAutomator2DaemonDriver(waitForIdleTimeout: Long, waitForInteractiveTimeo
 	@Throws(DeviceDaemonException::class)
 	private suspend fun performAction(deviceCommand: ExecuteCommand): DeviceResponse =
 		deviceCommand.guiAction.let { action ->
-			debugT(" EXECUTE-TIME avg = ${et / max(1, nActions)}", {
+			debugT(" EXECUTE-TIME avg = ${et / max(1, nActions)} ms", {
 				isWithinQueue = false
 
 				Log.v(uiaDaemon_logcatTag, "Performing GUI action $action [${action.id}]")
 
-				val result = debugT("execute action avg= ${tExec / (max(nActions, 1) * 1000000)}", {
+				val result = debugT("execute action avg= ${tExec / (max(nActions, 1) )} ms", {
 					lastId = action.id
 					action.execute(uiEnvironment)
 				}, inMillis = true, timer = {
@@ -86,7 +86,7 @@ class UiAutomator2DaemonDriver(waitForIdleTimeout: Long, waitForInteractiveTimeo
 //TODO if the previous action was not successful we should return an "ActionFailed"-DeviceResponse
 
 				if (!action.isFetch()) // only fetch once even if the action was a FetchGUI action
-					debugT("FETCH avg= ${tFetch / (max(nActions, 1) * 1000000)}", { fetchDeviceData(uiEnvironment, afterAction = true) }, inMillis = true, timer = {
+					debugT("FETCH avg= ${tFetch / (max(nActions, 1) )} ms", { fetchDeviceData(uiEnvironment, afterAction = true) }, inMillis = true, timer = {
 						//					if (action !is DeviceLaunchApp) {
 						tFetch += it
 //					}
@@ -94,7 +94,7 @@ class UiAutomator2DaemonDriver(waitForIdleTimeout: Long, waitForInteractiveTimeo
 				else result as DeviceResponse
 			}, inMillis = true, timer = {
 				//				if (action !is DeviceLaunchApp) {
-				et += it / 1000000.0
+				et += it
 				nActions += 1
 //				}
 			})

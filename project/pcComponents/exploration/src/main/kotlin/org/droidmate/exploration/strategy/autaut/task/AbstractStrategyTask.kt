@@ -29,7 +29,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.random.Random
 
-abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
+abstract class AbstractStrategyTask (val atuaStrategy: ATUATestingStrategy,
                                      val atuaMF: ATUAMF,
                                      val delay: Long,
                                      val useCoordinateClicks: Boolean){
@@ -38,16 +38,16 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
     protected var random = java.util.Random(Random.nextLong())
         private set
 
-    protected var counter: ActionCounterMF = autautStrategy.getActionCounter()
-    protected var blackList: BlackListMF = autautStrategy.getBlacklist()
+    protected var counter: ActionCounterMF = atuaStrategy.getActionCounter()
+    protected var blackList: BlackListMF = atuaStrategy.getBlacklist()
 
     protected suspend fun getCandidates(widgets: List<Widget>): List<Widget> {
         val lessExerciseWidgetsByUUID = widgets
                 .let { filteredCandidates ->
                     // for each widget in this state the number of interactions
-                    atuaMF.actionCount.widgetnNumExplored(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+                    atuaMF.actionCount.widgetnNumExplored(atuaStrategy.eContext.getCurrentState(), filteredCandidates).entries
                             .groupBy { it.key.packageName }.flatMap { (pkgName, countEntry) ->
-                                if (pkgName != autautStrategy.eContext.apk.packageName) {
+                                if (pkgName != atuaStrategy.eContext.apk.packageName) {
                                     val pkgActions = counter.pkgCount(pkgName)
                                     countEntry.map { Pair(it.key, pkgActions) }
                                 } else
@@ -64,12 +64,14 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                             }
                             ?: emptyList()
                 }
-        val lessExceriseWidgets = lessExerciseWidgetsByUUID.let { filteredCandidates ->
-            atuaMF.actionCount.widgetNumExplored2(autautStrategy.eContext.getCurrentState(), filteredCandidates).entries
+
+        /*val lessExceriseWidgets = lessExerciseWidgetsByUUID.let { filteredCandidates ->
+            atuaMF.actionCount.widgetNumExplored2(atuaStrategy.eContext.getCurrentState(), filteredCandidates).entries
                     .groupBy { it.value }.let { map ->
                         map.listOfSmallest()?.map { (w, _) -> w } ?: emptyList()
                     }
-        }
+        }*/
+        val lessExceriseWidgets = lessExerciseWidgetsByUUID
         return lessExceriseWidgets
     }
 
@@ -161,7 +163,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
          return visibleWidgets
      }
 
-     abstract fun chooseAction(currentState:State<*>): ExplorationAction
+     abstract fun chooseAction(currentState:State<*>): ExplorationAction?
 
      abstract fun reset()
 
@@ -198,14 +200,14 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 }
                 AbstractActionType.SEND_INTENT -> callIntent(data)
                 AbstractActionType.SWIPE -> doSwipe(currentState,data as String)
-                AbstractActionType.LAUNCH_APP -> autautStrategy.eContext.launchApp()
-                AbstractActionType.RESET_APP -> autautStrategy.eContext.resetApp()
+                AbstractActionType.LAUNCH_APP -> atuaStrategy.eContext.launchApp()
+                AbstractActionType.RESET_APP -> atuaStrategy.eContext.resetApp()
                 AbstractActionType.RANDOM_KEYBOARD -> doRandomKeyboard(currentState,data)
                 AbstractActionType.CLOSE_KEYBOARD -> GlobalAction(ActionType.CloseKeyboard)
                 AbstractActionType.CLICK_OUTBOUND -> doClickOutbound(currentState,abstractAction!!)
                 AbstractActionType.ACTION_QUEUE -> doActionQueue(data,currentState)
                 AbstractActionType.CLICK -> doClickWithoutTarget(data,currentState)
-                AbstractActionType.UNDERIVED -> doUnderivedAction(data,currentState)
+                AbstractActionType.UNKNOWN -> doUnderivedAction(data,currentState)
                 else -> ExplorationAction.pressBack()
             }
         }
@@ -647,7 +649,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
                 intentFilter.getDatas().random().testData.random()
             else
                 ""
-            return autautStrategy.eContext.callIntent(action,
+            return atuaStrategy.eContext.callIntent(action,
                     category, data, intentFilter.activity)
 
         } else {
@@ -658,7 +660,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
             if (intentData["activity"]==null) {
                 return GlobalAction(ActionType.FetchGUI)
             }
-            return autautStrategy.eContext.callIntent(
+            return atuaStrategy.eContext.callIntent(
                     action = intentData["action"]?:"",
                     category = intentData["category"]?:"",
                     activity = intentData["activity"]?:"",
@@ -771,7 +773,7 @@ abstract class AbstractStrategyTask (val autautStrategy: ATUATestingStrategy,
         return currentState.widgets.any{it.packageName == "com.android.camera2" || it.packageName == "com.android.camera" }
     }
     /** filters out all crashing marked widgets from the actionable widgets of the current state **/
-    suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { autautStrategy.eContext.crashlist.isBlacklistedInState(it.uid,autautStrategy.eContext.getCurrentState().uid) }
+    suspend fun Collection<Widget>.nonCrashingWidgets() = filterNot { atuaStrategy.eContext.crashlist.isBlacklistedInState(it.uid,atuaStrategy.eContext.getCurrentState().uid) }
     companion object {
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
     }

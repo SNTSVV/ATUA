@@ -1,7 +1,9 @@
 
 package org.droidmate.exploration.strategy.autaut.task
 
+import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
+import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.longClick
@@ -71,7 +73,7 @@ class PrepareContextTask constructor(
     }
 
     private fun prepareFillActions(currentState: State<*>) {
-        val allInputWidgets = Helper.getVisibleWidgets(currentState).filter {inputFillDecision[it]?:false }
+        val allInputWidgets = Helper.getVisibleWidgets(currentState).filter {inputFillDecision[it]?.equals(false)?:false }
         val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         allInputWidgets.forEach {widget ->
             if (!widget.checked.isEnabled() && !widget.isInputField) {
@@ -117,7 +119,7 @@ class PrepareContextTask constructor(
 
     }
 
-    override fun chooseAction(currentState: State<*>): ExplorationAction {
+    override fun chooseAction(currentState: State<*>): ExplorationAction? {
         if (isOpeningInputDialog) {
             if (!randomExplorationTask!!.isTaskEnd(currentState)) {
                 return randomExplorationTask!!.chooseAction(currentState)
@@ -167,6 +169,7 @@ class PrepareContextTask constructor(
     }
 
     override fun isAvailable(currentState: State<*>): Boolean {
+        randomInput = false
         return hasInput(currentState) && shouldInsertText(currentState)
     }
     fun isAvailable(currentState: State<*>, random: Boolean): Boolean {
@@ -180,11 +183,11 @@ class PrepareContextTask constructor(
 }
 
     var isOpeningInputDialog: Boolean = false
-    internal fun randomlyFill(currentState: State<*>): ExplorationAction {
+    internal fun randomlyFill(currentState: State<*>): ExplorationAction? {
         val availableWidgets = currentState.widgets.filter { w->fillActions.containsKey(w.uid)}
         if (availableWidgets.isEmpty()) {
-            log.debug("No more filling data. Press back.")
-            return ExplorationAction.pressBack()
+            log.debug("No more filling data.")
+            return null
         }
         val toFillWidget = availableWidgets.random()
         log.debug("Selected widget: ${toFillWidget}")
@@ -193,7 +196,7 @@ class PrepareContextTask constructor(
         fillActions.remove(toFillWidget.uid)
         if (!toFillWidget.isInputField && !toFillWidget.checked.isEnabled()) {
             isOpeningInputDialog = true
-            randomExplorationTask = RandomExplorationTask(atuaMF,autautStrategy,delay,useCoordinateClicks,false,10)
+            randomExplorationTask = RandomExplorationTask(atuaMF,atuaStrategy,delay,useCoordinateClicks,false,10)
             randomExplorationTask!!.isPureRandom = true
             randomExplorationTask!!.setMaxiumAttempt(10)
         }
@@ -239,15 +242,10 @@ class PrepareContextTask constructor(
                     InputCoverage.FILL_NONE ->  inputFillDecision.put(it,value = false)
                     InputCoverage.FILL_RANDOM -> {
                         if (!it.isPassword && it.isInputField) {
-                            if (randomInput) {
-                                if (TextInput.historyTextInput.contains(it.text)) {
-                                    if (random.nextInt(100) < 25)
-                                        inputFillDecision.put(it, false)
-                                } else {
-                                    inputFillDecision.put(it, false)
-                                }
+                            if (random.nextDouble() < 0.5) {
+                                inputFillDecision.put(it, true)
                             } else {
-                                inputFillDecision.put(it,false)
+                                inputFillDecision.put(it, false)
                             }
                         } else {
                             var ignoreWidget = false

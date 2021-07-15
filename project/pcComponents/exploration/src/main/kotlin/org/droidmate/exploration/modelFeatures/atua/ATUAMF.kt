@@ -100,7 +100,7 @@ class ATUAMF(private val appName: String,
 
     private val allMeaningfulWidgets = hashSetOf<EWTGWidget>() //widgetId -> idWidget
     val allTargetStaticWidgets = hashSetOf<EWTGWidget>() //widgetId -> idWidget
-    val allTargetInputs = hashSetOf<Input>()
+    val notFullyExercisedTargetInputs = hashSetOf<Input>()
     val allTargetWindow_ModifiedMethods = hashMapOf<Window, HashSet<String>>()
     val allTargetHandlers = hashSetOf<String>()
     val allEventHandlers = hashSetOf<String>()
@@ -151,7 +151,9 @@ class ATUAMF(private val appName: String,
     var traceId = 0
     var transitionId = 0
 
-    val interactionsTracing = HashMap<List<Interaction<*>>, Pair<Int, Int>>()
+    val interactionsTracingMap = HashMap<List<Interaction<*>>, Pair<Int, Int>>()
+    val tracingInteractionsMap = HashMap<Pair<Int, Int>,List<Interaction<*>>>()
+
     val prevWindowStateMapping = HashMap<State<*>,State<*>>()
     val interactionPrevWindowStateMapping = HashMap<Interaction<Widget>,State<*>>()
 
@@ -315,11 +317,11 @@ class ATUAMF(private val appName: String,
             it.inputs.forEach {
                 if (it.modifiedMethods.isNotEmpty()) {
                     allUpdatedMethods.addAll(it.modifiedMethods.keys)
-                    allTargetInputs.add(it)
+                    notFullyExercisedTargetInputs.add(it)
                 }
             }
         }
-        allTargetInputs.removeIf {
+        notFullyExercisedTargetInputs.removeIf {
             it.modifiedMethods.isEmpty()
         }
     }
@@ -617,10 +619,10 @@ class ATUAMF(private val appName: String,
         }
         var tempCandidate: State<*>? = null
         for (i in transitionId downTo 1) {
-            val traveredInteraction = interactionsTracing.entries.find { it.value == Pair(traceId, i) }
+            val traveredInteraction = tracingInteractionsMap.get(Pair(traceId,i))
             if (traveredInteraction == null)
                 throw Exception()
-            val prevWindowState = stateList.find { it.stateId == traveredInteraction.key.first().prevState }!!
+            val prevWindowState = stateList.find { it.stateId == traveredInteraction.last().prevState }!!
             val prevWindowAbstractState = getAbstractState(prevWindowState)!!
             if (prevWindowAbstractState.window == prevWindow
                     && !prevWindowAbstractState.isOpeningKeyboard
@@ -641,7 +643,8 @@ class ATUAMF(private val appName: String,
             }
             if (i==1)
             {
-                throw Exception()
+                prevWindowStateMapping.put(currentState, stateList.findLast { it.isHomeScreen }!!)
+                interactionPrevWindowStateMapping.put(lastInteraction,stateList.findLast { it.isHomeScreen }!!)
             }
         }
     }
@@ -712,9 +715,12 @@ class ATUAMF(private val appName: String,
         if (lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.RESET_APP) {
             if (statementCovered || currentState != prevState) {
                 transitionId++
-                interactionsTracing.put(interactions, Pair(traceId, transitionId))
+                interactionsTracingMap.put(interactions, Pair(traceId, transitionId))
+                tracingInteractionsMap.put(Pair(traceId,transitionId),interactions)
                 lastExecutedTransition!!.tracing.add(Pair(traceId, transitionId))
             }
+            // remove all obsolete abstract transitions that are not derived from interactions
+            AbstractStateManager.INSTANCE.removeObsoleteAbsstractTransitions(lastExecutedTransition!!)
         }
 
         log.info("Computing Abstract Interaction. - DONE")
@@ -792,7 +798,7 @@ class ATUAMF(private val appName: String,
                 else if (actionType == AbstractActionType.RANDOM_KEYBOARD) {
                     deriveKeyboardInteraction(prevAbstractState, actionType, actionData, interactionData, currentAbstractState, interaction, prevState,prevWindowAbstractState)
                 } else {
-                    val underviceAction = AbstractActionType.UNDERIVED
+                    val underviceAction = AbstractActionType.UNKNOWN
                     createNewAbstractTransition(underviceAction, interaction, prevState, prevAbstractState, null, interaction, currentAbstractState,prevWindowAbstractState)
                     log.debug("Cannot find the target widget's AVM")
                     prevAbstractState.getAttributeValuationSet(interaction.targetWidget!!, prevState, this)
@@ -815,13 +821,13 @@ class ATUAMF(private val appName: String,
         if (transitionId < 1) {
             prevWindowAbstractState = null
         } else {
-            val traveredInteraction = interactionsTracing.entries.find { it.value == Pair(traceId, transitionId) }
+            val traveredInteraction =  tracingInteractionsMap.get(Pair(traceId,transitionId))
             if (traveredInteraction == null)
                 throw Exception()
-            if (!interactionPrevWindowStateMapping.containsKey(traveredInteraction.key.last())) {
+            if (!interactionPrevWindowStateMapping.containsKey(traveredInteraction.last())) {
                 prevWindowAbstractState = null
             } else {
-                val prevWindowState = interactionPrevWindowStateMapping.get(traveredInteraction.key.last())!!
+                val prevWindowState = interactionPrevWindowStateMapping.get(traveredInteraction.last())!!
                 prevWindowAbstractState = getAbstractState(prevWindowState)
             }
         }
@@ -1277,7 +1283,9 @@ class ATUAMF(private val appName: String,
             if (newState.isAppHasStoppedDialogBox) {
                 necessaryCheckModel = false
             }
-
+            if (newState.isRequestRuntimePermissionDialogBox) {
+                necessaryCheckModel = false
+            }
             if (lastInteractions.isNotEmpty()) {
                 lastExecutedTransition = null
                 isActivityResult = false
@@ -1315,7 +1323,16 @@ class ATUAMF(private val appName: String,
                 }
                 if (lastExecutedTransition == null) {
                     log.debug("Last executed Interaction is null")
-                } else if (necessaryCheckModel && lastInteractions.size==1) {
+                } else if (necessaryCheckModel
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.UNKNOWN
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.WAIT
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.ACTION_QUEUE
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.RESET_APP
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.LAUNCH_APP
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.SEND_INTENT
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.RANDOM_CLICK
+                        && lastExecutedTransition!!.abstractAction.actionType != AbstractActionType.RANDOM_KEYBOARD
+                        && lastInteractions.size==1) {
                     log.info("Refining Abstract Interaction.")
                     prevAbstractStateRefinement = AbstractStateManager.INSTANCE.refineModel(lastInteractions.single(), prevState, lastExecutedTransition!!)
 
@@ -1399,11 +1416,11 @@ class ATUAMF(private val appName: String,
                 if (it.eventType != EventType.resetApp) {
                     updateStaticEventHandlersAndModifiedMethods(it, abstractTransition, coverageIncreased)
                     if (it.modifiedMethods.all {statementMF!!.fullyCoveredMethods.contains(it.key)  }) {
-                        if (allTargetInputs.contains(it))
-                            allTargetInputs.remove(it)
+                        if (notFullyExercisedTargetInputs.contains(it))
+                            notFullyExercisedTargetInputs.remove(it)
                     } else {
-                        if (it.modifiedMethods.isNotEmpty() && !allTargetInputs.contains(it))
-                            allTargetInputs.add(it)
+                        if (it.modifiedMethods.isNotEmpty() && !notFullyExercisedTargetInputs.contains(it))
+                            notFullyExercisedTargetInputs.add(it)
                     }
                     allTargetWindow_ModifiedMethods.entries.removeIf {
                         it.value.all { statementMF!!.fullyCoveredMethods.contains(it) }
@@ -1716,7 +1733,6 @@ class ATUAMF(private val appName: String,
 
     //region phase2
     var remainPhaseStateCount: Int = 0
-    val notFullyCoveredTargetEvents = HashMap<Input, Int>() //Event - number of exercise
 
     fun resetIneffectiveActionCounter() {
         updateMethodCovFromLastChangeCount = 0
@@ -1725,8 +1741,8 @@ class ATUAMF(private val appName: String,
 
     fun validateEvent(e: Input, currentState: State<*>): List<AbstractAction> {
         if (e.eventType == EventType.implicit_rotate_event && !appRotationSupport) {
-            if (allTargetInputs.contains(e)) {
-                allTargetInputs.remove(e)
+            if (notFullyExercisedTargetInputs.contains(e)) {
+                notFullyExercisedTargetInputs.remove(e)
             }
             return emptyList()
         }
@@ -2070,12 +2086,11 @@ class ATUAMF(private val appName: String,
 
     fun accumulateTargetEventsDependency(): HashMap<Input, HashMap<String, Long>> {
         val result = HashMap<Input, HashMap<String, Long>>()
-        allTargetInputs.forEach { event ->
+        notFullyExercisedTargetInputs.forEach { event ->
             val eventDependency = HashMap<String, Long>()
             event.eventHandlers.forEach {
                 if (methodTermsHashMap.containsKey(it)) {
                     if (methodTermsHashMap[it]!!.isNotEmpty()) {
-
                         methodTermsHashMap[it]!!.forEach { term, count ->
                             if (!eventDependency.containsKey(term))
                                 eventDependency.put(term, count)
@@ -2218,7 +2233,7 @@ class ATUAMF(private val appName: String,
         modifiedMethodTriggerCount.clear()
         appStateModifiedMethodMap.clear()
         modifiedMethodWeights.clear()
-        val allTargetInputs = ArrayList(allTargetInputs)
+        val allTargetInputs = ArrayList(notFullyExercisedTargetInputs)
 
         val triggeredStatements = statementMF!!.getAllExecutedStatements()
         statementMF!!.getAllModifiedMethodsId().forEach {
@@ -2356,7 +2371,7 @@ class ATUAMF(private val appName: String,
         var result: AbstractState? = null
         val keyboardOpenAbstractState = getAbstractState(keyboardopenState)!!
         for (i in tracing.second-1 downTo 1) {
-            val interaction = interactionsTracing.entries.find {  it.value == Pair(tracing.first,i) }?.key?.firstOrNull()
+            val interaction = tracingInteractionsMap.get(Pair(tracing.first,i))?.lastOrNull()
             if (interaction == null)
                 throw Exception()
             val resState = stateList.find { it.stateId==interaction.resState}!!

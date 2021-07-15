@@ -123,7 +123,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
             val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window && it.eventType!=EventType.implicit_launch_event
+                val targetInputs = atuaMF.notFullyExercisedTargetInputs.filter {it.sourceWindow == window && it.eventType!=EventType.implicit_launch_event
                         && it.eventType != EventType.resetApp}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)

@@ -1,9 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Interaction
@@ -49,18 +46,25 @@ class AbstractTransition(
 
     fun isExplicit() = !isImplicit
 
-    fun updateUpdateStatementCoverage(statement: String, autautMF: ATUAMF) {
-        val methodId = autautMF.statementMF!!.statementMethodInstrumentationMap.get(statement)
-        if (autautMF.statementMF!!.isModifiedMethodStatement(statement)) {
+    fun updateUpdateStatementCoverage(statement: String, atuaMF: ATUAMF) {
+        val methodId = atuaMF.statementMF!!.statementMethodInstrumentationMap.get(statement)
+        if (atuaMF.statementMF!!.isModifiedMethodStatement(statement)) {
             this.modifiedMethodStatement.put(statement, true)
-            val methodId = autautMF.statementMF!!.statementMethodInstrumentationMap.get(statement)
             if (methodId != null) {
-                autautMF.allModifiedMethod.put(methodId,true)
+                atuaMF.allModifiedMethod.put(methodId,true)
                 this.modifiedMethods.put(methodId, true)
             }
         }
         statementCoverage.add(statement)
         methodCoverage.add(methodId!!)
+        // update Handler
+        if (atuaMF.allEventHandlers.contains(methodId) ) {
+            if (handlers.containsKey(methodId)) {
+                handlers[methodId] = true
+            } else {
+                handlers.put(methodId, true)
+            }
+        }
     }
 
     fun copyPotentialInfoFrom(other: AbstractTransition) {
@@ -91,7 +95,7 @@ class AbstractTransition(
             }
             if (actionType == AbstractActionType.TEXT_INSERT) {
                 val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState,atuaMF)
-                if (avm!=null && avm.localAttributes.containsKey(AttributeType.text)) {
+                if (avm!=null) {
                     return interaction.data
                 }
                 return null

@@ -26,7 +26,7 @@ class GoToTargetWindowTask (
             computeNextPathType(currentPath!!.pathType,includeResetAction)
         val currentPathType = nextPathType
         while (possiblePaths.isEmpty()) {
-            possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
+            possiblePaths.addAll(atuaStrategy.phaseStrategy.getPathsToTargetWindows(currentState,pathType = nextPathType))
             nextPathType = computeNextPathType(nextPathType,includeResetAction)
             if (nextPathType == currentPathType)
                 break

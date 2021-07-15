@@ -11,7 +11,7 @@ import org.droidmate.explorationModel.interaction.State
 class CallingIntentTask(regressionTestingMF: ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean):AbstractStrategyTask(atuaMF = regressionTestingMF,
-                        autautStrategy = atuaTestingStrategy,
+                        atuaStrategy = atuaTestingStrategy,
                         delay = delay,useCoordinateClicks = useCoordinateClicks) {
     val targetIntentTestInstances = ArrayList<IntentTestInstance>()
     override fun isAvailable(currentState: State<*>): Boolean {
@@ -25,7 +25,7 @@ class CallingIntentTask(regressionTestingMF: ATUAMF,
             return ExplorationAction.pressBack()
         val intentFilter = targetIntentTestInstances.random()
         targetIntentTestInstances.remove(intentFilter)
-        return autautStrategy.eContext.callIntent(
+        return atuaStrategy.eContext.callIntent(
                 action = intentFilter.action,
                 category = intentFilter.category,
                 activity = intentFilter.activity,

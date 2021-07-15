@@ -612,9 +612,9 @@ class AttributeValuationMap {
 
 
     companion object {
-       val ALL_ATTRIBUTE_VALUATION_MAP: HashMap<Window, HashMap<String,AttributeValuationMap>> = HashMap()
+        val ALL_ATTRIBUTE_VALUATION_MAP: HashMap<Window, HashMap<String,AttributeValuationMap>> = HashMap()
         val attributePath_AttributeValuationMap: HashMap<Window, HashMap<AttributePath,AttributeValuationMap>> = HashMap()
-        val allWidgetAVMHashMap: HashMap<Window, HashMap<Widget,AttributeValuationMap>> = HashMap();
+        val allWidgetAVMHashMap: HashMap<Window, HashMap<Widget,AttributeValuationMap>> = HashMap()
         var maxId: Long = 0
         fun getExistingObject(attributePath: AttributePath, window: Window): AttributeValuationMap? {
             var attributeValuationSet =  attributePath_AttributeValuationMap.get(window)!!.get(attributePath)

@@ -232,7 +232,7 @@ class AppModelLoader {
                 data[5]
             }
             if (actionType == AbstractActionType.ACTION_QUEUE
-                    || actionType == AbstractActionType.UNDERIVED
+                    || actionType == AbstractActionType.UNKNOWN
                     || actionType == AbstractActionType.RANDOM_KEYBOARD)
                 return
             val abstractAction = createAbstractAction(actionType,interactedAVSId,actionData,sourceState)
@@ -356,7 +356,7 @@ class AppModelLoader {
                 newInput.data = abstractTransition.abstractAction.extra
                 newInput.eventHandlers.addAll(abstractTransition.handlers.map { it.key })
                 if (newInput.eventHandlers.intersect(atuaMF.allTargetHandlers).isNotEmpty()) {
-                    atuaMF.allTargetInputs.add(newInput)
+                    atuaMF.notFullyExercisedTargetInputs.add(newInput)
                 }
                 sourceAbstractState.inputMappings.putIfAbsent(abstractTransition.abstractAction, hashSetOf())
                 sourceAbstractState.inputMappings.get(abstractTransition.abstractAction)!!.add(newInput)

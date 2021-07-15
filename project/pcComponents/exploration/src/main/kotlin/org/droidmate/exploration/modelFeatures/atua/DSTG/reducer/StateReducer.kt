@@ -1,9 +1,8 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG.reducer
 
+import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributePath
-import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
@@ -18,7 +17,11 @@ import kotlin.collections.HashMap
 class StateReducer
 {
     companion object{
-        fun reduce(guiState: State<*>, window: Window, packageName: String, rotation: Rotation, atuaMF: ATUAMF): HashMap<Widget, AttributeValuationMap>{
+        fun reduce(guiState: State<*>, window: Window,
+                   rotation: Rotation,
+                   guiTreeRectangle: Rectangle,
+                   isOptionsMenu : Boolean,
+                   atuaMF: ATUAMF): HashMap<Widget, AttributeValuationMap>{
             AttributeValuationMap.allWidgetAVMHashMap.putIfAbsent(window, HashMap())
             AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.putIfAbsent(window,HashMap())
             AttributeValuationMap.attributePath_AttributeValuationMap.putIfAbsent(window, HashMap())
@@ -55,11 +58,6 @@ class StateReducer
             toReduceWidgets.removeIf { derivedWidgets.containsKey(it) }
             //toReduceWidgets.removeIf { derivedWidgets.contains(it) }
             //val toReduceWidgets = Helper.getVisibleWidgetsForAbstraction(guiState)
-            val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
-            var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, atuaMF))
-                Helper.isOptionsMenuLayout(guiState)
-            else
-                false
             toReduceWidgets .forEach {
                 val widgetAttributePath = if (tempFullAttrPaths.containsKey(it))
                 {
@@ -78,30 +76,30 @@ class StateReducer
             }
             val workingList = Stack<AttributePath>()
             val processedList = Stack<AttributePath>()
-            derivedAttributePaths.filterNot { it.attributePathId == emptyUUID }.also {
+
+            derivedAttributePaths.filter { it.parentAttributePathId == emptyUUID }.also {
                 workingList.addAll(it)
             }
+
             while (workingList.isNotEmpty()) {
                 val element = workingList.pop()
                 processedList.add(element)
-                var attributeValuationSet =  AttributeValuationMap.getExistingObject(element,window)
-                if (attributeValuationSet == null)
-                    attributeValuationSet =  AttributeValuationMap(element,window)
+                var avm =  AttributeValuationMap.getExistingObject(element,window)
+                if (avm == null)
+                    avm =  AttributeValuationMap(element,window)
                 /*val similarAVMs = AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.get(window)!!.values.filter { it!=attributeValuationSet && it.haveTheSameAttributePath(attributeValuationSet) }
                 if (similarAVMs.isNotEmpty()) {
                     throw Exception()
                 }*/
                 widgetReduceMap.filter { it.value.equals(element) }.forEach { w, _ ->
-                    if (capturedAttributePaths.contains(element)) {
-                        widgetAVMHashMap.put(w, attributeValuationSet!!)
+                    if (capturedWidgets.contains(w)) {
+                        widgetAVMHashMap.put(w, avm)
                     }
-                    derivedWidgets.put(w, attributeValuationSet!!)
+                    derivedWidgets.put(w, avm)
                 }
                 val nonProcessedChildren =  derivedAttributePaths.filter { it.parentAttributePathId == element.attributePathId }.filterNot { processedList.contains(it) }
-                if (nonProcessedChildren.isNotEmpty()) {
-                    nonProcessedChildren.forEach {
-                        workingList.push(it)
-                    }
+                nonProcessedChildren.forEach {
+                    workingList.push(it)
                 }
             }
             return widgetAVMHashMap

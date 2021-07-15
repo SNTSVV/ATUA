@@ -74,10 +74,10 @@ fun Widget.setText(newContent: String, ignoreVisibility: Boolean = false,
 
 fun Widget.dragTo(x: Int, y: Int, stepSize: Int): ExplorationAction = TODO()
 //FIXME the center points may be overlayed by other elements, swiping the corners would be safer
-fun Widget.swipeUp(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY+ this.visibleBounds.height-100) , Pair(this.visibleBounds.center.first, this.visibleBounds.topY), stepSize, true)
-fun Widget.swipeDown(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY+100), Pair(this.visibleBounds.center.first, this.visibleBounds.topY + this.visibleBounds.height), stepSize, true)
-fun Widget.swipeLeft(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX + this.visibleBounds.width-100, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX, this.visibleBounds.center.second), stepSize, true)
-fun Widget.swipeRight(stepSize: Int = 25): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX+100, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX + this.visibleBounds.width, this.visibleBounds.center.second), stepSize, true)
+fun Widget.swipeUp(stepSize: Int = 35): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY+ this.visibleBounds.height-100) , Pair(this.visibleBounds.center.first, this.visibleBounds.topY), stepSize, true)
+fun Widget.swipeDown(stepSize: Int = 35): ExplorationAction = Swipe(Pair(this.visibleBounds.center.first, this.visibleBounds.topY+100), Pair(this.visibleBounds.center.first, this.visibleBounds.topY + this.visibleBounds.height), stepSize, true)
+fun Widget.swipeLeft(stepSize: Int = 35): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX + this.visibleBounds.width-100, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX, this.visibleBounds.center.second), stepSize, true)
+fun Widget.swipeRight(stepSize: Int = 35): ExplorationAction = Swipe(Pair(this.visibleBounds.leftX+100, this.visibleBounds.center.second), Pair(this.visibleBounds.leftX + this.visibleBounds.width, this.visibleBounds.center.second), stepSize, true)
 
 /**
  * Used by RobustDevice which does not currently create [Widget] objects.

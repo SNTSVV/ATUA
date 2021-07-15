@@ -29,8 +29,9 @@ class AbstractionFunction2 (val root: DecisionNode2) {
 
     fun isAbandonedAbstractTransition(activity: String, abstractTransition: AbstractTransition):Boolean {
         return abandonedAbstractTransitions.filter { it.source.activity == activity }.any {
-            abstractTransition.abstractAction == it.abstractAction &&
-            abstractTransition.abstractAction.attributeValuationMap?.equals(it.abstractAction.attributeValuationMap!!)?:false
+            abstractTransition.abstractAction == it.abstractAction
+                    && ((!abstractTransition.abstractAction.isWidgetAction() && !it.abstractAction.isWidgetAction())
+                            || abstractTransition.abstractAction.attributeValuationMap!!.isDerivedFrom(it.abstractAction.attributeValuationMap!!))
                     && abstractTransition.source.equals(it.source)
                     && abstractTransition.dest.equals(it.dest)
                     /*&& abstractTransition.prevWindow == it.prevWindow*/
@@ -221,6 +222,7 @@ class AbstractionFunction2 (val root: DecisionNode2) {
                 decisionNode = decisionNode.nextNode
                 backupDecisionNode = backupDecisionNode.nextNode
             }
+            backupAbstractionFunction!!.abandonedAbstractTransitions.addAll(INSTANCE.abandonedAbstractTransitions)
         }
 
         fun restore(autMF: ATUAMF){

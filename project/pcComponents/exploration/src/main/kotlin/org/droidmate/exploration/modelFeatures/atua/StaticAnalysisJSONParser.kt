@@ -52,7 +52,7 @@ class StaticAnalysisJSONParser() {
                 ATUAMF.log.debug("Reading modified method invocation")
                 readModifiedMethodTopCallers(jObj, atuaMF.modifiedMethodTopCallersMap,atuaMF.statementMF!!,
                         atuaMF.allTargetHandlers,atuaMF.windowHandlersHashMap,atuaMF.allTargetWindow_ModifiedMethods,atuaMF.untriggeredTargetHiddenHandlers)
-                readModifiedMethodInvocation(jObj, atuaMF.wtg, atuaMF.allTargetInputs,atuaMF.allTargetStaticWidgets,
+                readModifiedMethodInvocation(jObj, atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs,atuaMF.allTargetStaticWidgets,
                         atuaMF.statementMF!!,atuaMF.allTargetWindow_ModifiedMethods,atuaMF.targetItemEvents)
                 readUnreachableModfiedMethods(jObj, atuaMF.unreachableModifiedMethods )
                 //log.debug("Reading all strings")
@@ -64,7 +64,7 @@ class StaticAnalysisJSONParser() {
                     val intentModelFile = atuaMF.getIntentModelFile()
                     if (intentModelFile!=null) {
                         readIntentModel(atuaMF.intentFilters, atuaMF.getAppName(),
-                                atuaMF.wtg, atuaMF.allTargetInputs, atuaMF.targetIntFilters,intentModelFile)
+                                atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs, atuaMF.targetIntFilters,intentModelFile)
                     }
                 }
                 if (manualInput) {

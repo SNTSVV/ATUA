@@ -105,12 +105,12 @@ open class GoToAnotherWindow constructor(
         if (expectedNextAbState!=null) {
             if (!isReachExpectedNode(currentState)) {
                 // Try another path if current state is not target node
-
+                expectedNextAbState = pathTraverser!!.getCurrentTransition()?.dest
                 log.debug("Fail to reach $expectedNextAbState" )
                 addIncorrectPath(currentAppState)
                 if (pathTraverser!!.finalStateAchieved() && currentPath!!.destination.window == currentAppState.window)
                     return true
-                if (retryTimes <5*autautStrategy.scaleFactor) {
+                if (retryTimes <5*atuaStrategy.scaleFactor) {
 //                    //TODO check currentPath is valid
 //                    if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(expectedNextAbState!!)) {
 //                        initPossiblePaths(currentState,true)
@@ -172,12 +172,14 @@ open class GoToAnotherWindow constructor(
          var reached = false
          val currentAbState = atuaMF.getAbstractState(currentState)!!
          var expectedAbstractState = pathTraverser!!.getCurrentTransition()!!.dest
+         if (expectedAbstractState == currentAbState)
+             return true
+         if (pathTraverser!!.finalStateAchieved() && expectedAbstractState.isRequestRuntimePermissionDialogBox)
+             return true
          if (expectedAbstractState.isRequestRuntimePermissionDialogBox) {
              pathTraverser!!.next()
              expectedAbstractState = pathTraverser!!.getCurrentTransition()!!.dest
          }
-         if (pathTraverser!!.finalStateAchieved() && expectedAbstractState.isRequestRuntimePermissionDialogBox)
-             return true
          if (expectedAbstractState == currentAbState)
              return true
          if (expectedAbstractState.modelVersion!=ModelVersion.BASE
@@ -243,18 +245,18 @@ open class GoToAnotherWindow constructor(
              }
 
              if (expectedAbstractState1 !is VirtualAbstractState) {
-                 if (expectedAbstractState1!!.isOpeningMenus != currentAbState.isOpeningMenus) {
+                 if (expectedAbstractState1.isOpeningMenus != currentAbState.isOpeningMenus) {
                      tmpPathTraverser.next()
                      continue
                  }
-                 /*if(expectedAbstractState1!!.rotation != currentAbState.rotation) {
+                 if(expectedAbstractState1.rotation != currentAbState.rotation) {
                      tmpPathTraverser.next()
                      continue
                  }
-                 if(expectedAbstractState1!!.isOpeningKeyboard != currentAbState.isOpeningKeyboard) {
+                 if(expectedAbstractState1.isOpeningKeyboard != currentAbState.isOpeningKeyboard) {
                      tmpPathTraverser.next()
                      continue
-                 }*/
+                 }
              }
              val nextTransition = tmpPathTraverser.transitionPath.path[tmpPathTraverser.latestEdgeId!!+1]
              if (nextTransition!=null) {
@@ -320,7 +322,7 @@ open class GoToAnotherWindow constructor(
                          reached = true
                      }
                      if (!reached) {
-                         val lastActionType = autautStrategy.eContext.getLastActionType()
+                         val lastActionType = atuaStrategy.eContext.getLastActionType()
                          var abstractActionType = when (lastActionType) {
                              "Tick" -> AbstractActionType.CLICK
                              "ClickEvent" -> AbstractActionType.CLICK
@@ -356,7 +358,7 @@ open class GoToAnotherWindow constructor(
         randomExplorationTask!!.fillingData=true
         randomExplorationTask!!.backAction=true
         chooseRandomOption(currentState)
-        autautStrategy.phaseStrategy.fullControl = true
+        atuaStrategy.phaseStrategy.fullControl = true
     }
 
     override fun reset() {
@@ -421,7 +423,7 @@ open class GoToAnotherWindow constructor(
 
         if (useInputTargetWindow && destWindow!=null) {
             while (possiblePaths.isEmpty()) {
-                possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,nextPathType,isExploration))
+                possiblePaths.addAll(atuaStrategy.phaseStrategy.getPathsToWindowToExplore(currentState,destWindow!!,nextPathType,isExploration))
                 if (nextPathType == PathFindingHelper.PathType.WTG)
                     break
                 if (continueMode)
@@ -435,7 +437,7 @@ open class GoToAnotherWindow constructor(
         } else {
             val curentPathType = nextPathType
             while (possiblePaths.isEmpty()) {
-                possiblePaths.addAll(autautStrategy.phaseStrategy.getPathsToExploreStates(currentState,nextPathType))
+                possiblePaths.addAll(atuaStrategy.phaseStrategy.getPathsToExploreStates(currentState,nextPathType))
                 nextPathType = computeNextPathType(nextPathType,includeResetAction)
                 if (nextPathType == curentPathType) // no path found
                     break
@@ -454,8 +456,8 @@ open class GoToAnotherWindow constructor(
             PathFindingHelper.PathType.NORMAL -> PathFindingHelper.PathType.WTG
             PathFindingHelper.PathType.WTG -> PathFindingHelper.PathType.PARTIAL_TRACE
             PathFindingHelper.PathType.PARTIAL_TRACE ->
-                if (includeResetApp) PathFindingHelper.PathType.FULLTRACE else PathFindingHelper.PathType.INCLUDE_INFERED
-            PathFindingHelper.PathType.FULLTRACE -> PathFindingHelper.PathType.INCLUDE_INFERED
+                if (includeResetApp) PathFindingHelper.PathType.FULLTRACE else PathFindingHelper.PathType.NORMAL
+            PathFindingHelper.PathType.FULLTRACE -> PathFindingHelper.PathType.NORMAL
             else -> PathFindingHelper.PathType.ANY
         }
     }
@@ -491,7 +493,7 @@ open class GoToAnotherWindow constructor(
         executedCount++
     }
 
-    override fun chooseAction(currentState: State<*>): ExplorationAction {
+    override fun chooseAction(currentState: State<*>): ExplorationAction? {
         increaseExecutedCount()
         if(currentExtraTask!=null)
             return currentExtraTask!!.chooseAction(currentState)
@@ -579,7 +581,7 @@ open class GoToAnotherWindow constructor(
         return randomExplorationTask!!.chooseAction(currentState)
     }
 
-    private fun executeCurrentEdgeAction(currentState: State<*>, nextTransition: AbstractTransition, currentAbstractState: AbstractState): ExplorationAction {
+    private fun executeCurrentEdgeAction(currentState: State<*>, nextTransition: AbstractTransition, currentAbstractState: AbstractState): ExplorationAction? {
         val currentEdge = nextTransition
         if (currentEdge!!.abstractAction.actionType == AbstractActionType.PRESS_MENU) {
             return pressMenuOrClickMoreOption(currentState)

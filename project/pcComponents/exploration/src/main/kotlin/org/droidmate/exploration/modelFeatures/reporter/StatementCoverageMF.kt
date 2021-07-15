@@ -90,9 +90,10 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
 
     val actionCoverageTracking = HashMap<Int,Set<String>>()
-    val actionIncreaseCoverageTracking = HashMap<Int,Set<String>>()
+    val actionIncreasingCoverageTracking = HashMap<Int,Set<String>>()
 
     val actionUpdatedCoverageTracking = HashMap<Int,Set<String>>()
+    val actionIncreasingUpdatedCoverageTracking = HashMap<Int,Set<String>>()
 
     var prevUpdateCoverage: Int = 0
     var prevCoverage: Int = 0
@@ -129,6 +130,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         statementRead = false
         val newExecutedStatements = HashSet<String>()
         val newUpdatedExecutedStatements = HashSet<String>()
+        val executedUpdatedStatements = HashSet<String>()
         prevUpdateCoverage = executedModifiedMethodStatementsMap.size
         prevCoverage = executedStatementsMap.size
         mutex.withLock {
@@ -160,8 +162,12 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
                             executedMethodsMap[methodId] = tms
                         }
                         val isUpdatedMethod = isModifiedMethod(methodId)
-                        if (!recentExecutedStatements.contains(statementId))
+                        if (!recentExecutedStatements.contains(statementId)) {
                             recentExecutedStatements.add(statementId)
+                            if (isUpdatedMethod) {
+                                executedUpdatedStatements.add(statementId)
+                            }
+                        }
                         var found = executedStatementsMap.containsKey(statementId)
                         if (!found /*&& instrumentationMap.containsKey(id)*/) {
                             executedStatementsMap[statementId] = tms
@@ -204,8 +210,9 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
         val lastAction = context.getLastAction()
         actionCoverageTracking.put(lastAction.actionId,recentExecutedStatements.toSet())
-        actionIncreaseCoverageTracking.put(lastAction.actionId,newExecutedStatements)
-        actionUpdatedCoverageTracking.put(lastAction.actionId,newUpdatedExecutedStatements)
+        actionIncreasingCoverageTracking.put(lastAction.actionId,newExecutedStatements)
+        actionUpdatedCoverageTracking.put(lastAction.actionId,executedUpdatedStatements)
+        actionIncreasingUpdatedCoverageTracking.put(lastAction.actionId,newUpdatedExecutedStatements)
     }
     /**
      * Fetch the statement data form the device. Afterwards, it parses the data and updates [executedStatementsMap].
@@ -554,16 +561,16 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
     fun dumpActionTraceWithCoverage(context: ExplorationContext<*, *, *>) {
         runBlocking {
             val outputFile = File(context.model.config.baseDir.resolve("actionCoverage.csv").toAbsolutePath().toString()).bufferedWriter()
-            outputFile.write("ActionId;ActionType;SourceState;ResultState;Data;ExecutedStatements;NewExecutedStatements;NewUpdatedExecutedStatements")
+            outputFile.write("ActionId;ActionType;SourceState;ResultState;Data;ExecutedStatements;NewExecutedStatements;ExecutedUpdatedStatements;NewUpdatedExecutedStatements")
             outputFile.newLine()
             val actions = context.explorationTrace.P_getActions()
             actions.forEach { action ->
                 outputFile.write("${action.actionId.toString()};${action.actionType};${action.prevState};${action.resState};\"${action.data}\"")
-                outputFile.write(";${actionCoverageTracking.get(action.actionId)?.size};${actionIncreaseCoverageTracking.get(action.actionId)?.size};${actionUpdatedCoverageTracking.get(action.actionId)?.size};")
+                outputFile.write(";${actionCoverageTracking.get(action.actionId)?.size};${actionIncreasingCoverageTracking.get(action.actionId)?.size};${actionUpdatedCoverageTracking.get(action.actionId)?.size};${actionIncreasingUpdatedCoverageTracking.get(action.actionId)?.size};")
                 outputFile.newLine()
             }
             outputFile.close()
-            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionCoverageTracking, actionIncreaseCoverage = actionIncreaseCoverageTracking,actionUpdatedStmtCoverage = actionUpdatedCoverageTracking)
+            (context.explorationTrace as ExplorationTrace<State<*>, Widget>).dumpWithCoverage<State<*>, Widget>(config = context.model.config, actionTraceCoverage = actionCoverageTracking, actionIncreaseCoverage = actionIncreasingCoverageTracking,actionUpdatedStmtCoverage = actionUpdatedCoverageTracking,actionIncreasingUpdatedStmtCoverage = actionIncreasingUpdatedCoverageTracking)
 
         }
 /*        launch(CoroutineName("trace-coverage-dump")) {
@@ -592,16 +599,16 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
 }
 
-private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(config:ModelConfig, actionTraceCoverage: HashMap<Int, Set<String>>, actionIncreaseCoverage: HashMap<Int, Set<String>>, actionUpdatedStmtCoverage: HashMap<Int,Set<String>>) {
+private suspend fun <S, W> ExplorationTrace<State<*>,Widget>.dumpWithCoverage(config:ModelConfig, actionTraceCoverage: HashMap<Int, Set<String>>, actionIncreaseCoverage: HashMap<Int, Set<String>>, actionUpdatedStmtCoverage: HashMap<Int,Set<String>>, actionIncreasingUpdatedStmtCoverage: HashMap<Int,Set<String>>) {
     File(config.traceFile2(id.toString())).bufferedWriter().use { out ->
         out.write(StringCreator.actionHeader(config[ConfigProperties.ModelProperties.dump.sep]))
-        out.write(";executedStatements;newExecutedStatements;newUpdatedExecutedStatements")
+        out.write(";ExecutedStatements;NewExecutedStatements;ExecutedUpdatedStatements;NewUpdatedExecutedStatements")
         out.newLine()
         // ensure that our trace is complete before dumping it by calling blocking getActions
         val actions = ArrayList(P_getActions())
         actions.forEach { action ->
             out.write(StringCreator.createActionString(action, config[ConfigProperties.ModelProperties.dump.sep]))
-            out.write(";${actionTraceCoverage.get(action.actionId)?.size};${actionIncreaseCoverage.get(action.actionId)?.size};${actionUpdatedStmtCoverage.get(action.actionId)?.size}")
+            out.write(";${actionTraceCoverage.get(action.actionId)?.size};${actionIncreaseCoverage.get(action.actionId)?.size};${actionUpdatedStmtCoverage.get(action.actionId)?.size};${actionIncreasingUpdatedStmtCoverage.get(action.actionId)?.size}")
             out.newLine()
         }
     }

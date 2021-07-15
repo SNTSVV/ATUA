@@ -4,6 +4,7 @@ import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.Swipe
 import org.droidmate.deviceInterface.exploration.isLaunchApp
 import org.droidmate.exploration.ExplorationContext
+import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
@@ -13,7 +14,6 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
-import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
 import org.droidmate.exploration.modelFeatures.atua.EWTG.TransitionPath
@@ -21,12 +21,12 @@ import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
 import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
 import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
+import org.droidmate.exploration.modelFeatures.atua.informationRetrieval.InformationRetrieval
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.autaut.task.*
 import org.droidmate.explorationModel.interaction.State
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import presto.android.gui.clients.regression.informationRetrieval.InformationRetrieval
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -72,11 +72,14 @@ class PhaseThreeStrategy(
         atuaMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         statementMF = atuaTestingStrategy.eContext.getOrCreateWatcher()
         atuaMF.updateMethodCovFromLastChangeCount = 0
+        atuaMF.notFullyExercisedTargetInputs.forEach {
+            allTargetInputs.put(it,0)
+        }
         atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
             val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
                 /*targetWindowsCount.put(window, 0)*/
-                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                val targetInputs = atuaMF.notFullyExercisedTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {
@@ -106,6 +109,8 @@ class PhaseThreeStrategy(
                 if (it == targetEvent) {
                     targetEvent = null
                 }
+                allTargetInputs.putIfAbsent(it,0)
+                allTargetInputs[it] = allTargetInputs[it]!! + 1
             }
         }
     }
@@ -119,7 +124,7 @@ class PhaseThreeStrategy(
                 && !targetWindowsCount.containsKey(it)}.forEach {window ->
             val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
-                val targetInputs = atuaMF.allTargetInputs.filter {it.sourceWindow == window}
+                val targetInputs = atuaMF.notFullyExercisedTargetInputs.filter {it.sourceWindow == window}
                 val realisticInputs = abstractStates.map { it.inputMappings.values }.flatten().flatten().distinct()
                 val realisticTargetInputs = targetInputs.intersect(realisticInputs)
                 if (realisticTargetInputs.isNotEmpty()) {
@@ -138,7 +143,7 @@ class PhaseThreeStrategy(
         {
             atuaMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
         }
-        var chosenAction:ExplorationAction
+        var chosenAction:ExplorationAction?
 
         val currentState = eContext.getCurrentState()
         if (phaseState == PhaseState.P3_INITIAL
@@ -184,6 +189,8 @@ class PhaseThreeStrategy(
             log.debug("No task seleted. It might be a bug.")
             chosenAction = eContext.resetApp()
         }
+        if (chosenAction == null)
+            return ExplorationAction.pressBack()
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).fillingData != true
                 && (strategyTask as RandomExplorationTask).goToLockedWindowTask == null
@@ -263,12 +270,36 @@ class PhaseThreeStrategy(
         targetEvents.clear()
 
         val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
-        if (abstractState!!.window == targetWindow && targetEvent!=null)
+        if (abstractState!!.window == targetWindow )
         {
-            val abstractActions = atuaMF.validateEvent(targetEvent!!,currentState)
-            if (abstractActions.isNotEmpty())
-            {
-                targetEvents.put(targetEvent!!, abstractActions)
+            if (targetEvents!=null) {
+                val abstractActions = atuaMF.validateEvent(targetEvent!!, currentState)
+                if (abstractActions.isNotEmpty()) {
+                    targetEvents.put(targetEvent!!, abstractActions)
+                }
+            } else {
+                val availableEvents = abstractState.inputMappings.map { it.value }.flatten()
+                val targetWindowEvents = atuaMF.notFullyExercisedTargetInputs.filter {
+                    it.sourceWindow == targetWindow!!
+                }
+                val availabelTargetInputs = targetWindowEvents.filter {
+                    availableEvents.contains(it) }
+                        .associateWith { input-> allTargetInputs[input]?:0 }
+                        .let { HashMap(it) }
+                if (availabelTargetInputs.isNotEmpty()) {
+                    while (targetEvents.isEmpty() && availabelTargetInputs.isNotEmpty()) {
+                        val leastTriggerCount = availabelTargetInputs.minBy { it.value }!!.value
+                        val leastTriggerEvents = availabelTargetInputs.filter { it.value == leastTriggerCount }
+                        leastTriggerEvents.forEach { t, u ->
+                            availabelTargetInputs.remove(t)
+                            val abstractActions = atuaMF.validateEvent(t, currentState)
+                            if (abstractActions.isNotEmpty()) {
+                                targetEvents.put(t, abstractActions)
+                            }
+                        }
+                    }
+                }
+
             }
         }
         return targetEvents.map { it.value }.flatten().toSet()
@@ -897,7 +928,7 @@ class PhaseThreeStrategy(
         modifiedMethodTriggerCount.clear()
         appStateModifiedMethodMap.clear()
         modifiedMethodWeights.clear()
-        val allTargetInputs = ArrayList(atuaMF.allTargetInputs)
+        val allTargetInputs = ArrayList(atuaMF.notFullyExercisedTargetInputs)
 
         val triggeredStatements = statementMF.getAllExecutedStatements()
         statementMF.getAllModifiedMethodsId().forEach {
@@ -1025,13 +1056,6 @@ class PhaseThreeStrategy(
                 staticNodeTotalScore+=weight
             }
 
-        }
-        allTargetInputs.forEach {
-            if (it.eventType != EventType.resetApp
-                    && it.eventType != EventType.implicit_launch_event
-                    && it.eventType != EventType.implicit_back_event) {
-                this.allTargetInputs.put(it,0)
-            }
         }
         windowsProbability.clear()
         //calculate staticNode probability

@@ -1,13 +1,6 @@
-/*
- * InformationRetrieval.kt - part of the GATOR project
- *
- * Copyright (c) 2020 The Ohio State University
- *
- * This file is distributed under the terms described in LICENSE in the
- * root directory.
- */
 
-package presto.android.gui.clients.regression.informationRetrieval
+
+package org.droidmate.exploration.modelFeatures.atua.informationRetrieval
 
 import kotlin.math.log10
 import kotlin.math.pow
@@ -177,7 +170,7 @@ class InformationRetrieval<D, T> (
     }
 
     /**
-     * This function use raw count for document's term frequency
+     * This function uses raw count for document's term frequency
      */
     private fun computeTermsFrequency() {
         documentsBagOfWords.forEach { document, bagOfWords ->

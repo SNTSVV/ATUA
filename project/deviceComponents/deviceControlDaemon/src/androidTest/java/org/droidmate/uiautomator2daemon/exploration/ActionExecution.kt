@@ -16,6 +16,7 @@ import android.support.test.uiautomator.Until
 import android.support.test.uiautomator.click
 import android.util.Log
 import android.view.KeyEvent
+import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
@@ -73,12 +74,10 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 	val result: Any = when(this) { // REMARK this has to be an assignment for when to check for exhaustiveness
 		is Click -> {
 			env.device.verifyCoordinate(x, y)
-			env.device.executeShellCommand("input tap $x $y").apply {
-				delay(delay)
-			}
-			/*env.device.click(x, y, interactiveTimeout).apply {
+			/*env.device.executeShellCommand("input tap $x $y").apply {
 				delay(delay)
 			}*/
+			env.device.click(x, y, interactiveTimeout)
 		}
 		is Tick -> {
 			var success = UiHierarchy.findAndPerform(env, idMatch(idHash)) {
@@ -97,12 +96,18 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 			UiHierarchy.findAndPerform(env, idMatch(idHash)) { nodeInfo ->				// do this for API Level above 19 (exclusive)
 //				Log.d(logTag, "looking for click target, windows are ${env.getDisplayedWindows()}")
 				nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK)}.also {
-					if(it) { delay(delay) } // wait for display update
+					if(it) {
+						delay(delay)
+						env.waitForWindowUpdate()
+					} // wait for display update
 					Log.d(logTag, "perform successful=$it")
 				}
 		is LongClickEvent -> UiHierarchy.findAndPerform(env, idMatch(idHash)) { nodeInfo ->				// do this for API Level above 19 (exclusive)
 			nodeInfo.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK)}.also {
-			if(it) { delay(delay) } // wait for display update
+			if(it) {
+				delay(delay)
+				env.waitForWindowUpdate()
+			} // wait for display update
 			Log.d(logTag, "perform successful=$it")
 		}
 		is LongClick -> {
@@ -111,7 +116,10 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 //			env.device.click(x, y, interactiveTimeout).apply {
 //				delay(delay)
 //			}
-			env.device.swipe(x,y,x,y,200)
+			env.device.swipe(x,y,x,y,100).also {
+				env.waitForWindowUpdate()
+			}
+
 //			env.device.longClick(x, y, interactiveTimeout).apply {
 //				delay(delay)
 //			}
@@ -121,6 +129,7 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 				ActionType.PressBack -> env.device.pressBack()
 				ActionType.PressHome -> env.device.pressHome()
 				ActionType.PressMenu -> env.device.pressMenu()
+				ActionType.PressEnter -> env.device.pressEnter()
 				ActionType.EnableWifi, ActionType.EnableData -> {
 					val wfm = env.context.getSystemService(Context.WIFI_SERVICE) as WifiManager
 					wfm.setWifiEnabled(true).also {
@@ -154,14 +163,19 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 					env.device.minimizeMaximize()
 					true
 				}
-				ActionType.FetchGUI -> fetchDeviceData(env = env, afterAction = false)
-				ActionType.Terminate -> false /* should never be transferred to the device */
-				ActionType.PressEnter -> env.device.pressEnter()
-				ActionType.CloseKeyboard -> 	if (env.isKeyboardOpen()) //(UiHierarchy.any(env.device) { node, _ -> env.keyboardPkgs.contains(node.packageName) })
+				ActionType.CloseKeyboard -> if (env.isKeyboardOpen()) //(UiHierarchy.any(env.device) { node, _ -> env.keyboardPkgs.contains(node.packageName) })
 					env.device.pressBack()
 				else true
+				ActionType.FetchGUI -> fetchDeviceData(env = env, afterAction = false)
+				ActionType.Terminate -> false /* should never be transferred to the device */
+
 				else -> true
-			}//.also { if (it is Boolean && it) { delay(idleTimeout) } }// wait for display update (if no Fetch action)
+			}.also {
+				if (it is Boolean && it) {
+					env.waitForWindowUpdate()
+				}
+			}
+		//.also { if (it is Boolean && it) { delay(idleTimeout) } }// wait for display update (if no Fetch action)
 		is TextInsert ->
 			UiHierarchy.findAndPerform(env, idMatch(idHash)) { nodeInfo ->
 				if(nodeInfo.isFocusable){
@@ -185,9 +199,11 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 						env.device.pressEnter()
 					}  // when doing multiple action sending enter may trigger a continue button but not all elements are yet filled
 
-					delay(delay)
+					env.waitForWindowUpdate()
 				} }
-		is RotateUI -> env.device.rotate(rotation, env.automation)
+		is RotateUI -> env.device.rotate(rotation, env.automation).also {
+			env.waitForWindowUpdate()
+		}
 		is LaunchApp -> {
 
 			//reset wifi
@@ -220,7 +236,9 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 			true
 		}
 		is Swipe -> env.device.twoPointAction(start,end){
-			x0, y0, x1, y1 ->  env.device.swipe(x0, y0, x1, y1, stepSize)
+			x0, y0, x1, y1 ->  env.device.swipe(x0, y0, x1, y1, stepSize).also {
+				env.waitForWindowUpdate()
+			}
 		}
 		is CallIntent -> env.device.sendIntent(action, category, uriString,activityName, packageName,env)
 		is TwoPointerGesture ->	TODO("this requires a call on UiObject, which we currently do not match to our ui-extraction")
@@ -263,24 +281,25 @@ suspend fun ExplorationAction.execute(env: UiAutomationEnvironment): Any {
 //REMARK keep the order of first wait for windowUpdate, then wait for idle, then extract windows to minimize synchronization issues with opening/closing keyboard windows
 private suspend fun waitForSync(env: UiAutomationEnvironment, afterAction: Boolean) {
 	try {
-		env.lastWindows.firstOrNull { it.isApp() && !it.isKeyboard && !it.isLauncher }?.let {
-			env.device.waitForWindowUpdate(it.w.pkgName, env.interactiveTimeout) //wait sync on focused window
-		}
-
+/*		if (afterAction) {
+			env.lastWindows.firstOrNull { it.isApp() && !it.isKeyboard && !it.isLauncher }?.let {
+				env.device.waitForWindowUpdate(it.w.pkgName, env.interactiveTimeout) //wait sync on focused window
+			}
+		}*/
 		debugT("wait for IDLE avg = ${time / max(1, cnt)} ms", {
-			env.automation.waitForIdle(100, env.idleTimeout)
+			env.automation.waitForIdle(50, env.idleTimeout)
 		//env.device.waitForIdle(env.idleTimeout) // this has a minimal delay of 500ms between events until the device is considered idle
 		}, inMillis = true,
 				timer = {
-					Log.d(logTag, "time=${it / 1000000}")
-					time += it / 1000000
+					Log.d(logTag, "time=${it} mms")
+					time += it
 					cnt += 1
 				}) // this sometimes really sucks in performance but we do not yet have any reliable alternative
-		/*debugOut("check if we have a webView", debugFetch)
+		debugOut("check if we have a webView", debugFetch)
 		if (afterAction && UiHierarchy.any(env, cond = isWebView)) { // waitForIdle is insufficient for WebView's therefore we need to handle the stabilize separately
 			debugOut("WebView detected wait for interactive element with different package name", debugFetch)
 			UiHierarchy.waitFor(env, interactiveTimeout, actableAppElem)
-		}*/
+		}
 	} catch(e: java.util.concurrent.TimeoutException) {
 		Log.e(logTag, "No idle state with idle timeout: 100ms within global timeout: ${env.idleTimeout}ms", e)
 	}
@@ -290,7 +309,7 @@ private suspend fun waitForSync(env: UiAutomationEnvironment, afterAction: Boole
 /** compressing an image no matter the quality, takes long time therefore the option of storing these asynchronous
  * and transferring them later is available via configuration
  */
-private fun getOrStoreImgPixels(bm: Bitmap?, env: UiAutomationEnvironment, actionId: Int = lastId): ByteArray = debugT("wait for screen avg = ${wt / max(1, wc)}",{
+private fun getOrStoreImgPixels(bm: Bitmap?, env: UiAutomationEnvironment, actionId: Int = lastId): ByteArray = debugT("wait for screen avg = ${wt / max(1, wc)} milliseconds",{
 	when{ // if we couldn't capture screenshots
 		bm == null ->{
 			Log.w(logTag,"create empty image")
@@ -310,13 +329,13 @@ private fun getOrStoreImgPixels(bm: Bitmap?, env: UiAutomationEnvironment, actio
 			bm.recycle()
 		}
 	}
-}, inMillis = true, timer = { wt += it / 1000000.0; wc += 1 })
+}, inMillis = true, timer = { wt += it ; wc += 1 })
 
 private var time: Long = 0
 private var cnt = 0
 private var wt = 0.0
 private var wc = 0
-private const val debugFetch = true
+private const val debugFetch = false
 private val isInteractive = { w: UiElementPropertiesI -> w.clickable || w.longClickable || w.checked!=null || w.isInputField}
 suspend fun fetchDeviceData(env: UiAutomationEnvironment, afterAction: Boolean = false): DeviceResponse = coroutineScope{
 	debugOut("start fetch execution",debugFetch)
@@ -330,24 +349,31 @@ suspend fun fetchDeviceData(env: UiAutomationEnvironment, afterAction: Boolean =
 
 	debugOut("start element extraction",debugFetch)
 	// we want the ui fetch first as it is fast but will likely solve synchronization issues
-	val uiHierarchy = UiHierarchy.fetch(windows,img).let{
-		if(it == null ||  it.none (isInteractive) ) {
-			Log.w(logTag, "first ui extraction failed or no interactive elements were found \n $it, \n ---> start a second try")
-			windows = env.getDisplayedWindows()
-			img = env.captureScreen()
-			UiHierarchy.fetch( windows, img ).also{ secondRes ->
-				Log.d(logTag, "second try resulted in ${secondRes?.size} elements")
-			}  //retry once for the case that AccessibilityNode tree was not yet stable
-		} else it
-	} ?: emptyList<UiElementPropertiesI>()	.also {
-		isSuccessful = false
-		Log.e(logTag, "could not parse current UI screen ( $windows )")
-		throw java.lang.RuntimeException("UI extraction failed for windows: $windows")
-	}
+	var uiHierarchy: List<UiElementPropertiesI>? = null
+	var fetchTime: Long=0
+	debugT("Fetch UI", {
+		uiHierarchy = UiHierarchy.fetch(windows,img).let{
+			if(it == null ||  it.none (isInteractive) ) {
+				Log.w(logTag, "first ui extraction failed or no interactive elements were found \n $it, \n ---> start a second try")
+				windows = env.getDisplayedWindows()
+				img = env.captureScreen()
+				UiHierarchy.fetch( windows, img ).also{ secondRes ->
+					Log.d(logTag, "second try resulted in ${secondRes?.size} elements")
+				}  //retry once for the case that AccessibilityNode tree was not yet stable
+			} else it
+		} ?: emptyList<UiElementPropertiesI>()	.also {
+			isSuccessful = false
+			Log.e(logTag, "could not parse current UI screen ( $windows )")
+			throw java.lang.RuntimeException("UI extraction failed for windows: $windows")
+		}
+	},inMillis = true,timer = {
+		fetchTime = it
+	})
+
 //	Log.d(logTag, "uiHierarchy = $uiHierarchy")
-	uiHierarchy.also {
+/*	uiHierarchy.also {
 		debugOut("INTERACTIVE Element in UI = ${it.any (isInteractive)}")
-	}
+	}*/
 
 //			val xmlDump = UiHierarchy.getXml(device)
 	val focusedWindow = windows.filter { it.isExtracted() && !it.isKeyboard }.let { appWindows ->
@@ -365,7 +391,7 @@ suspend fun fetchDeviceData(env: UiAutomationEnvironment, afterAction: Boolean =
 			", because (currently) we would have to traverse the tree a second time"
 	if(debugEnabled) xml = UiHierarchy.getXml(env)
 
-	env.lastResponse = DeviceResponse.create( isSuccessful = isSuccessful, uiHierarchy = uiHierarchy,
+	env.lastResponse = DeviceResponse.create( isSuccessful = isSuccessful, uiHierarchy = uiHierarchy!!,
 		uiDump = xml,
 		launchedActivity = env.launchedMainActivity,
 		capturedScreen = img != null,
@@ -407,15 +433,15 @@ private suspend fun UiDevice.minimizeMaximize(){
 
 	pressRecentApps()
 	// Cannot use wait for changes because it crashes UIAutomator
-	delay(100) // avoid idle 0 which get the wait stuck for multiple seconds
-	measureTimeMillis { waitForIdle(idleTimeout) }.let { Log.d(logTag, "waited $it millis for IDLE") }
+	delay(200) // avoid idle 0 which get the wait stuck for multiple seconds
+//	measureTimeMillis { waitForIdle(idleTimeout) }.let { Log.d(logTag, "waited $it millis for IDLE") }
 
 	for (i in (0 until 9)) {
 		pressRecentApps()
 
 		// Cannot use wait for changes because it waits some interact-able element
-		delay(100) // avoid idle 0 which get the wait stuck for multiple seconds
-		measureTimeMillis { waitForIdle(idleTimeout) }.let { Log.d(logTag, "waited $it millis for IDLE") }
+		delay(200) // avoid idle 0 which get the wait stuck for multiple seconds
+//		measureTimeMillis { waitForIdle(idleTimeout) }.let { Log.d(logTag, "waited $it millis for IDLE") }
 
 		Log.d(logTag, "Current package name $currentPackageName")
 		if (currentPackageName == currentPackage)

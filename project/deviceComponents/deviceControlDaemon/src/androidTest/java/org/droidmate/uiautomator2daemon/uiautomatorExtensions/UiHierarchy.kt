@@ -48,7 +48,7 @@ object UiHierarchy : UiParser() {
 					.forEach{ w: DisplayedWindow ->
 			//windows.forEach {  w: DisplayedWindow ->
 				//Try considering Launcher elements
-				if (w.isExtracted() || !w.isExtracted()) {  // for now we are not interested in the Launcher elements
+			if (w.isExtracted() /*|| !w.isExtracted()*/) {  // for now we are not interested in the Launcher elements
 					w.area = LinkedList<Rect>().apply { w.initialArea.forEach { add(it) } }
 					if(w.rootNode == null) Log.w(LOGTAG,"ERROR root should not be null (window=$w)")
 					check(w.rootNode != null) {"if extraction is enabled we have to have a rootNode"}
@@ -170,7 +170,7 @@ object UiHierarchy : UiParser() {
 	 * @return if the condition was fulfilled within timeout
 	 * */
 	@JvmOverloads
-	suspend fun waitFor(env: UiAutomationEnvironment, timeout: Long = 10000, cond: SelectorCondition): Boolean{
+	suspend fun waitFor(env: UiAutomationEnvironment, timeout: Long = 1000, cond: SelectorCondition): Boolean{
 		return waitFor(env,timeout,10,cond)
 	}
 	/** @param pollTime time intervall (in ms) to recheck the condition [cond] */
@@ -222,7 +222,7 @@ object UiHierarchy : UiParser() {
 	@JvmStatic private var t = 0.0
 	@JvmStatic private var c = 0
 	@JvmStatic
-	fun compressScreenshot(screenshot: Bitmap): ByteArray = debugT("compress image avg = ${t / max(1, c)}", {
+	fun compressScreenshot(screenshot: Bitmap): ByteArray = debugT("compress image avg = ${t / max(1, c)} ms", {
 		var bytes = ByteArray(0)
 		val stream = ByteArrayOutputStream()
 		try {
@@ -237,7 +237,7 @@ object UiHierarchy : UiParser() {
 		}
 
 		bytes
-	}, inMillis = true, timer = { t += it / 1000000.0; c += 1 })
+	}, inMillis = true, timer = { t += it; c += 1 })
 
 
 	private val windowFilter: (window:DisplayedWindow, value: Int) -> Int = { w,v -> if( w.isExtracted() ) v else 0 }

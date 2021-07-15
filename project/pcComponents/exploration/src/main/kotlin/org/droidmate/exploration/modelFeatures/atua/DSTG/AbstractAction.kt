@@ -167,7 +167,7 @@ enum class AbstractActionType(val actionName: String) {
     ACTION_QUEUE("ActionQueue"),
     PRESS_HOME("PressHome"),
     RANDOM_KEYBOARD("RandomKeyboard"),
-    UNDERIVED("Underived"),
+    UNKNOWN("Underived"),
     FAKE_ACTION("FakeAction"),
     TERMINATE("Terminate"),
     WAIT("FetchGUI")

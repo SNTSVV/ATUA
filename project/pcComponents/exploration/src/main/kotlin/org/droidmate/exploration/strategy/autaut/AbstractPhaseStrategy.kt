@@ -124,36 +124,23 @@ abstract class AbstractPhaseStrategy(
                     currentAbstractState = currentAbstractState,
                     currentState = currentState,
                     pathType = pathType,
-                    shortest = shortest,
-                    pathCountLimitation = 5)
+                    shortest = shortest)
         else {
             getPathToStates(
                     transitionPaths = transitionPaths,
                     stateByScore = stateByActionCount,
                     currentAbstractState = currentAbstractState,
                     currentState = currentState,
-                    pathType = PathFindingHelper.PathType.INCLUDE_INFERED,
-                    shortest = shortest,
-                    pathCountLimitation = 5)
+                    pathType = PathFindingHelper.PathType.NORMAL,
+                    shortest = shortest)
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
                         transitionPaths = transitionPaths,
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        pathType = PathFindingHelper.PathType.FULLTRACE,
-                        shortest = shortest,
-                        pathCountLimitation = 5)
-            }
-            if (transitionPaths.isEmpty()) {
-                getPathToStates(
-                        transitionPaths = transitionPaths,
-                        stateByScore = stateByActionCount,
-                        currentAbstractState = currentAbstractState,
-                        currentState = currentState,
-                        pathType = PathFindingHelper.PathType.NORMAL,
-                        shortest = shortest,
-                        pathCountLimitation = 5)
+                        pathType = PathFindingHelper.PathType.WTG,
+                        shortest = shortest)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -162,8 +149,7 @@ abstract class AbstractPhaseStrategy(
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
                         pathType = PathFindingHelper.PathType.PARTIAL_TRACE,
-                        shortest = shortest,
-                        pathCountLimitation = 5)
+                        shortest = shortest)
             }
             if (transitionPaths.isEmpty()) {
                 getPathToStates(
@@ -171,9 +157,8 @@ abstract class AbstractPhaseStrategy(
                         stateByScore = stateByActionCount,
                         currentAbstractState = currentAbstractState,
                         currentState = currentState,
-                        pathType = PathFindingHelper.PathType.WTG,
-                        shortest = shortest,
-                        pathCountLimitation = 5)
+                        pathType = PathFindingHelper.PathType.FULLTRACE,
+                        shortest = shortest)
             }
         }
     }
@@ -188,7 +173,7 @@ abstract class AbstractPhaseStrategy(
     fun getPathToStates(transitionPaths: ArrayList<TransitionPath>, stateByScore: Map<AbstractState, Double>
                         , currentAbstractState: AbstractState, currentState: State<*>
                         , shortest: Boolean
-                        , pathCountLimitation: Int
+                        , pathCountLimitation: Int = 3
                         , pathType: PathFindingHelper.PathType) {
         val candidateStates = HashMap(stateByScore)
         while (candidateStates.isNotEmpty()) {

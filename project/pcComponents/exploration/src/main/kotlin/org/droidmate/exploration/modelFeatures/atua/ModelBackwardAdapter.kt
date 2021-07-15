@@ -349,7 +349,7 @@ class ModelBackwardAdapter {
             }
         }
         unmatchedAVMs1.forEach { avm1->
-            val matches = unmatchedAVMs2.filter { avm2-> avm1.isDerivedFrom(avm2) }
+            val matches = unmatchedAVMs2.filter { avm2-> isEquivalentAttributeValuationMaps(avm1,avm2) }
             if (matches.isNotEmpty()) {
                 matchedAVMs1.putIfAbsent(avm1, ArrayList())
                 val matchedList = matchedAVMs1.get(avm1)!!
@@ -365,7 +365,7 @@ class ModelBackwardAdapter {
         unmatchedAVMs1.removeIf { matchedAVMs1.containsKey(it) }
         unmatchedAVMs2.removeIf { matchedAVMs2.containsKey(it) }
         unmatchedAVMs2.forEach { avm2->
-            val matches = unmatchedAVMs1.filter { avm1-> avm2.isDerivedFrom(avm1) }
+            val matches = unmatchedAVMs1.filter { avm1-> isEquivalentAttributeValuationMaps(avm2, avm1) }
             if (matches.isNotEmpty()) {
                 matchedAVMs2.putIfAbsent(avm2, ArrayList())
                 val matchedList = matchedAVMs2.get(avm2)!!
@@ -384,8 +384,10 @@ class ModelBackwardAdapter {
             return true
         } else {
 
-            val unmatchedWidgets1 =  unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
-            val unmatchedWidgets2 = unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) }
+            val unmatchedWidgets1 =  ArrayList(unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)})
+            val unmatchedWidgets2 = ArrayList(unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) })
+            unmatchedWidgets1.removeIf { it == null }
+            unmatchedWidgets2.removeIf { it == null }
             if (!strict) {
                 if (unmatchedWidgets1.intersect(unmatchedWidgets2).isEmpty())
                     return true
@@ -410,8 +412,10 @@ class ModelBackwardAdapter {
             }
             unmatchedAVMs1.removeIf { avm ->  ! observedAbstractState.abstractTransitions.any { it.abstractAction.attributeValuationMap == avm  }}
             unmatchedAVMs2.removeIf {avm ->  !expectedAbstractState.abstractTransitions.any { it.abstractAction.attributeValuationMap == avm } }
-            val unmatchedWidgets1_2 =  unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)}
-            val unmatchedWidgets2_2 = unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) }
+            val unmatchedWidgets1_2 =  ArrayList(unmatchedAVMs1.map {  observedAbstractState.EWTGWidgetMapping.get(it)})
+            val unmatchedWidgets2_2 = ArrayList(unmatchedAVMs2.map { expectedAbstractState.EWTGWidgetMapping.get(it) })
+            unmatchedWidgets1_2.removeIf { it == null }
+            unmatchedWidgets2_2.removeIf { it == null }
             val condition1_2 = if (unmatchedWidgets1_2.isNotEmpty()) unmatchedWidgets1_2.all {
                 updateWindowCreatedRuntimeWidgets.contains(it)
                         && !baseWindowCreatedRuntimeWidgets.contains(it)} else true
@@ -423,6 +427,18 @@ class ModelBackwardAdapter {
             }
             return false
         }
+    }
+
+    private fun isEquivalentAttributeValuationMaps(avm1: AttributeValuationMap, avm2: AttributeValuationMap): Boolean {
+        // avm1.localAttributes should have the same values of all localAttributes of avm2
+        avm2.localAttributes.forEach {
+            if (!avm1.localAttributes.containsKey(it.key))
+                return false
+            if (avm1.localAttributes[it.key] != it.value)
+                return  false
+        }
+
+        return true
     }
 
     fun outputBackwardEquivalentResult(){

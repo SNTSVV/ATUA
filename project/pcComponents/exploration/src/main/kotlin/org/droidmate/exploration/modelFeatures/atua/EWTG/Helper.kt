@@ -402,27 +402,27 @@ class Helper {
             }
             if (matchedEWTGWidgets.isEmpty() && guiWidget.resourceId.isBlank()&& !guiWidget.isInputField && guiWidget.text.isNotBlank()) {
                 val candidates = window.widgets.filter {it.structure.isNotBlank()}.filter { w ->
-                    w.resourceIdName.isBlank() &&
-                    w.structure == guiWidget.deriveStructure() &&
-                    w.possibleTexts.contains(guiWidget.text)
+                    w.resourceIdName.isBlank()
+                            && w.structure == guiWidget.deriveStructure()
+                            && w.possibleTexts.contains(guiWidget.text)
                 }
                 matchedEWTGWidgets.addAll(candidates)
             }
             if (matchedEWTGWidgets.isEmpty() && guiWidget.resourceId.isBlank()) {
                 val candidates = window.widgets.filter { it.structure.isNotBlank() }.filter { w ->
-                    w.resourceIdName.isBlank() &&
-                    guiWidget.deriveStructure() == w.structure
+                    w.resourceIdName.isBlank()
+                            && guiWidget.deriveStructure() == w.structure
                 }
                 matchedEWTGWidgets.addAll(candidates)
             }
             if (matchedEWTGWidgets.isEmpty() && guiWidget.resourceId.isBlank()) {
                 val candidates = window.widgets.filter { it.structure.isBlank() }.filter { w ->
-                    w.resourceIdName.isBlank() &&
-                            w.className == guiWidget.className
+                    w.resourceIdName.isBlank()
+                            && w.className == guiWidget.className
                 }
                 matchedEWTGWidgets.addAll(candidates)
             }
-            if (matchedEWTGWidgets.size>1 && updateModel) {
+            if (matchedEWTGWidgets.size>1) {
                 val matchingScores = HashMap<EWTGWidget,Double>()
 
                 matchedEWTGWidgets.forEach {
@@ -459,16 +459,7 @@ class Helper {
                             structure = guiWidget.deriveStructure()
                     )
                     newWidget.createdAtRuntime = true
-                    val ancestorWidgetMatchedEWTGWidget: Widget? = findAncestorWidgetHavingMatchedEWTGWidget(guiWidget.parentId,guiState,guiWidgetId_ewtgWidgets)
-                    if (ancestorWidgetMatchedEWTGWidget != null) {
-                        val matchedAncestorEWTGWidget = guiWidgetId_ewtgWidgets.get(ancestorWidgetMatchedEWTGWidget.id)
-                        newWidget.parent = matchedAncestorEWTGWidget
-                    } else {
-                        val layoutRoots = window.widgets.filter { it.parent == null && it != newWidget}
-                        layoutRoots.forEach {
-                            it.parent = newWidget
-                        }
-                    }
+                    updateWindowHierarchy(guiWidget, guiState, guiWidgetId_ewtgWidgets, newWidget, window)
                     if (guiWidget.text.isNotBlank())
                         newWidget.possibleTexts.add(guiWidget.text)
                     if (guiWidget.contentDesc.isNotBlank())
@@ -480,16 +471,7 @@ class Helper {
                     val matchedWidget = matchedEWTGWidgets.first()
                     if (matchedWidget.structure.isBlank()) {
                         matchedWidget.structure = guiWidget.deriveStructure()
-                        val ancestorWidgetMatchedEWTGWidget: Widget? = findAncestorWidgetHavingMatchedEWTGWidget(guiWidget.parentId, guiState, guiWidgetId_ewtgWidgets)
-                        if (ancestorWidgetMatchedEWTGWidget != null) {
-                            val matchedAncestorEWTGWidget = guiWidgetId_ewtgWidgets.get(ancestorWidgetMatchedEWTGWidget.id)
-                            matchedWidget.parent = matchedAncestorEWTGWidget
-                        } else {
-                            val layoutRoots = window.widgets.filter { it.parent == null && it != matchedWidget }
-                            layoutRoots.forEach {
-                                it.parent = matchedWidget
-                            }
-                        }
+                        updateWindowHierarchy(guiWidget, guiState, guiWidgetId_ewtgWidgets, matchedWidget, window)
                     }
                     if (guiWidget.text.isNotBlank())
                         matchedWidget.possibleTexts.add(guiWidget.text)
@@ -499,6 +481,19 @@ class Helper {
                 WindowManager.instance.guiWidgetEWTGWidgetMappingByWindow.get(window)!!.put(guiWidget,matchedEWTGWidgets.first())
             }
             return matchedEWTGWidgets.firstOrNull()
+        }
+
+        private fun updateWindowHierarchy(guiWidget: Widget, guiState: State<*>, guiWidgetId_ewtgWidgets: HashMap<ConcreteId, EWTGWidget>, newWidget: EWTGWidget, window: Window) {
+            val ancestorWidgetMatchedEWTGWidget: Widget? = findAncestorWidgetHavingMatchedEWTGWidget(guiWidget.parentId, guiState, guiWidgetId_ewtgWidgets)
+            if (ancestorWidgetMatchedEWTGWidget != null) {
+                val matchedAncestorEWTGWidget = guiWidgetId_ewtgWidgets.get(ancestorWidgetMatchedEWTGWidget.id)
+                newWidget.parent = matchedAncestorEWTGWidget
+            } else {
+                val layoutRoots = window.widgets.filter { it.parent == null && it != newWidget }
+                layoutRoots.forEach {
+                    it.parent = newWidget
+                }
+            }
         }
 
         fun Widget.deriveStructure() = xpath.replace("\\[\\d*]".toRegex(),"")

@@ -30,7 +30,7 @@ class PathFindingHelper {
         fun findPathToTargetComponent(autautMF: ATUAMF, currentState: State<*>, root: AbstractState, finalTarget: AbstractState
                                       , allPaths: ArrayList<TransitionPath>
                                       , shortest: Boolean = true
-                                      , pathCountLimitation: Int = 1
+                                      , pathCountLimitation: Int = 3
                                       , pathType: PathType) {
 /*            val existingPaths = allAvailableTransitionPaths.get(Pair(root,finalTarget))
             if (existingPaths!= null && existingPaths.isNotEmpty()) {
@@ -95,10 +95,10 @@ class PathFindingHelper {
                         includeWTG =  false,
                         stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
-                        pathCountLimitation = 1,
-                        includeResetAction = true,
+                        pathCountLimitation = pathCountLimitation,
+                        includeResetAction = false,
                         includeImplicitInteraction = true,
-                        includeLaunchAction = true,
+                        includeLaunchAction = false,
                         followTrace = false,
                         pathType = pathType,
                         targetTraces = targetTraces,
@@ -117,8 +117,8 @@ class PathFindingHelper {
                         includeWTG =  true,
                         stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
-                        pathCountLimitation = 1,
-                        includeResetAction = true,
+                        pathCountLimitation = pathCountLimitation,
+                        includeResetAction = false,
                         includeImplicitInteraction = false,
                         includeLaunchAction = true,
                         followTrace = false,
@@ -139,7 +139,7 @@ class PathFindingHelper {
                         includeWTG =  false,
                         stopWhenHavingUnexercisedAction = false,
                         shortest = shortest,
-                        pathCountLimitation = 1,
+                        pathCountLimitation = pathCountLimitation,
                         includeResetAction = false,
                         includeImplicitInteraction = false,
                         includeLaunchAction = true,
@@ -842,6 +842,7 @@ class PathFindingHelper {
             }
             if (pathTraverser.finalStateAchieved()) {
                 if (pathTraverser.getCurrentTransition()!!.abstractAction.isLaunchOrReset()) {
+                    // This incorrect transition will be automatically removed
                     return
                 }
                 // No reset action
@@ -1006,11 +1007,11 @@ class PathFindingHelper {
                     break
                 }
             }
-            if (samePrefix && pathTraverser.finalStateAchieved()) {
+           /* if (samePrefix && pathTraverser.finalStateAchieved()) {
                 if (type == DisablePathType.UNAVAILABLE_ACTION) {
                     samePrefix = false
                 }
-            }
+            }*/
             return samePrefix
         }
     }

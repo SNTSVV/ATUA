@@ -22,7 +22,9 @@ class WindowManager {
     val intentFilter = HashMap<Window, ArrayList<IntentFilter>>()
     val dialogClasses = HashMap<DialogType, ArrayList<String>>()
     val allMeaningWindows
-        get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp }
+        get()= updatedModelWindows.filter { it !is FakeWindow && it !is Launcher && it !is OutOfApp &&
+                !(it is Dialog && (it.isGrantedRuntimeDialog
+                        || it.ownerActivitys.any{it is OutOfApp}))}
 
     val guiWidgetEWTGWidgetMappingByWindow = HashMap<Window, HashMap<Widget,EWTGWidget>>()
     fun dump(config: ModelConfig, atuaMF: ATUAMF) {

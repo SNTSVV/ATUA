@@ -10,28 +10,45 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5c639742-9a77-4c75-ae1f-b87fa8f0eb0c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractionFunction2.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/DecisionNode2.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../defaultConfig-RT.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../../../defaultConfig-RT.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/UiAutomator2DaemonDriver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/UiAutomator2DaemonDriver.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiAutomationEnvironment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiAutomationEnvironment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiHierarchy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiHierarchy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon-test.apk" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/core/src/main/resources/deviceControlDaemon-test.apk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ATUAMF.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ATUAMF.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/AppModelLoader.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/AppModelLoader.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/AutAutModelOutput.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/AutAutModelOutput.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractAction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractAction.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractState.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractStateManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractStateManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractTransition.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AbstractTransition.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributeValuationMap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/AttributeValuationMap.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractionFunction2.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/AbstractionFunction2.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/StateReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/StateReducer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/WidgetReducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/DSTG/reducer/WidgetReducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Helper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/Helper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/WindowManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/WindowManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Dialog.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/EWTG/window/Dialog.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ModelBackwardAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ModelBackwardAdapter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ewtgdiff/EWTGDiff.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/ewtgdiff/EWTGDiff.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/PathFindingHelper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/PathFindingHelper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/StaticAnalysisJSONParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/StaticAnalysisJSONParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/TestingPathIdentification.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/helper/TestingPathIdentification.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/informationRetrieval/InformationRetrieval.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/atua/informationRetrieval/InformationRetrieval.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/ATUATestingStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/ATUATestingStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/AbstractPhaseStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/AbstractPhaseStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseOneStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseOneStrategy.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseThreeStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseThreeStrategy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseTwoStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/PhaseTwoStrategy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/AbstractStrategyTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/AbstractStrategyTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/CallingIntentTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/CallingIntentTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ClickNavigationUpTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ClickNavigationUpTask.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ExerciseTargetComponentTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/ExerciseTargetComponentTask.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToAnotherWindow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToAnotherWindow.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToTargetWindowTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/GoToTargetWindowTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/OpenNavigationBarTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/OpenNavigationBarTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/PrepareContextTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/PrepareContextTask.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/RandomExplorationTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/strategy/autaut/task/RandomExplorationTask.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -39,7 +56,7 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="avd23_gapp" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="avd28_2" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -326,31 +343,31 @@
     </state>
     <state width="1059" height="336" key="GridCell.Tab.1.right/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861888" />
     <state width="1611" height="336" key="GridCell.Tab.1.right/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255328" />
-    <state x="433" y="233" width="785" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog" timestamp="1624892466840">
-      <screen x="30" y="23" width="1650" height="1027" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog" timestamp="1626211031772">
+      <screen x="28" y="23" width="1652" height="1027" />
     </state>
     <state x="224" y="138" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/0.23.1440.877/-2531.23.2531.1417@0.23.1440.877" timestamp="1620397920117" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/1680.23.2560.1417/28.23.1652.1027@1680.23.2560.1417" timestamp="1623144368164" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/1680.23.2560.1417/28.23.1652.1027@28.23.1652.1027" timestamp="1623139808406" />
     <state x="283" y="158" width="902" height="827" key="com.android.tools.idea.avdmanager.AvdListDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1619687189544" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1623172364678" />
-    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/28.23.1652.1027@28.23.1652.1027" timestamp="1620854841641" />
+    <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/28.23.1652.1027@28.23.1652.1027" timestamp="1626211031772" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620720462732" />
     <state x="433" y="233" width="785" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/30.23.1650.1027@30.23.1650.1027" timestamp="1624892466840" />
-    <state x="453" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1624531597822">
-      <screen x="30" y="23" width="1650" height="1027" />
+    <state x="451" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1626018679913">
+      <screen x="27" y="23" width="1653" height="1027" />
     </state>
     <state x="369" y="294" key="com.intellij.ide.util.TipDialog/0.23.1440.877/-2531.23.2531.1417@0.23.1440.877" timestamp="1620397902904" />
-    <state x="451" y="340" key="com.intellij.ide.util.TipDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1622583584119" />
+    <state x="451" y="340" key="com.intellij.ide.util.TipDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1626018679913" />
     <state x="452" y="340" key="com.intellij.ide.util.TipDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620656490760" />
     <state x="453" y="340" key="com.intellij.ide.util.TipDialog/30.23.1650.1027@30.23.1650.1027" timestamp="1624531597822" />
-    <state x="627" y="292" width="765" height="488" key="find.popup" timestamp="1622762592636">
-      <screen x="26" y="23" width="1654" height="1027" />
+    <state x="629" y="292" width="765" height="488" key="find.popup" timestamp="1626212701319">
+      <screen x="28" y="23" width="1652" height="1027" />
     </state>
     <state x="627" y="292" width="766" height="488" key="find.popup/25.23.1655.1027@25.23.1655.1027" timestamp="1619712475753" />
     <state x="627" y="292" width="765" height="488" key="find.popup/26.23.1654.1027@26.23.1654.1027" timestamp="1622762592636" />
-    <state x="628" y="292" width="765" height="488" key="find.popup/27.23.1653.1027@27.23.1653.1027" timestamp="1619702083607" />
-    <state x="628" y="292" width="714" height="488" key="find.popup/28.23.1652.1027@28.23.1652.1027" timestamp="1617221336637" />
+    <state x="628" y="292" width="765" height="488" key="find.popup/27.23.1653.1027@27.23.1653.1027" timestamp="1626154523076" />
+    <state x="629" y="292" width="765" height="488" key="find.popup/28.23.1652.1027@28.23.1652.1027" timestamp="1626212701319" />
     <state x="520" y="250" width="670" height="676" key="search.everywhere.popup" timestamp="1624531605297">
       <screen x="30" y="23" width="1650" height="1027" />
     </state>
@@ -363,7 +380,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/exploration/ActionExecution.kt</url>
-          <line>474</line>
+          <line>500</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
@@ -373,7 +390,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/androidTest/java/org/droidmate/uiautomator2daemon/uiautomatorExtensions/UiAutomationEnvironment.kt</url>
-          <line>236</line>
+          <line>241</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>

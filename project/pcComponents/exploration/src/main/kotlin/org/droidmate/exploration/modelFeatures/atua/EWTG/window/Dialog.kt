@@ -6,8 +6,10 @@ class Dialog(classType: String,
              nodeId: String= getNodeId(),
              var dialogType: DialogType,
              val allocMethod: String,// can only acquired by ewtg
+             val isGrantedRuntimeDialog: Boolean,
              runtimeCreated: Boolean,
              isBaseModel:Boolean): Window(classType,nodeId,runtimeCreated,isBaseModel){
+
     override fun copyToRunningModel(): Window {
         val newDialog = Dialog.getOrCreateNode(
                 nodeId =  Dialog.getNodeId(),
@@ -37,7 +39,7 @@ class Dialog(classType: String,
     companion object{
         var counter = 0
         fun getNodeId(): String = "Dialog-${counter+1}"
-        fun getOrCreateNode(nodeId: String, classType: String, allocMethod: String, runtimeCreated: Boolean, isBaseModel: Boolean): Dialog {
+        fun getOrCreateNode(nodeId: String, classType: String, allocMethod: String, runtimeCreated: Boolean ,isBaseModel: Boolean,isGrantedRuntimeDialog: Boolean = false): Dialog {
             val node = if (isBaseModel) {
                 WindowManager.instance.baseModelWindows.find { it.classType == classType
                         && it is Dialog}
@@ -57,6 +59,7 @@ class Dialog(classType: String,
                         , dialogType = dialogType
                         , allocMethod = allocMethod
                         , runtimeCreated = runtimeCreated
+                        , isGrantedRuntimeDialog = isGrantedRuntimeDialog
                         ,isBaseModel = isBaseModel)
         }
     }

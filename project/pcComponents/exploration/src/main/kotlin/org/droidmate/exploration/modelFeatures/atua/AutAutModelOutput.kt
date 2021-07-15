@@ -32,7 +32,7 @@ class AutAutModelOutput {
         private fun produceWindowTransition(config:ModelConfig, autautMF: ATUAMF) {
             val outputFile = config.baseDir.resolve("TargetInputs.txt")
             val sb = StringBuilder()
-            autautMF.allTargetInputs.forEach { event ->
+            autautMF.notFullyExercisedTargetInputs.forEach { event ->
                 sb.appendln("*")
                 sb.appendln(event.toString())
                 event.coverage.toSortedMap().forEach { tms, c ->

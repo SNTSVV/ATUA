@@ -44,7 +44,6 @@ open class AbstractState(
 ) {
     val actionCount = HashMap<AbstractAction, Int>()
     val targetActions = HashSet<AbstractAction>()
-
     val abstractStateId: String
     var hashCode: Int = 0
     var isInitalState = false
@@ -501,9 +500,9 @@ open class AbstractState(
     }
 
     fun isRequireRandomExploration():Boolean {
-        if (this.window is Dialog
+        if ((this.window is Dialog
+                        && !WindowManager.instance.updatedModelWindows.filter { it is OutOfApp }.map { it.classType }.contains(this.activity))
                 || this.isOpeningMenus
-                || this.window is OutOfApp
                 || this.window.classType.contains("ResolverActivity"))
             return true
         return false
