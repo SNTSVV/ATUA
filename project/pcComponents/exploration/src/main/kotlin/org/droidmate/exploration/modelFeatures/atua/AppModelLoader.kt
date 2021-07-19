@@ -241,11 +241,12 @@ class AppModelLoader {
             val prevWindow = WindowManager.instance.baseModelWindows.firstOrNull(){it.windowId == prevWindowId}?:WindowManager.instance.updatedModelWindows.firstOrNull(){it.windowId == prevWindowId}*/
             // val prevWindowAbstractStateId = data[6]
             // val prevWindowAbstractState = AbstractStateManager.instance.ABSTRACT_STATES.find { it.abstractStateId == prevWindowAbstractStateId }
-            val guiTransitionIds = data[10]
+            val guiTransitionIds = data[11]
             if (guiTransitionIds.isBlank()) {
                 return
             }
-            val dependentAbstractStateIds = splitCSVLineToField(data[11])
+            val guardEnabled = data[6].toBoolean()
+            val dependentAbstractStateIds = splitCSVLineToField(data[7])
             val dependentAbstractStates = ArrayList<AbstractState>()
             dependentAbstractStateIds.forEach { dependentAbstractStateId->
                 var dependentAbstractState: AbstractState? = null
@@ -279,6 +280,7 @@ class AppModelLoader {
                         abstractAction = abstractAction,
                         modelVersion = ModelVersion.BASE
                 )
+                newAbstractTransition.guardEnabled = guardEnabled
                 newAbstractTransition.dependentAbstractStates.addAll(dependentAbstractStates)
                 autAutMF.dstg.add(sourceState,destState,newAbstractTransition)
                 createWindowTransitionFromAbstractInteraction(newAbstractTransition,autAutMF)

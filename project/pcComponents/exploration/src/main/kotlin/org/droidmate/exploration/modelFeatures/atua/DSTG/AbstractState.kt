@@ -383,14 +383,45 @@ open class AbstractState(
                     .filter { !it.isUserLikeInput() }.map { w -> w.actionCount }
         }
         widgetActionCounts.forEach {
-            val actions = it.filter { it.value == 0 || (avmCardinalities.get(it.key.attributeValuationMap)==Cardinality.MANY && it.value < 2) }.map { it.key }
+            val actions = it.filterNot {
+                it.key.attributeValuationMap!!.getClassName().contains("WebView")
+                        && (
+                        (it.key.actionType == AbstractActionType.ITEM_CLICK && hasClickableSubItems(it.key.attributeValuationMap!!, currentState))
+                                || (it.key.actionType == AbstractActionType.ITEM_LONGCLICK && hasLongClickableSubItems(it.key.attributeValuationMap!!, currentState))
+                        )
+            }.filter { it.value == 0 || (avmCardinalities.get(it.key.attributeValuationMap)==Cardinality.MANY && it.value < 2) }.map { it.key }
             unexcerisedActions.addAll(actions)
-
         }
 
         val itemActions = attributeValuationMaps.map { w -> w.actionCount.filter { it.key.isItemAction() } }.map { it.keys }.flatten()
 
         return unexcerisedActions.toList()
+    }
+
+    private fun hasLongClickableSubItems(attributeValuationMap: AttributeValuationMap, currentState: State<*>?): Boolean {
+        if (currentState == null)
+            return false
+        val guiWidgets = attributeValuationMap.getGUIWidgets(currentState)
+        if (guiWidgets.isNotEmpty()) {
+            guiWidgets.forEach {
+                if (Helper.haveLongClickableChild(currentState.visibleTargets, it))
+                    return true
+            }
+        }
+        return false
+    }
+
+    private fun hasClickableSubItems(attributeValuationMap: AttributeValuationMap, currentState: State<*>?): Boolean {
+        if (currentState == null)
+            return false
+        val guiWidgets = attributeValuationMap.getGUIWidgets(currentState)
+        if (guiWidgets.isNotEmpty()) {
+            guiWidgets.forEach {
+                if (Helper.haveClickableChild(currentState.visibleTargets, it))
+                    return true
+            }
+        }
+        return false
     }
 
 

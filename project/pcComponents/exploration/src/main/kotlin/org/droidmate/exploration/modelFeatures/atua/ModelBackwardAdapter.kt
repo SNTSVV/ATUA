@@ -12,6 +12,7 @@ import org.droidmate.exploration.modelFeatures.atua.DSTG.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.AdditionSet
 import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import org.droidmate.explorationModel.interaction.State
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.util.*
@@ -37,7 +38,7 @@ class ModelBackwardAdapter {
     fun runtimeAdaptation() {
     }
 
-    fun checkingEquivalence(observedAbstractState: AbstractState, abstractTransition: AbstractTransition, prevWindowAbstractState: AbstractState?, dstg: DSTG) {
+    fun checkingEquivalence(guiState: State<*>, observedAbstractState: AbstractState, abstractTransition: AbstractTransition, prevWindowAbstractState: AbstractState?, dstg: DSTG) {
         if (!isConsideringAbstractAction(abstractTransition.abstractAction)) {
             return
         }
@@ -441,7 +442,7 @@ class ModelBackwardAdapter {
         return true
     }
 
-    fun outputBackwardEquivalentResult(){
+    fun outputBackwardEquivalentResult(actionId: Int, guiState: State<*>, expectedAbstractState: AbstractState, observedAbstractState: AbstractState){
 
     }
      fun produceReport(context: ExplorationContext<*,*,*>) {

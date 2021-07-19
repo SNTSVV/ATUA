@@ -418,7 +418,7 @@ class RandomExplorationTask constructor(
                 tryLastAction = 1
                 maximumAttempt += 1
                 randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
-            } else if (atuaMF.appPrevState!!.stateId != currentState.stateId
+            } /*else if (atuaMF.appPrevState!!.stateId != currentState.stateId
                     && atuaMF.stateVisitCount[currentState] == 1
                     && tryLastAction < MAX_TRY_LAST_ACTION
                     && currentAbstractState.getAvailableActions().contains(lastAction!!)
@@ -426,7 +426,7 @@ class RandomExplorationTask constructor(
                 tryLastAction += 1
                 maximumAttempt += 1
                 randomAction = currentAbstractState.getAvailableActions().find { it == lastAction }
-            }
+            }*/
         }
         if(randomAction==null) {
             tryLastAction = 0
@@ -435,7 +435,8 @@ class RandomExplorationTask constructor(
             val lowestPriorityActions = unexercisedActions.filter {
                 it.attributeValuationMap == null
             }
-            if (unexercisedActions.filterNot { lowestPriorityActions.contains(it) }.isNotEmpty()) {
+            val priotizeActions = unexercisedActions.filterNot { lowestPriorityActions.contains(it) }
+            if (priotizeActions.isNotEmpty()) {
                 randomAction = exerciseUnexercisedWidgetAbstractActions(unexercisedActions.filterNot { lowestPriorityActions.contains(it) }, randomAction, currentAbstractState)
                 //randomAction = unexercisedActions.random()
             } else if (unexercisedActions.isNotEmpty()) {
@@ -454,7 +455,7 @@ class RandomExplorationTask constructor(
                                 && it !is VirtualAbstractState
                                 && it.guiStates.isNotEmpty()
                                 && it.attributeValuationMaps.isNotEmpty()
-                                && it.getUnExercisedActions(null,atuaMF).filter { it.isWidgetAction() }.isNotEmpty()
+                                && it.getUnExercisedActions(null,atuaMF).filter { it.isWidgetAction() && !it.attributeValuationMap!!.getClassName().contains("WebView")}.isNotEmpty()
                     }.toHashSet()
                     if (targetStates.isNotEmpty()) {
                         goToLockedWindowTask = GoToAnotherWindow(atuaTestingStrategy = atuaStrategy, autautMF = atuaMF, delay = delay, useCoordinateClicks = useCoordinateClicks)
@@ -520,9 +521,21 @@ class RandomExplorationTask constructor(
                             ArrayList(getCandidates(candidates
                             ))
                         }
-                        val chosenWidget = lessExercisedWidgets.random()
-                        log.info("Widget: $chosenWidget")
-                        return doRandomActionOnWidget(chosenWidget, currentState)
+                        if (lessExercisedWidgets.isNotEmpty()) {
+                            val chosenWidget = lessExercisedWidgets.random()
+                            log.info("Widget: $chosenWidget")
+                            return doRandomActionOnWidget(chosenWidget, currentState)
+                        } else {
+                            if (candidates.isNotEmpty()) {
+                                val chosenWidget = candidates.random()
+                                log.info("Widget: $chosenWidget")
+                                return doRandomActionOnWidget(chosenWidget, currentState)
+                            } else {
+                                val chosenWidget = currentState.visibleTargets.random()
+                                log.info("Widget: $chosenWidget")
+                                return doRandomActionOnWidget(chosenWidget, currentState)
+                            }
+                        }
                     }
                     /*else {
                         qlearningRunning = true

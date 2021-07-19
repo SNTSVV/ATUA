@@ -521,6 +521,7 @@ class AttributeValuationMap {
 
     fun dumpAttributeValueToString(attributeType: AttributeType,value: Any?): String {
         return when (attributeType) {
+            AttributeType.xpath -> value as String
             AttributeType.resourceId -> value as String
             AttributeType.className -> value as String
             AttributeType.contentDesc -> "\""+ (value as String?)?.replace("\n","\\n")+"\""

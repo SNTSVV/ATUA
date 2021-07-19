@@ -1305,7 +1305,7 @@ class ATUAMF(private val appName: String,
                 } else {
                     if (reuseBaseModel) {
                         val prevWindowAbstractState: AbstractState? = getPrevWindowAbstractState(traceId,transitionId-1)
-                        ModelBackwardAdapter.instance.checkingEquivalence(currentAbstractState, lastExecutedTransition!!,prevWindowAbstractState ,dstg)
+                        ModelBackwardAdapter.instance.checkingEquivalence(newState,currentAbstractState, lastExecutedTransition!!,prevWindowAbstractState ,dstg)
                     }
                     if (prevAbstractState!!.belongToAUT() && currentAbstractState.isOutOfApplication && lastInteractions.size > 1) {
                         lastOpeningAnotherAppInteraction = lastInteractions.single()

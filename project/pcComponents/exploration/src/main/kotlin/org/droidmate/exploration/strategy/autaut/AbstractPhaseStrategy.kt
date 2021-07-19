@@ -173,7 +173,7 @@ abstract class AbstractPhaseStrategy(
     fun getPathToStates(transitionPaths: ArrayList<TransitionPath>, stateByScore: Map<AbstractState, Double>
                         , currentAbstractState: AbstractState, currentState: State<*>
                         , shortest: Boolean
-                        , pathCountLimitation: Int = 3
+                        , pathCountLimitation: Int = 1
                         , pathType: PathFindingHelper.PathType) {
         val candidateStates = HashMap(stateByScore)
         while (candidateStates.isNotEmpty()) {

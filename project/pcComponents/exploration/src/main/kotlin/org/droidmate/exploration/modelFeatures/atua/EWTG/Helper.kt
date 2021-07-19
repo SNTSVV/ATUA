@@ -251,7 +251,7 @@ class Helper {
             val result = ArrayList<Widget>()
             val originalVisibleWidgets = state.widgets.filter { isVisibleWidget(it) }
             //TODO try recompute VisibleAreas
-            val visibleAreasByWidget = HashMap<Widget,List<Rectangle>> ()
+/*            val visibleAreasByWidget = HashMap<Widget,List<Rectangle>> ()
             val topNodes = state.widgets.filter { !it.hasParent}
             val workingList = Stack<Widget>()
             topNodes.forEach {
@@ -296,7 +296,8 @@ class Helper {
                     }
                 }
             }
-            result.addAll(visibleAreasByWidget.keys)
+            result.addAll(visibleAreasByWidget.keys)*/
+            result.addAll(originalVisibleWidgets)
             visibileWidgetsByState.put(state,result)
             return result
         }
@@ -345,7 +346,7 @@ class Helper {
             return Rectangle.empty()
         }
         private fun isVisibleWidget(it: Widget) =
-                it.enabled &&  isWellVisualized(it) && it.metaInfo.contains("visibleToUser = true")
+                it.enabled &&  isWellVisualized(it) && (it.isVisible || it.metaInfo.contains("visibleToUser = true"))
 
         fun getVisibleWidgetsForAbstraction(state: State<*>): List<Widget> {
             val result = ArrayList(getActionableWidgetsWithoutKeyboard(state).filterNot { isTrivialWebViewContent(it,state) })

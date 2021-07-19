@@ -110,7 +110,11 @@ open class GoToAnotherWindow constructor(
                 addIncorrectPath(currentAppState)
                 if (pathTraverser!!.finalStateAchieved() && currentPath!!.destination.window == currentAppState.window)
                     return true
-                if (retryTimes <5*atuaStrategy.scaleFactor) {
+                val retryBudget = if (includeResetAction) {
+                    (5 * atuaStrategy.scaleFactor).toInt()
+                } else
+                    (3 * atuaStrategy.scaleFactor).toInt()
+                if (retryTimes < retryBudget && currentPath!!.pathType!=PathFindingHelper.PathType.FULLTRACE) {
 //                    //TODO check currentPath is valid
 //                    if (!AbstractStateManager.instance.ABSTRACT_STATES.contains(expectedNextAbState!!)) {
 //                        initPossiblePaths(currentState,true)
@@ -126,16 +130,7 @@ open class GoToAnotherWindow constructor(
                     } else {
                     }*/
                     log.debug("Reidentify paths to the destination.")
-                    if (currentPath!!.pathType==PathFindingHelper.PathType.PARTIAL_TRACE
-                            || currentPath!!.pathType==PathFindingHelper.PathType.FULLTRACE) {
-                        initPossiblePaths(currentState, true)
-                        val currentPathLeft = currentPath!!.path.size - (pathTraverser!!.latestEdgeId!! + 1)
-                        if (!possiblePaths.any { it.path.size < currentPathLeft-1 }) {
-                            initPossiblePaths(currentState)
-                        }
-                    } else {
-                        initPossiblePaths(currentState)
-                    }
+                    initPossiblePaths(currentState, true)
                     if (possiblePaths.isNotEmpty()) {
                         initialize(currentState)
                         log.debug(" Paths is not empty")
@@ -256,6 +251,11 @@ open class GoToAnotherWindow constructor(
                  if(expectedAbstractState1.isOpeningKeyboard != currentAbState.isOpeningKeyboard) {
                      tmpPathTraverser.next()
                      continue
+                 }
+             } else {
+                 if (expectedAbstractState.window == currentAbState.window) {
+                     reached = true
+                     break
                  }
              }
              val nextTransition = tmpPathTraverser.transitionPath.path[tmpPathTraverser.latestEdgeId!!+1]
@@ -604,7 +604,11 @@ open class GoToAnotherWindow constructor(
                         ?: ExplorationAction.pressBack()
             } else {
                 log.debug("Can not get target widget. Random exploration.")
-                mainTaskFinished=true
+                if (currentEdge.fromWTG && currentEdge.dest is VirtualAbstractState && atuaMF.actionCount.getUnexploredWidget(currentState).isNotEmpty()) {
+                    pathTraverser!!.latestEdgeId = pathTraverser!!.latestEdgeId!! - 1
+                } else {
+                    mainTaskFinished = true
+                }
                 return randomExplorationTask!!.chooseAction(currentState)
             }
         } else {

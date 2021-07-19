@@ -139,7 +139,7 @@ object DefaultStrategies: Logging {
 	 *  - we try to wait for up to ${maxWaittime}s (default 5s) if any interactive element appears
 	 *  - if the app has crashed we terminate
 	 */
-	fun handleTargetAbsence(prio: Int, maxWaitTime: Long = 5000) = object : AExplorationStrategy(){
+	fun handleTargetAbsence(prio: Int, maxWaitTime: Long = 1000) = object : AExplorationStrategy(){
 		private var cnt = 0
 		private var pressbackCnt = 0
 		private var clickScreen = false
@@ -194,11 +194,23 @@ object DefaultStrategies: Logging {
 			val s_res = eContext.getState(eContext.getLastAction().resState)
 			val s_prev = eContext.getState(eContext.getLastAction().prevState)
 			return when {
+				lastActionType.isLaunchApp() || lastActionType == "ResetApp" -> {
+					log.debug("Cannot explore. Returning 'Wait'")
+					waitForLaunch(eContext)
+				}
+				lastActionType.isFetch() -> {
+					when {
+						cnt<2 -> {
+							log.debug("Cannot explore. Returning 'Wait'")
+							waitForLaunch(eContext)
+						}
+						else -> {
+							eContext.resetApp()
+						}
+					}
+				}
 				s.isHomeScreen -> {
 					eContext.launchApp()
-				}
-				s.widgets.any { it.resourceId == "android:id/aerr_close" } -> {
-					s.widgets.find { it.resourceId == "android:id/aerr_close"  }!!.click()
 				}
 				lastActionType.isPressBack() -> {
 					// if previous action was back, terminate
@@ -222,29 +234,9 @@ object DefaultStrategies: Logging {
 						}
 					}
 				}
-				lastLaunchDistance <=3 || eContext.getLastActionType().isFetch() -> { // since app reset is an ActionQueue of (Launch+EnableWifi), or we had a WaitForLaunch action
-					when {  // last action was reset
-						s.isAppHasStoppedDialogBox -> {
-							log.debug("Cannot explore. Last action was reset. Currently on an 'App has stopped' dialog. Returning 'Terminate'")
-							ExplorationAction.terminateApp()
-						}
-						eContext.explorationTrace.getActions().takeLast(3).filterNot {it.actionType.isFetch()}.isEmpty() ->{
-							//Last three actions are FetchUI, try to pressBack
-								eContext.resetApp()
-						}
-
-						secondLast?.actionType?.isPressBack() ?: false -> {
-							terminate = true  // try to wait for launch but terminate if we still have nothing to explore afterwards
-							waitForLaunch(eContext)
-						}
-						else -> { // the app may simply need more time to start (synchronization for app-launch not yet perfectly working) -> do delayed re-fetch for now
-							log.debug("Cannot explore. Returning 'Wait'")
-							waitForLaunch(eContext)
-						}
-					}
-				}
 				// by default, if it cannot explore, presses back
 				else -> {
+
 					if (!s.actionableWidgets.any { it.clickable }  ) {
 						// for example: vlc video player
 						log.debug("Cannot explore because of no actionable widgets. Randomly choose PressBack or Click")

@@ -1,6 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
 enum class AttributeType {
+    xpath,
     resourceId,
     className,
     contentDesc,

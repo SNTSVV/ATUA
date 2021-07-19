@@ -1,5 +1,6 @@
 package org.droidmate.exploration.modelFeatures.atua.DSTG
 
+import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
 import org.droidmate.exploration.modelFeatures.graph.*
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.slf4j.Logger
@@ -42,14 +43,15 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
     }
 
     private fun header(): String {
-        return "[1]SourceState;[2]ResultingState;[3]ActionType;[4]InteractedAVM;[5]ActionExtra;[6]InteractionData;[7]DependentAbstractStates;[8]EventHandlers;[9]CoveredUpdatedMethods;[10]CoveredUpdatedStatements;[11]GUITransitionIDs;[13]modelVersion"
+        return "[1]SourceState;[2]ResultingState;[3]ActionType;[4]InteractedAVM;[5]ActionExtra;[6]InteractionData;[7]GuardEnabled;[8]DependentAbstractStates;[9]EventHandlers;[10]CoveredUpdatedMethods;[11]CoveredUpdatedStatements;[12]GUITransitionIDs;[13]modelVersion"
     }
 
     fun recursiveDump(sourceAbstractState: AbstractState, statementCoverageMF: StatementCoverageMF, dumpedSourceStates: ArrayList<AbstractState> , bufferedWriter: BufferedWriter) {
         dumpedSourceStates.add(sourceAbstractState)
         val explicitEdges = this.edges(sourceAbstractState).filter { it.label.isExplicit()
                 && it.destination!=null
-                && sourceAbstractState.abstractTransitions.contains(it.label) }
+                && sourceAbstractState.abstractTransitions.contains(it.label)
+                && (it.label.interactions.isNotEmpty() || it.label.modelVersion == ModelVersion.BASE) }
         val nextSources = ArrayList<AbstractState>()
         explicitEdges.map { it.label }.distinct().forEach { edge ->
             if (!nextSources.contains(edge.dest) && !dumpedSourceStates.contains(edge.dest)) {
@@ -57,7 +59,7 @@ class DSTG(private val graph: IGraph<AbstractState, AbstractTransition> =
             }
             bufferedWriter.newLine()
             val abstractTransitionInfo = "${sourceAbstractState.abstractStateId};${edge.dest.abstractStateId};" +
-                    "${edge.abstractAction.actionType};${edge.abstractAction.attributeValuationMap?.avmId};${edge.abstractAction.extra};${edge.data};" +
+                    "${edge.abstractAction.actionType};${edge.abstractAction.attributeValuationMap?.avmId};${edge.abstractAction.extra};${edge.data};${edge.guardEnabled};" +
                     "\"${edge.dependentAbstractStates.map { it.abstractStateId }.joinToString(";")}\";\"${getInteractionHandlers(edge,statementCoverageMF)}\";\"${getCoveredModifiedMethods(edge,statementCoverageMF)}\";\"${getCoveredUpdatedStatements(edge,statementCoverageMF)}\";" +
                     "\"${edge.interactions.map { it.actionId }.joinToString(separator = ";")}\";${edge.modelVersion}"
             bufferedWriter.write(abstractTransitionInfo)

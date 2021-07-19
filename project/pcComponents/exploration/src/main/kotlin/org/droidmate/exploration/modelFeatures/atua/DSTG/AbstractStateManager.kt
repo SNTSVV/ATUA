@@ -561,11 +561,16 @@ class AbstractStateManager() {
 
     private fun createAbstractTransitionsFromWTG(abstractState: AbstractState) {
         //create implicit non-widget interactions
-        val nonTrivialWindowTransitions = atuaMF.wtg.edges(abstractState.window).filter { it.label.input.widget == null && it.label.input.eventType != EventType.implicit_back_event && it.source.data == it.destination?.data }
+        val nonTrivialWindowTransitions = atuaMF.wtg.edges(abstractState.window)
+                .filter { it.label.input.widget == null
+                        && it.label.input.eventType != EventType.implicit_back_event
+                        && it.source.data == it.destination?.data }
         //create implicit widget interactions from static Node
-        val nonTrivialWidgetWindowsTransitions = atuaMF.wtg.edges(abstractState.window).filter { it.label.input.widget != null }.filterNot { it.source.data == it.destination?.data }
+        val nonTrivialWidgetWindowsTransitions = atuaMF.wtg.edges(abstractState.window)
+                .filter { it.label.input.widget != null }
+                .filterNot { it.source.data == it.destination?.data }
 
-        nonTrivialWindowTransitions
+    /*    nonTrivialWindowTransitions
                 .forEach { windowTransition ->
                     val abstractActions = abstractState.inputMappings.filter { it.value.contains(windowTransition.label.input) }.map { it.key }
                     val destWindow = windowTransition.destination!!.data
@@ -575,7 +580,7 @@ class AbstractStateManager() {
                             createAbstractTransitionFromWindowTransition(abstractState, abstractAction, windowTransition, destAbstractState)
                         }
                     }
-                }
+                }*/
 
         nonTrivialWidgetWindowsTransitions
                 .forEach { windowTransition ->

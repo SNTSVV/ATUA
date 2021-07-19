@@ -23,22 +23,26 @@ open class IncludeChildrenReducer(
 {
     override fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, window: Window, rotation: Rotation, autAutMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>, tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath {
         val localAttributes = localReducer.reduce(guiWidget,guiState)
-        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,autAutMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+//        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,autAutMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
         var childStructure: String = ""
         var childText: String = ""
-        guiWidget.childHashes.forEach { childHash ->
-            val childWidget = guiState.widgets.find { it.idHash == childHash && it.isVisible }
-            if (childWidget!=null) {
-                val childInfo = childReduce(childWidget, guiState,isOptionsMenu,guiTreeRectangle, rotation,autAutMF, tempChildWidgetAttributePaths)
-                childStructure += childInfo.first
-                childText += childInfo.second
+        if (shouldIncludeChildrenInfo(guiState,guiWidget) ) {
+            guiWidget.childHashes.forEach { childHash ->
+                val childWidget = guiState.widgets.find { it.idHash == childHash && it.isVisible }
+                if (childWidget != null) {
+                    val childInfo = childReduce(childWidget, guiState, isOptionsMenu, guiTreeRectangle, rotation, autAutMF, tempChildWidgetAttributePaths)
+                    childStructure += childInfo.first
+                    childText += childInfo.second
+                }
             }
+            localAttributes.put(AttributeType.childrenStructure, childStructure)
+            localAttributes.put(AttributeType.childrenText,childText)
         }
-        localAttributes.put(AttributeType.childrenStructure, childStructure)
-        localAttributes.put(AttributeType.childrenText,childText)
+
+
         if (childrenReducer is LocalReducerLV3) {
             var siblingInfos = ""
-            if (needSiblingInfos(guiState,guiWidget)) {
+            if (needSiblingInfos(guiState,guiWidget) ) {
                 val siblings = guiState.widgets.filter { it.parentId == guiWidget.parentId && it != guiWidget }
                 siblings.forEach { sibling ->
                     if (sibling.className != guiWidget.className) {
@@ -52,7 +56,7 @@ open class IncludeChildrenReducer(
         }
         val attributePath = AttributePath(
                 localAttributes = localAttributes,
-                parentAttributePathId = parentAttributePath?.attributePathId?: emptyUUID,
+                parentAttributePathId = emptyUUID,
                 window = window
         )
         tempWidgetReduceMap.put(guiWidget,attributePath)
@@ -67,6 +71,16 @@ open class IncludeChildrenReducer(
         return false
     }
 
+    private fun shouldIncludeChildrenInfo(guiState: State<*>, guiWidget: Widget) : Boolean {
+        if (guiWidget.className.contains("RecyclerView")
+                || guiWidget.className.contains("ListView")
+                || guiWidget.className.contains("ViewPager")
+                || guiWidget.className.contains("WebView")
+        )
+            return false
+        return true
+
+    }
     fun childReduce(widget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, rotation: Rotation, autAutMF: ATUAMF, tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): Pair<String,String> {
         var nestedChildrenStructure: String = ""
         var nestedChildrenText: String = ""

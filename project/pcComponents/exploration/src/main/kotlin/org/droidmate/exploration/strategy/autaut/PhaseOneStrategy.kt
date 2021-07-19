@@ -786,7 +786,9 @@ class PhaseOneStrategy(
         }
         if (continueRandomExplorationIfIsFillingData(randomExplorationTask)) return
 
-        if (randomExplorationTask.stopWhenHavingTestPath ) {
+        if (randomExplorationTask.stopWhenHavingTestPath
+                || !targetWindowTryCount.containsKey(currentAppState.window)
+                || fullyCoveredWindows.contains(currentAppState.window)) {
             if (goToTargetNodeTask.isAvailable(currentState =  currentState,
                             destWindow =  targetWindow!!,
                             includePressback = true,
@@ -801,6 +803,7 @@ class PhaseOneStrategy(
             }
         }
         if (randomExplorationInSpecialWindows(currentAppState, randomExplorationTask, currentState)) return
+
         if (hasBudgetLeft(currentAppState.window)) {
             if (continueOrEndCurrentTask(currentState)) return
         }
@@ -1035,7 +1038,7 @@ class PhaseOneStrategy(
            !chosenAction.isFetch()
                    && chosenAction.name!="CloseKeyboard"
                    && !chosenAction.name.isLaunchApp()
-                   && chosenAction !is Swipe
+                   && chosenAction.name != "Swipe"
 
     private fun isTargetWindow(currentAppState: AbstractState): Boolean {
         return targetWindowTryCount.filterNot {

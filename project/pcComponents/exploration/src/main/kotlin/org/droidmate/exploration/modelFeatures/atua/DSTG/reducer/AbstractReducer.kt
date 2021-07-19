@@ -9,6 +9,7 @@ import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 
+
 abstract class AbstractReducer(
         val localReducer: AbstractLocalReducer
 ) {

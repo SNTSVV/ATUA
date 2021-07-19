@@ -19,11 +19,11 @@ open class BaseReducer(
     override fun reduce(guiWidget: Widget, guiState: State<*>, isOptionsMenu:Boolean, guiTreeRectangle: Rectangle, window: Window, rotation: Rotation, atuaMF: ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath>
                         , tempChildWidgetAttributePaths: HashMap<Widget,AttributePath>): AttributePath {
         val localAttributes = localReducer.reduce(guiWidget,guiState)
-        val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
+        // val parentAttributePath = parentReduce(guiWidget, guiState,isOptionsMenu,guiTreeRectangle, window,rotation,atuaMF, tempWidgetReduceMap,tempChildWidgetAttributePaths)
 
         val attributePath = AttributePath(
                 localAttributes = localAttributes,
-                parentAttributePathId = parentAttributePath?.attributePathId?: emptyUUID,
+                parentAttributePathId = emptyUUID,
                 window = window
         )
         tempWidgetReduceMap.put(guiWidget,attributePath)

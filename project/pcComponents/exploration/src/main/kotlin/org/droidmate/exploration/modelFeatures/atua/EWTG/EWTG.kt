@@ -106,11 +106,11 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                 input = event,
                                 prevWindow = null
                         )
-
-                        if (ewtgWidget != null && ewtgWidget!!.className.contains("Layout")) {
+                        this.add(sourceNode,targetNode,windowTransition)
+                        /*if (ewtgWidget != null && ewtgWidget!!.className.contains("Layout")) {
                             var createItemClick = false
                             var createItemLongClick = false
-                            /*when (action) {
+                            *//*when (action) {
                                 "touch" -> {
                                     createItemClick=true
                                     createItemLongClick=true
@@ -121,7 +121,7 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                 "long_click" -> {
                                     createItemLongClick=true
                                 }
-                            }*/
+                            }*//*
                             if (createItemClick) {
                                 //create item click and long click
                                 val itemClick = Input.getOrCreateEvent(
@@ -141,7 +141,7 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                                         sourceWindow = sourceNode)
                                 this.add(sourceNode, targetNode, WindowTransition(sourceNode,targetNode,itemLongClick,null))
                             }
-                        }
+                        }*/
                     }
                 }
 

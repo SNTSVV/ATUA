@@ -3,13 +3,17 @@ package org.droidmate.exploration.modelFeatures.atua.DSTG.reducer.localReducer
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.modelFeatures.atua.DSTG.AttributeType
 import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper.Companion.deriveStructure
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
+
 
 abstract class AbstractLocalReducer {
     abstract fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>
     fun reduceBaseAttributes(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String> {
         val reducedAttributes = HashMap<AttributeType, String>()
+        val xpath = guiWidget.deriveStructure()
+        reducedAttributes.put(AttributeType.xpath, xpath)
         reducedAttributes.put(AttributeType.className, guiWidget.className)
         reducedAttributes.put(AttributeType.resourceId, guiWidget.resourceId)
         reducedAttributes.put(AttributeType.enabled, guiWidget.enabled.toString())

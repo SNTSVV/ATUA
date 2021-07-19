@@ -272,7 +272,7 @@ class PhaseThreeStrategy(
         val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)
         if (abstractState!!.window == targetWindow )
         {
-            if (targetEvents!=null) {
+            if (targetEvent!=null) {
                 val abstractActions = atuaMF.validateEvent(targetEvent!!, currentState)
                 if (abstractActions.isNotEmpty()) {
                     targetEvents.put(targetEvent!!, abstractActions)
