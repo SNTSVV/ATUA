@@ -9,15 +9,13 @@
  * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-package org.droidmate.exploration.modelFeatures.atua.dstg.reducer.localReducer
 
-import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeType
-import org.droidmate.explorationModel.interaction.State
-import org.droidmate.explorationModel.interaction.Widget
+package org.droidmate.exploration.strategy.atua.model
 
-class LocalReducerLV0: AbstractLocalReducer() {
-    override fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>  {
-        val reducedAttributes = HashMap<AttributeType, String>()
-        return reducedAttributes
-    }
+data class IntentTestInstance (
+        val activity: String,
+        val action: String,
+        val category: String,
+        val data: String
+) {
 }

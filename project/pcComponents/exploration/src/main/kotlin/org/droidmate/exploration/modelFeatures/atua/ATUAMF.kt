@@ -1,12 +1,14 @@
-// ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
-// Copyright (C) 2019 - 2021 University of Luxembourg
-//
-// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-//
+/*
+ * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
+ * Copyright (C) 2019 - 2021 University of Luxembourg
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
 package org.droidmate.exploration.modelFeatures.atua
 
 import com.natpryce.konfig.PropertyGroup
@@ -49,10 +51,8 @@ import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
-import org.droidmate.exploration.modelFeatures.calm.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
-import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
@@ -266,11 +266,6 @@ class ATUAMF(private val appName: String,
         processOptionsMenusWindow()
         AbstractStateManager.INSTANCE.init(this, appName)
         AbstractStateManager.INSTANCE.initVirtualAbstractStates()
-        if (reuseBaseModel) {
-            log.info("Loading base model...")
-            loadBaseModel()
-            AbstractStateManager.INSTANCE.initVirtualAbstractStates()
-        }
 
         postProcessingTargets()
 
@@ -374,37 +369,6 @@ class ATUAMF(private val appName: String,
                 }
             }
         }
-    }
-
-    private fun loadBaseModel() {
-        AppModelLoader.loadModel(baseModelDir.resolve(appName), this)
-        ModelBackwardAdapter.instance.initialBaseAbstractStates.addAll(
-                AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
-                    it.modelVersion == ModelVersion.BASE
-                }
-        )
-        ModelBackwardAdapter.instance.initialBaseAbstractStates.forEach {
-            ModelBackwardAdapter.instance.initialBaseAbstractTransitions.addAll(it.abstractTransitions.filter { it.isExplicit() })
-        }
-        val ewtgDiff = EWTGDiff.instance
-        val ewtgDiffFile = getEWTGDiffFile(appName, resourceDir)
-        if (ewtgDiffFile!=null)
-            ewtgDiff.loadFromFile(ewtgDiffFile, this)
-        AttributeValuationMap.ALL_ATTRIBUTE_VALUATION_MAP.forEach { window, u ->
-            u.values.forEach {
-                it.computeHashCode()
-            }
-        }
-        ModelBackwardAdapter.instance.keptBaseAbstractStates.addAll(
-                AbstractStateManager.INSTANCE.ABSTRACT_STATES.filter {
-                    it.modelVersion == ModelVersion.BASE
-                }
-        )
-        ModelBackwardAdapter.instance.keptBaseAbstractStates.forEach {
-            ModelBackwardAdapter.instance.keptBaseAbstractTransitions.addAll(
-                    it.abstractTransitions.filter { it.isExplicit() })
-        }
-
     }
 
     private fun processOptionsMenusWindow() {
@@ -1309,10 +1273,6 @@ class ATUAMF(private val appName: String,
                     log.debug("lastExecutedEvent is null")
                     updated = false
                 } else {
-                    if (reuseBaseModel) {
-                        val prevWindowAbstractState: AbstractState? = getPrevWindowAbstractState(traceId,transitionId-1)
-                        ModelBackwardAdapter.instance.checkingEquivalence(newState,currentAbstractState, lastExecutedTransition!!,prevWindowAbstractState ,dstg)
-                    }
                     if (prevAbstractState!!.belongToAUT() && currentAbstractState.isOutOfApplication && lastInteractions.size > 1) {
                         lastOpeningAnotherAppInteraction = lastInteractions.single()
                     }
@@ -2071,9 +2031,6 @@ class ATUAMF(private val appName: String,
         Files.write(outputFile, sb.lines())
         ATUAMF.log.info("Finished writing report in ${outputFile.fileName}")
 
-        if (reuseBaseModel) {
-           ModelBackwardAdapter.instance.produceReport(context)
-        }
     }
 
 

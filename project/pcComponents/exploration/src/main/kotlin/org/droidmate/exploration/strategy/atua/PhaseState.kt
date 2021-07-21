@@ -9,15 +9,29 @@
  * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-package org.droidmate.exploration.modelFeatures.atua.dstg.reducer.localReducer
 
-import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeType
-import org.droidmate.explorationModel.interaction.State
-import org.droidmate.explorationModel.interaction.Widget
+package org.droidmate.exploration.strategy.atua
 
-class LocalReducerLV0: AbstractLocalReducer() {
-    override fun reduce(guiWidget: Widget, guiState: State<*>): HashMap<AttributeType, String>  {
-        val reducedAttributes = HashMap<AttributeType, String>()
-        return reducedAttributes
-    }
+enum class PhaseState {
+    NULL,
+    P1_INITIAL,
+    P1_GO_TO_TARGET_NODE,
+    P1_GO_TO_EXPLORE_STATE,
+    P1_EXERCISE_TARGET_NODE,
+    P1_RANDOM_IN_EXERCISE_TARGET_NODE,
+    P1_RANDOM_EXPLORATION,
+    //phase 2
+    P2_INITIAL,
+    P2_RANDOM_EXPLORATION,
+    P2_GO_TO_TARGET_NODE,
+    P2_EXERCISE_TARGET_NODE,
+    P2_GO_TO_EXPLORE_STATE,
+    P2_RANDOM_IN_EXERCISE_TARGET_NODE,
+    //phase 3
+    P3_INITIAL,
+    P3_EXERCISE_TARGET_NODE,
+    P3_GO_TO_RELATED_NODE,
+    P3_GO_TO_TARGET_NODE,
+    P3_EXPLORATION_IN_RELATED_WINDOW
+
 }

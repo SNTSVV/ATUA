@@ -1,12 +1,14 @@
-// ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
-// Copyright (C) 2019 - 2021 University of Luxembourg
-//
-// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-//
+/*
+ * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
+ * Copyright (C) 2019 - 2021 University of Luxembourg
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
 package org.droidmate.exploration.modelFeatures.atua.dstg
 
 import org.droidmate.deviceInterface.exploration.Rectangle
@@ -25,8 +27,6 @@ import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
-import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
-import org.droidmate.exploration.modelFeatures.calm.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
@@ -92,34 +92,6 @@ class AbstractStateManager() {
         updateLaunchAndResetAbstractTransitions(virtualAbstractState)
     }
 
-    val backwardEquivalences = HashMap<AbstractState, AbstractState>()
-    fun verifyBackwardEquivalent(observedState: AbstractState, expectedState: AbstractState) {
-        val matchedAVMs = ArrayList<AttributeValuationMap>()
-        for (attributeValuationMap1 in observedState.attributeValuationMaps) {
-            for (attributeValuationMap2 in expectedState.attributeValuationMaps) {
-                if (attributeValuationMap1.hashCode == attributeValuationMap2.hashCode) {
-                    matchedAVMs.add(attributeValuationMap1)
-                }
-            }
-        }
-        val addedAVMs = ArrayList<AttributeValuationMap>()
-        val unmatchedAVMs = ArrayList<AttributeValuationMap>()
-        for (mutableEntry in observedState.EWTGWidgetMapping) {
-            val avm = mutableEntry.key
-            val ewtgWidget = mutableEntry.value
-            if (matchedAVMs.contains(avm)) {
-                continue
-            }
-            if (EWTGDiff.instance.getWidgetAdditions().contains(ewtgWidget)) {
-                addedAVMs.add(avm)
-            } else {
-                unmatchedAVMs.add(avm)
-            }
-        }
-        if (unmatchedAVMs.isEmpty()) {
-            backwardEquivalences.put(observedState, expectedState)
-        }
-    }
 
     fun getOrCreateNewAbstractState(guiState: State<*>,
                                     i_activity: String,
@@ -2620,7 +2592,6 @@ class AbstractStateManager() {
                 it !is VirtualAbstractState
                         && it.modelVersion == ModelVersion.BASE
                         && it.window != unreachedWindow
-                        && !ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.values.flatten().contains(it)
             }.forEach { abstractState ->
                 if (allUnexercisedBaseAbstractTransitions.any { it.dest == abstractState }) {
                     usefulUnseenBaseAbstractStates.add(abstractState)

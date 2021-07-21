@@ -1,4 +1,16 @@
-package org.droidmate.exploration.strategy.autaut.task
+/*
+ * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
+ * Copyright (C) 2019 - 2021 University of Luxembourg
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+package org.droidmate.exploration.strategy.atua.task
 
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
@@ -15,11 +27,10 @@ import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
 import org.droidmate.exploration.modelFeatures.atua.ewtg.*
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
-import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
 import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
-import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
+import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import org.slf4j.Logger
@@ -211,23 +222,6 @@ open class GoToAnotherWindow constructor(
              if (expectedAbstractState1 == currentAbState) {
                  reached = true
                  break
-             }
-             if (expectedAbstractState1.modelVersion == ModelVersion.BASE && expectedAbstractState1.guiStates.isEmpty()) {
-                 // check the current state is backward equivalent to expectedAbstractState
-                 if (ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.containsKey(currentAbState)) {
-                     val backwardEquivalences = ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.get(currentAbState)!!
-                     if (backwardEquivalences.contains(expectedAbstractState1)) {
-                         reached = true
-                         val toUpdateTransition = tmpPathTraverser.transitionPath.path[tmpPathTraverser.latestEdgeId!!+1]
-                         if (toUpdateTransition!=null && toUpdateTransition.modelVersion == ModelVersion.BASE) {
-                             if (ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.containsKey(toUpdateTransition)) {
-                                 val equivalentTransition = ModelBackwardAdapter.instance.backwardEquivalentAbstractTransitionMapping.get(toUpdateTransition)!!
-                                 currentPath!!.path.put(tmpPathTraverser.latestEdgeId!!+1,equivalentTransition.first())
-                             }
-                         }
-                         break
-                     }
-                 }
              }
              if (!AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(expectedAbstractState1)) {
                  val equivalentAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
