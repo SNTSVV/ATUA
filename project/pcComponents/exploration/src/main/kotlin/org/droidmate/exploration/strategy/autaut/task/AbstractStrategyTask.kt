@@ -9,12 +9,12 @@ import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.Rotation
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace

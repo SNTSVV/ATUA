@@ -35,23 +35,24 @@ import org.droidmate.exploration.modelFeatures.explorationWatchers.CrashListMF
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.InputConfiguration
-import org.droidmate.exploration.modelFeatures.atua.DSTG.*
+import org.droidmate.exploration.modelFeatures.atua.dstg.*
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.deviceEnvironment.DeviceEnvironmentConfiguration
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.atua.EWTG.EventType
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
-import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
-import org.droidmate.exploration.modelFeatures.atua.EWTG.*
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.FakeWindow
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Launcher
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
-import org.droidmate.exploration.modelFeatures.atua.ewtgdiff.EWTGDiff
+import org.droidmate.exploration.modelFeatures.atua.ewtg.EventType
+import org.droidmate.exploration.modelFeatures.atua.ewtg.Input
+import org.droidmate.exploration.modelFeatures.atua.ewtg.EWTGWidget
+import org.droidmate.exploration.modelFeatures.atua.ewtg.*
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.FakeWindow
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.droidmate.exploration.modelFeatures.calm.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
 import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.Interaction
@@ -114,19 +115,15 @@ class ATUAMF(private val appName: String,
     val allTargetHandlers = hashSetOf<String>()
     val allEventHandlers = hashSetOf<String>()
     val allModifiedMethod = hashMapOf<String, Boolean>()
-    val widgets_modMethodInvocation = mutableMapOf<String, Widget_MethodInvocations>()
     val allDialogOwners = hashMapOf<String, ArrayList<String>>() // window -> listof (Dialog)
 
     private val allActivityOptionMenuItems = mutableMapOf<String, ArrayList<EWTGWidget>>()  //idWidget
-    private val allContextMenuItems = arrayListOf<EWTGWidget>()
-    private val activityTransitionWidget = mutableMapOf<String, ArrayList<EWTGWidget>>() // window -> Listof<StaticWidget>
     private val activity_TargetComponent_Map = mutableMapOf<String, ArrayList<Input>>() // window -> Listof<StaticWidget>
 
     val targetItemEvents = HashMap<Input, HashMap<String, Int>>()
     var isAlreadyRegisteringEvent = false
     private val stateActivityMapping = mutableMapOf<State<*>, String>()
 
-    private val child_parentTargetWidgetMapping = mutableMapOf<Pair<Window, UUID>, Pair<Window, UUID>>() // child_widget.uid -> parent_widget.uid
     private val dateFormater = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     var lastExecutedTransition: AbstractTransition? = null
@@ -254,7 +251,7 @@ class ATUAMF(private val appName: String,
     override suspend fun onAppExplorationFinished(context: ExplorationContext<*, *, *>) {
         this.join()
         produceTargetWidgetReport(context)
-        AutAutModelOutput.dumpModel(context.model.config, this)
+        ATUAModelOutput.dumpModel(context.model.config, this)
     }
 
     override fun onAppExplorationStarted(context: ExplorationContext<*, *, *>) {

@@ -5,11 +5,11 @@ import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.DSTG.Cardinality
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.dstg.Cardinality
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget

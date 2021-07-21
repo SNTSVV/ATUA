@@ -9,9 +9,9 @@
 //
 package org.droidmate.exploration.modelFeatures.atua.inputRepo.deviceEnvironment
 
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
-import org.droidmate.exploration.modelFeatures.atua.EWTG.WindowManager
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.droidmate.exploration.modelFeatures.atua.ewtg.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.file.Files

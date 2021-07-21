@@ -1,21 +1,19 @@
 
 package org.droidmate.exploration.strategy.autaut.task
 
-import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.ExplorationAction
-import org.droidmate.deviceInterface.exploration.GlobalAction
 import org.droidmate.deviceInterface.exploration.isEnabled
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.longClick
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.setText
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.DataField
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
 import org.droidmate.exploration.strategy.autaut.ATUATestingStrategy
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
