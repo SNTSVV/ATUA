@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua
 
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Input
-import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
+import org.droidmate.exploration.modelFeatures.atua.ewtg.Input
+import org.droidmate.exploration.modelFeatures.atua.ewtg.EWTGWidget
 
 
 data class Widget_MethodInvocations (

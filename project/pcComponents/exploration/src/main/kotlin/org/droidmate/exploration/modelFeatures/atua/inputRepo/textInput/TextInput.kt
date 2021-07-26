@@ -1,7 +1,7 @@
 package org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput
 
 import org.droidmate.deviceInterface.exploration.isEnabled
-import org.droidmate.exploration.strategy.autaut.task.InputCoverage
+import org.droidmate.exploration.strategy.atua.task.InputCoverage
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 import java.util.*

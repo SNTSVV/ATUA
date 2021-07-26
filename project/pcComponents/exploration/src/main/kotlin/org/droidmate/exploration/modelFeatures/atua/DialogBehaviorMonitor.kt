@@ -1,9 +1,9 @@
 package org.droidmate.exploration.modelFeatures.atua
 
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractTransition
-import org.droidmate.exploration.modelFeatures.atua.EWTG.EWTGWidget
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
+import org.droidmate.exploration.modelFeatures.atua.ewtg.EWTGWidget
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
 

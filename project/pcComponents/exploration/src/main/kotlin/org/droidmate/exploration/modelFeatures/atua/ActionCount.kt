@@ -1,10 +1,10 @@
 package org.droidmate.exploration.modelFeatures.atua
 
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.DSTG.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.EWTG.Helper
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
+import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State

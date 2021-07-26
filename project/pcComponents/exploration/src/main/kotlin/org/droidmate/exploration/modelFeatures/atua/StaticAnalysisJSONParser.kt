@@ -2,13 +2,13 @@ package org.droidmate.exploration.modelFeatures.atua
 
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentData
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.atua.EWTG.*
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.DialogType
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.EWTG.window.Window
+import org.droidmate.exploration.modelFeatures.atua.ewtg.*
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.DialogType
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.deviceEnvironment.DeviceEnvironmentConfigurationFileHelper
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.InputConfigurationFileHelper
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
