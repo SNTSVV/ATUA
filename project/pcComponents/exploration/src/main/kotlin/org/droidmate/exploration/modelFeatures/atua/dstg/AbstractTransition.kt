@@ -94,6 +94,8 @@ class AbstractTransition(
                 return interaction.targetWidget
             }
             if (actionType == AbstractActionType.TEXT_INSERT) {
+                if (interaction.targetWidget==null)
+                    return null
                 val avm = abstractState.getAttributeValuationSet(interaction.targetWidget!!,guiState,atuaMF)
                 if (avm!=null) {
                     return interaction.data

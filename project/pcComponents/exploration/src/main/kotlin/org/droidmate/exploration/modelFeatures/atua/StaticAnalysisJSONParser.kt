@@ -666,7 +666,7 @@ class StaticAnalysisJSONParser() {
                                    widget: EWTGWidget?,
                                    sourceWindow: Window,
                                    allTargetInputs: HashSet<Input>): Input {
-            val event = Input.getOrCreateEvent(eventHandlers, eventTypeString, widget, sourceWindow)
+            val event = Input.getOrCreateInput(eventHandlers, eventTypeString, widget, sourceWindow)
             allTargetInputs.add(event)
             return event
         }
@@ -831,7 +831,7 @@ class StaticAnalysisJSONParser() {
                                 ewtgWidget = null
                             }
                         }
-                        val event = Input.getOrCreateEvent(
+                        val event = Input.getOrCreateInput(
                                 eventHandlers = HashSet(),
                                 eventTypeString = eventType,
                                 sourceWindow = sourceNode,

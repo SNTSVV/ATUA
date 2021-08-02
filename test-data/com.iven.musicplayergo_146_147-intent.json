@@ -1,0 +1,28 @@
+{
+  "activities" : [
+    {
+      "name" : ".ui.MainActivity",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.intent.action.VIEW"
+          ],
+          "categories" : [
+            "android.intent.category.DEFAULT"
+          ],
+          "data" : [
+            {
+              "scheme" : "content",
+              "host" : "",
+              "pathPrefix" : "",
+              "type" : "audio",
+              "testData" : [
+                "/sdcard/mpthreetest.mp3"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

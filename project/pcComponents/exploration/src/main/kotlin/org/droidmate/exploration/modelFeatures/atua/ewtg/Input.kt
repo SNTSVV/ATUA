@@ -7,17 +7,21 @@ import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.Widget
+import java.lang.Exception
 
 
-open class Input (
-        val eventType: EventType,
-        val eventHandlers: HashSet<String>,
-        var widget: EWTGWidget?,
-        var sourceWindow: Window,
-        val createdAtRuntime: Boolean = false
-)
-{
-
+open class Input{
+    val eventType: EventType
+    val eventHandlers: HashSet<String> = HashSet()
+    var widget: EWTGWidget?
+    var sourceWindow: Window
+    set(value) {
+        if (field != null)
+            field.inputs.remove(this)
+        field = value
+        value.inputs.add(this)
+    }
+    val createdAtRuntime: Boolean
     val verifiedEventHandlers = HashSet<String>() //if an event handler appears in this set, we will not remove it from event's handlers
     val modifiedMethods = HashMap<String,Boolean>() //method id,
     val modifiedMethodStatement = HashMap<String, Boolean>() //statement id,
@@ -25,11 +29,21 @@ open class Input (
 
     var data: Any? = null
     var exerciseCount: Int = 0
-
-
-    init {
+    constructor(eventType: EventType, eventHandlers: Set<String>, widget: EWTGWidget?,sourceWindow: Window,createdAtRuntime: Boolean=false) {
+       this.eventType = eventType
+       this.eventHandlers.addAll(eventHandlers)
+       this.widget = widget
+       this.sourceWindow = sourceWindow
+        this.createdAtRuntime = createdAtRuntime
         allInputs.add(this)
         sourceWindow.inputs.add(this)
+        val exisingInput = allInputs.find { it!= this
+                && it.eventType == this.eventType
+                && it.sourceWindow == this.sourceWindow
+                && it.widget == this.widget}
+        if (exisingInput != null) {
+            throw Exception("Duplicated Input created")
+        }
     }
 
     fun convertToExplorationActionName(): AbstractActionType{
@@ -48,7 +62,7 @@ open class Input (
             EventType.implicit_back_event -> AbstractActionType.PRESS_BACK
             EventType.press_back -> AbstractActionType.PRESS_BACK
             EventType.callIntent -> AbstractActionType.SEND_INTENT
-            EventType.implicit_home_event -> AbstractActionType.MINIMIZE_MAXIMIZE
+            EventType.implicit_lifecycle_event -> AbstractActionType.MINIMIZE_MAXIMIZE
             EventType.scroll -> AbstractActionType.SWIPE
             EventType.swipe -> AbstractActionType.SWIPE
             EventType.closeKeyboard -> AbstractActionType.CLOSE_KEYBOARD
@@ -89,9 +103,9 @@ open class Input (
             return (action == EventType.implicit_on_activity_result.name
                     || action == EventType.implicit_on_activity_newIntent.name
                     || action == EventType.implicit_power_event.name
-                    || action == EventType.implicit_lifecycle_event.name
-                    || action == EventType.implicit_rotate_event.name
-                    || action == EventType.implicit_back_event.name
+//                    || action == EventType.implicit_lifecycle_event.name
+//                    || action == EventType.implicit_rotate_event.name
+//                    || action == EventType.implicit_back_event.name
                     || action == EventType.implicit_home_event.name
                     || action == EventType.press_key.name
                     || action == EventType.dialog_press_key.name
@@ -108,7 +122,7 @@ open class Input (
                 AbstractActionType.TEXT_INSERT -> EventType.enter_text
                 AbstractActionType.PRESS_MENU -> EventType.implicit_menu
                 AbstractActionType.PRESS_BACK -> EventType.press_back
-                AbstractActionType.MINIMIZE_MAXIMIZE -> EventType.implicit_home_event
+                AbstractActionType.MINIMIZE_MAXIMIZE -> EventType.implicit_lifecycle_event
                 AbstractActionType.ROTATE_UI -> EventType.implicit_rotate_event
                 AbstractActionType.SEND_INTENT -> EventType.callIntent
                 AbstractActionType.LAUNCH_APP -> EventType.implicit_launch_event
@@ -122,7 +136,7 @@ open class Input (
             }
         }
 
-        fun getOrCreateEvent(eventHandlers: Set<String>,
+        fun getOrCreateInput(eventHandlers: Set<String>,
                              eventTypeString: String,
                              widget: EWTGWidget?,
                              sourceWindow: Window,
@@ -137,7 +151,8 @@ open class Input (
                     , widget = widget, sourceWindow = sourceWindow, createdAtRuntime = createdAtRuntime)
             return event
         }
-        fun createStaticEventFromAbstractInteraction(prevAbstractState: AbstractState, newAbstractState: AbstractState, abstractTransition: AbstractTransition, interaction: Interaction<Widget>?, wtg: EWTG) {
+
+        fun createInputFromAbstractInteraction(prevAbstractState: AbstractState, newAbstractState: AbstractState, abstractTransition: AbstractTransition, interaction: Interaction<Widget>?, wtg: EWTG) {
             val eventType = Input.getEventTypeFromActionName(abstractTransition.abstractAction.actionType)
             if (eventType == EventType.fake_action || eventType == EventType.resetApp || eventType == EventType.implicit_launch_event)
                 return
@@ -145,7 +160,7 @@ open class Input (
                 return
             var newInput: Input?
             if (abstractTransition.abstractAction.attributeValuationMap == null) {
-                newInput = Input.getOrCreateEvent(
+                newInput = Input.getOrCreateInput(
                         eventHandlers = emptySet(),
                         eventTypeString = eventType.toString(),
                         widget = null,
@@ -219,7 +234,7 @@ open class Input (
                 }
                 if (prevAbstractState.EWTGWidgetMapping.contains(attributeValuationSet)) {
                     val staticWidget = prevAbstractState.EWTGWidgetMapping[attributeValuationSet]!!
-                    newInput = Input.getOrCreateEvent(
+                    newInput = Input.getOrCreateInput(
                             eventHandlers = emptySet(),
                             eventTypeString = eventType.toString(),
                             widget = staticWidget,

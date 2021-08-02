@@ -10,8 +10,9 @@ import java.nio.file.Files
 class AtuaModelOutput {
     companion object {
         fun dumpModel(config: ModelConfig, autautMF: ATUAMF) {
-            ATUAMF.log.info("Dumping WTG...")
+            ATUAMF.log.info("Dumping EWTG...")
             WindowManager.instance.dump(config,autautMF)
+            ATUAMF.log.info("Dumping EWTG finished")
             dumpDSTG(config, autautMF)
             produceWindowTransition(config ,autautMF)
         }
@@ -21,12 +22,15 @@ class AtuaModelOutput {
             Files.createDirectory(dstgFolder)
             ATUAMF.log.info("Dumping abstraction function...")
             AbstractionFunction2.INSTANCE.dump(dstgFolder)
+            ATUAMF.log.info("Dumping abstraction function finished.")
             ATUAMF.log.info("Dumping abstract states...")
             AbstractStateManager.INSTANCE.dump(dstgFolder)
+            ATUAMF.log.info("Dumping abstract states finished.")
             ATUAMF.log.info("Dumping abstract states transition graph...")
             File(dstgFolder.resolve("DSTG.csv").toUri()).bufferedWriter().use { all ->
                 autautMF.dstg.dump(autautMF.statementMF!!, all)
             }
+            ATUAMF.log.info("Dumping abstract states transition graph finished.")
         }
 
         private fun produceWindowTransition(config:ModelConfig, autautMF: ATUAMF) {

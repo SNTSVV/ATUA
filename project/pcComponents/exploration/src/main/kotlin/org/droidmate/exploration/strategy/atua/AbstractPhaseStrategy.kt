@@ -116,7 +116,7 @@ abstract class AbstractPhaseStrategy(
                                         stateByActionCount: HashMap<AbstractState, Double>,
                                         currentAbstractState: AbstractState,
                                         currentState: State<*>,
-                                        shortest: Boolean=false) {
+                                        shortest: Boolean=true) {
         if (pathType != PathFindingHelper.PathType.ANY)
             getPathToStates(
                     transitionPaths = transitionPaths,
@@ -179,8 +179,10 @@ abstract class AbstractPhaseStrategy(
         while (candidateStates.isNotEmpty()) {
             if (transitionPaths.isNotEmpty() && shortest)
                 break
-            val abstractState = candidateStates.maxBy { it.value }!!.key
-            PathFindingHelper.findPathToTargetComponent(currentState = currentState
+            val maxValue = candidateStates.maxBy { it.value }!!.value
+            val abstractStates = candidateStates.filter { it.value == maxValue }
+            abstractStates.keys.forEach { abstractState->
+                PathFindingHelper.findPathToTargetComponent(currentState = currentState
                     , root = currentAbstractState
                     , finalTarget = abstractState
                     , allPaths = transitionPaths
@@ -188,13 +190,15 @@ abstract class AbstractPhaseStrategy(
                     , pathCountLimitation = pathCountLimitation
                     , autautMF = atuaMF
                     , pathType = pathType)
-            //windowStates.remove(abstractState)
-            candidateStates.remove(abstractState)
+                //windowStates.remove(abstractState)
+                candidateStates.remove(abstractState)
+            }
+            if (shortest && transitionPaths.isNotEmpty()) {
+                val minSequenceLength = transitionPaths.map { it.path.size }.min()!!
+                transitionPaths.removeIf { it.path.size > minSequenceLength }
+            }
         }
-        if (shortest && transitionPaths.isNotEmpty()) {
-            val minSequenceLength = transitionPaths.map { it.path.size }.min()!!
-            transitionPaths.removeIf { it.path.size > minSequenceLength }
-        }
+
     }
 
 }

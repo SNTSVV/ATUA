@@ -1,0 +1,25 @@
+{
+  "LinuxCommand" : {
+    "DataFields" : {
+      "command" : {
+        "resourceIdPatterns" : [
+          "search_input"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "command" : "cat"
+      },
+      {
+        "command": "ls"
+      },
+      {
+        "command": "mkdir"
+      },
+      {
+        "command": "sudo chmod"
+      }
+    ]
+  }
+}

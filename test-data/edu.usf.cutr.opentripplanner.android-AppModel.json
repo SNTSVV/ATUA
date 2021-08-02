@@ -1,0 +1,1329 @@
+{
+    "allTransitions": {
+        "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>": [
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_home_event",
+                "target": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_power_event",
+                "target": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_back_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            }
+        ],
+        "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "widget": "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+            "action": "dialog_dismiss",
+            "target": "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>"
+        }],
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145": [
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+                "action": "implicit_home_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+                "action": "implicit_back_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+                "action": "implicit_power_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145"
+            }
+        ],
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142": [
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142",
+                "action": "implicit_home_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142"
+            },
+            {
+                "widget": "INFL[android.widget.Button,WID[2131492882|playServicesButton]704,7603]7609",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142",
+                "action": "implicit_power_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142"
+            }
+        ],
+        "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": [
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_power_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "touch",
+                "target": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "touch",
+                "target": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "touch",
+                "target": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "touch",
+                "target": "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_back_event",
+                "target": "LAUNCHER_NODE[]7956"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "editor_action",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.CheckBox,WID[2131492939|btnModeTrain]767,7768]7774",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "enter_text",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_on_activity_result",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.RadioButton,WID[2131492935|btnModeWalk]771,7766]7771",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ImageButton,WID[2131492922|btnMyLocation]750,7746]7754",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "touch",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ImageButton,WID[2131492924|btnHandle]740,7746]7755",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.Spinner,WID[2131492911|itinerarySelection]714,7756]7762",
+                "action": "item_selected",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "editor_action",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "touch",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.CheckBox,WID[2131492938|btnModeBus]766,7768]7773",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_on_activity_newIntent",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ImageButton,WID[2131492925|btnDisplayDirection]742,7756]7760",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ListView,WID[2131492930|spinOptimization]774,7757]7764",
+                "action": "item_click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.RadioButton,WID[2131492936|btnModeBike]764,7766]7772",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ImageButton,WID[2131492919|btnDateDialog]755,7746]7751",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                "action": "focus_change",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.CheckBox,WID[2131492940|btnModeRentedBike]760,7768]7775",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "enter_text",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.CheckBox,WID[2131492942|btnModeFerry]762,7769]7776",
+                "action": "select",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.ImageButton,WID[2131492918|btnSwapOriginDestination]754,7746]7750",
+                "action": "click",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                "action": "focus_change",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+                "action": "implicit_home_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            }
+        ],
+        "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "widget": "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+            "action": "dialog_dismiss",
+            "target": "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>"
+        }],
+        "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129": [
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129",
+                "action": "implicit_home_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129",
+                "action": "implicit_power_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129"
+            },
+            {
+                "widget": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129"
+            }
+        ],
+        "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "widget": "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+            "action": "dialog_dismiss",
+            "target": "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>"
+        }],
+        "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "widget": "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+            "action": "dialog_dismiss",
+            "target": "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>"
+        }],
+        "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>": [
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_home_event",
+                "target": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_rotate_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_back_event",
+                "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+            },
+            {
+                "widget": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+                "action": "implicit_power_event",
+                "target": "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>"
+            }
+        ],
+        "LAUNCHER_NODE[]7956": [{
+            "widget": "LAUNCHER_NODE[]7956",
+            "action": "implicit_launch_event",
+            "target": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123"
+        }]
+    },
+    "allFragmentNodes": {
+        "1133": "FRAG[edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment]1133",
+        "7415": "FRAG[edu.usf.cutr.opentripplanner.android.fragments.MainFragment]7415",
+        "7409": "FRAG[edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment]7409"
+    },
+    "allDialogs": {
+        "7285": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onPostExecute(java.lang.Long)>",
+        "7287": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onCancelled(java.lang.Long)>",
+        "4880": "android.app.ProgressDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void <init>(java.lang.ref.WeakReference,android.content.Context,boolean)>",
+        "7278": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "7289": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "4475": "android.app.ProgressDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.sqlite.ServersDataSource,edu.usf.cutr.opentripplanner.android.listeners.ServerSelectorCompleteListener,boolean,boolean)>",
+        "7148": "android.app.ProgressDialog <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void <init>(java.lang.ref.WeakReference,android.content.Context,android.content.res.Resources,edu.usf.cutr.opentripplanner.android.model.Server,edu.usf.cutr.opentripplanner.android.listeners.TripRequestCompleteListener)>",
+        "7280": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "7291": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onConnectionFailed(com.google.android.gms.common.ConnectionResult)>",
+        "7290": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "7271": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "7282": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.OTPGeocoding: void onCancelled(java.lang.Long)>",
+        "7293": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void onPostExecute(java.lang.String)>",
+        "7273": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$6: void onMapLongClick(com.google.android.gms.maps.model.LatLng)>",
+        "7284": "android.app.AlertDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+        "4873": "android.app.ProgressDialog <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.listeners.ServerCheckerCompleteListener,boolean,boolean,boolean)>",
+        "4413": "android.app.ProgressDialog <edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.listeners.MetadataRequestCompleteListener)>"
+    },
+    "allActivityOptionMenuItems": {
+        "edu.usf.cutr.opentripplanner.android.MyActivity": [],
+        "edu.usf.cutr.opentripplanner.android.SettingsActivity": [],
+        "edu.usf.cutr.opentripplanner.android.AboutActivity": [],
+        "edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity": []
+    },
+    "modifiedMethods": [
+        "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+        "<edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+        "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>",
+        "<edu.usf.cutr.opentripplanner.android.util.ConversionUtils: double getDuration(java.lang.String,java.lang.String,android.content.Context)>",
+        "<edu.usf.cutr.opentripplanner.android.util.DirectionsGenerator: edu.usf.cutr.opentripplanner.android.model.Direction generateNonTransitDirections(org.opentripplanner.api.model.Leg)>",
+        "<edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>"
+    ],
+    "allWidgetEvent": {
+        "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>": {"DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>": [
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_back_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            }
+        ]},
+        "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"],
+            "action": "dialog_dismiss"
+        }]},
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145": {"ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145": [
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_back_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            }
+        ]},
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142": {
+            "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142": [
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                }
+            ],
+            "INFL[android.widget.Button,WID[2131492882|playServicesButton]704,7603]7609": [{
+                "handler": ["<edu.usf.cutr.opentripplanner.android.AboutActivity$1: void onClick(android.view.View)>"],
+                "action": "click"
+            }]
+        },
+        "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": {
+            "INFL[android.widget.RadioButton,WID[2131492936|btnModeBike]764,7766]7772": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$23: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$22: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "INFL[android.widget.CheckBox,WID[2131492942|btnModeFerry]762,7769]7776": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "INFL[android.widget.CheckBox,WID[2131492940|btnModeRentedBike]760,7768]7775": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": [
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.MyActivity: void onActivityResult(int,int,android.content.Intent)>"],
+                    "action": "implicit_on_activity_result"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.MyActivity: void onNewIntent(android.content.Intent)>"],
+                    "action": "implicit_on_activity_newIntent"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                }
+            ],
+            "INFL[android.widget.ImageButton,WID[2131492924|btnHandle]740,7746]7755": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+                ],
+                "action": "click"
+            }],
+            "INFL[android.widget.CheckBox,WID[2131492938|btnModeBus]766,7768]7773": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "INFL[android.widget.CheckBox,WID[2131492939|btnModeTrain]767,7768]7774": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "INFL[android.widget.Spinner,WID[2131492911|itinerarySelection]714,7756]7762": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onItemSelected(android.widget.AdapterView,android.view.View,int,long)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onNothingSelected(android.widget.AdapterView)>"
+                ],
+                "action": "item_selected"
+            }],
+            "INFL[android.widget.RadioButton,WID[2131492935|btnModeWalk]771,7766]7771": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$23: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$22: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+                ],
+                "action": "select"
+            }],
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753": [
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": [
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void afterTextChanged(android.text.Editable)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void afterTextChanged(android.text.Editable)>"
+                    ],
+                    "action": "enter_text"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                    "action": "editor_action"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$4: void onFocusChange(android.view.View,boolean)>"],
+                    "action": "focus_change"
+                }
+            ],
+            "INFL[android.widget.ListView,WID[2131492930|spinOptimization]774,7757]7764": [{
+                "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$28: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"],
+                "action": "item_click"
+            }],
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752": [
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                    "action": "editor_action"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                    "action": "touch"
+                },
+                {
+                    "handler": [
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void afterTextChanged(android.text.Editable)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void afterTextChanged(android.text.Editable)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void beforeTextChanged(java.lang.CharSequence,int,int,int)>"
+                    ],
+                    "action": "enter_text"
+                },
+                {
+                    "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$4: void onFocusChange(android.view.View,boolean)>"],
+                    "action": "focus_change"
+                }
+            ],
+            "INFL[android.widget.ImageButton,WID[2131492922|btnMyLocation]750,7746]7754": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+                ],
+                "action": "click"
+            }],
+            "INFL[android.widget.ImageButton,WID[2131492919|btnDateDialog]755,7746]7751": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+                ],
+                "action": "click"
+            }],
+            "INFL[android.widget.ImageButton,WID[2131492925|btnDisplayDirection]742,7756]7760": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+                ],
+                "action": "click"
+            }],
+            "INFL[android.widget.ImageButton,WID[2131492918|btnSwapOriginDestination]754,7746]7750": [{
+                "handler": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+                ],
+                "action": "click"
+            }]
+        },
+        "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"],
+            "action": "dialog_dismiss"
+        }]},
+        "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129": {"ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129": [
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            }
+        ]},
+        "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"],
+            "action": "dialog_dismiss"
+        }]},
+        "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": [{
+            "handler": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"],
+            "action": "dialog_dismiss"
+        }]},
+        "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>": {"DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>": [
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_back_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            }
+        ]},
+        "LAUNCHER_NODE[]7956": {"LAUNCHER_NODE[]7956": [{
+            "handler": [],
+            "action": "implicit_launch_event"
+        }]}
+    },
+    "allInflateNodes": [
+        "LID[2130903047|layout_date_time_dialog]9---[INFLATE]---VAR[FakeName_0]3339",
+        "LID[2130903046|layout_custom_info_window]11---[INFLATE]---VAR[$r4]2555",
+        "LID[17367055|simple_list_item_single_choice]14---[INFLATE]---VAR[FakeName_45]7395",
+        "LID[17367055|simple_list_item_single_choice]14---[INFLATE]---VAR[FakeName_46]7398",
+        "LID[17367055|simple_list_item_single_choice]14---[INFLATE]---VAR[FakeName_47]7401",
+        "LID[17367055|simple_list_item_single_choice]14---[INFLATE]---VAR[FakeName_48]7404",
+        "LID[2130903051|layout_list_direction_header]17---[INFLATE]---VAR[$r5]2930",
+        "LID[2130903048|layout_direction]23---[INFLATE]---VAR[$r4]2928",
+        "LID[2130903054|layout_main]27---[INFLATE]---VAR[$r6]6356",
+        "LID[2130903053|layout_list_subdirection_item]29---[INFLATE]---FLD[<edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: int subDirectionLayoutResourceId>]4291",
+        "LID[2130903052|layout_list_direction_item]31---[INFLATE]---FLD[<edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: int directionLayoutResourceId>]4290"
+    ],
+    "allNodes": [
+        "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+        "DIALOG[android.app.ProgressDialog]4475, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.sqlite.ServersDataSource,edu.usf.cutr.opentripplanner.android.listeners.ServerSelectorCompleteListener,boolean,boolean)>",
+        "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129",
+        "DIALOG[android.app.AlertDialog]7273, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$6: void onMapLongClick(com.google.android.gms.maps.model.LatLng)>",
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+        "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "DIALOG[android.app.AlertDialog]7287, alloc: <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onCancelled(java.lang.Long)>",
+        "DIALOG[android.app.AlertDialog]7293, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void onPostExecute(java.lang.String)>",
+        "LAUNCHER_NODE[]7956",
+        "DIALOG[android.app.ProgressDialog]4413, alloc: <edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.listeners.MetadataRequestCompleteListener)>",
+        "DIALOG[android.app.AlertDialog]7291, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onConnectionFailed(com.google.android.gms.common.ConnectionResult)>",
+        "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "DIALOG[android.app.ProgressDialog]4880, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void <init>(java.lang.ref.WeakReference,android.content.Context,boolean)>",
+        "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "DIALOG[android.app.AlertDialog]7282, alloc: <edu.usf.cutr.opentripplanner.android.tasks.OTPGeocoding: void onCancelled(java.lang.Long)>",
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142",
+        "DIALOG[android.app.AlertDialog]7284, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+        "DIALOG[android.app.AlertDialog]7285, alloc: <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onPostExecute(java.lang.Long)>",
+        "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "DIALOG[android.app.ProgressDialog]4873, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void <init>(java.lang.ref.WeakReference,android.content.Context,edu.usf.cutr.opentripplanner.android.listeners.ServerCheckerCompleteListener,boolean,boolean,boolean)>",
+        "DIALOG[android.app.ProgressDialog]7148, alloc: <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void <init>(java.lang.ref.WeakReference,android.content.Context,android.content.res.Resources,edu.usf.cutr.opentripplanner.android.model.Server,edu.usf.cutr.opentripplanner.android.listeners.TripRequestCompleteListener)>",
+        "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "DIALOG[android.app.AlertDialog]7280, alloc: <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>"
+    ],
+    "allLayoutIdNodes": [
+        "LID[2130903043|layout_color_bike_headers_blue]1",
+        "LID[17367049|simple_spinner_dropdown_item]2",
+        "LID[2130903042|layout_activity]3",
+        "LID[17367048|simple_spinner_item]4",
+        "LID[2130903041|layout_about_playservices]5",
+        "LID[17367051|simple_gallery_item]6",
+        "LID[2130903040|layout_about]7",
+        "LID[17367050|simple_dropdown_item_1line]8",
+        "LID[2130903047|layout_date_time_dialog]9",
+        "LID[17367053|two_line_list_item]10",
+        "LID[2130903046|layout_custom_info_window]11",
+        "LID[17367052|test_list_item]12",
+        "LID[2130903045|layout_color_bike_headers_red]13",
+        "LID[17367055|simple_list_item_single_choice]14",
+        "LID[2130903044|layout_color_bike_headers_green]15",
+        "LID[17367054|browser_link_context_header]16",
+        "LID[2130903051|layout_list_direction_header]17",
+        "LID[17367041|expandable_list_content]18",
+        "LID[2130903050|layout_info_window]19",
+        "LID[17367040|activity_list_item]20",
+        "LID[2130903049|layout_direction_adapter_content]21",
+        "LID[17367043|simple_list_item_1]22",
+        "LID[2130903048|layout_direction]23",
+        "LID[17367042|preference_category]24",
+        "LID[2130903055|layout_text_bubble]25",
+        "LID[17367045|simple_list_item_checked]26",
+        "LID[2130903054|layout_main]27",
+        "LID[17367044|simple_list_item_2]28",
+        "LID[2130903053|layout_list_subdirection_item]29",
+        "LID[17367047|simple_expandable_list_item_2]30",
+        "LID[2130903052|layout_list_direction_item]31",
+        "LID[17367046|simple_expandable_list_item_1]32",
+        "LID[17367065|app_permission_item]33",
+        "LID[17367064|always_use_checkbox]34",
+        "LID[17367067|auto_complete_list]35",
+        "LID[2130903056|layout_webview]36",
+        "LID[17367066|app_perms_summary]37",
+        "LID[17367069|character_picker_button]38",
+        "LID[17367068|character_picker]39",
+        "LID[17367071|date_picker]40",
+        "LID[17367070|contact_header]41",
+        "LID[17367057|select_dialog_item]42",
+        "LID[17367056|simple_list_item_multiple_choice]43",
+        "LID[17367059|select_dialog_multichoice]44",
+        "LID[17367058|select_dialog_singlechoice]45",
+        "LID[17367061|activity_list_item_2]46",
+        "LID[17367060|activity_list]47",
+        "LID[17367063|alert_dialog_progress]48",
+        "LID[17367062|alert_dialog]49",
+        "LID[17367081|icon_menu_layout]50",
+        "LID[17367080|icon_menu_item_layout]51",
+        "LID[17367083|input_method_extract_view]52",
+        "LID[17367082|input_method]53",
+        "LID[17367085|keyboard_key_preview]54",
+        "LID[17367084|js_prompt]55",
+        "LID[17367087|keyguard]56",
+        "LID[17367086|keyboard_popup_keyboard]57",
+        "LID[17367073|dialog_custom_title]58",
+        "LID[17367072|date_picker_dialog]59",
+        "LID[17367075|dialog_title_icons]60",
+        "LID[17367074|dialog_title]61",
+        "LID[17367077|global_actions_item]62",
+        "LID[17367076|expanded_menu_layout]63",
+        "LID[17367079|heavy_weight_switcher]64",
+        "LID[17367078|grant_credentials_permission]65",
+        "LID[17367097|keyguard_screen_unlock_portrait]66",
+        "LID[17367096|keyguard_screen_unlock_landscape]67",
+        "LID[17367099|list_content]68",
+        "LID[17367098|launch_warning]69",
+        "LID[17367101|list_menu_item_checkbox]70",
+        "LID[17367100|list_gestures_overlay]71",
+        "LID[17367103|list_menu_item_layout]72",
+        "LID[17367102|list_menu_item_icon]73",
+        "LID[17367089|keyguard_screen_lock]74",
+        "LID[17367088|keyguard_screen_glogin_unlock]75",
+        "LID[17367091|keyguard_screen_password_portrait]76",
+        "LID[17367090|keyguard_screen_password_landscape]77",
+        "LID[17367093|keyguard_screen_sim_pin_portrait]78",
+        "LID[17367092|keyguard_screen_sim_pin_landscape]79",
+        "LID[17367095|keyguard_screen_tab_unlock_land]80",
+        "LID[17367094|keyguard_screen_tab_unlock]81",
+        "LID[17367113|preference_dialog]82",
+        "LID[17367112|preference_child]83",
+        "LID[17367115|preference_information]84",
+        "LID[17367114|preference_dialog_edittext]85",
+        "LID[17367117|preference_widget_checkbox]86",
+        "LID[17367116|preference_list_content]87",
+        "LID[17367119|progress_dialog]88",
+        "LID[17367118|preferences]89",
+        "LID[17367105|media_controller]90",
+        "LID[17367104|list_menu_item_radio]91",
+        "LID[17367107|number_picker]92",
+        "LID[17367106|menu_item]93",
+        "LID[17367109|permissions_package_list_item]94",
+        "LID[17367108|permissions_account_and_authtokentype]95",
+        "LID[17367111|preference]96",
+        "LID[17367110|power_dialog]97",
+        "LID[17367129|screen_title_icons]98",
+        "LID[17367128|screen_title]99",
+        "LID[17367131|search_dropdown_item_1line]100",
+        "LID[17367130|search_bar]101",
+        "LID[17367133|seekbar_dialog]102",
+        "LID[17367132|search_dropdown_item_icons_2line]103",
+        "LID[17367135|simple_dropdown_hint]104",
+        "LID[17367134|select_dialog]105",
+        "LID[17367121|recent_apps_icon]106",
+        "LID[17367120|recent_apps_dialog]107",
+        "LID[17367123|safe_mode]108",
+        "LID[17367122|resolve_list_item]109",
+        "LID[17367125|screen_custom_title]110",
+        "LID[17367124|screen]111",
+        "LID[17367127|screen_simple]112",
+        "LID[17367126|screen_progress]113",
+        "LID[17367145|typing_filter]114",
+        "LID[17367144|twelve_key_entry]115",
+        "LID[17367147|volume_adjust]116",
+        "LID[17367146|usb_storage_activity]117",
+        "LID[17367149|zoom_container]118",
+        "LID[17367148|zoom_browser_accessory_buttons]119",
+        "LID[17367151|zoom_magnify]120",
+        "LID[17367150|zoom_controls]121",
+        "LID[17367137|status_bar_latest_event_content]122",
+        "LID[17367136|simple_dropdown_item_2line]123",
+        "LID[17367139|tab_indicator]124",
+        "LID[17367138|tab_content]125",
+        "LID[17367141|time_picker]126",
+        "LID[17367140|textview_hint]127",
+        "LID[17367143|transient_notification]128",
+        "LID[17367142|time_picker_dialog]129",
+        "LID[-2130968576|breadcrumbs_in_fragment]130"
+    ],
+    "allActivities": {
+        "1129": "ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129",
+        "1123": "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123",
+        "1145": "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145",
+        "1142": "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142"
+    },
+    "allActivityDialogs": {"edu.usf.cutr.opentripplanner.android.MyActivity": ["android.app.AlertDialog"]},
+    "allWindow_Widgets": {
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145": {"7703": {
+            "widget": "INFL[android.widget.ScrollView,*,7702]7703",
+            "children": {"7704": "INFL[android.widget.TextView,WID[2131492885|playServicesAcknowledgement]694,7703]7704"}
+        }},
+        "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142": {"7602": {
+            "widget": "INFL[android.widget.ScrollView,*,7601]7602",
+            "children": {"7603": {
+                "widget": "INFL[android.widget.RelativeLayout,WID[2131492876|layoutAbout]644,7602]7603",
+                "children": {
+                    "7609": "INFL[android.widget.Button,WID[2131492882|playServicesButton]704,7603]7609",
+                    "7611": "INFL[android.widget.TextView,WID[2131492884|license]692,7603]7611",
+                    "7610": "INFL[android.widget.TextView,WID[2131492883|licenseHeader]706,7603]7610",
+                    "7604": "INFL[android.widget.ImageView,WID[2131492877|appLogo]646,7603]7604",
+                    "7606": "INFL[android.widget.TextView,WID[2131492879|appDescription]650,7603]7606",
+                    "7605": "INFL[android.widget.TextView,WID[2131492878|appName]648,7603]7605",
+                    "7608": "INFL[android.widget.TextView,WID[2131492881|acknowledgements]702,7603]7608",
+                    "7607": "INFL[android.widget.TextView,WID[2131492880|acknowledgementsHeader]700,7603]7607"
+                }
+            }}
+        }},
+        "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": {"7434": {
+            "widget": "INFL[android.widget.FrameLayout,WID[2131492886|mainFragment]696,7433]7434",
+            "children": {
+                "7521": {
+                    "widget": "INFL[android.widget.LinearLayout,*,7434]7521",
+                    "children": {"7522": "INFL[android.widget.ExpandableListView,WID[16908298|list]396,7521]7522"}
+                },
+                "7745": {
+                    "widget": "INFL[android.support.v4.widget.DrawerLayout,WID[2131492915|drawerLayout]759,7434]7745",
+                    "children": {
+                        "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379",
+                        "7747": {
+                            "widget": "INFL[android.widget.RelativeLayout,WID[2131492927|navigationDrawerLeftPane]746,7745]7747",
+                            "children": {
+                                "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379",
+                                "7758": {
+                                    "widget": "INFL[android.widget.LinearLayout,WID[2131492931|layoutMode]775,7747]7758",
+                                    "children": {
+                                        "7765": "INFL[android.widget.TextView,WID[2131492933|headerSpinTravelmode]769,7758]7765",
+                                        "7767": "INFL[android.widget.ImageView,*,7758]7767",
+                                        "7766": {
+                                            "widget": "INFL[android.widget.RadioGroup,WID[2131492934|layoutModeNonTransit]770,7758]7766",
+                                            "children": {
+                                                "7772": "INFL[android.widget.RadioButton,WID[2131492936|btnModeBike]764,7766]7772",
+                                                "7771": "INFL[android.widget.RadioButton,WID[2131492935|btnModeWalk]771,7766]7771"
+                                            }
+                                        },
+                                        "7769": {
+                                            "widget": "INFL[android.widget.LinearLayout,WID[2131492941|layoutModeTransitSecondLine]761,7758]7769",
+                                            "children": {
+                                                "7776": "INFL[android.widget.CheckBox,WID[2131492942|btnModeFerry]762,7769]7776",
+                                                "7778": "INFL[android.view.View,*,7769]7778",
+                                                "7777": "INFL[android.view.View,*,7769]7777"
+                                            }
+                                        },
+                                        "7768": {
+                                            "widget": "INFL[android.widget.LinearLayout,WID[2131492937|layoutModeTransitFirstLine]765,7758]7768",
+                                            "children": {
+                                                "7774": "INFL[android.widget.CheckBox,WID[2131492939|btnModeTrain]767,7768]7774",
+                                                "7773": "INFL[android.widget.CheckBox,WID[2131492938|btnModeBus]766,7768]7773",
+                                                "7775": "INFL[android.widget.CheckBox,WID[2131492940|btnModeRentedBike]760,7768]7775"
+                                            }
+                                        }
+                                    }
+                                },
+                                "7757": {
+                                    "widget": "INFL[android.widget.LinearLayout,WID[2131492928|layoutOptimization]772,7747]7757",
+                                    "children": {
+                                        "7763": "INFL[android.widget.TextView,WID[2131492929|headerSpinOptimization]773,7757]7763",
+                                        "7764": {
+                                            "widget": "INFL[android.widget.ListView,WID[2131492930|spinOptimization]774,7757]7764",
+                                            "children": {
+                                                "7564": "INFL[android.widget.CheckedTextView,WID[16908308|text1]410,7764]7564",
+                                                "7454": "INFL[android.widget.CheckedTextView,WID[16908308|text1]410,7764]7454",
+                                                "7545": "INFL[android.widget.CheckedTextView,WID[16908308|text1]410,7764]7545",
+                                                "7435": "INFL[android.widget.CheckedTextView,WID[16908308|text1]410,7764]7435",
+                                                "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379"
+                                            }
+                                        }
+                                    }
+                                },
+                                "7759": {
+                                    "widget": "INFL[android.widget.ScrollView,WID[2131492932|layoutBike]768,7747]7759",
+                                    "children": {"7770": {
+                                        "widget": "INFL[android.widget.RelativeLayout,WID[2131492943|bikeParametersLayout]763,7759]7770",
+                                        "children": {
+                                            "7780": {
+                                                "widget": "INFL[android.widget.LinearLayout,WID[2131492945|bikeParametersTags]783,7770]7780",
+                                                "children": {
+                                                    "7781": "INFL[android.widget.TextView,WID[2131492946|bikeParametersQuickTag]784,7780]7781",
+                                                    "7783": "INFL[android.widget.TextView,WID[2131492948|bikeParametersFriendlyTag]778,7780]7783",
+                                                    "7782": "INFL[android.widget.TextView,WID[2131492947|bikeParametersFlatTag]785,7780]7782"
+                                                }
+                                            },
+                                            "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379",
+                                            "7779": "INFL[android.widget.TextView,WID[2131492944|headerBikeParameters]782,7770]7779"
+                                        }
+                                    }}
+                                }
+                            }
+                        },
+                        "7746": {
+                            "widget": "INFL[android.widget.RelativeLayout,WID[2131492916|content_frame]752,7745]7746",
+                            "children": {
+                                "7750": "INFL[android.widget.ImageButton,WID[2131492918|btnSwapOriginDestination]754,7746]7750",
+                                "7752": "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752",
+                                "7751": "INFL[android.widget.ImageButton,WID[2131492919|btnDateDialog]755,7746]7751",
+                                "7754": "INFL[android.widget.ImageButton,WID[2131492922|btnMyLocation]750,7746]7754",
+                                "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379",
+                                "7753": "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753",
+                                "7756": {
+                                    "widget": "INFL[android.widget.RelativeLayout,WID[2131492923|panelDisplayDirection]751,7746]7756",
+                                    "children": {
+                                        "7761": "INFL[android.view.View,WID[2131492926|separator]744,7756]7761",
+                                        "7760": "INFL[android.widget.ImageButton,WID[2131492925|btnDisplayDirection]742,7756]7760",
+                                        "7762": {
+                                            "widget": "INFL[android.widget.Spinner,WID[2131492911|itinerarySelection]714,7756]7762",
+                                            "children": {"6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379"}
+                                        },
+                                        "6379": "NEWVIEW[edu.usf.cutr.opentripplanner.android.util.RangeSeekBar,*,7764;7745;7746;7756;7762;7747;7770;]6379"
+                                    }
+                                },
+                                "7755": "INFL[android.widget.ImageButton,WID[2131492924|btnHandle]740,7746]7755",
+                                "7749": "INFL[android.widget.FrameLayout,*,7746]7749",
+                                "7748": "INFL[android.widget.LinearLayout,WID[2131492917|map]753,7746]7748"
+                            }
+                        }
+                    }
+                }
+            }
+        }}
+    },
+    "modiMethodInvocation": {
+        "DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>": {"DIALOG[android.app.AlertDialog]7278, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>": [{
+            "modMethods": [
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>",
+                "<edu.usf.cutr.opentripplanner.android.util.DirectionsGenerator: edu.usf.cutr.opentripplanner.android.model.Direction generateNonTransitDirections(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>"
+            ],
+            "eventHandlers": [],
+            "eventType": "implicit_rotate_event"
+        }]},
+        "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": {
+            "INFL[android.widget.Spinner,WID[2131492911|itinerarySelection]714,7756]7762": [{
+                "modMethods": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>"],
+                "eventHandlers": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onItemSelected(android.widget.AdapterView,android.view.View,int,long)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onNothingSelected(android.widget.AdapterView)>"
+                ],
+                "eventType": "item_selected"
+            }],
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753": [{
+                "modMethods": [
+                    "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>"
+                ],
+                "eventHandlers": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                "eventType": "editor_action"
+            }],
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752": [{
+                "modMethods": [
+                    "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>"
+                ],
+                "eventHandlers": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                "eventType": "editor_action"
+            }],
+            "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": [
+                {
+                    "modMethods": [
+                        "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+                        "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                        "<edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>",
+                        "<edu.usf.cutr.opentripplanner.android.util.DirectionsGenerator: edu.usf.cutr.opentripplanner.android.model.Direction generateNonTransitDirections(org.opentripplanner.api.model.Leg)>",
+                        "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_rotate_event"
+                },
+                {
+                    "modMethods": [
+                        "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+                        "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                        "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>",
+                        "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>"
+                    ],
+                    "eventHandlers": ["<edu.usf.cutr.opentripplanner.android.MyActivity: void onActivityResult(int,int,android.content.Intent)>"],
+                    "eventType": "implicit_on_activity_result"
+                }
+            ]
+        },
+        "LAUNCHER_NODE[]7956": {"LAUNCHER_NODE[]7956": [{
+            "modMethods": [
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>",
+                "<edu.usf.cutr.opentripplanner.android.util.DirectionsGenerator: edu.usf.cutr.opentripplanner.android.model.Direction generateNonTransitDirections(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>"
+            ],
+            "eventHandlers": [],
+            "eventType": "implicit_launch_event"
+        }]},
+        "DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>": {"DIALOG[android.app.AlertDialog]7271, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>": [{
+            "modMethods": [
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: java.lang.String doInBackground(edu.usf.cutr.opentripplanner.android.model.Server[])>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.TripRequest: org.opentripplanner.api.ws.Response requestPlan(org.opentripplanner.api.ws.Request,java.lang.String,java.lang.String)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: java.lang.CharSequence generateModeMarkerSnippet(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void fillItinerariesSpinner(java.util.List)>",
+                "<edu.usf.cutr.opentripplanner.android.util.DirectionsGenerator: edu.usf.cutr.opentripplanner.android.model.Direction generateNonTransitDirections(org.opentripplanner.api.model.Leg)>",
+                "<edu.usf.cutr.opentripplanner.android.tasks.MetadataRequest: org.opentripplanner.api.ws.GraphMetadata doInBackground(java.lang.String[])>"
+            ],
+            "eventHandlers": [],
+            "eventType": "implicit_rotate_event"
+        }]}
+    },
+    "allOpNodes": [
+        "NFindView1OpNode[2571] $r5 = virtualinvoke $r4.<android.view.View: android.view.View findViewById(int)>(2131492889) @ <edu.usf.cutr.opentripplanner.android.util.CustomInfoWindowAdapter: android.view.View getInfoContents(com.google.android.gms.maps.model.Marker)>",
+        "NSetIdOpNode[4044] virtualinvoke $r9.<android.widget.TextView: void setId(int)>(16711681) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[4342] $r10 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(2131492912) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getGroupView(int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NFindView1OpNode[2852] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492908) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NInflate2OpNode[7322] virtualinvoke $r10.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView2OpNode[7375] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NSetListenerOpNode[5752] virtualinvoke $r35.<android.widget.CheckBox: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r39) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView2OpNode[7329] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[6376] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492942) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[3364] virtualinvoke $r12.<android.widget.Button: void setOnClickListener(android.view.View$OnClickListener)>($r5) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5709] virtualinvoke $r21.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r6) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[6366] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492918) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[3353] $r8 = virtualinvoke $r7.<android.view.View: android.view.View findViewById(int)>(2131492896) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate1OpNode[2556] $r4 = virtualinvoke $r3.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup)>(2130903046, null) @ <edu.usf.cutr.opentripplanner.android.util.CustomInfoWindowAdapter: android.view.View getInfoContents(com.google.android.gms.maps.model.Marker)>",
+        "NInflate2OpNode[7304] virtualinvoke $r11.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.ServerChecker: void onPostExecute(java.lang.String)>",
+        "NFindView1OpNode[4018] $r2 = virtualinvoke $r2.<android.view.View: android.view.View findViewById(int)>(16908298) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void onContentChanged()>",
+        "NFindView1OpNode[2855] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492910) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NFindView2OpNode[4273] $r2 = virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutActivity: android.view.View findViewById(int)>(2131492881) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NInflate2OpNode[7308] virtualinvoke $r10.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[6406] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492916) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[2560] $r5 = virtualinvoke $r4.<android.view.View: android.view.View findViewById(int)>(2131492888) @ <edu.usf.cutr.opentripplanner.android.util.CustomInfoWindowAdapter: android.view.View getInfoContents(com.google.android.gms.maps.model.Marker)>",
+        "NAddView2OpNode[4046] virtualinvoke $r4.<android.widget.FrameLayout: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r9, $r11) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NAddView2OpNode[7412] <call site unknown>",
+        "NAddView2OpNode[7400] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NInflate2OpNode[5468] virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.MyActivity: void setContentView(int)>(2130903042) @ <edu.usf.cutr.opentripplanner.android.MyActivity: void onCreate(android.os.Bundle)>",
+        "NAddView2OpNode[4036] virtualinvoke $r6.<android.widget.LinearLayout: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r7, $r11) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[6394] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492919) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[2837] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492905) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NSetListenerOpNode[4283] virtualinvoke $r6.<android.widget.Button: void setOnClickListener(android.view.View$OnClickListener)>($r8) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NSetListenerOpNode[7336] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NInflate1OpNode[6357] $r6 = virtualinvoke $r1.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>(2130903054, $r2, 0) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5634] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnFocusChangeListener(android.view.View$OnFocusChangeListener)>($r16) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NAddView2OpNode[4051] virtualinvoke $r4.<android.widget.FrameLayout: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r5, $r11) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[3344] $r8 = virtualinvoke $r7.<android.view.View: android.view.View findViewById(int)>(2131492891) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[7364] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r9, $r10) @ <edu.usf.cutr.opentripplanner.android.tasks.OTPGeocoding: void onCancelled(java.lang.Long)>",
+        "NFindView1OpNode[6368] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492930) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[7383] virtualinvoke $r4.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setView(android.view.View)>($r3) @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "NFindView2OpNode[7339] virtualinvoke $r8.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(int,android.content.DialogInterface$OnClickListener)>(17039370, $r9) @ <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onCancelled(java.lang.Long)>",
+        "NFindView1OpNode[6370] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492935) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[4347] $r10 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(2131492914) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getGroupView(int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NFindView1OpNode[6395] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492925) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NAddView2OpNode[6392] virtualinvoke $r2.<android.view.ViewGroup: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r15, $r5) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[6388] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492943) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[7367] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NSetListenerOpNode[5732] virtualinvoke $r32.<android.widget.RadioButton: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r34) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NInflate2OpNode[7318] virtualinvoke $r10.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NSetListenerOpNode[7380] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[3995] $r3 = virtualinvoke $r3.<android.view.View: android.view.View findViewById(int)>(16908298) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NSetListenerOpNode[5666] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnTouchListener(android.view.View$OnTouchListener)>($r13) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NInflate2OpNode[7312] virtualinvoke $r11.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.OTPGeocoding: void onCancelled(java.lang.Long)>",
+        "NAddView2OpNode[7384] virtualinvoke $r4.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setView(android.view.View)>($r3) @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "NFindView1OpNode[6401] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492911) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[6396] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492927) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5680] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void addTextChangedListener(android.text.TextWatcher)>($r17) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[4307] $r9 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(2131492912) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getChildView(int,int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NSetIdOpNode[4049] virtualinvoke $r5.<android.widget.ExpandableListView: void setId(int)>(16908298) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate2OpNode[7300] virtualinvoke $r10.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[6377] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492940) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5691] virtualinvoke $r21.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r4) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NSetListenerOpNode[5704] virtualinvoke $r21.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r3) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NSetListenerOpNode[7394] virtualinvoke $r4.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r10, $r15) @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "NFindView1OpNode[3350] $r8 = virtualinvoke $r7.<android.view.View: android.view.View findViewById(int)>(2131492897) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[7411] <call site unknown>",
+        "NSetListenerOpNode[4023] virtualinvoke $r3.<android.widget.ExpandableListView: void setOnChildClickListener(android.widget.ExpandableListView$OnChildClickListener)>($r0) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void onContentChanged()>",
+        "NInflate1OpNode[2931] $r5 = virtualinvoke $r1.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup)>(2130903051, null) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5715] virtualinvoke $r29.<android.widget.Spinner: void setOnItemSelectedListener(android.widget.AdapterView$OnItemSelectedListener)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NInflate1OpNode[4302] $r1 = virtualinvoke $r7.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>($i2, $r2, 0) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getChildView(int,int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NSetListenerOpNode[5742] virtualinvoke $r35.<android.widget.CheckBox: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r37) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[3348] $r8 = virtualinvoke $r7.<android.view.View: android.view.View findViewById(int)>(2131492895) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[7357] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r9, $r10) @ <edu.usf.cutr.opentripplanner.android.tasks.OTPGeocoding: void onCancelled(java.lang.Long)>",
+        "NFindView2OpNode[7417] <call site unknown>",
+        "NSetListenerOpNode[4025] virtualinvoke $r3.<android.widget.ExpandableListView: void setOnGroupCollapseListener(android.widget.ExpandableListView$OnGroupCollapseListener)>($r0) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void onContentChanged()>",
+        "NInflate1OpNode[7399] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NAddView2OpNode[7403] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NAddView2OpNode[3342] $r7 = virtualinvoke $r1.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup)>(2130903047, $r2) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[2901] virtualinvoke $r20.<android.widget.Spinner: void setOnItemSelectedListener(android.widget.AdapterView$OnItemSelectedListener)>($r8) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NSetListenerOpNode[3360] virtualinvoke $r12.<android.widget.Button: void setOnClickListener(android.view.View$OnClickListener)>($r6) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[3987] $r8 = virtualinvoke $r3.<android.view.View: android.view.View findViewById(int)>(16908292) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NInflate2OpNode[3594] virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity: void setContentView(int)>(2130903041) @ <edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity: void onCreate(android.os.Bundle)>",
+        "NSetIdOpNode[4041] virtualinvoke $r4.<android.widget.FrameLayout: void setId(int)>(16711683) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NAddView2OpNode[4053] virtualinvoke $r8.<android.widget.FrameLayout: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r4, $r11) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5685] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnEditorActionListener(android.widget.TextView$OnEditorActionListener)>($r15) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NSetListenerOpNode[5686] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnEditorActionListener(android.widget.TextView$OnEditorActionListener)>($r15) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView2OpNode[7387] virtualinvoke $r4.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r10, $r15) @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "NFindView1OpNode[3993] $r8 = virtualinvoke $r3.<android.view.View: android.view.View findViewById(int)>(16711683) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NFindView1OpNode[3346] $r8 = virtualinvoke $r7.<android.view.View: android.view.View findViewById(int)>(2131492894) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate2OpNode[7306] virtualinvoke $r8.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onConnectionFailed(com.google.android.gms.common.ConnectionResult)>",
+        "NInflate2OpNode[7320] virtualinvoke $r9.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$10: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "NSetIdOpNode[4031] virtualinvoke $r6.<android.widget.LinearLayout: void setId(int)>(16711682) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[4016] $r1 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(16908292) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void onContentChanged()>",
+        "NInflate2OpNode[7310] virtualinvoke $r9.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$11: boolean onDrawableTouch(android.view.MotionEvent)>",
+        "NFindView1OpNode[2849] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492907) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NSetListenerOpNode[5699] virtualinvoke $r21.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r5) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[6399] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492915) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate1OpNode[7402] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NSetListenerOpNode[7372] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NAddView2OpNode[7406] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NFindView1OpNode[6365] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492921) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5679] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void addTextChangedListener(android.text.TextWatcher)>($r18) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[3984] $r8 = virtualinvoke $r3.<android.view.View: android.view.View findViewById(int)>(16711681) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NInflate2OpNode[7302] virtualinvoke $r10.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onCancelled(java.lang.Long)>",
+        "NInflate2OpNode[7314] virtualinvoke $r3.<android.app.AlertDialog$Builder: android.app.AlertDialog show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector: void onPostExecute(java.lang.Integer)>",
+        "NSetListenerOpNode[5669] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnTouchListener(android.view.View$OnTouchListener)>($r12) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NInflate2OpNode[7324] virtualinvoke $r16.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.ServerSelector$1: void onClick(android.content.DialogInterface,int)>",
+        "NSetListenerOpNode[5747] virtualinvoke $r35.<android.widget.CheckBox: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r38) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[2854] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492909) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NFindView1OpNode[6397] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492923) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[3596] $r2 = virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity: android.view.View findViewById(int)>(2131492885) @ <edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity: void onCreate(android.os.Bundle)>",
+        "NFindView1OpNode[6372] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492936) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5635] virtualinvoke $r20.<android.widget.AutoCompleteTextView: void setOnFocusChangeListener(android.view.View$OnFocusChangeListener)>($r16) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView1OpNode[3990] $r8 = virtualinvoke $r3.<android.view.View: android.view.View findViewById(int)>(16711682) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NMenuInflateOpNode[6352] virtualinvoke $r2.<android.view.MenuInflater: void inflate(int,android.view.Menu)>(2131623936, $r1) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onCreateOptionsMenu(android.view.Menu,android.view.MenuInflater)>",
+        "NSetListenerOpNode[5646] virtualinvoke $r21.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r7) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NSetListenerOpNode[3974] virtualinvoke $r2.<android.widget.ExpandableListView: void setOnItemClickListener(android.widget.AdapterView$OnItemClickListener)>($r5) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void ensureList()>",
+        "NSetListenerOpNode[5728] virtualinvoke $r32.<android.widget.RadioButton: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r33) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NInflate2OpNode[4269] virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutActivity: void setContentView(int)>(2130903040) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NSetListenerOpNode[2848] virtualinvoke $r11.<android.widget.ImageButton: void setOnClickListener(android.view.View$OnClickListener)>($r9) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NFindView1OpNode[2877] $r10 = virtualinvoke $r10.<android.view.View: android.view.View findViewById(int)>(2131492911) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: void onActivityCreated(android.os.Bundle)>",
+        "NFindView1OpNode[6398] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492924) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[4271] $r2 = virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutActivity: android.view.View findViewById(int)>(2131492879) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NInflate2OpNode[7316] virtualinvoke $r18.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onPostExecute(java.lang.Long)>",
+        "NSetListenerOpNode[4024] virtualinvoke $r3.<android.widget.ExpandableListView: void setOnGroupExpandListener(android.widget.ExpandableListView$OnGroupExpandListener)>($r0) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: void onContentChanged()>",
+        "NInflate1OpNode[2929] $r4 = virtualinvoke $r1.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>(2130903048, $r2, 0) @ <edu.usf.cutr.opentripplanner.android.fragments.DirectionListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView1OpNode[4310] $r9 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(2131492914) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getChildView(int,int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NInflate1OpNode[7405] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NInflate1OpNode[4338] $r1 = virtualinvoke $r8.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>($i1, $r2, 0) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getGroupView(int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NFindView1OpNode[2558] $r5 = virtualinvoke $r4.<android.view.View: android.view.View findViewById(int)>(2131492887) @ <edu.usf.cutr.opentripplanner.android.util.CustomInfoWindowAdapter: android.view.View getInfoContents(com.google.android.gms.maps.model.Marker)>",
+        "NAddView2OpNode[7418] <call site unknown>",
+        "NFindView1OpNode[6375] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492939) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5737] virtualinvoke $r35.<android.widget.CheckBox: void setOnCheckedChangeListener(android.widget.CompoundButton$OnCheckedChangeListener)>($r36) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NAddView2OpNode[7397] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NSetListenerOpNode[7346] virtualinvoke $r8.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(int,android.content.DialogInterface$OnClickListener)>(17039370, $r9) @ <edu.usf.cutr.opentripplanner.android.tasks.TripRequest: void onCancelled(java.lang.Long)>",
+        "NFindView1OpNode[4344] $r10 = virtualinvoke $r1.<android.view.View: android.view.View findViewById(int)>(2131492913) @ <edu.usf.cutr.opentripplanner.android.util.DirectionExpandableListAdapter: android.view.View getGroupView(int,boolean,android.view.View,android.view.ViewGroup)>",
+        "NFindView3OpNode[6354] $r3 = interfaceinvoke $r1.<android.view.Menu: android.view.MenuItem getItem(int)>(0) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onCreateOptionsMenu(android.view.Menu,android.view.MenuInflater)>",
+        "NAddView2OpNode[4038] virtualinvoke $r8.<android.widget.FrameLayout: void addView(android.view.View,android.view.ViewGroup$LayoutParams)>($r6, $r11) @ <edu.usf.cutr.opentripplanner.android.util.ExpandableListFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NSetListenerOpNode[5757] virtualinvoke $r40.<android.widget.ListView: void setOnItemClickListener(android.widget.AdapterView$OnItemClickListener)>($r41) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void addInterfaceListeners()>",
+        "NFindView2OpNode[7349] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[6363] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492920) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView3OpNode[5776] $r2 = virtualinvoke $r1.<android.view.ViewGroup: android.view.View getChildAt(int)>($i0) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void disableEnableControls(boolean,android.view.ViewGroup)>",
+        "NFindView1OpNode[6373] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492938) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate1OpNode[3341] $r7 = virtualinvoke $r1.<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup)>(2130903047, $r2) @ <edu.usf.cutr.opentripplanner.android.util.DateTimeDialog: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NFindView2OpNode[4277] $r2 = virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutActivity: android.view.View findViewById(int)>(2131492882) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NSetListenerOpNode[7354] virtualinvoke $r6.<android.app.AlertDialog$Builder: android.app.AlertDialog$Builder setPositiveButton(java.lang.CharSequence,android.content.DialogInterface$OnClickListener)>($r8, $r9) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>",
+        "NFindView1OpNode[6393] $r9 = virtualinvoke $r6.<android.view.View: android.view.View findViewById(int)>(2131492922) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle)>",
+        "NInflate1OpNode[7396] virtualinvoke $r1.<android.widget.ListView: void setAdapter(android.widget.ListAdapter)>($r2) @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void setBikeOptimizationAdapter(boolean,boolean)>",
+        "NFindView2OpNode[4275] $r2 = virtualinvoke $r0.<edu.usf.cutr.opentripplanner.android.AboutActivity: android.view.View findViewById(int)>(2131492884) @ <edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>",
+        "NInflate2OpNode[7298] virtualinvoke $r14.<android.app.AlertDialog: void show()>() @ <edu.usf.cutr.opentripplanner.android.fragments.MainFragment$6: void onMapLongClick(com.google.android.gms.maps.model.LatLng)>"
+    ],
+    "outputAPK": "edu.usf.cutr.opentripplanner.android",
+    "allWindow_Widget_EventHandlers": {
+        "android.app.AlertDialog": {
+            "DIALOG[android.app.AlertDialog]7275, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"dialog_dismiss": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"]},
+            "DIALOG[android.app.AlertDialog]7290, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"dialog_dismiss": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"]},
+            "DIALOG[android.app.AlertDialog]7277, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"dialog_dismiss": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"]},
+            "DIALOG[android.app.AlertDialog]7289, alloc: <edu.usf.cutr.opentripplanner.android.fragments.MainFragment: void onOTPGeocodingComplete(boolean,java.util.ArrayList,boolean)>": {"dialog_dismiss": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$31: void onDismiss(android.content.DialogInterface)>"]}
+        },
+        "edu.usf.cutr.opentripplanner.android.MyActivity": {
+            "INFL[android.widget.RadioButton,WID[2131492936|btnModeBike]764,7766]7772": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$22: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$23: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "INFL[android.widget.CheckBox,WID[2131492942|btnModeFerry]762,7769]7776": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "INFL[android.widget.CheckBox,WID[2131492940|btnModeRentedBike]760,7768]7775": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "ACT[edu.usf.cutr.opentripplanner.android.MyActivity]1123": {
+                "implicit_lifecycle_event": [
+                    "<edu.usf.cutr.opentripplanner.android.MyActivity: void onDestroy()>",
+                    "<edu.usf.cutr.opentripplanner.android.MyActivity: void onCreate(android.os.Bundle)>"
+                ],
+                "implicit_on_activity_newIntent": ["<edu.usf.cutr.opentripplanner.android.MyActivity: void onNewIntent(android.content.Intent)>"],
+                "implicit_on_activity_result": ["<edu.usf.cutr.opentripplanner.android.MyActivity: void onActivityResult(int,int,android.content.Intent)>"]
+            },
+            "INFL[android.widget.ImageButton,WID[2131492924|btnHandle]740,7746]7755": {"click": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>"
+            ]},
+            "INFL[android.widget.CheckBox,WID[2131492938|btnModeBus]766,7768]7773": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "INFL[android.widget.CheckBox,WID[2131492939|btnModeTrain]767,7768]7774": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$25: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$26: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$24: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$27: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "INFL[android.widget.RadioButton,WID[2131492935|btnModeWalk]771,7766]7771": {"select": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$23: void onCheckedChanged(android.widget.CompoundButton,boolean)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$22: void onCheckedChanged(android.widget.CompoundButton,boolean)>"
+            ]},
+            "INFL[android.widget.Spinner,WID[2131492911|itinerarySelection]714,7756]7762": {"item_selected": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onItemSelected(android.widget.AdapterView,android.view.View,int,long)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$20: void onNothingSelected(android.widget.AdapterView)>"
+            ]},
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492921|tbEndLocation]749,7746]7753": {
+                "editor_action": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                "touch": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                "focus_change": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$4: void onFocusChange(android.view.View,boolean)>"],
+                "enter_text": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void afterTextChanged(android.text.Editable)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void afterTextChanged(android.text.Editable)>"
+                ]
+            },
+            "INFL[android.widget.ListView,WID[2131492930|spinOptimization]774,7757]7764": {"item_click": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$28: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"]},
+            "INFL[android.widget.AutoCompleteTextView,WID[2131492920|tbStartLocation]748,7746]7752": {
+                "editor_action": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$15: boolean onEditorAction(android.widget.TextView,int,android.view.KeyEvent)>"],
+                "touch": ["<edu.usf.cutr.opentripplanner.android.util.RightDrawableOnTouchListener: boolean onTouch(android.view.View,android.view.MotionEvent)>"],
+                "focus_change": ["<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$4: void onFocusChange(android.view.View,boolean)>"],
+                "enter_text": [
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void afterTextChanged(android.text.Editable)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void afterTextChanged(android.text.Editable)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void onTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$13: void beforeTextChanged(java.lang.CharSequence,int,int,int)>",
+                    "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$14: void beforeTextChanged(java.lang.CharSequence,int,int,int)>"
+                ]
+            },
+            "INFL[android.widget.ImageButton,WID[2131492922|btnMyLocation]750,7746]7754": {"click": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>"
+            ]},
+            "INFL[android.widget.ImageButton,WID[2131492919|btnDateDialog]755,7746]7751": {"click": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>"
+            ]},
+            "INFL[android.widget.ImageButton,WID[2131492925|btnDisplayDirection]742,7756]7760": {"click": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>"
+            ]},
+            "INFL[android.widget.ImageButton,WID[2131492918|btnSwapOriginDestination]754,7746]7750": {"click": [
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$18: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$7: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$19: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$17: void onClick(android.view.View)>",
+                "<edu.usf.cutr.opentripplanner.android.fragments.MainFragment$16: void onClick(android.view.View)>"
+            ]}
+        },
+        "edu.usf.cutr.opentripplanner.android.SettingsActivity": {"ACT[edu.usf.cutr.opentripplanner.android.SettingsActivity]1129": {"implicit_lifecycle_event": ["<edu.usf.cutr.opentripplanner.android.SettingsActivity: void onCreate(android.os.Bundle)>"]}},
+        "edu.usf.cutr.opentripplanner.android.AboutActivity": {
+            "ACT[edu.usf.cutr.opentripplanner.android.AboutActivity]1142": {"implicit_lifecycle_event": ["<edu.usf.cutr.opentripplanner.android.AboutActivity: void onCreate(android.os.Bundle)>"]},
+            "INFL[android.widget.Button,WID[2131492882|playServicesButton]704,7603]7609": {"click": ["<edu.usf.cutr.opentripplanner.android.AboutActivity$1: void onClick(android.view.View)>"]}
+        },
+        "edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity": {"ACT[edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity]1145": {"implicit_lifecycle_event": ["<edu.usf.cutr.opentripplanner.android.AboutPlayServicesActivity: void onCreate(android.os.Bundle)>"]}}
+    }
+}

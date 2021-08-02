@@ -1,0 +1,58 @@
+{
+  "Book" : {
+    "DataFields" : {
+      "isbn" : {
+        "resourceIdPatterns" : [
+          "isbn"
+        ]
+      },
+      "title" : {
+        "resourceIdPatterns" : [
+          "title"
+        ]
+      },
+      "publisher" : {
+        "resourceIdPatterns" : [
+          "publisher"
+        ]
+      },
+      "pages" : {
+        "resourceIdPatterns" : [
+          "pages"
+        ]
+      },
+      "list_price" : {
+        "resourceIdPatterns" : [
+          "list_price"
+        ]
+      },
+      "format" : {
+        "resourceIdPatterns" : [
+          "format"
+        ]
+      },
+      "genre" : {
+        "resourceIdPatterns" : [
+          "genre"
+        ]
+      },
+      "language" : {
+        "resourceIdPatterns" : [
+          "language"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "isbn" : "0387284540",
+        "title" : "Applied probability and statistics",
+        "publisher" : "Springer",
+        "pages" : "350",
+        "list_prices" : "69",
+        "format" : "Hard Cover",
+        "genre" : "Unfiction",
+        "language" : "English"
+      }
+    ]
+  }
+}

@@ -92,7 +92,7 @@ class EWTG(private val graph: IGraph<Window, WindowTransition> =
                         ewtgWidget = null
                     }
                     if (Input.isNoWidgetEvent(action) || (!Input.isNoWidgetEvent(action) && ewtgWidget != null)) {
-                        val event = Input.getOrCreateEvent(
+                        val event = Input.getOrCreateInput(
                                 eventTypeString = action,
                                 eventHandlers = emptySet(),
                                 widget = ewtgWidget,

@@ -1,0 +1,41 @@
+{
+  "Account" : {
+    "DataFields" : {
+      "email" : {
+        "resourceIdPatterns" : [
+          "edit_register_email",
+          "edit_signin_email"
+        ]
+      },
+      "password" : {
+        "resourceIdPatterns" : [
+          "edit_register_password",
+          "edit_signin_password"
+        ]
+      },
+      "confirm_password" : {
+        "resourceIdPatterns" : [
+          "edit_register_password_confirm"
+        ]
+      },
+      "name" : {
+        "resourceIdPatterns" : [
+          "edit_register_name"
+        ]
+      },
+      "surname" : {
+        "resourceIdPatterns" : [
+          "edit_register_surname"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "email" : "svv.ngo.test01@gmail.com",
+        "password" : "ks61mn494y",
+        "confirm_password" : "ks61mn494y",
+        "name" : "Duc"
+      }
+    ]
+  }
+}

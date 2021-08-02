@@ -65,13 +65,13 @@ abstract class AbstractStrategyTask (val atuaStrategy: ATUATestingStrategy,
                             ?: emptyList()
                 }
 
-        /*val lessExceriseWidgets = lessExerciseWidgetsByUUID.let { filteredCandidates ->
+        val lessExceriseWidgets = lessExerciseWidgetsByUUID.let { filteredCandidates ->
             atuaMF.actionCount.widgetNumExplored2(atuaStrategy.eContext.getCurrentState(), filteredCandidates).entries
                     .groupBy { it.value }.let { map ->
                         map.listOfSmallest()?.map { (w, _) -> w } ?: emptyList()
                     }
-        }*/
-        val lessExceriseWidgets = lessExerciseWidgetsByUUID
+        }
+        // val lessExceriseWidgets = lessExerciseWidgetsByUUID
         return lessExceriseWidgets
     }
 

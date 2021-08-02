@@ -332,7 +332,7 @@ class AppModelLoader {
             val inputs = if (abstractTransition.source.inputMappings.containsKey(abstractTransition.abstractAction))
                 abstractTransition.source.inputMappings.get(abstractTransition.abstractAction)!!
             else
-                createNewInput(abstractTransition,atuaMF)
+                createNewInput(abstractTransition, atuaMF)
             val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
             inputs.forEach { input ->
                 if (prevWindows.isEmpty())
@@ -728,7 +728,7 @@ class AppModelLoader {
                         window.inputs.find { it.eventType.toString() == eventType && it.widget == widget }
                     }
                     val event = if (existingEvent == null) {
-                        createNewEvent(data,widget,window,createdAtRuntime)
+                        createNewInput(data,widget,window,createdAtRuntime)
                     } else
                         existingEvent
                     updateHandlerAndModifiedMethods(event, data,window,autautMF)
@@ -770,7 +770,7 @@ class AppModelLoader {
             }*/
         }
 
-        private fun createNewEvent(data: List<String>, widget: EWTGWidget?, window: Window,createdAtRuntime: Boolean): Input {
+        private fun createNewInput(data: List<String>, widget: EWTGWidget?, window: Window, createdAtRuntime: Boolean): Input {
             val eventType = EventType.values().find { it.name == data[0] }
             if (eventType == null) {
                 throw Exception("Not supported eventType ${data[0]}")

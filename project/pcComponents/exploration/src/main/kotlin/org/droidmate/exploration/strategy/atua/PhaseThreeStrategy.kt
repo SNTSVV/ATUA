@@ -19,6 +19,7 @@ import org.droidmate.exploration.modelFeatures.atua.ewtg.Input
 import org.droidmate.exploration.modelFeatures.atua.ewtg.TransitionPath
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
 import org.droidmate.exploration.modelFeatures.atua.ewtg.WindowManager
+import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.atua.informationRetrieval.InformationRetrieval
@@ -99,11 +100,11 @@ class PhaseThreeStrategy(
         return true
     }
 
-    override fun registerTriggeredEvents(abstractAction: AbstractAction, currentState: State<*>) {
+    override fun registerTriggeredEvents(chosenAbstractAction: AbstractAction, currentState: State<*>) {
         val abstractState = AbstractStateManager.INSTANCE.getAbstractState(currentState)!!
         //val abstractInteractions = regressionTestingMF.abstractTransitionGraph.edges(abstractState).filter { it.label.abstractAction.equals(abstractAction) }.map { it.label }
 
-        val staticEvents = abstractState.inputMappings[abstractAction]
+        val staticEvents = abstractState.inputMappings[chosenAbstractAction]
         if (staticEvents!=null) {
             staticEvents.forEach {
                 if (it == targetEvent) {
@@ -139,10 +140,6 @@ class PhaseThreeStrategy(
     }
 
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
-        if (atuaMF == null)
-        {
-            atuaMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
-        }
         var chosenAction:ExplorationAction?
 
         val currentState = eContext.getCurrentState()
@@ -212,7 +209,6 @@ class PhaseThreeStrategy(
             return emptyList()
         val transitionPaths = ArrayList<TransitionPath>()
         val currentAbState = atuaMF.getAbstractState(currentState)
-        val prevAbstractState = AbstractStateManager.INSTANCE.getAbstractState(atuaMF.appPrevState!!)
         if (currentAbState==null)
             return transitionPaths
         val runtimeAbstractStates = getUnexhaustedExploredAbstractState(currentState)
@@ -355,7 +351,7 @@ class PhaseThreeStrategy(
             return
         }
         phaseState = PhaseState.P3_GO_TO_RELATED_NODE
-        if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, true, true,false)) {
+        if (goToAnotherNode.isAvailable(currentState, relatedWindow!!,false, true, true,false)) {
             setGoToRelatedWindow(goToAnotherNode, currentState)
             return
         }
@@ -383,7 +379,7 @@ class PhaseThreeStrategy(
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).stopWhenHavingTestPath
                 && !currentAppState.isRequireRandomExploration()) {
-            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, true, true,false)) {
+            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!,false, true, true,false)) {
                 setGoToRelatedWindow(goToAnotherNode, currentState)
                 return
             }
@@ -408,7 +404,6 @@ class PhaseThreeStrategy(
     }
 
     private fun nextActionOnRandomExplorationInRelatedWindow(randomExplorationTask: RandomExplorationTask, currentState: State<*>, currentAppState: AbstractState, exerciseTargetComponentTask: ExerciseTargetComponentTask, goToAnotherNode: GoToAnotherWindow, goToTargetNodeTask: GoToTargetWindowTask) {
-
         if (isRandomBudgetAvailable()) {
             if (randomExplorationTask.fillingData || randomExplorationTask.attemptCount == 0) {
                 // if random can be still run, keep running
@@ -429,7 +424,7 @@ class PhaseThreeStrategy(
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
             }
-            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, false, false,false)) {
+            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!,false, false, false,false)) {
                 setGoToRelatedWindow(goToAnotherNode, currentState)
                 return
             }
@@ -458,7 +453,7 @@ class PhaseThreeStrategy(
                     phaseState = PhaseState.P3_EXERCISE_TARGET_NODE
                     return
                 }
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false, true, false,false)) {
                     setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
@@ -466,7 +461,7 @@ class PhaseThreeStrategy(
                 phaseState = PhaseState.P3_GO_TO_TARGET_NODE
                 return
             } else {
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false, true, false,false)) {
                     setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
@@ -497,7 +492,7 @@ class PhaseThreeStrategy(
         if (strategyTask is RandomExplorationTask
                 && (strategyTask as RandomExplorationTask).stopWhenHavingTestPath
                 && !currentAppState.isRequireRandomExploration()) {
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false,true, false,false)) {
                 setGoToTarget(goToTargetNodeTask, currentState)
                 return
             }
@@ -553,7 +548,7 @@ class PhaseThreeStrategy(
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
             }
-            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, true, false,false)) {
+            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, false, true, false,false)) {
                 setGoToRelatedWindow(goToAnotherNode, currentState)
                 return
             }
@@ -564,7 +559,7 @@ class PhaseThreeStrategy(
                     setExerciseTarget(exerciseTargetComponentTask, currentState)
                     return
                 }
-                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+                if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, false,true, false,false)) {
                     setGoToTarget(goToTargetNodeTask, currentState)
                     return
                 }
@@ -594,7 +589,7 @@ class PhaseThreeStrategy(
                 setRandomExplorationInRelatedWindow(randomExplorationTask, currentState)
                 return
             }
-            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!, true, false,false)) {
+            if (goToAnotherNode.isAvailable(currentState, relatedWindow!!,false, true, false,false)) {
                 setGoToRelatedWindow(goToAnotherNode, currentState)
                 return
             }
@@ -607,7 +602,7 @@ class PhaseThreeStrategy(
                     return
                 }
             }
-            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!, true, false,false)) {
+            if (goToTargetNodeTask.isAvailable(currentState, targetWindow!!,false, true, false,false)) {
                 setGoToTarget(goToTargetNodeTask, currentState)
                 return
             }
@@ -709,8 +704,8 @@ class PhaseThreeStrategy(
 
     fun selectTargetWindow(currentState: State<*>, numTried: Int, maxTry: Int) {
         computeAppStatesScore()
-        computeEventWindowCorrelation()
         selectLeastTriedTargetWindow(maxTry, numTried, currentState)
+        computeEventWindowCorrelation()
         if (targetWindow!=null)
             computeTargetEventScores()
         /*if (targetEventScores.isEmpty()) {
@@ -872,7 +867,7 @@ class PhaseThreeStrategy(
         if (targetEvent!=null
                 && eventWindowCorrelation.containsKey(targetEvent!!)
                 && eventWindowCorrelation[targetEvent!!]!!.isNotEmpty()) {
-            val currentEventWindowCorrelation = eventWindowCorrelation[targetEvent!!]!!.filter {  it.key != targetWindow!! }
+            val currentEventWindowCorrelation = eventWindowCorrelation[targetEvent!!]!!.filter {  it.key != targetWindow!! && it.key !is Dialog }
             if (currentEventWindowCorrelation.isNotEmpty()) {
                 val pdForRelatedWindows = ProbabilityDistribution<Window>(currentEventWindowCorrelation)
                 relatedWindow = pdForRelatedWindows.getRandomVariable()
@@ -881,7 +876,7 @@ class PhaseThreeStrategy(
                 relatedWindow = pdForRelatedWindows.getRandomVariable()
             }
         } else {
-            val candidates = WindowManager.instance.allMeaningWindows.filter { it != targetWindow }
+            val candidates = WindowManager.instance.allMeaningWindows.filter { it != targetWindow && it !is Dialog}
             if (candidates.isNotEmpty()) {
                 relatedWindow = candidates.random()
             } else {
@@ -905,7 +900,7 @@ class PhaseThreeStrategy(
 
     fun computeEventWindowCorrelation() {
         eventWindowCorrelation.clear()
-        val eventsTerms = atuaMF!!.accumulateTargetEventsDependency()
+        val eventsTerms = atuaMF!!.accumulateTargetEventsDependency(targetWindow!!)
         val ir = InformationRetrieval<Window,String>(atuaMF!!.windowTermsHashMap)
         eventsTerms.forEach {
             val result = ir.searchSimilarDocuments(it.value,10)

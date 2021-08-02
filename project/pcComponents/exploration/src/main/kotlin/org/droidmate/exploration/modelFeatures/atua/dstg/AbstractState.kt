@@ -49,7 +49,7 @@ open class AbstractState(
     var isInitalState = false
 
     var hasOptionsMenu: Boolean = true
-
+    var shouldNotCloseKeyboard: Boolean = false
     init {
         window.mappedStates.add(this)
         attributeValuationMaps.forEach {

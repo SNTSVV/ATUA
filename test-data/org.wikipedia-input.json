@@ -1,0 +1,36 @@
+{
+  "UserAccount" : {
+    "DataFields" : {
+      "username" : {
+        "resourceIdPatterns" : [
+          "login_username",
+          "create_account_username"
+        ]
+      },
+      "password" : {
+        "resourceIdPatterns" : [
+          "login_password",
+          "create_account_password"
+        ]
+      },
+      "passwordConfirm" : {
+        "resourceIdPatterns" : [
+          "create_account_password_repeat"
+        ]
+      },
+      "email" : {
+        "resourceIdPatterns" : [
+          "create_account_email"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "username" : "duc123456",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "chanhduc@gmail.com"
+      }
+    ]
+  }
+}

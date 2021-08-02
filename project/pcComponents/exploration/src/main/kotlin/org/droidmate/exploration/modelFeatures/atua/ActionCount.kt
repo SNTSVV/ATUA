@@ -19,9 +19,10 @@ class ActionCount  {
     fun widgetnNumExplored(s: State<*>, selection: Collection<Widget>): Map<Widget, Int> {
         val abstractState = AbstractStateManager.INSTANCE.getAbstractState(s)!!
         val activity = abstractState.window.classType
-        return selection.map {
+        val widgetCount = selection.map {
             it to (wCnt[it.uid]?.get(activity) ?: 0)
         }.toMap()
+        return widgetCount
     }
 
     fun widgetNumExplored2(s: State<*>, selection: Collection<Widget>): Map<Widget,Int> {
@@ -71,10 +72,6 @@ class ActionCount  {
 
     fun updateWidgetActionCounter(prevAbstractState: AbstractState,  prevState: State<*>, interaction: Interaction<Widget>) {
         //update widget count
-        val actionType = AbstractAction.normalizeActionType(interaction,prevState)
-        if (actionType != AbstractActionType.CLICK) {
-            return
-        }
         val prevActivity = prevAbstractState.window.classType
         val widgetUid = interaction.targetWidget!!.uid
         if (!wCnt.containsKey(widgetUid)) {

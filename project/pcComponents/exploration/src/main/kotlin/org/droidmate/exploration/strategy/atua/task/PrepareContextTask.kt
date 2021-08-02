@@ -41,7 +41,7 @@ class PrepareContextTask constructor(
             }
             isOpeningInputDialog = false
         }
-        val availableWidgets = currentState.widgets.filter { fillActions.containsKey(it.uid) }
+        val availableWidgets = currentState.widgets.filter { fillActions.containsKey(it) }
         if (availableWidgets.isNotEmpty())
             return false
         var isEnd = true
@@ -57,7 +57,7 @@ class PrepareContextTask constructor(
 
     var fillDataMode: FillDataMode = FillDataMode.SIMPLE
     protected val filledData = HashMap<DataField, Boolean>()
-    val fillActions = HashMap<UUID,ExplorationAction>()
+    val fillActions = HashMap<Widget,ExplorationAction>()
     override fun initialize(currentState: State<*>) {
         reset()
         prepareFillActions(currentState)
@@ -71,7 +71,8 @@ class PrepareContextTask constructor(
     }
 
     private fun prepareFillActions(currentState: State<*>) {
-        val allInputWidgets = Helper.getVisibleWidgets(currentState).filter {inputFillDecision[it]?.equals(false)?:false }
+        val visibleWidgets = Helper.getVisibleWidgets(currentState)
+        val allInputWidgets = visibleWidgets.filter {inputFillDecision[it]?.equals(true)?:false }
         val currentAbstractState = atuaMF.getAbstractState(currentState)!!
         allInputWidgets.forEach {widget ->
             if (!widget.checked.isEnabled() && !widget.isInputField) {
@@ -86,11 +87,11 @@ class PrepareContextTask constructor(
                         val action = openDialogActions.random().abstractAction.actionType
                         when (action) {
                             AbstractActionType.CLICK ->  {
-                                fillActions[widget.uid] = widget.click()
+                                fillActions[widget] = widget.click()
                                 ExplorationTrace.widgetTargets.removeLast()
                             }
                             AbstractActionType.LONGCLICK -> {
-                                fillActions[widget.uid] = widget.longClick()
+                                fillActions[widget] = widget.longClick()
                                 ExplorationTrace.widgetTargets.removeLast()
                             }
                         }
@@ -100,7 +101,7 @@ class PrepareContextTask constructor(
                 val inputValue = TextInput.getSetTextInputValue(widget,currentState,randomInput,currentInputCoverageType)
                 if (widget.checked.isEnabled()) {
                     if(widget.checked.toString() != inputValue) {
-                        fillActions[widget.uid] = widget.click()
+                        fillActions[widget] = widget.click()
                         ExplorationTrace.widgetTargets.removeLast()
                     }
                 } else {
@@ -109,7 +110,7 @@ class PrepareContextTask constructor(
                     else
                         widget.setText(inputValue,sendEnter = false ,enableValidation = false)
                     ExplorationTrace.widgetTargets.removeLast()
-                    fillActions[widget.uid] = inputAction
+                    fillActions[widget] = inputAction
                 }
             }
 
@@ -118,6 +119,7 @@ class PrepareContextTask constructor(
     }
 
     override fun chooseAction(currentState: State<*>): ExplorationAction? {
+        log.info("Choose an user-like input.")
         if (isOpeningInputDialog) {
             if (!randomExplorationTask!!.isTaskEnd(currentState)) {
                 return randomExplorationTask!!.chooseAction(currentState)
@@ -177,12 +179,14 @@ class PrepareContextTask constructor(
     val inputFillDecision = HashMap<Widget,Boolean>()
 
     private fun hasInput(currentState: State<*>): Boolean {
-        return  Helper.getUserInputFields(currentState).isNotEmpty() || getUserLikeInputWidgets(currentState).isNotEmpty()
+        val userInputFields = Helper.getUserInputFields(currentState)
+        val userlikeInputWidgets = getUserLikeInputWidgets(currentState)
+        return  userInputFields.isNotEmpty() || userlikeInputWidgets.isNotEmpty()
 }
 
     var isOpeningInputDialog: Boolean = false
     internal fun randomlyFill(currentState: State<*>): ExplorationAction? {
-        val availableWidgets = currentState.widgets.filter { w->fillActions.containsKey(w.uid)}
+        val availableWidgets = currentState.widgets.filter { w->fillActions.containsKey(w)}
         if (availableWidgets.isEmpty()) {
             log.debug("No more filling data.")
             return null
@@ -190,8 +194,8 @@ class PrepareContextTask constructor(
         val toFillWidget = availableWidgets.random()
         log.debug("Selected widget: ${toFillWidget}")
         ExplorationTrace.widgetTargets.add(toFillWidget)
-        val action = fillActions[toFillWidget.uid]!!
-        fillActions.remove(toFillWidget.uid)
+        val action = fillActions[toFillWidget]!!
+        fillActions.remove(toFillWidget)
         if (!toFillWidget.isInputField && !toFillWidget.checked.isEnabled()) {
             isOpeningInputDialog = true
             randomExplorationTask = RandomExplorationTask(atuaMF,atuaStrategy,delay,useCoordinateClicks,false,10)
@@ -240,7 +244,7 @@ class PrepareContextTask constructor(
                     InputCoverage.FILL_NONE ->  inputFillDecision.put(it,value = false)
                     InputCoverage.FILL_RANDOM -> {
                         if (!it.isPassword && it.isInputField) {
-                            if (random.nextDouble() < 0.5) {
+                            if (random.nextDouble() < 0.75) {
                                 inputFillDecision.put(it, true)
                             } else {
                                 inputFillDecision.put(it, false)
@@ -266,7 +270,7 @@ class PrepareContextTask constructor(
                                 }*/
                             }
                             if (!ignoreWidget) {
-                                inputFillDecision.put(it, false)
+                                inputFillDecision.put(it, true)
                             }
                         }
                     }

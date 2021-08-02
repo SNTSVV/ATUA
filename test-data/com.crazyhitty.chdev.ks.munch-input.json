@@ -1,0 +1,19 @@
+{
+  "Rss" : {
+    "DataFields" : {
+      "rss_url" : {
+        "resourceIdPatterns" : [
+          "source_url"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "rss_url" : "http://feeds.bbci.co.uk/news/world/rss.xml"
+      },
+      {
+        "rss_url": "http://rssfeeds.usatoday.com/usatoday-newstopstories&x=1"
+      }
+    ]
+  }
+}

@@ -308,8 +308,7 @@ class ATUAMF(private val appName: String,
         allTargetWindow_ModifiedMethods.entries.removeIf {
             it.key.inputs.all { it.modifiedMethods.isEmpty() }
                     && (windowHandlersHashMap.get(it.key) == null
-                    || (
-                    windowHandlersHashMap.get(it.key) != null
+                    || (windowHandlersHashMap.get(it.key) != null
                             && windowHandlersHashMap.get(it.key)!!.all { !targetHandlers.contains(it) }
                     ))
         }
@@ -322,6 +321,7 @@ class ATUAMF(private val appName: String,
                     notFullyExercisedTargetInputs.add(it)
                 }
             }
+
         }
         notFullyExercisedTargetInputs.removeIf {
             it.modifiedMethods.isEmpty()
@@ -1140,7 +1140,7 @@ class ATUAMF(private val appName: String,
         if (!sourceAbstractState.inputMappings.containsKey(newAbstractInteraction.abstractAction)
                 && !newAbstractInteraction.abstractAction.isActionQueue()
                 && !newAbstractInteraction.abstractAction.isLaunchOrReset()) {
-            Input.createStaticEventFromAbstractInteraction(sourceAbstractState, destAbstractState, newAbstractInteraction, interaction,wtg)
+            Input.createInputFromAbstractInteraction(sourceAbstractState, destAbstractState, newAbstractInteraction, interaction,wtg)
         }
         newAbstractInteraction.updateGuardEnableStatus()
         lastExecutedTransition = newAbstractInteraction
@@ -1265,8 +1265,6 @@ class ATUAMF(private val appName: String,
             statementMF!!.statementRead = false
             val currentAbstractState = computeAbstractState(newState, context)
             stateList.add(newState)
-
-
             stateVisitCount.putIfAbsent(newState, 0)
             stateVisitCount[newState] = stateVisitCount[newState]!! + 1
             actionCount.initWidgetActionCounterForNewState(newState)
@@ -1274,6 +1272,20 @@ class ATUAMF(private val appName: String,
             if (prevAbstractState == null && prevState != context.model.emptyState) {
                 prevAbstractState = computeAbstractState(prevState, context)
                 stateList.add(stateList.size - 1, prevState)
+            }
+            if (prevAbstractState!=null) {
+                if (prevAbstractState.shouldNotCloseKeyboard == false && prevAbstractState.window == currentAbstractState.window && prevAbstractState.isOpeningKeyboard && !currentAbstractState.isOpeningKeyboard) {
+                    val missingAVMs = ArrayList<AttributeValuationMap>()
+                    prevAbstractState.attributeValuationMaps.forEach { avm1 ->
+                        if (!currentAbstractState.attributeValuationMaps.any { avm2-> avm1 == avm2 }
+                            && !currentAbstractState.EWTGWidgetMapping.entries.any { it.value == prevAbstractState.EWTGWidgetMapping[avm1] }) {
+                            missingAVMs.add(avm1)
+                        }
+                    }
+                    if (missingAVMs.isNotEmpty()) {
+                        prevAbstractState.shouldNotCloseKeyboard = true
+                    }
+                }
             }
             necessaryCheckModel = true
             if (!newState.isHomeScreen && firstRun) {
@@ -2086,9 +2098,9 @@ class ATUAMF(private val appName: String,
         return null
     }
 
-    fun accumulateTargetEventsDependency(): HashMap<Input, HashMap<String, Long>> {
+    fun accumulateTargetEventsDependency(window: Window): HashMap<Input, HashMap<String, Long>> {
         val result = HashMap<Input, HashMap<String, Long>>()
-        notFullyExercisedTargetInputs.forEach { event ->
+        Input.allInputs.filter { it.sourceWindow == window }.forEach { event ->
             val eventDependency = HashMap<String, Long>()
             event.eventHandlers.forEach {
                 if (methodTermsHashMap.containsKey(it)) {

@@ -42,8 +42,8 @@ abstract class AbstractLocalReducer {
                 reducedAttributes.put(AttributeType.scrollable, false.toString())
             }
         }
-        if (guiWidget.selected.isEnabled())
-            reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())
+        /*if (guiWidget.selected.isEnabled())
+            reducedAttributes.put(AttributeType.selected, guiWidget.selected.toString())*/
 
         return reducedAttributes
     }

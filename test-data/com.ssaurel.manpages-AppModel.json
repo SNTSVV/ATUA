@@ -1,0 +1,1422 @@
+{
+    "allTransitions": {
+        "ACT[com.ssaurel.manpages.activities.SectionActivity]966": [
+            {
+                "widget": "INFL[android.widget.ListView,WID[16908298|list]289,1961]1964",
+                "action": "item_click",
+                "target": "ACT[com.ssaurel.manpages.activities.CommandActivity]951"
+            },
+            {
+                "widget": "ACT[com.ssaurel.manpages.activities.SectionActivity]966",
+                "action": "implicit_back_event",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            }
+        ],
+        "ACT[com.ssaurel.manpages.activities.CommandActivity]951": [
+            {
+                "widget": "ACT[com.ssaurel.manpages.activities.CommandActivity]951",
+                "action": "implicit_back_event",
+                "target": "ACT[com.ssaurel.manpages.activities.SectionActivity]966"
+            },
+            {
+                "widget": "ACT[com.ssaurel.manpages.activities.CommandActivity]951",
+                "action": "implicit_back_event",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            }
+        ],
+        "LAUNCHER_NODE[]2066": [{
+            "widget": "LAUNCHER_NODE[]2066",
+            "action": "implicit_launch_event",
+            "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+        }],
+        "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": [
+            {
+                "widget": "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967",
+                "action": "click",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            },
+            {
+                "widget": "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968",
+                "action": "click",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            },
+            {
+                "widget": "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969",
+                "action": "click",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            },
+            {
+                "widget": "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970",
+                "action": "click",
+                "target": "ACT[com.ssaurel.manpages.activities.MainActivity]980"
+            }
+        ],
+        "ACT[com.ssaurel.manpages.activities.MainActivity]980": [
+            {
+                "widget": "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935",
+                "action": "item_click",
+                "target": "ACT[com.ssaurel.manpages.activities.SectionActivity]966"
+            },
+            {
+                "widget": "ACT[com.ssaurel.manpages.activities.MainActivity]980",
+                "action": "implicit_back_event",
+                "target": "LAUNCHER_NODE[]2066"
+            },
+            {
+                "widget": "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935",
+                "action": "item_click",
+                "target": "ACT[com.ssaurel.manpages.activities.CommandActivity]951"
+            }
+        ],
+        "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": [],
+        "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": []
+    },
+    "allUnreachedActivity": [],
+    "allFragmentNodes": {},
+    "allDialogs": {"1903": "android.app.AlertDialog <com.ssaurel.manpages.activities.MainActivity: boolean downloadPages()>"},
+    "unreachableMethods": [
+        "<com.ssaurel.manpages.activities.AdListActivity: android.widget.ListAdapter getListAdapter()>",
+        "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSlideme(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchAmazon(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.AppRater: void init(com.ssaurel.manpages.utils.AppRater$Config)>",
+        "<com.ssaurel.manpages.utils.InfosWrapper: void rate(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSlideme(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.utils.UtilAds: void renew(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounter(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounterThresold(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchNokiaLink(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSamsungLink(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: void renew(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.AppRater: void init(com.ssaurel.manpages.utils.AppRater$Config)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounter(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounterThresold(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchAmazon(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSamsungLink(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: com.ssaurel.manpages.utils.ManPagesApplication$TrackerName[] values()>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication: void <clinit>()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchNokiaX(android.content.Context,java.lang.String)>"
+    ],
+    "allLayoutIdNodes": [
+        "LID[-2130968576|notification_template_material_base]1",
+        "LID[2131296265|layout_abc_alert_dialog_material]2",
+        "LID[17367049|simple_spinner_dropdown_item]3",
+        "LID[-2130968581|recent_apps_icon]4",
+        "LID[2131296264|layout_abc_alert_dialog_button_bar_material]5",
+        "LID[17367048|simple_spinner_item]6",
+        "LID[-2130968582|recent_apps_icon]7",
+        "LID[2131296267|layout_abc_dialog_title_material]8",
+        "LID[17367051|simple_gallery_item]9",
+        "LID[-2130968583|recent_apps_icon]10",
+        "LID[2131296266|layout_abc_alert_dialog_title_material]11",
+        "LID[17367050|simple_dropdown_item_1line]12",
+        "LID[-2130968584|recent_apps_icon]13",
+        "LID[2131296269|layout_abc_list_menu_item_checkbox]14",
+        "LID[17367053|two_line_list_item]15",
+        "LID[-2130968577|recent_apps_icon]16",
+        "LID[2131296268|layout_abc_expanded_menu_layout]17",
+        "LID[17367052|test_list_item]18",
+        "LID[-2130968578|recent_apps_icon]19",
+        "LID[2131296271|layout_abc_list_menu_item_layout]20",
+        "LID[17367055|simple_list_item_single_choice]21",
+        "LID[-2130968579|recent_apps_icon]22",
+        "LID[2131296270|layout_abc_list_menu_item_icon]23",
+        "LID[17367054|browser_link_context_header]24",
+        "LID[-2130968580|recent_apps_icon]25",
+        "LID[2131296257|layout_abc_action_bar_up_container]26",
+        "LID[17367041|expandable_list_content]27",
+        "LID[-2130968589|notification_template_text]28",
+        "LID[2131296256|layout_abc_action_bar_title_item]29",
+        "LID[17367040|activity_list_item]30",
+        "LID[-2130968590|notification_template_progress]31",
+        "LID[2131296259|layout_abc_action_menu_layout]32",
+        "LID[17367043|simple_list_item_1]33",
+        "LID[2131296258|layout_abc_action_menu_item_layout]34",
+        "LID[17367042|preference_category]35",
+        "LID[2131296261|layout_abc_action_mode_close_item_material]36",
+        "LID[17367045|simple_list_item_checked]37",
+        "LID[-2130968585|notification_template_header]38",
+        "LID[2131296260|layout_abc_action_mode_bar]39",
+        "LID[17367044|simple_list_item_2]40",
+        "LID[-2130968586|notification_template_right_icon]41",
+        "LID[2131296263|layout_abc_activity_chooser_view_list_item]42",
+        "LID[17367047|simple_expandable_list_item_2]43",
+        "LID[-2130968587|breadcrumbs_in_fragment]44",
+        "LID[2131296262|layout_abc_activity_chooser_view]45",
+        "LID[17367046|simple_expandable_list_item_1]46",
+        "LID[-2130968588|notification_template_part_line1]47",
+        "LID[2131296281|layout_abc_select_dialog_material]48",
+        "LID[17367065|action_bar_title_item]49",
+        "LID[2131296280|layout_abc_search_view]50",
+        "LID[17367064|action_bar_home]51",
+        "LID[2131296283|layout_activity_command]52",
+        "LID[17367067|action_menu_item_layout]53",
+        "LID[2131296282|layout_abc_tooltip]54",
+        "LID[17367066|action_bar_up_container]55",
+        "LID[2131296285|layout_activity_section]56",
+        "LID[2131296284|layout_activity_main]57",
+        "LID[17367068|action_menu_layout]58",
+        "LID[2131296287|layout_browser_actions_context_menu_row]59",
+        "LID[17367071|activity_chooser_view]60",
+        "LID[2131296286|layout_browser_actions_context_menu_page]61",
+        "LID[17367070|action_mode_close_item]62",
+        "LID[2131296273|layout_abc_popup_menu_header_item_layout]63",
+        "LID[17367057|select_dialog_item]64",
+        "LID[2131296272|layout_abc_list_menu_item_radio]65",
+        "LID[17367056|simple_list_item_multiple_choice]66",
+        "LID[2131296275|layout_abc_screen_content_include]67",
+        "LID[17367059|select_dialog_multichoice]68",
+        "LID[2131296274|layout_abc_popup_menu_item_layout]69",
+        "LID[17367058|select_dialog_singlechoice]70",
+        "LID[2131296277|layout_abc_screen_simple_overlay_action_mode]71",
+        "LID[17367061|simple_selectable_list_item]72",
+        "LID[2131296276|layout_abc_screen_simple]73",
+        "LID[17367060|list_content]74",
+        "LID[2131296279|layout_abc_search_dropdown_item_icons_2line]75",
+        "LID[17367063|simple_list_item_activated_2]76",
+        "LID[2131296278|layout_abc_screen_toolbar]77",
+        "LID[17367062|simple_list_item_activated_1]78",
+        "LID[2131296297|layout_md_dialog_progress_indeterminate]79",
+        "LID[17367081|am_compat_mode_dialog]80",
+        "LID[2131296296|layout_md_dialog_progress]81",
+        "LID[17367080|always_use_checkbox]82",
+        "LID[2131296299|layout_md_listitem]83",
+        "LID[17367083|app_permission_item_money]84",
+        "LID[2131296298|layout_md_dialog_progress_indeterminate_horizontal]85",
+        "LID[17367082|app_permission_item]86",
+        "LID[2131296301|layout_md_listitem_singlechoice]87",
+        "LID[17367085|app_perms_summary]88",
+        "LID[2131296300|layout_md_listitem_multichoice]89",
+        "LID[17367084|app_permission_item_old]90",
+        "LID[2131296303|layout_md_stub_progress]91",
+        "LID[2131296302|layout_md_stub_actionbuttons]92",
+        "LID[17367086|auto_complete_list]93",
+        "LID[2131296289|layout_md_dialog_basic]94",
+        "LID[17367073|activity_list]95",
+        "LID[2131296288|layout_expand_button]96",
+        "LID[17367072|activity_chooser_view_list_item]97",
+        "LID[2131296291|layout_md_dialog_custom]98",
+        "LID[2131296290|layout_md_dialog_basic_check]99",
+        "LID[17367074|activity_list_item_2]100",
+        "LID[2131296293|layout_md_dialog_input_check]101",
+        "LID[2131296292|layout_md_dialog_input]102",
+        "LID[17367076|alert_dialog]103",
+        "LID[2131296295|layout_md_dialog_list_check]104",
+        "LID[2131296294|layout_md_dialog_list]105",
+        "LID[17367078|alert_dialog_progress]106",
+        "LID[2131296313|layout_notification_template_big_media_custom]107",
+        "LID[2131296312|layout_notification_template_big_media]108",
+        "LID[17367096|date_picker_dialog]109",
+        "LID[2131296315|layout_notification_template_big_media_narrow_custom]110",
+        "LID[2131296314|layout_notification_template_big_media_narrow]111",
+        "LID[2131296317|layout_notification_template_icon_group]112",
+        "LID[2131296316|layout_notification_template_custom_big]113",
+        "LID[2131296319|layout_notification_template_media]114",
+        "LID[2131296318|layout_notification_template_lines_media]115",
+        "LID[2131296305|layout_md_stub_progress_indeterminate_horizontal]116",
+        "LID[17367089|character_picker]117",
+        "LID[2131296304|layout_md_stub_progress_indeterminate]118",
+        "LID[17367088|calendar_view]119",
+        "LID[2131296307|layout_md_stub_titleframe_lesspadding]120",
+        "LID[17367091|choose_account]121",
+        "LID[2131296306|layout_md_stub_titleframe]122",
+        "LID[17367090|character_picker_button]123",
+        "LID[2131296309|layout_notification_action_tombstone]124",
+        "LID[17367093|choose_account_type]125",
+        "LID[2131296308|layout_notification_action]126",
+        "LID[17367092|choose_account_row]127",
+        "LID[2131296311|layout_notification_media_cancel_action]128",
+        "LID[17367095|date_picker]129",
+        "LID[2131296310|layout_notification_media_action]130",
+        "LID[17367094|choose_type_and_account]131",
+        "LID[2131296329|layout_preference_information]132",
+        "LID[17367113|icon_menu_layout]133",
+        "LID[2131296328|layout_preference_dropdown_material]134",
+        "LID[17367112|icon_menu_item_layout]135",
+        "LID[2131296331|layout_preference_list_fragment]136",
+        "LID[17367115|input_method_extract_view]137",
+        "LID[2131296330|layout_preference_information_material]138",
+        "LID[17367114|input_method]139",
+        "LID[2131296333|layout_preference_recyclerview]140",
+        "LID[17367117|js_prompt]141",
+        "LID[2131296332|layout_preference_material]142",
+        "LID[17367116|input_method_switch_dialog_title]143",
+        "LID[2131296335|layout_preference_widget_seekbar]144",
+        "LID[2131296334|layout_preference_widget_checkbox]145",
+        "LID[2131296321|layout_notification_template_part_chronometer]146",
+        "LID[17367105|expanded_menu_layout]147",
+        "LID[2131296320|layout_notification_template_media_custom]148",
+        "LID[2131296323|layout_preference]149",
+        "LID[17367107|fragment_bread_crumbs]150",
+        "LID[2131296322|layout_notification_template_part_time]151",
+        "LID[17367106|fragment_bread_crumb_item]152",
+        "LID[2131296325|layout_preference_category_material]153",
+        "LID[17367109|global_actions_silent_mode]154",
+        "LID[2131296324|layout_preference_category]155",
+        "LID[17367108|global_actions_item]156",
+        "LID[2131296327|layout_preference_dropdown]157",
+        "LID[17367111|heavy_weight_switcher]158",
+        "LID[2131296326|layout_preference_dialog_edittext]159",
+        "LID[17367110|grant_credentials_permission]160",
+        "LID[2131296344|layout_support_simple_spinner_dropdown_item]161",
+        "LID[17367128|keyguard_host_view]162",
+        "LID[17367131|keyguard_multi_user_avatar]163",
+        "LID[17367133|keyguard_multi_user_selector_widget]164",
+        "LID[17367135|keyguard_password_view]165",
+        "LID[2131296337|layout_preference_widget_switch]166",
+        "LID[17367121|keyguard_account_view]167",
+        "LID[2131296336|layout_preference_widget_seekbar_material]168",
+        "LID[2131296339|layout_progress_popup]169",
+        "LID[2131296338|layout_preference_widget_switch_compat]170",
+        "LID[17367122|keyguard_add_widget]171",
+        "LID[2131296341|layout_select_dialog_item_material]172",
+        "LID[17367125|keyguard_face_unlock_view]173",
+        "LID[2131296340|layout_row]174",
+        "LID[2131296343|layout_select_dialog_singlechoice_material]175",
+        "LID[2131296342|layout_select_dialog_multichoice_material]176",
+        "LID[17367145|keyguard_screen_sim_puk_portrait]177",
+        "LID[17367144|keyguard_screen_sim_puk_landscape]178",
+        "LID[17367149|keyguard_screen_tab_unlock_land]179",
+        "LID[17367148|keyguard_screen_tab_unlock]180",
+        "LID[17367151|keyguard_screen_unlock_portrait]181",
+        "LID[17367150|keyguard_screen_unlock_landscape]182",
+        "LID[17367137|keyguard_pin_view]183",
+        "LID[17367136|keyguard_pattern_view]184",
+        "LID[17367138|keyguard_screen_glogin_unlock]185",
+        "LID[17367141|keyguard_screen_password_portrait]186",
+        "LID[17367140|keyguard_screen_password_landscape]187",
+        "LID[17367143|keyguard_screen_sim_pin_portrait]188",
+        "LID[17367142|keyguard_screen_sim_pin_landscape]189",
+        "LID[17367160|keyguard_transport_control_view]190",
+        "LID[17367163|launch_warning]191",
+        "LID[17367164|list_content_simple]192",
+        "LID[17367167|list_menu_item_icon]193",
+        "LID[17367166|list_menu_item_checkbox]194",
+        "LID[17367153|keyguard_sim_pin_view]195",
+        "LID[17367152|keyguard_selector_view]196",
+        "LID[17367156|keyguard_sim_puk_view]197",
+        "LID[17367158|keyguard_status_view]198",
+        "LID[17367177|media_route_list_item_top_header]199",
+        "LID[17367176|media_route_list_item_section_header]200",
+        "LID[17367179|notification_action]201",
+        "LID[17367181|notification_action_tombstone]202",
+        "LID[17367183|notification_template_base]203",
+        "LID[17367182|notification_intruder_content]204",
+        "LID[17367169|list_menu_item_radio]205",
+        "LID[17367168|list_menu_item_layout]206",
+        "LID[17367171|media_controller]207",
+        "LID[17367170|locale_picker_item]208",
+        "LID[17367173|media_route_list_item]209",
+        "LID[17367172|media_route_chooser_layout]210",
+        "LID[17367175|media_route_list_item_collapse_group]211",
+        "LID[17367174|media_route_list_item_checkable]212",
+        "LID[17367192|overlay_display_window]213",
+        "LID[17367195|popup_menu_item_layout]214",
+        "LID[17367194|permissions_package_list_item]215",
+        "LID[17367197|preference]216",
+        "LID[17367185|notification_template_big_picture]217",
+        "LID[17367184|notification_template_big_base]218",
+        "LID[17367187|notification_template_inbox]219",
+        "LID[17367186|notification_template_big_text]220",
+        "LID[17367189|notification_template_part_time]221",
+        "LID[17367188|notification_template_part_chronometer]222",
+        "LID[17367190|number_picker]223",
+        "LID[17367208|preference_list_fragment]224",
+        "LID[17367210|preference_widget_seekbar]225",
+        "LID[17367213|progress_dialog]226",
+        "LID[17367215|recent_apps_dialog]227",
+        "LID[17367202|preference_header_item]228",
+        "LID[17367207|preference_list_content_single]229",
+        "LID[17367206|preference_list_content]230",
+        "LID[17367225|screen_progress]231",
+        "LID[17367224|screen_custom_title]232",
+        "LID[17367227|screen_simple_overlay_action_mode]233",
+        "LID[17367226|screen_simple]234",
+        "LID[17367229|screen_title_icons]235",
+        "LID[17367228|screen_title]236",
+        "LID[17367230|search_bar]237",
+        "LID[17367217|remote_views_adapter_default_loading_view]238",
+        "LID[17367219|resolver_grid]239",
+        "LID[17367218|resolve_list_item]240",
+        "LID[17367220|safe_mode]241",
+        "LID[17367223|screen_action_bar_overlay]242",
+        "LID[17367222|screen_action_bar]243",
+        "LID[17367240|simple_dropdown_hint]244",
+        "LID[17367243|sms_short_code_confirmation_dialog]245",
+        "LID[17367242|simple_list_item_2_single_choice]246",
+        "LID[17367245|status_bar_latest_event_content]247",
+        "LID[17367244|ssl_certificate]248",
+        "LID[17367247|status_bar_latest_event_ticker_large_icon]249",
+        "LID[17367246|status_bar_latest_event_ticker]250",
+        "LID[17367233|search_view]251",
+        "LID[17367232|search_dropdown_item_icons_2line]252",
+        "LID[17367235|select_dialog]253",
+        "LID[17367234|seekbar_dialog]254",
+        "LID[17367239|select_dialog_singlechoice_holo]255",
+        "LID[17367259|textview_hint]256",
+        "LID[17367261|time_picker_dialog]257",
+        "LID[17367260|time_picker]258",
+        "LID[17367263|transient_notification]259",
+        "LID[17367248|tab_content]260",
+        "LID[17367251|text_drag_thumbnail]261",
+        "LID[17367250|tab_indicator_holo]262",
+        "LID[17367252|text_edit_action_popup_text]263",
+        "LID[17367273|wifi_p2p_dialog]264",
+        "LID[17367272|webview_select_singlechoice]265",
+        "LID[17367274|wifi_p2p_dialog_row]266",
+        "LID[17367277|zoom_controls]267",
+        "LID[17367276|zoom_container]268",
+        "LID[17367278|zoom_magnify]269",
+        "LID[17367265|typing_filter]270",
+        "LID[17367267|volume_adjust]271",
+        "LID[17367266|usb_storage_activity]272",
+        "LID[17367268|volume_adjust_item]273",
+        "LID[17367271|webview_find]274",
+        "LID[17367270|web_text_view_dropdown]275"
+    ],
+    "numberOfUnreachableModifiedMethods": 11,
+    "allActivityNodes": {
+        "980": "ACT[com.ssaurel.manpages.activities.MainActivity]980",
+        "951": "ACT[com.ssaurel.manpages.activities.CommandActivity]951",
+        "966": "ACT[com.ssaurel.manpages.activities.SectionActivity]966"
+    },
+    "allWindow_Widgets": {
+        "ACT[com.ssaurel.manpages.activities.SectionActivity]966": {
+            "1965": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1965",
+            "1964": "INFL[android.widget.ListView,WID[16908298|list]289,1961]1964",
+            "1930": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1930",
+            "1963": "INFL[android.widget.AutoCompleteTextView,WID[2131165325|search_input]711,1961]1963",
+            "1962": "INFL[android.widget.RelativeLayout,WID[2131165211|adView]534,1961]1962",
+            "1960": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1960",
+            "1959": "INFL[android.widget.TextView,WID[2131165245|desc]565,1957]1959",
+            "1958": "INFL[android.widget.TextView,WID[2131165356|title]772,1957]1958",
+            "1966": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1966"
+        },
+        "ACT[com.ssaurel.manpages.activities.CommandActivity]951": {
+            "1929": "INFL[android.webkit.WebView,WID[2131165364|webview]787,1927]1929",
+            "1928": "INFL[android.widget.RelativeLayout,WID[2131165211|adView]534,1927]1928"
+        },
+        "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": {
+            "1970": "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970",
+            "1969": "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969",
+            "1968": "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968",
+            "1967": "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967"
+        },
+        "DIALOG[android.app.AlertDialog]1903, alloc: <com.ssaurel.manpages.activities.MainActivity: boolean downloadPages()>": {
+            "1954": "INFL[android.widget.LinearLayout,WID[2131165248|downloadProgressDialog]584,1944]1954",
+            "1943": "INFL[android.widget.ScrollView,WID[16908894|scrollView]624,1938]1943",
+            "1953": "INFL[android.widget.LinearLayout,WID[16908892|rightSpacer]628,1945]1953",
+            "1942": "INFL[android.widget.ImageView,WID[16908889|titleDivider]622,1937]1942",
+            "1952": "INFL[android.widget.Button,WID[16908314|button2]305,1945]1952",
+            "1941": "INFL[android.widget.LinearLayout,WID[16908887|title_template]611,1937]1941",
+            "1940": "INFL[android.widget.LinearLayout,WID[16908890|buttonPanel]616,1936]1940",
+            "1951": "INFL[android.widget.Button,WID[16908315|button3]306,1945]1951",
+            "1950": "INFL[android.widget.Button,WID[16908313|button1]308,1945]1950",
+            "1939": "INFL[android.widget.FrameLayout,WID[16908895|customPanel]626,1936]1939",
+            "1938": "INFL[android.widget.LinearLayout,WID[16908893|contentPanel]630,1936]1938",
+            "1949": "INFL[android.widget.LinearLayout,WID[16908891|leftSpacer]618,1945]1949",
+            "1937": "INFL[android.widget.LinearLayout,WID[16908886|topPanel]609,1936]1937",
+            "1948": "INFL[android.widget.TextView,WID[16908299|message]290,1943]1948",
+            "1947": "INFL[com.android.internal.widget.DialogTitle,WID[16908888|alertTitle]620,1941]1947",
+            "1946": "INFL[android.widget.ImageView,WID[16908294|icon]285,1941]1946",
+            "1956": "INFL[android.widget.TextView,WID[2131165307|progressText]685,1954]1956",
+            "1955": "INFL[android.widget.ProgressBar,WID[2131165306|progressBar]687,1944;1954;]1955",
+            "1944": "INFL[android.widget.FrameLayout,WID[16908331|custom]322,1939]1944"
+        },
+        "ACT[com.ssaurel.manpages.activities.MainActivity]980": {
+            "1932": "INFL[android.widget.RelativeLayout,WID[2131165211|adView]534,1931]1932",
+            "1965": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1965",
+            "1930": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1930",
+            "1960": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1960",
+            "1959": "INFL[android.widget.TextView,WID[2131165245|desc]565,1957]1959",
+            "1958": "INFL[android.widget.TextView,WID[2131165356|title]772,1957]1958",
+            "1935": "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935",
+            "1933": "INFL[android.widget.AutoCompleteTextView,WID[2131165325|search_input]711,1931]1933",
+            "1966": "INFL[android.widget.TextView,WID[16908308|text1]303,1964;1935;]1966"
+        },
+        "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": {},
+        "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": {}
+    },
+    "menuItemTexts": {
+        "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967": "Download Pages",
+        "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968": "Remove Ads",
+        "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969": "Privacy policy",
+        "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970": "More Apps"
+    },
+    "unhandledMethods": [
+        "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd()>",
+        "<com.ssaurel.manpages.utils.AppRater: void init(com.ssaurel.manpages.utils.AppRater$Config)>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: com.ssaurel.manpages.utils.ManPagesApplication$TrackerName[] values()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSamsungLink(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.InfosWrapper: void rate(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounter(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: void renew(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int adCounterThresold(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.AdListActivity: android.widget.ListAdapter getListAdapter()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchNokiaLink(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSlideme(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSlideme(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSamsungLink(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchAmazon(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchAmazon(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication: void <clinit>()>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchNokiaX(android.content.Context,java.lang.String)>"
+    ],
+    "numberOfModifiedMethods": 48,
+    "widgetTexts": {
+        "1959": [
+            "1. User commands",
+            "Documents details of various devices, most of which reside in /dev.",
+            "4. Devices",
+            "Describes various file formats, and includes proc(5), which documents the /proc file system.",
+            "man-pages includes a very few Section 8 pages, mainly documenting programs supplied by the GNU C library.",
+            "7. Overviews, conventions, and miscellaneous",
+            "Documents conventions, protocols, character set standard, and other miscellaneous things.",
+            "Man-pages includes a very few Section 1 pages that document programs supplied by the GNU C library.",
+            "8. Superuser and system administration commands",
+            "5. Files",
+            "3. Library functions",
+            "Documents the functions provided by the standard C library.",
+            "2. System calls",
+            "Documents the system calls provided by the Linux kernel.",
+            "1. User commands",
+            "Documents details of various devices, most of which reside in /dev.",
+            "4. Devices",
+            "Describes various file formats, and includes proc(5), which documents the /proc file system.",
+            "man-pages includes a very few Section 8 pages, mainly documenting programs supplied by the GNU C library.",
+            "7. Overviews, conventions, and miscellaneous",
+            "Documents conventions, protocols, character set standard, and other miscellaneous things.",
+            "Man-pages includes a very few Section 1 pages that document programs supplied by the GNU C library.",
+            "8. Superuser and system administration commands",
+            "5. Files",
+            "3. Library functions",
+            "Documents the functions provided by the standard C library.",
+            "2. System calls",
+            "Documents the system calls provided by the Linux kernel."
+        ],
+        "1958": [
+            "1. User commands",
+            "Documents details of various devices, most of which reside in /dev.",
+            "4. Devices",
+            "Describes various file formats, and includes proc(5), which documents the /proc file system.",
+            "man-pages includes a very few Section 8 pages, mainly documenting programs supplied by the GNU C library.",
+            "7. Overviews, conventions, and miscellaneous",
+            "Documents conventions, protocols, character set standard, and other miscellaneous things.",
+            "Man-pages includes a very few Section 1 pages that document programs supplied by the GNU C library.",
+            "8. Superuser and system administration commands",
+            "5. Files",
+            "3. Library functions",
+            "Documents the functions provided by the standard C library.",
+            "2. System calls",
+            "Documents the system calls provided by the Linux kernel.",
+            "1. User commands",
+            "Documents details of various devices, most of which reside in /dev.",
+            "4. Devices",
+            "Describes various file formats, and includes proc(5), which documents the /proc file system.",
+            "man-pages includes a very few Section 8 pages, mainly documenting programs supplied by the GNU C library.",
+            "7. Overviews, conventions, and miscellaneous",
+            "Documents conventions, protocols, character set standard, and other miscellaneous things.",
+            "Man-pages includes a very few Section 1 pages that document programs supplied by the GNU C library.",
+            "8. Superuser and system administration commands",
+            "5. Files",
+            "3. Library functions",
+            "Documents the functions provided by the standard C library.",
+            "2. System calls",
+            "Documents the system calls provided by the Linux kernel."
+        ],
+        "1956": [
+            " / 2344 files",
+            " / 7600 KB"
+        ]
+    },
+    "allEventHandlers": [
+        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+    ],
+    "numberOfNotFoundModifiedMethods": 0,
+    "allStrings": [
+        "sans-serif",
+        "sans-serif-light",
+        "sans-serif-medium",
+        "See all",
+        "Choose an app",
+        "OFF",
+        "ON",
+        "Navigate home",
+        "Navigate up",
+        "More options",
+        "Done",
+        "Collapse",
+        "Man Pages",
+        "Man Pages Pro",
+        "Enable",
+        "Submit query",
+        "Voice search",
+        "Share with",
+        "Share with %s",
+        "Search\u2026",
+        "Clear query",
+        "Search query",
+        "Search",
+        "%1$s won't run without Google Play services, which are currently updating.",
+        "New version of Google Play services needed. It will update itself shortly.",
+        "Open on phone",
+        "Sign in",
+        "%1$s won't run without Google Play services, which are not supported by your device.",
+        "Update",
+        "%1$s won't run unless you update Google Play services.",
+        "Update Google Play services",
+        "Get Google Play services",
+        "Google Play services availability",
+        "Google Play services error",
+        "%1$s is having trouble with Google Play services. Please try again.",
+        "%1$s won't work unless you enable Google Play services.",
+        "Enable Google Play services",
+        "Install",
+        "%1$s won't run without Google Play services, which are missing from your device.",
+        "More Apps",
+        "Do you want to discover more apps from the developer ?",
+        "No, thanks",
+        "Advanced",
+        "Extracting pages ...",
+        "Loading ...",
+        "You have already downloaded man pages for offline use.",
+        "To use Man Pages offline, you can download all the pages. It will download 7.6 Mb of data that will be stored on your SD Card. Continue ?",
+        "Downloading pages ...",
+        "Error while writing file. Retry later",
+        "Sign in with Google",
+        "Download Pages",
+        "Download pages",
+        "Download pages ?",
+        "If you enjoy using Man Pages, please take a moment to rate it. Thanks for your support !",
+        "No",
+        "Rate Man Pages",
+        "Rate it !",
+        "com.ssaurel.manpages.pro",
+        "Privacy policy",
+        "Discover our privacy policy",
+        "Later",
+        "Pro version",
+        "Yes",
+        "You must in WiFi or 3G connection to download all the pages. Retry later",
+        "No storage found. Retry later",
+        "Discover",
+        "Device Identifiers help us deliver our services. By using our services, you agree to our use of Device Identifiers.",
+        "Do you want to enjoy and ad-free experience and say thank the developer ?",
+        "Documents the system calls provided by the Linux kernel.",
+        "2. System calls",
+        "Documents the functions provided by the standard C library.",
+        "3. Library functions",
+        "Man-pages includes a very few Section 1 pages that document programs supplied by the GNU C library.",
+        "1. User commands",
+        "Decline",
+        "Create calendar event",
+        "Allow Ad to create a calendar event?",
+        "Test Ad",
+        "Remove Ads",
+        "Save image",
+        "Allow Ad to store image in Picture gallery?",
+        "Accept",
+        "999+",
+        "%1$s, %2$s",
+        "Cookies",
+        "Use online pages",
+        "Documents conventions, protocols, character set standard, and other miscellaneous things.",
+        "7. Overviews, conventions, and miscellaneous",
+        "man-pages includes a very few Section 8 pages, mainly documenting programs supplied by the GNU C library.",
+        "8. Superuser and system administration commands",
+        "Documents details of various devices, most of which reside in /dev.",
+        "4. Devices",
+        "Describes various file formats, and includes proc(5), which documents the /proc file system.",
+        "5. Files"
+    ],
+    "unreachableModifiedMethods": {
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSlideme(android.content.Context)>": ["<com.ssaurel.manpages.utils.UtilInfos: void searchSlideme(android.content.Context)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSlideme(android.content.Context,java.lang.String)>": ["<com.ssaurel.manpages.utils.UtilInfos: void launchSlideme(android.content.Context,java.lang.String)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSamsungLink(android.content.Context)>": ["<com.ssaurel.manpages.utils.UtilInfos: void searchSamsungLink(android.content.Context)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchMarketLink(android.content.Context,java.lang.String)>": ["<com.ssaurel.manpages.utils.InfosWrapper: void rate(android.content.Context)>"],
+        "<com.ssaurel.manpages.utils.ManPagesApplication: void <clinit>()>": ["<com.ssaurel.manpages.utils.ManPagesApplication: void <clinit>()>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchNokiaX(android.content.Context,java.lang.String)>": ["<com.ssaurel.manpages.utils.UtilInfos: void launchNokiaX(android.content.Context,java.lang.String)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSamsungLink(android.content.Context,java.lang.String)>": ["<com.ssaurel.manpages.utils.UtilInfos: void launchSamsungLink(android.content.Context,java.lang.String)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchAmazon(android.content.Context)>": ["<com.ssaurel.manpages.utils.UtilInfos: void searchAmazon(android.content.Context)>"],
+        "<com.ssaurel.manpages.activities.AdListActivity: android.widget.ListAdapter getListAdapter()>": ["<com.ssaurel.manpages.activities.AdListActivity: android.widget.ListAdapter getListAdapter()>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchAmazon(android.content.Context,java.lang.String)>": ["<com.ssaurel.manpages.utils.UtilInfos: void launchAmazon(android.content.Context,java.lang.String)>"],
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchNokiaLink(android.content.Context)>": ["<com.ssaurel.manpages.utils.UtilInfos: void searchNokiaLink(android.content.Context)>"]
+    },
+    "allActivityOptionMenuItems": {
+        "com.ssaurel.manpages.activities.SectionActivity": [],
+        "com.ssaurel.manpages.activities.CommandActivity": [],
+        "com.ssaurel.manpages.activities.MainActivity": [
+            "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967",
+            "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968",
+            "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969",
+            "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970"
+        ]
+    },
+    "modifiedMethods": [
+        "<com.ssaurel.manpages.activities.AdListActivity: android.widget.ListAdapter getListAdapter()>",
+        "<com.ssaurel.manpages.tasks.DownloadZipTask: void onProgressUpdate(java.lang.Integer[])>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchMarketLink(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.CommandActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSlideme(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+        "<com.ssaurel.manpages.activities.MainActivity: java.util.ArrayList loadCommands(int,int)>",
+        "<com.ssaurel.manpages.activities.CommandActivity: boolean onKeyDown(int,android.view.KeyEvent)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchAmazon(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.MainActivity$SectionsAdapter: com.ssaurel.manpages.model.Section getItem(int)>",
+        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchMarketLink(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.activities.MainActivity: void extractZipFile(java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSlideme(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>",
+        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+        "<com.ssaurel.manpages.activities.MainActivity$SectionsAdapter: android.view.View getView(int,android.view.View,android.view.ViewGroup)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchNokiaLink(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+        "<com.ssaurel.manpages.model.Command: java.lang.String toString()>",
+        "<com.ssaurel.manpages.activities.SectionActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void searchSamsungLink(android.content.Context)>",
+        "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+        "<com.ssaurel.manpages.activities.MainActivity$4: void onClick(com.afollestad.materialdialogs.MaterialDialog,com.afollestad.materialdialogs.DialogAction)>",
+        "<com.ssaurel.manpages.utils.Utils: void <clinit>()>",
+        "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+        "<com.ssaurel.manpages.activities.MainActivity: boolean downloadPages()>",
+        "<com.ssaurel.manpages.tasks.ExtractZipTask: java.lang.Void doInBackground(java.lang.Void[])>",
+        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+        "<com.ssaurel.manpages.tasks.DownloadZipTask: java.lang.Void doInBackground(java.lang.Void[])>",
+        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+        "<com.ssaurel.manpages.activities.SectionActivity: java.util.ArrayList loadCommands(int,int)>",
+        "<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+        "<com.ssaurel.manpages.tasks.ExtractZipTask: void dirChecker(java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchAmazon(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchSamsungLink(android.content.Context,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+        "<com.ssaurel.manpages.activities.CommandActivity$MyWebViewClient: boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String)>",
+        "<com.ssaurel.manpages.utils.ManPagesApplication: void <clinit>()>",
+        "<com.ssaurel.manpages.activities.MainActivity: void suggestDownload()>",
+        "<com.ssaurel.manpages.tasks.ExtractZipTask: void onProgressUpdate(java.lang.Integer[])>",
+        "<com.ssaurel.manpages.activities.MainActivity: void onCreate(android.os.Bundle)>",
+        "<com.ssaurel.manpages.utils.UtilInfos: void launchNokiaX(android.content.Context,java.lang.String)>"
+    ],
+    "numberOfHandledModifiedMethods": 24,
+    "allWidgetEvent": {
+        "ACT[com.ssaurel.manpages.activities.SectionActivity]966": {
+            "ACT[com.ssaurel.manpages.activities.SectionActivity]966": [
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                }
+            ],
+            "INFL[android.widget.ListView,WID[16908298|list]289,1961]1964": [
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                },
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                },
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                }
+            ],
+            "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": [{
+                "handler": ["<com.ssaurel.manpages.activities.SectionActivity: boolean onCreateOptionsMenu(android.view.Menu)>"],
+                "action": "click"
+            }]
+        },
+        "ACT[com.ssaurel.manpages.activities.CommandActivity]951": {
+            "ACT[com.ssaurel.manpages.activities.CommandActivity]951": [
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                },
+                {
+                    "handler": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onKeyDown(int,android.view.KeyEvent)>"],
+                    "action": "press_key"
+                }
+            ],
+            "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": [{
+                "handler": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onCreateOptionsMenu(android.view.Menu)>"],
+                "action": "click"
+            }]
+        },
+        "LAUNCHER_NODE[]2066": {"LAUNCHER_NODE[]2066": [{
+            "handler": [],
+            "action": "implicit_launch_event"
+        }]},
+        "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": {
+            "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967": [{
+                "handler": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "action": "click"
+            }],
+            "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": [
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                }
+            ],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968": [{
+                "handler": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "action": "click"
+            }],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970": [{
+                "handler": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "action": "click"
+            }],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969": [{
+                "handler": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "action": "click"
+            }]
+        },
+        "ACT[com.ssaurel.manpages.activities.MainActivity]980": {
+            "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935": [
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                },
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                },
+                {
+                    "handler": [
+                        "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                    ],
+                    "action": "item_click"
+                }
+            ],
+            "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": [{
+                "handler": ["<com.ssaurel.manpages.activities.MainActivity: boolean onCreateOptionsMenu(android.view.Menu)>"],
+                "action": "click"
+            }],
+            "ACT[com.ssaurel.manpages.activities.MainActivity]980": [
+                {
+                    "handler": [],
+                    "action": "implicit_back_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_home_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_power_event"
+                },
+                {
+                    "handler": [],
+                    "action": "implicit_rotate_event"
+                }
+            ]
+        },
+        "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": {"OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": [
+            {
+                "handler": [],
+                "action": "implicit_back_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            }
+        ]},
+        "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": {"OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": [
+            {
+                "handler": [],
+                "action": "implicit_home_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_back_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_rotate_event"
+            },
+            {
+                "handler": [],
+                "action": "implicit_power_event"
+            }
+        ]}
+    },
+    "allInflateNodes": [
+        "LID[17367050|simple_dropdown_item_1line]12---[INFLATE]---VAR[FakeName_10]1915",
+        "LID[17367050|simple_dropdown_item_1line]12---[INFLATE]---VAR[FakeName_12]1921",
+        "LID[17367043|simple_list_item_1]33---[INFLATE]---VAR[FakeName_9]1912",
+        "LID[17367043|simple_list_item_1]33---[INFLATE]---VAR[FakeName_11]1918",
+        "LID[2131296339|layout_progress_popup]169---[INFLATE]---VAR[$r13]1627",
+        "LID[2131296340|layout_row]174---[INFLATE]---VAR[$r1]1802"
+    ],
+    "allActivityDialogs": {},
+    "modiMethodInvocation": {
+        "ACT[com.ssaurel.manpages.activities.SectionActivity]966": {
+            "ACT[com.ssaurel.manpages.activities.SectionActivity]966": [
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_back_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_power_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity: java.util.ArrayList loadCommands(int,int)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>",
+                        "<com.ssaurel.manpages.utils.Utils: void <clinit>()>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_rotate_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_home_event"
+                }
+            ],
+            "INFL[android.widget.ListView,WID[16908298|list]289,1961]1964": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: java.util.ArrayList loadCommands(int,int)>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.Utils: void <clinit>()>"
+                ],
+                "eventHandlers": [
+                    "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                ],
+                "eventType": "item_click"
+            }]
+        },
+        "ACT[com.ssaurel.manpages.activities.CommandActivity]951": {"ACT[com.ssaurel.manpages.activities.CommandActivity]951": [
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_rotate_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_power_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_home_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_back_event"
+            },
+            {
+                "modMethods": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onKeyDown(int,android.view.KeyEvent)>"],
+                "eventHandlers": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onKeyDown(int,android.view.KeyEvent)>"],
+                "eventType": "press_key"
+            }
+        ]},
+        "LAUNCHER_NODE[]2066": {"LAUNCHER_NODE[]2066": [{
+            "modMethods": [
+                "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                "<com.ssaurel.manpages.activities.MainActivity: void onCreate(android.os.Bundle)>",
+                "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                "<com.ssaurel.manpages.activities.MainActivity: java.util.ArrayList loadCommands(int,int)>",
+                "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+            ],
+            "eventHandlers": [],
+            "eventType": "implicit_launch_event"
+        }]},
+        "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": {
+            "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.activities.MainActivity: void suggestDownload()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"
+                ],
+                "eventHandlers": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "eventType": "click"
+            }],
+            "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": [
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_home_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void onCreate(android.os.Bundle)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.activities.MainActivity: java.util.ArrayList loadCommands(int,int)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_rotate_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_power_event"
+                }
+            ],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.activities.MainActivity: void suggestDownload()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"
+                ],
+                "eventHandlers": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "eventType": "click"
+            }],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.activities.MainActivity: void suggestDownload()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"
+                ],
+                "eventHandlers": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "eventType": "click"
+            }],
+            "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.activities.MainActivity: void suggestDownload()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: boolean onOptionsItemSelected(android.view.MenuItem)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"
+                ],
+                "eventHandlers": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"],
+                "eventType": "click"
+            }]
+        },
+        "ACT[com.ssaurel.manpages.activities.MainActivity]980": {
+            "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935": [{
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: java.util.ArrayList loadCommands(int,int)>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.Utils: void <clinit>()>"
+                ],
+                "eventHandlers": [
+                    "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+                ],
+                "eventType": "item_click"
+            }],
+            "ACT[com.ssaurel.manpages.activities.MainActivity]980": [
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_home_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_power_event"
+                },
+                {
+                    "modMethods": [
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void onCreate(android.os.Bundle)>",
+                        "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                        "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                        "<com.ssaurel.manpages.utils.AppRater: void onStart(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean showRateDialogIfNeeded(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                        "<com.ssaurel.manpages.utils.AppRater: void <clinit>()>",
+                        "<com.ssaurel.manpages.activities.MainActivity: java.util.ArrayList loadCommands(int,int)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                        "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                        "<com.ssaurel.manpages.utils.AppRater: boolean shouldShowRateDialog()>",
+                        "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                    ],
+                    "eventHandlers": [],
+                    "eventType": "implicit_rotate_event"
+                }
+            ]
+        },
+        "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": {"OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": [
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_power_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: java.util.ArrayList loadCommands(int,int)>",
+                    "<com.ssaurel.manpages.activities.MainActivity: void <init>()>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.Utils: void <clinit>()>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_rotate_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>",
+                    "<com.ssaurel.manpages.activities.AdListActivity: void manageInterstitialAd(boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_home_event"
+            }
+        ]},
+        "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": {"OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": [
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_home_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_rotate_event"
+            },
+            {
+                "modMethods": [
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean isConnected(android.content.Context)>",
+                    "<com.ssaurel.manpages.activities.AdActivity: void manageInterstitialAd(boolean)>",
+                    "<com.ssaurel.manpages.utils.ManPagesApplication$TrackerName: void <clinit>()>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int getPreferenceValue(java.lang.String,int,android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: int randomBetween(int,int)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: boolean mustBeDisplayed(android.content.Context)>",
+                    "<com.ssaurel.manpages.utils.UtilAds: void init(android.content.Context,boolean)>"
+                ],
+                "eventHandlers": [],
+                "eventType": "implicit_power_event"
+            }
+        ]}
+    },
+    "outputAPK": "com.ssaurel.manpages",
+    "allWindow_Widget_EventHandlers": {
+        "com.ssaurel.manpages.activities.SectionActivity": {
+            "ACT[com.ssaurel.manpages.activities.SectionActivity]966": {"implicit_lifecycle_event": [
+                "<com.ssaurel.manpages.activities.SectionActivity: void onCreate(android.os.Bundle)>",
+                "<com.ssaurel.manpages.activities.SectionActivity: void onResume()>",
+                "<com.ssaurel.manpages.activities.SectionActivity: void onPause()>",
+                "<com.ssaurel.manpages.activities.SectionActivity: void onDestroy()>",
+                "<com.ssaurel.manpages.activities.SectionActivity: boolean onCreateOptionsMenu(android.view.Menu)>"
+            ]},
+            "INFL[android.widget.ListView,WID[16908298|list]289,1961]1964": {"item_click": [
+                "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+            ]},
+            "OptionsMenu[com.ssaurel.manpages.activities.SectionActivity]960": {"click": ["<com.ssaurel.manpages.activities.SectionActivity: boolean onCreateOptionsMenu(android.view.Menu)>"]}
+        },
+        "com.ssaurel.manpages.activities.CommandActivity": {
+            "ACT[com.ssaurel.manpages.activities.CommandActivity]951": {
+                "implicit_lifecycle_event": [
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onPause()>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onDestroy()>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onCreate(android.os.Bundle)>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: void onResume()>",
+                    "<com.ssaurel.manpages.activities.CommandActivity: boolean onCreateOptionsMenu(android.view.Menu)>"
+                ],
+                "press_key": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onKeyDown(int,android.view.KeyEvent)>"]
+            },
+            "OptionsMenu[com.ssaurel.manpages.activities.CommandActivity]944": {"click": ["<com.ssaurel.manpages.activities.CommandActivity: boolean onCreateOptionsMenu(android.view.Menu)>"]}
+        },
+        "android.view.Menu": {
+            "MenuItemINFL[android.view.MenuItem,WID[2131165247|download]563,974]1967": {"click": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"]},
+            "MenuItemINFL[android.view.MenuItem,WID[2131165311|remove_ads]677,974]1968": {"click": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"]},
+            "MenuItemINFL[android.view.MenuItem,WID[2131165207|action_privacy_policy]522,974]1969": {"click": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"]},
+            "MenuItemINFL[android.view.MenuItem,WID[2131165259|help]593,974]1970": {"click": ["<com.ssaurel.manpages.activities.MainActivity: boolean onOptionsItemSelected(android.view.MenuItem)>"]}
+        },
+        "com.ssaurel.manpages.activities.MainActivity": {
+            "INFL[android.widget.ListView,WID[16908298|list]289,1931]1935": {"item_click": [
+                "<com.ssaurel.manpages.activities.MainActivity$2: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>",
+                "<com.ssaurel.manpages.activities.SectionActivity$1: void onItemClick(android.widget.AdapterView,android.view.View,int,long)>"
+            ]},
+            "OptionsMenu[com.ssaurel.manpages.activities.MainActivity]974": {"click": ["<com.ssaurel.manpages.activities.MainActivity: boolean onCreateOptionsMenu(android.view.Menu)>"]},
+            "ACT[com.ssaurel.manpages.activities.MainActivity]980": {"implicit_lifecycle_event": [
+                "<com.ssaurel.manpages.activities.MainActivity: void onPause()>",
+                "<com.ssaurel.manpages.activities.MainActivity: void onDestroy()>",
+                "<com.ssaurel.manpages.activities.MainActivity: void onStart()>",
+                "<com.ssaurel.manpages.activities.MainActivity: void onResume()>",
+                "<com.ssaurel.manpages.activities.MainActivity: void onCreate(android.os.Bundle)>",
+                "<com.ssaurel.manpages.activities.MainActivity: boolean onCreateOptionsMenu(android.view.Menu)>"
+            ]}
+        }
+    }
+}

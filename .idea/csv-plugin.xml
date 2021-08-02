@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CsvFileAttributes">
+    <option name="attributeMap">
+      <map>
+        <entry key="/apks/model/bbc.mobile.news.ww/DSTG/AbstractStateList.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/bbc.mobile.news.ww/EWTG/WindowsEvents/Events_2751.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/bbc.mobile.news.ww/EWTG/WindowsWidget/Widgets_2878.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/bbc.mobile.news.ww/states/a8ec6da2-3c65-40de-7e4e-ea619a5d5158_862d0c6b-bb53-aae0-5b8f-892b194bbb5a.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/com.amaze.filemanager/EWTG/WindowsEvents/Events_OutOfApp-3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/com.yahoo.mobile.client.android.weather/EWTG/WindowsEvents/Events_3511.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/com.yahoo.mobile.client.android.weather/states/4b7c1edd-009a-6ca2-20de-9b9c5e927d1c_988f3450-c2db-b5f9-6df1-b11020d3c673.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/org.wikipedia/EWTG/WindowsEvents/Events_2857.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/org.wikipedia/EWTG/WindowsWidget/Widgets_2748.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/org.wikipedia/EWTG/WindowsWidget/Widgets_2820.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/apks/model/org.wikipedia/EWTG/WindowsWidget/Widgets_2823.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

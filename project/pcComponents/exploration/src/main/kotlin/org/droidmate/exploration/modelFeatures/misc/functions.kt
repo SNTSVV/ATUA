@@ -95,7 +95,7 @@ fun Path.unzip(targetDirectory: Path): Path {
 		val entry = entries.nextElement()
 		if (entry.isDirectory) {
 			Files.createDirectories(targetDirectory.resolve(entry.name))
-		} else {
+		} else  {
 			val bis = BufferedInputStream(file.getInputStream(entry))
 			val fName = targetDirectory.resolve(entry.name).toAbsolutePath().toString()
 			Files.createFile(fileSystem.getPath(fName))
