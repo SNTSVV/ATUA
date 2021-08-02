@@ -1,14 +1,3 @@
-/*
- * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
- * Copyright (C) 2019 - 2021 University of Luxembourg
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
 package org.droidmate.exploration.modelFeatures.atua.dstg
 
 import org.droidmate.deviceInterface.exploration.Rectangle
@@ -27,10 +16,12 @@ import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
+import org.droidmate.exploration.modelFeatures.calm.ewtgdiff.EWTGDiff
 import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
 import org.droidmate.exploration.modelFeatures.graph.Edge
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
-import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import org.droidmate.exploration.modelFeatures.calm.modelReuse.ModelVersion
 import org.droidmate.explorationModel.ConcreteId
 import org.droidmate.explorationModel.interaction.Interaction
 import org.droidmate.explorationModel.interaction.State
@@ -92,6 +83,34 @@ class AbstractStateManager() {
         updateLaunchAndResetAbstractTransitions(virtualAbstractState)
     }
 
+    val backwardEquivalences = HashMap<AbstractState, AbstractState>()
+    fun verifyBackwardEquivalent(observedState: AbstractState, expectedState: AbstractState) {
+        val matchedAVMs = ArrayList<AttributeValuationMap>()
+        for (attributeValuationMap1 in observedState.attributeValuationMaps) {
+            for (attributeValuationMap2 in expectedState.attributeValuationMaps) {
+                if (attributeValuationMap1.hashCode == attributeValuationMap2.hashCode) {
+                    matchedAVMs.add(attributeValuationMap1)
+                }
+            }
+        }
+        val addedAVMs = ArrayList<AttributeValuationMap>()
+        val unmatchedAVMs = ArrayList<AttributeValuationMap>()
+        for (mutableEntry in observedState.EWTGWidgetMapping) {
+            val avm = mutableEntry.key
+            val ewtgWidget = mutableEntry.value
+            if (matchedAVMs.contains(avm)) {
+                continue
+            }
+            if (EWTGDiff.instance.getWidgetAdditions().contains(ewtgWidget)) {
+                addedAVMs.add(avm)
+            } else {
+                unmatchedAVMs.add(avm)
+            }
+        }
+        if (unmatchedAVMs.isEmpty()) {
+            backwardEquivalences.put(observedState, expectedState)
+        }
+    }
 
     fun getOrCreateNewAbstractState(guiState: State<*>,
                                     i_activity: String,
@@ -735,7 +754,8 @@ class AbstractStateManager() {
         var activityNode: Window? = WindowManager.instance.updatedModelWindows.find { it.classType == activity }
         if (activityNode == null) {
             val newWTGNode =
-                    if (guiState.widgets.any { it.packageName == atuaMF.packageName } && !guiState.isRequestRuntimePermissionDialogBox) {
+                    if (guiState.widgets.any { it.packageName == atuaMF.packageName }
+                        && !guiState.isRequestRuntimePermissionDialogBox) {
                         Activity.getOrCreateNode(
                                 nodeId = Activity.getNodeId(),
                                 classType = activity,
@@ -2088,6 +2108,20 @@ class AbstractStateManager() {
 
         otherSameStaticNodeAbStates.forEach {
             processedStateCount11 += 1
+            val exisitingTransitions = it.abstractTransitions.filter {
+                it.abstractAction == abstractTransition.abstractAction
+                        /*&& it.prevWindow == abstractTransition.prevWindow*/
+                        && it.data == abstractTransition.data
+                        && it.dependentAbstractStates.intersect(abstractTransition.dependentAbstractStates).isNotEmpty()
+                        && it.isImplicit
+            }
+            exisitingTransitions.forEach {abTransition ->
+                val edge = atuaMF.dstg.edge(abTransition.source,abTransition.dest,abTransition)
+                if (edge != null) {
+                    atuaMF.dstg.remove(edge)
+                }
+                it.abstractTransitions.remove(abTransition)
+            }
             var implicitAbstractTransition: AbstractTransition?
             implicitAbstractTransition = it.abstractTransitions.find {
                 it.abstractAction == abstractTransition.abstractAction
@@ -2156,6 +2190,21 @@ class AbstractStateManager() {
         val destVirtualAbstractState = ABSTRACT_STATES.find {
             it is VirtualAbstractState && it.window == abstractTransition.dest.window
         }
+
+        val exisitingTransitions = virtualAbstractState.abstractTransitions.filter {
+            it.abstractAction == abstractAction
+                    /*&& it.prevWindow == abstractTransition.prevWindow*/
+                    && it.data == abstractTransition.data
+                    && it.dependentAbstractStates.intersect(abstractTransition.dependentAbstractStates).isNotEmpty()
+        }
+        exisitingTransitions.forEach {
+            val edge = atuaMF.dstg.edge(it.source,it.dest,it)
+            if (edge != null) {
+                atuaMF.dstg.remove(edge)
+            }
+            virtualAbstractState.abstractTransitions.remove(it)
+        }
+
         if (destVirtualAbstractState != null) {
             val existingVirtualTransition1 = virtualAbstractState.abstractTransitions.find {
                 it.abstractAction == abstractAction
@@ -2179,6 +2228,8 @@ class AbstractStateManager() {
                 atuaMF.dstg.add(virtualAbstractState, destVirtualAbstractState, newVirtualTransition)
             } else {
                 existingVirtualTransition1.changeEffects.addAll(changeEffects)
+                existingVirtualTransition1.guaranteedAVMs.addAll(guaranteedAVMs)
+                existingVirtualTransition1.dependentAbstractStates.addAll(abstractTransition.dependentAbstractStates)
             }
         }
         val existingVirtualTransition2 = virtualAbstractState.abstractTransitions.find {
@@ -2199,9 +2250,12 @@ class AbstractStateManager() {
             newVirtualTransition.guaranteedAVMs.addAll(guaranteedAVMs)
             newVirtualTransition.changeEffects.addAll(changeEffects)
             virtualAbstractState.abstractTransitions.add(newVirtualTransition)
+            newVirtualTransition.dependentAbstractStates.addAll(abstractTransition.dependentAbstractStates)
             atuaMF.dstg.add(virtualAbstractState, abstractTransition.dest, newVirtualTransition)
         } else {
             existingVirtualTransition2.changeEffects.addAll(changeEffects)
+            existingVirtualTransition2.dependentAbstractStates.addAll(abstractTransition.dependentAbstractStates)
+            existingVirtualTransition2.guaranteedAVMs.addAll(guaranteedAVMs)
         }
         /* // get existing action
          var virtualAbstractAction = virtualAbstractState.getAvailableActions().find {
@@ -2592,6 +2646,7 @@ class AbstractStateManager() {
                 it !is VirtualAbstractState
                         && it.modelVersion == ModelVersion.BASE
                         && it.window != unreachedWindow
+                        && !ModelBackwardAdapter.instance.backwardEquivalentAbstractStateMapping.values.flatten().contains(it)
             }.forEach { abstractState ->
                 if (allUnexercisedBaseAbstractTransitions.any { it.dest == abstractState }) {
                     usefulUnseenBaseAbstractStates.add(abstractState)

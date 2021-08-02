@@ -1,15 +1,3 @@
-/*
- * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
- * Copyright (C) 2019 - 2021 University of Luxembourg
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
-
 package org.droidmate.exploration.strategy.atua
 
 import kotlinx.coroutines.runBlocking
@@ -128,7 +116,7 @@ abstract class AbstractPhaseStrategy(
                                         stateByActionCount: HashMap<AbstractState, Double>,
                                         currentAbstractState: AbstractState,
                                         currentState: State<*>,
-                                        shortest: Boolean=false) {
+                                        shortest: Boolean=true) {
         if (pathType != PathFindingHelper.PathType.ANY)
             getPathToStates(
                     transitionPaths = transitionPaths,
@@ -191,8 +179,10 @@ abstract class AbstractPhaseStrategy(
         while (candidateStates.isNotEmpty()) {
             if (transitionPaths.isNotEmpty() && shortest)
                 break
-            val abstractState = candidateStates.maxBy { it.value }!!.key
-            PathFindingHelper.findPathToTargetComponent(currentState = currentState
+            val maxValue = candidateStates.maxBy { it.value }!!.value
+            val abstractStates = candidateStates.filter { it.value == maxValue }
+            abstractStates.keys.forEach { abstractState->
+                PathFindingHelper.findPathToTargetComponent(currentState = currentState
                     , root = currentAbstractState
                     , finalTarget = abstractState
                     , allPaths = transitionPaths
@@ -200,13 +190,15 @@ abstract class AbstractPhaseStrategy(
                     , pathCountLimitation = pathCountLimitation
                     , autautMF = atuaMF
                     , pathType = pathType)
-            //windowStates.remove(abstractState)
-            candidateStates.remove(abstractState)
+                //windowStates.remove(abstractState)
+                candidateStates.remove(abstractState)
+            }
+            if (shortest && transitionPaths.isNotEmpty()) {
+                val minSequenceLength = transitionPaths.map { it.path.size }.min()!!
+                transitionPaths.removeIf { it.path.size > minSequenceLength }
+            }
         }
-        if (shortest && transitionPaths.isNotEmpty()) {
-            val minSequenceLength = transitionPaths.map { it.path.size }.min()!!
-            transitionPaths.removeIf { it.path.size > minSequenceLength }
-        }
+
     }
 
 }

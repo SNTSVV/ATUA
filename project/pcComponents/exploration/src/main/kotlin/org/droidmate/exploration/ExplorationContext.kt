@@ -103,7 +103,16 @@ class ExplorationContext<M,S,W> @JvmOverloads constructor(val cfg: Configuration
 				val manualIntent = model.config[ATUAMF.Companion.RegressionStrategy.manualIntent]
 				val reuseBaseModel = model.config[ATUAMF.Companion.RegressionStrategy.reuseBaseModel]
 				val baseModelDir = Paths.get(cfg[ATUAMF.Companion.RegressionStrategy.baseModelDir]).toAbsolutePath()
-				addWatcher(ATUAMF(model.config.appName, resourceDir, manualInput, manualIntent,reuseBaseModel, baseModelDir, getCurrentActivity, getDeviceRotation, getDeviceScreenSurface))
+				addWatcher(ATUAMF(
+                    model.config.appName,
+                    resourceDir,
+                    manualInput,
+                    manualIntent,
+                    reuseBaseModel,
+                    baseModelDir,
+                    getCurrentActivity,
+                    getDeviceRotation
+                ))
 			}
 		}
 	}

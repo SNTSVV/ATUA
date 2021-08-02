@@ -1,7 +1,7 @@
 <component name="CopyrightManager">
-  <settings>
+  <settings default="atua">
     <module2copyright>
-      <element module="Project Files" copyright="SnT" />
+      <element module="All Changed Files" copyright="atua" />
     </module2copyright>
   </settings>
 </component>

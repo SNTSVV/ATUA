@@ -1,19 +1,8 @@
-/*
- * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
- * Copyright (C) 2019 - 2021 University of Luxembourg
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
-package org.droidmate.exploration.modelFeatures.atua.ewtg
+package org.droidmate.exploration.modelFeatures.atua
 
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentData
 import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
+import org.droidmate.exploration.modelFeatures.atua.ewtg.*
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.DialogType
@@ -44,8 +33,8 @@ class StaticAnalysisJSONParser() {
                 readDialogs(jObj)
                 ATUAMF.log.debug("Reading Window Transition Graph")
                 atuaMF.wtg.constructFromJson(jObj)
-                readActivityAlias(jObj, atuaMF.activityAlias)
-                readWindowWidgets(jObj, atuaMF.allEventHandlers,
+                readActivityAlias(jObj,atuaMF.activityAlias)
+                readWindowWidgets(jObj,atuaMF.allEventHandlers,
                         atuaMF.wtg, atuaMF.statementMF!!)
                 WindowManager.instance.updatedModelWindows.forEach { w ->
                     if (w is OptionsMenu) {
@@ -59,23 +48,23 @@ class StaticAnalysisJSONParser() {
                 }
                 readMenuItemTexts(jObj)
                 readActivityDialogs(jObj, atuaMF.allDialogOwners)
-                readWindowHandlers(jObj, atuaMF.windowHandlersHashMap, atuaMF.wtg, atuaMF.statementMF!!)
+                readWindowHandlers(jObj,atuaMF.windowHandlersHashMap,atuaMF.wtg,atuaMF.statementMF!!)
                 ATUAMF.log.debug("Reading modified method invocation")
-                readModifiedMethodTopCallers(jObj, atuaMF.modifiedMethodTopCallersMap, atuaMF.statementMF!!,
-                        atuaMF.allTargetHandlers, atuaMF.windowHandlersHashMap, atuaMF.allTargetWindow_ModifiedMethods, atuaMF.untriggeredTargetHiddenHandlers)
-                readModifiedMethodInvocation(jObj, atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs, atuaMF.allTargetStaticWidgets,
-                        atuaMF.statementMF!!, atuaMF.allTargetWindow_ModifiedMethods, atuaMF.targetItemEvents)
-                readUnreachableModfiedMethods(jObj, atuaMF.unreachableModifiedMethods)
+                readModifiedMethodTopCallers(jObj, atuaMF.modifiedMethodTopCallersMap,atuaMF.statementMF!!,
+                        atuaMF.allTargetHandlers,atuaMF.windowHandlersHashMap,atuaMF.modifiedMethodsByWindow,atuaMF.untriggeredTargetHiddenHandlers)
+                readModifiedMethodInvocation(jObj, atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs,atuaMF.allTargetStaticWidgets,
+                        atuaMF.statementMF!!,atuaMF.modifiedMethodsByWindow,atuaMF.targetItemEvents)
+                readUnreachableModfiedMethods(jObj, atuaMF.unreachableModifiedMethods )
                 //log.debug("Reading all strings")
                 //readAllStrings(jObj)
-                readEventCorrelation(jObj, atuaMF.inputWindowCorrelation, atuaMF.wtg)
+                readEventCorrelation(jObj,atuaMF.inputWindowCorrelation, atuaMF.wtg)
                 readMethodDependency(jObj, atuaMF.methodTermsHashMap, atuaMF.statementMF!!)
-                readWindowDependency(jObj, atuaMF.windowTermsHashMap, atuaMF.wtg)
+                readWindowDependency(jObj, atuaMF.windowTermsHashMap, atuaMF.wtg )
                 if (manualIntent) {
                     val intentModelFile = atuaMF.getIntentModelFile()
                     if (intentModelFile!=null) {
                         readIntentModel(atuaMF.intentFilters, atuaMF.getAppName(),
-                                atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs, atuaMF.targetIntFilters, intentModelFile)
+                                atuaMF.wtg, atuaMF.notFullyExercisedTargetInputs, atuaMF.targetIntFilters,intentModelFile)
                     }
                 }
                 if (manualInput) {
@@ -145,7 +134,7 @@ class StaticAnalysisJSONParser() {
                                         wtg: EWTG, statementCoverageMF: StatementCoverageMF) {
             val jsonWindowHandlers = jObj.getJSONObject("windowHandlers")
             if (jsonWindowHandlers != null) {
-                windowHandlersHashMap.putAll(readWindowHandlers(jsonWindowHandlers, wtg, statementCoverageMF))
+                windowHandlersHashMap.putAll(readWindowHandlers(jsonWindowHandlers,wtg, statementCoverageMF))
             }
         }
 
@@ -155,7 +144,7 @@ class StaticAnalysisJSONParser() {
             var jsonMethodDepedency = jObj.getJSONObject("methodDependency")
             if (jsonMethodDepedency != null)
             {
-                methodTermsHashMap.putAll(readMethodTerms(jsonMethodDepedency, statementMF))
+                methodTermsHashMap.putAll(StaticAnalysisJSONParser.readMethodTerms(jsonMethodDepedency,statementMF))
             }
         }
         private fun readEventCorrelation(jObj: JSONObject,
@@ -164,7 +153,7 @@ class StaticAnalysisJSONParser() {
             var eventCorrelationJson = jObj.getJSONObject("event_window_Correlation")
             if (eventCorrelationJson!=null)
             {
-                inputWindowCorrelation.putAll(readEventWindowCorrelation(eventCorrelationJson, wtg))
+                inputWindowCorrelation.putAll(readEventWindowCorrelation(eventCorrelationJson,wtg))
             }
         }
 
@@ -178,7 +167,7 @@ class StaticAnalysisJSONParser() {
                 val jObj = JSONObject(jsonData)
                 val activitiesJson = jObj.getJSONArray("activities")
                 activitiesJson.forEach {
-                    readActivityIntentFilter(it as JSONObject, intentFilters, appName)
+                    StaticAnalysisJSONParser.readActivityIntentFilter(it as JSONObject, intentFilters, appName)
                 }
                 intentFilters.forEach { t, u ->
                     val activityName = t
@@ -233,7 +222,7 @@ class StaticAnalysisJSONParser() {
         private fun readWindowWidgets(jObj: JSONObject, allEventHandlers: HashSet<String>,
                                       wtg: EWTG, statementCoverageMF: StatementCoverageMF) {
             var jMap1 = jObj.getJSONObject("allWindow_Widgets")
-            readWindowWidgets(jMap1, wtg)
+            readWindowWidgets(jMap1,wtg)
             var jMap2 = jObj.getJSONObject("allWidgetEvent")
             readAllWidgetEvents(jMap2, wtg, allEventHandlers, statementCoverageMF)
 
@@ -247,7 +236,7 @@ class StaticAnalysisJSONParser() {
                                                  allTargetWindow_ModifiedMethods: HashMap<Window,HashSet<String>>,
                                                  untriggeredTargetHandlers: HashSet<String>){
             var jMap = jObj.getJSONObject("modiMethodTopCaller")
-            readModifiedMethodTopCallers(jMap, modifiedMethodTopCallersMap, statementCoverageMF, windowHandlersHashMap)
+            readModifiedMethodTopCallers(jMap,modifiedMethodTopCallersMap,statementCoverageMF,windowHandlersHashMap)
             //Add windows containing top caller to allTargetWindows list
             modifiedMethodTopCallersMap.forEach { modMethod, topCallers ->
                 allTargetHandlers.addAll(topCallers)
@@ -279,7 +268,7 @@ class StaticAnalysisJSONParser() {
                     wtg = wtg,
                     allTargetInputs = allTargetInputs,
                     allTargetEWTGWidgets = allTargetStaticWidgets,
-                    statementCoverageMF = statementCoverageMF)
+                    statementCoverageMF =statementCoverageMF)
             allTargetInputs.forEach {
                 val sourceWindow = it.sourceWindow
                 if (!allTargetWindow_ModifiedMethods.contains(sourceWindow) && sourceWindow !is OutOfApp) {
@@ -677,7 +666,7 @@ class StaticAnalysisJSONParser() {
                                    widget: EWTGWidget?,
                                    sourceWindow: Window,
                                    allTargetInputs: HashSet<Input>): Input {
-            val event = Input.getOrCreateEvent(eventHandlers, eventTypeString, widget, sourceWindow)
+            val event = Input.getOrCreateInput(eventHandlers, eventTypeString, widget, sourceWindow)
             allTargetInputs.add(event)
             return event
         }
@@ -842,7 +831,7 @@ class StaticAnalysisJSONParser() {
                                 ewtgWidget = null
                             }
                         }
-                        val event = Input.getOrCreateEvent(
+                        val event = Input.getOrCreateInput(
                                 eventHandlers = HashSet(),
                                 eventTypeString = eventType,
                                 sourceWindow = sourceNode,

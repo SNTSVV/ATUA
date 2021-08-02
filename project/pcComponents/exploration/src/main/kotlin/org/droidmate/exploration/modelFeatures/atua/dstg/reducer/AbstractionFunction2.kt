@@ -1,29 +1,19 @@
-/*
- * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
- * Copyright (C) 2019 - 2021 University of Luxembourg
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
 package org.droidmate.exploration.modelFeatures.atua.dstg.reducer
+
 
 import org.droidmate.deviceInterface.exploration.Rectangle
 import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
-import org.droidmate.exploration.modelFeatures.atua.dstg.AttributePath
 import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeValuationMap
 import org.droidmate.exploration.modelFeatures.atua.dstg.reducer.localReducer.LocalReducerLV1
 import org.droidmate.exploration.modelFeatures.atua.dstg.reducer.localReducer.LocalReducerLV2
 import org.droidmate.exploration.modelFeatures.atua.dstg.reducer.localReducer.LocalReducerLV3
-import org.droidmate.exploration.modelFeatures.atua.ewtg.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.Rotation
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
+import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
+import org.droidmate.exploration.modelFeatures.atua.dstg.AttributePath
+import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeValuationMap
+import org.droidmate.exploration.modelFeatures.atua.ewtg.EWTGWidget
 import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
 import org.droidmate.explorationModel.interaction.State
@@ -61,7 +51,7 @@ class AbstractionFunction2 (val root: DecisionNode2) {
         }
     }
 
-    fun reduce(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget?, isOptionsMenu:Boolean ,
+    fun reduce(guiWidget: Widget, guiState: State<*>, ewtgWidget: EWTGWidget?, isOptionsMenu:Boolean,
                guiTreeRectangle: Rectangle, window: Window, rotation: Rotation,
                autaut:ATUAMF, tempWidgetReduceMap: HashMap<Widget,AttributePath> = HashMap(),
                tempChildWidgetAttributePaths: HashMap<Widget, AttributePath>): AttributePath{
@@ -99,7 +89,7 @@ class AbstractionFunction2 (val root: DecisionNode2) {
         val isInteractiveLeaf = guiWidget.isInteractiveLeaf(guiState)
         var currentDecisionNode: DecisionNode2?=null
         var attributePath: AttributePath? = null
-        val guiTreeRectangle = org.droidmate.exploration.modelFeatures.atua.ewtg.Helper.computeGuiTreeDimension(guiState)
+        val guiTreeRectangle = Helper.computeGuiTreeDimension(guiState)
         var isOptionsMenu = if (!Helper.isDialog(rotation,guiTreeRectangle, guiState, atuaMF))
             Helper.isOptionsMenuLayout(guiState)
         else
@@ -250,9 +240,9 @@ class AbstractionFunction2 (val root: DecisionNode2) {
     }
 
     class AbandonedTransition (
-            val activity: String,
-            val attributeValuationMap: AttributeValuationMap,
-            val abstractActionType: AbstractActionType,
-            val resAbstractStates: List<AbstractState>
+        val activity: String,
+        val attributeValuationMap: AttributeValuationMap,
+        val abstractActionType: AbstractActionType,
+        val resAbstractStates: List<AbstractState>
     )
 }

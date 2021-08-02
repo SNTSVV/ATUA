@@ -9,9 +9,12 @@
  * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-package org.droidmate.exploration.modelFeatures.atua
+
+package org.droidmate.exploration.modelFeatures.calm
 
 import org.droidmate.deviceInterface.exploration.Rectangle
+import org.droidmate.exploration.modelFeatures.atua.ATUAMF
+import org.droidmate.exploration.modelFeatures.atua.Rotation
 import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
 import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
 import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
@@ -37,7 +40,7 @@ import org.droidmate.exploration.modelFeatures.atua.ewtg.window.FakeWindow
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
 import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.modelReuse.ModelVersion
+import org.droidmate.exploration.modelFeatures.calm.modelReuse.ModelVersion
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
@@ -329,7 +332,7 @@ class AppModelLoader {
             val inputs = if (abstractTransition.source.inputMappings.containsKey(abstractTransition.abstractAction))
                 abstractTransition.source.inputMappings.get(abstractTransition.abstractAction)!!
             else
-                createNewInput(abstractTransition,atuaMF)
+                createNewInput(abstractTransition, atuaMF)
             val prevWindows = abstractTransition.dependentAbstractStates.map { it.window }
             inputs.forEach { input ->
                 if (prevWindows.isEmpty())
@@ -725,7 +728,7 @@ class AppModelLoader {
                         window.inputs.find { it.eventType.toString() == eventType && it.widget == widget }
                     }
                     val event = if (existingEvent == null) {
-                        createNewEvent(data,widget,window,createdAtRuntime)
+                        createNewInput(data,widget,window,createdAtRuntime)
                     } else
                         existingEvent
                     updateHandlerAndModifiedMethods(event, data,window,autautMF)
@@ -767,7 +770,7 @@ class AppModelLoader {
             }*/
         }
 
-        private fun createNewEvent(data: List<String>, widget: EWTGWidget?, window: Window,createdAtRuntime: Boolean): Input {
+        private fun createNewInput(data: List<String>, widget: EWTGWidget?, window: Window, createdAtRuntime: Boolean): Input {
             val eventType = EventType.values().find { it.name == data[0] }
             if (eventType == null) {
                 throw Exception("Not supported eventType ${data[0]}")

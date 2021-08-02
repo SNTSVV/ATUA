@@ -26,7 +26,7 @@ class TextInput () {
     companion object{
         var inputConfiguration: InputConfiguration? = null
         var generalDictionary: HashSet<String> = HashSet()
-        val historyTextInput: ArrayList<String> = ArrayList()
+        val historyTextInput: HashSet<String> = HashSet()
         val specificTextInput: HashMap<UUID, ArrayList<String>> = HashMap()
 
         protected var random = java.util.Random(Random.nextLong())
@@ -97,18 +97,28 @@ class TextInput () {
                     return specificTextInput[widget.uid]!!.random()
                 return historyTextInput.random()
             }
-            if (random.nextBoolean() && generalDictionary.isNotEmpty())
-            {
-                return generalDictionary.random()
+            val textValue: String
+            val choice = random.nextInt(3)
+            when (choice) {
+                0 -> textValue = generalDictionary.random()
+                1 -> textValue = ""
+                2 -> {
+                    val source = "1234567890abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
+                    textValue = random.ints( random.nextInt(20).toLong()+3, 0, source.length)
+                        .asSequence()
+                        .map(source::get)
+                        .joinToString("")
+                }
+                else -> {
+                    val source = "1234567890abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
+                    textValue = random.ints( random.nextInt(20).toLong()+3, 0, source.length)
+                        .asSequence()
+                        .map(source::get)
+                        .joinToString("")
+                }
             }
-            if (random.nextBoolean() && widget.text.isNotBlank()){
-                return ""
-            }
-            @Suppress("SpellCheckingInspection") val source = "1234567890abcdefghijklmnopqrstuvwxyz@#$%^&*()-_=+[]"
-            return random.ints( random.nextInt(20).toLong()+3, 0, source.length)
-                    .asSequence()
-                    .map(source::get)
-                    .joinToString("")
+            historyTextInput.add(textValue)
+            return textValue
         }
 
         protected open fun randomInt(): String{

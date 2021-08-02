@@ -1,15 +1,3 @@
-/*
- * ATUA is a test automation tool for mobile Apps, which focuses on testing methods updated in each software release.
- * Copyright (C) 2019 - 2021 University of Luxembourg
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
-
 package org.droidmate.exploration.strategy.atua
 
 
@@ -71,14 +59,14 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
     protected val mutex = Mutex()
 
     override suspend fun <M : AbstractModel<S, W>, S : State<W>, W : Widget> chooseRandomWidget(eContext: ExplorationContext<M, S, W>): ExplorationAction {
-        return chooseActionByATUA(eContext)
+        return chooseRegression(eContext)
     }
 
     var prevNode: AbstractState? = null
 
 
 
-    internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseActionByATUA(eContext: ExplorationContext<M,S,W>): ExplorationAction {
+    internal suspend fun<M: AbstractModel<S, W>,S: State<W>,W: Widget> chooseRegression(eContext: ExplorationContext<M,S,W>): ExplorationAction {
 /*        if (!phaseStrategy.fullControl && handleTargetAbsent.hasNext(eContext)) {
             return handleTargetAbsent.nextAction(eContext)
         }*/
@@ -107,7 +95,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
         if (!phaseStrategy.hasNextAction(eContext.getCurrentState())) {
             if (phaseStrategy is PhaseOneStrategy) {
                 val unreachableWindow = (phaseStrategy as PhaseOneStrategy).unreachableWindows
-                if (atuaMF.allTargetWindow_ModifiedMethods.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
+                if (atuaMF.modifiedMethodsByWindow.keys.filterNot { unreachableWindow.contains(it) }.isNotEmpty()) {
                     phaseStrategy = PhaseTwoStrategy(this, scaleFactor, delay, useCoordinateClicks, unreachableWindow)
                     atuaMF.updateStage1Info(eContext)
                 }
@@ -132,7 +120,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
     }
 
     private fun targetInputAvailable(): Boolean {
-        atuaMF.allTargetWindow_ModifiedMethods.keys.filter { it !is Launcher }.forEach { window ->
+        atuaMF.modifiedMethodsByWindow.keys.filter { it !is Launcher }.forEach { window ->
             val abstractStates = AbstractStateManager.INSTANCE.getPotentialAbstractStates().filter { it.window == window }
             if (abstractStates.isNotEmpty()) {
                 val targetInputs = atuaMF.notFullyExercisedTargetInputs.filter {it.sourceWindow == window && it.eventType!=EventType.implicit_launch_event

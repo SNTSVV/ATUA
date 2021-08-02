@@ -10,14 +10,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5c639742-9a77-4c75-ae1f-b87fa8f0eb0c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/resources/actionCoverageHTML.zip" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../pcComponents/exploration/src/main/kotlin/org/droidmate/exploration/modelFeatures/reporter/StatementCoverageMF.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="avd23_gapp" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="avd28_1" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -304,6 +306,10 @@
     </state>
     <state width="1059" height="336" key="GridCell.Tab.1.right/25.23.1655.1027@25.23.1655.1027" timestamp="1622127861888" />
     <state width="1611" height="336" key="GridCell.Tab.1.right/26.23.1654.1027@26.23.1654.1027" timestamp="1619727255328" />
+    <state x="355" y="175" key="SettingsEditor" timestamp="1626783883686">
+      <screen x="26" y="23" width="1654" height="1027" />
+    </state>
+    <state x="355" y="175" key="SettingsEditor/26.23.1654.1027@26.23.1654.1027" timestamp="1626783883686" />
     <state x="429" y="233" width="787" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog" timestamp="1626427750933">
       <screen x="26" y="23" width="1654" height="1027" />
     </state>
@@ -316,10 +322,11 @@
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/28.23.1652.1027@28.23.1652.1027" timestamp="1626211031772" />
     <state x="431" y="233" width="786" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620720462732" />
     <state x="433" y="233" width="785" height="707" key="com.android.tools.idea.avdmanager.AvdListDialog/30.23.1650.1027@30.23.1650.1027" timestamp="1624892466840" />
-    <state x="451" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1626018679913">
-      <screen x="27" y="23" width="1653" height="1027" />
+    <state x="450" y="340" key="com.intellij.ide.util.TipDialog" timestamp="1626768809486">
+      <screen x="26" y="23" width="1654" height="1027" />
     </state>
     <state x="369" y="294" key="com.intellij.ide.util.TipDialog/0.23.1440.877/-2531.23.2531.1417@0.23.1440.877" timestamp="1620397902904" />
+    <state x="450" y="340" key="com.intellij.ide.util.TipDialog/26.23.1654.1027@26.23.1654.1027" timestamp="1626768809486" />
     <state x="451" y="340" key="com.intellij.ide.util.TipDialog/27.23.1653.1027@27.23.1653.1027" timestamp="1626018679913" />
     <state x="452" y="340" key="com.intellij.ide.util.TipDialog/29.23.1651.1027@29.23.1651.1027" timestamp="1620656490760" />
     <state x="453" y="340" key="com.intellij.ide.util.TipDialog/30.23.1650.1027@30.23.1650.1027" timestamp="1624531597822" />
