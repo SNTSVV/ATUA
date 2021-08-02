@@ -27,13 +27,9 @@
 package org.droidmate.api
 
 import com.natpryce.konfig.CommandLineOption
-import com.natpryce.konfig.PropertyGroup
-import com.natpryce.konfig.booleanType
-import com.natpryce.konfig.getValue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
-import org.droidmate.command.CoverageCommand
 import org.droidmate.command.ExploreCommand
 import org.droidmate.command.ExploreCommandBuilder
 import org.droidmate.configuration.ConfigProperties
@@ -70,9 +66,6 @@ object ExplorationAPI {
 	fun main(args: Array<String>) = runBlocking(CoroutineName("main")) { // e.g.`-config filePath` or `--configPath=filePath`
 		val cfg = setup(args)
 
-		if (cfg[ConfigProperties.ExecutionMode.coverage])
-			instrument(cfg)
-
 		if (cfg[ConfigProperties.ExecutionMode.inline])
 			inline(cfg)
 
@@ -105,17 +98,7 @@ object ExplorationAPI {
 
 	/****************************** Apk-Instrument (Coverage) API methods *****************************/
 
-	@JvmStatic
-	@JvmOverloads
-	suspend fun instrument(args: Array<String> = emptyArray()) = coroutineScope{
-		instrument(setup(args))
-	}
 
-	@JvmStatic
-	suspend fun instrument(cfg: ConfigurationWrapper) = coroutineScope{
-		log.info("instrument the apks for coverage if necessary")
-		CoverageCommand(cfg).execute()
-	}
 
 	/****************************** Exploration API methods *****************************/
 

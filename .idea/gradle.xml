@@ -15,12 +15,15 @@
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/project" />
             <option value="$PROJECT_DIR$/project/deviceComponents" />
+            <option value="$PROJECT_DIR$/project/droidmate-libs" />
+            <option value="$PROJECT_DIR$/project/droidmate-libs/deviceCommonLib/deviceDaemonLib" />
+            <option value="$PROJECT_DIR$/project/droidmate-libs/droidmate-common" />
+            <option value="$PROJECT_DIR$/project/droidmate-libs/explorationModel" />
             <option value="$PROJECT_DIR$/project/pcComponents" />
             <option value="$PROJECT_DIR$/project/pcComponents/core" />
             <option value="$PROJECT_DIR$/project/pcComponents/exploration" />
           </set>
         </option>
-        <option name="useQualifiedModuleNames" value="true" />
       </GradleProjectSettings>
     </option>
   </component>

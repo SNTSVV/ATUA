@@ -29,28 +29,35 @@ rootProject.name = 'atua'
 // right now this is probably not even necessary due to our strange deploy hacks in core/deviceControlDaemon.gradle
 include("project:deviceComponents") // to include the build of the android modules (this probably requires a dependency to the library publish task before 'DeviceControlDaemon' can be compiled)
 // for proper android code highlighting we have to update the settings file (i.e. from deviceControlDaemon) via attach gradle project or open it as its own project
-
+include ("project:droidmate-libs")
 include(
 		"project:pcComponents", // use this to identify all child projects
 		"project:pcComponents:core",
-		"project:pcComponents:exploration"
+		"project:pcComponents:exploration",
 //		,":deviceControlDaemon" // not working Failed to apply plugin [id 'com.android.application']
 		)
 
 def isIncludedBuild = gradle.parent != null
 if(!isIncludedBuild) {
-	def libDir = 'project/deviceCommonLib/deviceDaemonLib'
+	def commonDir = 'project/droidmate-libs/droidmate-common'
+	if(file("$commonDir/build.gradle").exists()){
+		include(":common")
+		project(':common').projectDir = new File(commonDir)
+	}
+
+	def libDir = 'project/droidmate-libs/deviceCommonLib/deviceDaemonLib'
 	if(file("$libDir/build.gradle").exists() || file("$libDir/build.gradle.kts").exists()){
 		include(":deviceDaemonLib")
 		// we use this instead of includeBuild as android gradle does not yet support nested composite and the highlighting would be screwed up anyway
 		project(':deviceDaemonLib').projectDir = new File(libDir)
 	}
 
-	def eModelDir = 'project/pcComponents/explorationModel'
+	def eModelDir = 'project/droidmate-libs/explorationModel'
 	if(file("$eModelDir/build.gradle.kts").exists()){
 		include(":explorationModel")
 		project(':explorationModel').projectDir = new File(eModelDir)
 	}
+
 }
 
 /** REMARKS for later reference: */

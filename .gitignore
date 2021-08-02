@@ -47,3 +47,6 @@ project/pcComponents/exploration/build
 .DS_Store
 out
 buildSrc
+deviceControlDaemon.apk
+deviceControlDaemon-test.apk
+gradle-wrapper.jar

@@ -31,17 +31,16 @@ apply from: project(":project:pcComponents").file("debug.gradle")
 dependOnJunit(project)
 
 dependencies {
-	api( project.ext.dmCoverage ){
+	/*api( project.ext.dmCoverage ){
 		exclude( module: "com.github.hotzkow:platformInterfaceLib" )
-	}
-	api( project.ext.dmAPIMonitor ){
+	}*/
+	implementation( project.ext.dmAPIMonitor ){
 		exclude( module: "droidmate-common" )
 		exclude( module: "com.github.hotzkow:platformInterfaceLib" )
 	}
-
-
-
+	compile project(":common")
 	compile project(":project:pcComponents:exploration")
+
 	implementation 'com.natpryce:konfig:1.6.6.0'  // configuration library
 
 	implementation 'org.apache.commons:commons-lang3:3.8'

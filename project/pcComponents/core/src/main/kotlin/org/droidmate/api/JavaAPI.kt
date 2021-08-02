@@ -35,16 +35,7 @@ object JavaAPI {
         replaceWith= ReplaceWith("DefaultModelProvider()","import org.droidmate.explorationModel.factory.DefaultModelProvider"))
     fun defaultModelProvider(@Suppress("UNUSED_PARAMETER") cfg: ConfigurationWrapper) = DefaultModelProvider()
 
-    @JvmStatic
-    @JvmOverloads
-    fun instrument(args: Array<String> = emptyArray()) = runBlocking {
-        ExplorationAPI.instrument(args)
-    }
 
-    @JvmStatic
-    fun instrument(cfg: ConfigurationWrapper) = runBlocking {
-        ExplorationAPI.instrument(cfg)
-    }
 
     @JvmStatic
     @JvmOverloads

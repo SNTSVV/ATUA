@@ -82,7 +82,7 @@ project.ext { // direct child projects would be childProjects
 	pcJvmTargets = subprojects.find() { it.name == 'pcComponents' }.subprojects
 	artifactModules = allprojects.findAll {
 		it.name in [ "atua", "core", "exploration",    // internal artifacts
-		             "deviceDaemonLib", "explorationModel" ]  // external for platform independency
+		             "deviceDaemonLib", "explorationModel", "common" ]  // external for platform independency
 	}
 }
 
@@ -112,6 +112,7 @@ configure(pcJvmTargets) {
 	apply from: file("${rootProject.projectDir}/versions.gradle")
 
 	apply plugin: "kotlin"
+
 	compileKotlin {
 		sourceCompatibility = project.ext.javaVersion
 		targetCompatibility = project.ext.javaVersion

@@ -28,7 +28,9 @@
 */
 
 dependencies {
-	compile (project.ext.dmExplorationModel) {
+	compile project(":explorationModel")
+	compile project(":common")
+/*	compile (project.ext.dmExplorationModel) {
 		// includes platformInterfaceLib
 	}
 	compile (project.ext.dmCommon) {  // FIXME why does dmCommon include explorationModel?
@@ -36,8 +38,10 @@ dependencies {
 		exclude( module: "explorationModel" )
 	}
 	implementation (project.ext.dmDriverLib)
+	*/
 
-	api 'com.natpryce:konfig:1.6.6.0'  // configuration library (since StatementCoverageMF access config parameters)
+
+	implementation 'com.natpryce:konfig:1.6.6.0'  // configuration library (since StatementCoverageMF access config parameters)
 	
 	testImplementation "org.jetbrains.kotlin:kotlin-test"
 	testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
@@ -47,7 +51,7 @@ dependencies {
 	implementation 'com.google.jimfs:jimfs:1.1'
 
 	// jdk dependency necessary for kotlin/stream library used by RandomWidget
-	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
 	// used in VisualizationGraph
 	implementation 'org.json:json:20160212'
