@@ -3,19 +3,16 @@ package org.droidmate.exploration.strategy.atua.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.deviceInterface.exploration.isEnabled
-import org.droidmate.exploration.actions.click
-import org.droidmate.exploration.actions.longClick
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.actions.setText
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.DataField
-import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
+import org.atua.modelFeatures.dstg.AbstractActionType
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.inputRepo.textInput.DataField
+import org.atua.modelFeatures.ewtg.Helper
+import org.atua.modelFeatures.ewtg.window.Activity
+import org.atua.modelFeatures.ewtg.window.Dialog
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
-import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
+import org.atua.modelFeatures.inputRepo.textInput.TextInput
+import org.droidmate.exploration.actions.*
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -26,9 +23,9 @@ import java.util.*
 import kotlin.collections.HashMap
 
 class PrepareContextTask constructor(
-        atuaMF: ATUAMF,
-        atuaTestingStrategy: ATUATestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, atuaMF,delay,useCoordinateClicks){
+    atuaMF: org.atua.modelFeatures.ATUAMF,
+    atuaTestingStrategy: ATUATestingStrategy,
+    delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, atuaMF,delay,useCoordinateClicks){
 
     val stateInputCoverages = HashMap<UUID, HashMap<InputCoverage,Boolean>>()
     var currentInputCoverageType: InputCoverage = InputCoverage.FILL_ALL
@@ -307,7 +304,7 @@ class PrepareContextTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount:Int = 0
         var instance: PrepareContextTask? = null
-        fun getInstance(regressionWatcher: ATUAMF,
+        fun getInstance(regressionWatcher: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean): PrepareContextTask {

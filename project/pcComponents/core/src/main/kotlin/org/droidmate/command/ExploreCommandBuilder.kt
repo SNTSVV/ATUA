@@ -43,7 +43,6 @@ import org.droidmate.configuration.ConfigProperties.Selectors.resetEvery
 import org.droidmate.configuration.ConfigProperties.Selectors.stopOnExhaustion
 import org.droidmate.configuration.ConfigProperties.Selectors.timeLimit
 import org.droidmate.configuration.ConfigurationWrapper
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.reporter.*
 import org.droidmate.exploration.strategy.*
 import org.droidmate.exploration.strategy.login.LoginWithGoogle
@@ -128,9 +127,9 @@ open class ExploreCommandBuilder(
 
         conditionalEnable(cfg[ConfigProperties.Strategies.explore], cfg) { addRandomStrategy() }
 
-        conditionalEnable(cfg[ATUAMF.Companion.RegressionStrategy.use]
-                && !cfg[ATUAMF.Companion.RegressionStrategy.budgetScale].isNaN()) {
-            addATUATestingStrategy(cfg[ATUAMF.Companion.RegressionStrategy.budgetScale])
+        conditionalEnable(cfg[org.atua.modelFeatures.ATUAMF.Companion.RegressionStrategy.use]
+                && !cfg[org.atua.modelFeatures.ATUAMF.Companion.RegressionStrategy.budgetScale].isNaN()) {
+            addATUATestingStrategy(cfg[org.atua.modelFeatures.ATUAMF.Companion.RegressionStrategy.budgetScale])
         }
 
 

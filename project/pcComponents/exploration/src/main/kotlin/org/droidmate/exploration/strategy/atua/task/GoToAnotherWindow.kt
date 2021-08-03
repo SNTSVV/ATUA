@@ -6,19 +6,17 @@ import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.rotate
 import org.droidmate.exploration.actions.setText
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.dstg.AttributeValuationMap
-import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.atua.ewtg.*
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
-import org.droidmate.exploration.modelFeatures.calm.ModelBackwardAdapter
-import org.droidmate.exploration.modelFeatures.atua.Rotation
-import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
-import org.droidmate.exploration.modelFeatures.calm.modelReuse.ModelVersion
+import org.atua.modelFeatures.dstg.AbstractActionType
+import org.atua.modelFeatures.dstg.AbstractTransition
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.dstg.AttributeValuationMap
+import org.atua.modelFeatures.dstg.VirtualAbstractState
+import org.atua.modelFeatures.ewtg.*
+import org.atua.modelFeatures.ewtg.window.Window
+import org.atua.calm.ModelBackwardAdapter
+import org.atua.modelFeatures.helper.PathFindingHelper
+import org.atua.calm.modelReuse.ModelVersion
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -29,9 +27,9 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 open class GoToAnotherWindow constructor(
-        autautMF: ATUAMF,
-        atuaTestingStrategy: ATUATestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(atuaTestingStrategy, autautMF, delay, useCoordinateClicks) {
+    autautMF: org.atua.modelFeatures.ATUAMF,
+    atuaTestingStrategy: ATUATestingStrategy,
+    delay: Long, useCoordinateClicks: Boolean) : AbstractStrategyTask(atuaTestingStrategy, autautMF, delay, useCoordinateClicks) {
 
     private var tryOpenNavigationBar: Boolean = false
     private var tryScroll: Boolean = false
@@ -182,7 +180,7 @@ open class GoToAnotherWindow constructor(
          }
          if (expectedAbstractState == currentAbState)
              return true
-         if (expectedAbstractState.modelVersion!=ModelVersion.BASE
+         if (expectedAbstractState.modelVersion!= ModelVersion.BASE
                  && !AbstractStateManager.INSTANCE.ABSTRACT_STATES.contains(expectedAbstractState)) {
              val equivalentAbstractState = AbstractStateManager.INSTANCE.ABSTRACT_STATES.find {
                  it.hashCode == expectedAbstractState!!.hashCode
@@ -572,7 +570,7 @@ open class GoToAnotherWindow constructor(
         log.info("Destination: ${currentPath!!.getFinalDestination()}")
         if (expectedNextAbState!!.window == currentAbstractState.window) {
             if (expectedNextAbState!!.rotation != currentAbstractState.rotation) {
-                if (currentAbstractState.rotation == Rotation.LANDSCAPE) {
+                if (currentAbstractState.rotation == org.atua.modelFeatures.Rotation.LANDSCAPE) {
                     return ExplorationAction.rotate(-90)
                 } else {
                     return ExplorationAction.rotate(90)
@@ -701,7 +699,7 @@ open class GoToAnotherWindow constructor(
 
         var instance: GoToAnotherWindow? = null
         var executedCount:Int = 0
-        fun getInstance(regressionWatcher: ATUAMF,
+        fun getInstance(regressionWatcher: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): GoToAnotherWindow {
             if (instance == null) {

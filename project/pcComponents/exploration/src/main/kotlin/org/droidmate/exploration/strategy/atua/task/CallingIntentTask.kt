@@ -3,12 +3,11 @@ package org.droidmate.exploration.strategy.atua.task
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.callIntent
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.exploration.strategy.atua.model.IntentTestInstance
 import org.droidmate.explorationModel.interaction.State
 
-class CallingIntentTask(regressionTestingMF: ATUAMF,
+class CallingIntentTask(regressionTestingMF: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean):AbstractStrategyTask(atuaMF = regressionTestingMF,
                         atuaStrategy = atuaTestingStrategy,

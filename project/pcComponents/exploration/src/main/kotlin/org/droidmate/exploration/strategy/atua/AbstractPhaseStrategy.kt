@@ -3,17 +3,16 @@ package org.droidmate.exploration.strategy.atua
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.ExplorationContext
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
-import org.droidmate.exploration.modelFeatures.atua.ewtg.*
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.dstg.VirtualAbstractState
+import org.atua.modelFeatures.helper.PathFindingHelper
+import org.atua.modelFeatures.ewtg.*
+import org.atua.modelFeatures.ewtg.window.Dialog
+import org.atua.modelFeatures.ewtg.window.Launcher
+import org.atua.modelFeatures.ewtg.window.OutOfApp
+import org.atua.modelFeatures.ewtg.window.Window
 import org.droidmate.exploration.strategy.atua.task.AbstractStrategyTask
 import org.droidmate.explorationModel.interaction.State
 import kotlin.collections.ArrayList
@@ -27,7 +26,7 @@ abstract class AbstractPhaseStrategy(
         val useCoordinateClicks: Boolean
 ) {
     lateinit var phaseState: PhaseState
-    lateinit var atuaMF: ATUAMF
+    lateinit var atuaMF: org.atua.modelFeatures.ATUAMF
 
     var strategyTask: AbstractStrategyTask? = null
     var fullControl: Boolean = false

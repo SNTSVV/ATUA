@@ -22,7 +22,6 @@ import kotlinx.coroutines.sync.withLock
 import org.droidmate.coverage.INSTRUMENTATION_FILE_SUFFIX
 import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.modelFeatures.ModelFeature
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.modelFeatures.misc.unzip
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.config.ConfigProperties
@@ -35,12 +34,9 @@ import org.droidmate.legacy.Resource
 import org.droidmate.legacy.getExtension
 import org.droidmate.misc.deleteDir
 import org.json.JSONObject
-import org.json.JSONString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.FileSystemException
 import java.nio.file.Files
@@ -448,7 +444,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
     override suspend fun onAppExplorationFinished(context: ExplorationContext<*, *, *>) {
         this.join()
-        regressionTestingMF = context.findWatcher { it is ATUAMF } as ATUAMF?
+        regressionTestingMF = context.findWatcher { it is org.atua.modelFeatures.ATUAMF } as org.atua.modelFeatures.ATUAMF?
         log.info("Producing coverage reports...")
         produceStatementCoverageOutput(context)
         produceMethodCoverageOutput(context)
@@ -514,7 +510,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
         Files.write(outputFile, sb.lines())
         log.info("Finished writing coverage in ${outputFile.fileName}")
     }
-    private var regressionTestingMF: ATUAMF?=null
+    private var regressionTestingMF: org.atua.modelFeatures.ATUAMF?=null
     fun produceModMethodCoverageOutput(context: ExplorationContext<*,*,*>){
         val sb = StringBuilder()
         sb.appendln(statement_header)

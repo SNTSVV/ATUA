@@ -7,20 +7,19 @@ import org.droidmate.exploration.ExplorationContext
 import org.droidmate.exploration.actions.pressBack
 import org.droidmate.exploration.actions.resetApp
 import org.droidmate.exploration.modelFeatures.graph.Edge
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractTransition
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.atua.helper.PathFindingHelper
-import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
-import org.droidmate.exploration.modelFeatures.atua.ewtg.*
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OptionsMenu
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractTransition
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.dstg.VirtualAbstractState
+import org.atua.modelFeatures.helper.PathFindingHelper
+import org.atua.modelFeatures.helper.ProbabilityDistribution
+import org.atua.modelFeatures.ewtg.*
+import org.atua.modelFeatures.ewtg.window.Dialog
+import org.atua.modelFeatures.ewtg.window.Launcher
+import org.atua.modelFeatures.ewtg.window.OptionsMenu
+import org.atua.modelFeatures.ewtg.window.OutOfApp
+import org.atua.modelFeatures.ewtg.window.Window
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.atua.task.*
 import org.droidmate.explorationModel.interaction.State
@@ -149,7 +148,7 @@ class PhaseTwoStrategy(
 
     override fun nextAction(eContext: ExplorationContext<*, *, *>): ExplorationAction {
         if (atuaMF == null) {
-            atuaMF = eContext.findWatcher { it is ATUAMF } as ATUAMF
+            atuaMF = eContext.findWatcher { it is org.atua.modelFeatures.ATUAMF } as org.atua.modelFeatures.ATUAMF
         }
         val currentState = eContext.getCurrentState()
         /*if (phaseState != PhaseState.P2_EXERCISE_TARGET_NODE

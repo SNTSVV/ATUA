@@ -2,7 +2,6 @@ package org.droidmate.exploration.strategy.atua.task
 
 import org.droidmate.deviceInterface.exploration.ExplorationAction
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -10,9 +9,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class OpenNavigationBarTask constructor(
-        regressionTestingMF: ATUAMF,
-        atuaTestingStrategy: ATUATestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
+    regressionTestingMF: org.atua.modelFeatures.ATUAMF,
+    atuaTestingStrategy: ATUATestingStrategy,
+    delay: Long, useCoordinateClicks: Boolean): AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF,delay, useCoordinateClicks){
 
     override fun isTaskEnd(currentState: State<*>): Boolean {
         return true
@@ -62,7 +61,7 @@ class OpenNavigationBarTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass) }
         var executedCount:Int = 0
         var instance: OpenNavigationBarTask? = null
-        fun getInstance(regressionTestingMF: ATUAMF,
+        fun getInstance(regressionTestingMF: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): OpenNavigationBarTask {
             if (instance == null) {

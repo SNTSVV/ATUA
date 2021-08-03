@@ -43,7 +43,6 @@ import org.droidmate.explorationModel.factory.AbstractModel
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.deviceInterface.exploration.ActionType
 import org.droidmate.deviceInterface.exploration.GlobalAction
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
 import java.util.Random
 import kotlin.streams.asSequence
 
@@ -270,9 +269,9 @@ open class RandomWidget constructor(
 			return GlobalAction(ActionType.FetchGUI)
 		}
 
-		val autAutMF = eContext.findWatcher { it is ATUAMF }
+		val autAutMF = eContext.findWatcher { it is org.atua.modelFeatures.ATUAMF }
 		if (autAutMF!=null) {
-			if ((autAutMF as ATUAMF).portraitScreenSurface.isEmpty()) {
+			if ((autAutMF as org.atua.modelFeatures.ATUAMF).portraitScreenSurface.isEmpty()) {
 				if (eContext.getCurrentState().isHomeScreen)
 					return GlobalAction(ActionType.FetchGUI)
 				else

@@ -3,19 +3,18 @@ package org.droidmate.exploration.strategy.atua.task
 import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.*
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
-import org.droidmate.exploration.modelFeatures.atua.ewtg.WindowManager
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Activity
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Dialog
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.OutOfApp
-import org.droidmate.exploration.modelFeatures.atua.helper.ProbabilityDistribution
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractActionType
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.dstg.VirtualAbstractState
+import org.atua.modelFeatures.ewtg.Helper
+import org.atua.modelFeatures.ewtg.WindowManager
+import org.atua.modelFeatures.ewtg.window.Activity
+import org.atua.modelFeatures.ewtg.window.Dialog
+import org.atua.modelFeatures.ewtg.window.Window
+import org.atua.modelFeatures.ewtg.window.OutOfApp
+import org.atua.modelFeatures.helper.ProbabilityDistribution
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.interaction.State
@@ -25,11 +24,11 @@ import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 class RandomExplorationTask constructor(
-        regressionTestingMF: ATUAMF,
-        atuaTestingStrategy: ATUATestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean,
-        private var randomScroll: Boolean,
-        private var maximumAttempt: Int) : AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF, delay, useCoordinateClicks) {
+    regressionTestingMF: org.atua.modelFeatures.ATUAMF,
+    atuaTestingStrategy: ATUATestingStrategy,
+    delay: Long, useCoordinateClicks: Boolean,
+    private var randomScroll: Boolean,
+    private var maximumAttempt: Int) : AbstractStrategyTask(atuaTestingStrategy, regressionTestingMF, delay, useCoordinateClicks) {
     private val MAX_ATTEMP_EACH_EXECUTION = (5*atuaTestingStrategy.scaleFactor).toInt()
     private var prevAbState: AbstractState? = null
     private val BACK_PROB = 0.1
@@ -696,7 +695,7 @@ class RandomExplorationTask constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         var executedCount: Int = 0
         var instance: RandomExplorationTask? = null
-        fun getInstance(regressionTestingMF: ATUAMF,
+        fun getInstance(regressionTestingMF: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long,
                         useCoordinateClicks: Boolean,

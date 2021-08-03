@@ -10,14 +10,12 @@ import org.droidmate.exploration.modelFeatures.graph.StateGraphMF
 import org.droidmate.exploration.modelFeatures.reporter.StatementCoverageMF
 import org.droidmate.exploration.strategy.widget.RandomWidget
 import org.droidmate.explorationModel.interaction.Widget
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.Rotation
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.dstg.VirtualAbstractState
-import org.droidmate.exploration.modelFeatures.atua.ewtg.EventType
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Launcher
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.dstg.VirtualAbstractState
+import org.atua.modelFeatures.ewtg.EventType
+import org.atua.modelFeatures.ewtg.window.Launcher
 import org.droidmate.exploration.strategy.AExplorationStrategy
 import org.droidmate.exploration.strategy.atua.task.*
 import org.droidmate.explorationModel.ExplorationTrace
@@ -31,8 +29,8 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
 ) : RandomWidget(priority, dictionary,useCoordinateClicks) {
     lateinit var eContext: ExplorationContext<*,*,*>
 
-    protected val atuaMF: ATUAMF
-        get() = (eContext.findWatcher { it is ATUAMF } as ATUAMF)
+    protected val atuaMF: org.atua.modelFeatures.ATUAMF
+        get() = (eContext.findWatcher { it is org.atua.modelFeatures.ATUAMF } as org.atua.modelFeatures.ATUAMF)
 
     protected val statementWatcher: StatementCoverageMF
     get() = (eContext.findWatcher { it is StatementCoverageMF } as StatementCoverageMF)
@@ -84,7 +82,7 @@ open class ATUATestingStrategy @JvmOverloads constructor(priority: Int,
 
         if ((AbstractStateManager.INSTANCE.launchStates[AbstractStateManager.LAUNCH_STATE.NORMAL_LAUNCH]==currentAbstractState
                 || AbstractStateManager.INSTANCE.launchStates[AbstractStateManager.LAUNCH_STATE.RESET_LAUNCH]==currentAbstractState)
-                && currentAbstractState.rotation == Rotation.LANDSCAPE) {
+                && currentAbstractState.rotation == org.atua.modelFeatures.Rotation.LANDSCAPE) {
             return ExplorationAction.rotate(-90)
         }
 

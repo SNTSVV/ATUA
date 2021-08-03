@@ -4,12 +4,11 @@ import kotlinx.coroutines.runBlocking
 import org.droidmate.deviceInterface.exploration.*
 import org.droidmate.exploration.actions.click
 import org.droidmate.exploration.actions.pressBack
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.Cardinality
-import org.droidmate.exploration.modelFeatures.atua.ewtg.window.Window
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractActionType
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.Cardinality
+import org.atua.modelFeatures.ewtg.window.Window
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
 import org.droidmate.explorationModel.interaction.State
 import org.droidmate.explorationModel.interaction.Widget
@@ -19,9 +18,9 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class ExerciseTargetComponentTask private constructor(
-        regressionWatcher: ATUAMF,
-        atuaTestingStrategy: ATUATestingStrategy,
-        delay: Long, useCoordinateClicks: Boolean)
+    regressionWatcher: org.atua.modelFeatures.ATUAMF,
+    atuaTestingStrategy: ATUATestingStrategy,
+    delay: Long, useCoordinateClicks: Boolean)
     : AbstractStrategyTask(atuaTestingStrategy, regressionWatcher, delay, useCoordinateClicks){
 
     private var recentChangedSystemConfiguration: Boolean = false
@@ -352,7 +351,7 @@ class ExerciseTargetComponentTask private constructor(
         private val log: Logger by lazy { LoggerFactory.getLogger(this.javaClass.name) }
         private var instance: ExerciseTargetComponentTask? = null
         var executedCount:Int = 0
-        fun getInstance(regressionWatcher: ATUAMF,
+        fun getInstance(regressionWatcher: org.atua.modelFeatures.ATUAMF,
                         atuaTestingStrategy: ATUATestingStrategy,
                         delay: Long, useCoordinateClicks: Boolean): ExerciseTargetComponentTask {
             if (instance == null)

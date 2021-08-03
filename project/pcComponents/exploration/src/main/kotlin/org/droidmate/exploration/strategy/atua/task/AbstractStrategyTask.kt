@@ -7,16 +7,14 @@ import org.droidmate.exploration.actions.*
 import org.droidmate.exploration.modelFeatures.ActionCounterMF
 import org.droidmate.exploration.modelFeatures.explorationWatchers.BlackListMF
 import org.droidmate.exploration.modelFeatures.listOfSmallest
-import org.droidmate.exploration.modelFeatures.atua.ATUAMF
-import org.droidmate.exploration.modelFeatures.atua.Rotation
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractAction
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractActionType
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractState
-import org.droidmate.exploration.modelFeatures.atua.dstg.AbstractStateManager
-import org.droidmate.exploration.modelFeatures.atua.inputRepo.intent.IntentFilter
-import org.droidmate.exploration.modelFeatures.atua.ewtg.Helper
+import org.atua.modelFeatures.dstg.AbstractAction
+import org.atua.modelFeatures.dstg.AbstractActionType
+import org.atua.modelFeatures.dstg.AbstractState
+import org.atua.modelFeatures.dstg.AbstractStateManager
+import org.atua.modelFeatures.inputRepo.intent.IntentFilter
+import org.atua.modelFeatures.ewtg.Helper
 import org.droidmate.exploration.strategy.atua.ATUATestingStrategy
-import org.droidmate.exploration.modelFeatures.atua.inputRepo.textInput.TextInput
+import org.atua.modelFeatures.inputRepo.textInput.TextInput
 import org.droidmate.explorationModel.ExplorationTrace
 import org.droidmate.explorationModel.debugT
 import org.droidmate.explorationModel.firstCenter
@@ -30,7 +28,7 @@ import kotlin.collections.HashMap
 import kotlin.random.Random
 
 abstract class AbstractStrategyTask (val atuaStrategy: ATUATestingStrategy,
-                                     val atuaMF: ATUAMF,
+                                     val atuaMF: org.atua.modelFeatures.ATUAMF,
                                      val delay: Long,
                                      val useCoordinateClicks: Boolean){
 
@@ -189,7 +187,7 @@ abstract class AbstractStrategyTask (val atuaStrategy: ATUATestingStrategy,
                 AbstractActionType.PRESS_HOME -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.MINIMIZE_MAXIMIZE -> ExplorationAction.minimizeMaximize()
                 AbstractActionType.ROTATE_UI -> {
-                    if (currentAbstactState==Rotation.PORTRAIT) {
+                    if (currentAbstactState== org.atua.modelFeatures.Rotation.PORTRAIT) {
                         ExplorationAction.rotate(90)
                     }
                     else
