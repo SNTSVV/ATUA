@@ -1,0 +1,38 @@
+{
+  "activities" : [
+    {
+      "name" : ".activity.IntentDistributorActivity",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.intent.action.VIEW"
+          ],
+          "categories" : [
+            "android.intent.category.DEFAULT",
+            "android.intent.category.BROWSABLE"
+          ],
+          "data" : [
+            {
+              "scheme" : "http",
+              "host" : "www.jamendo.com",
+              "pathPrefix" : "/track/",
+              "testData" : [
+                "http://www.jamendo.com/track/12345",
+                "http://www.jamendo.com/track/887202"
+              ]
+            },
+            {
+              "scheme" : "http",
+              "host" : "www.jamendo.com",
+              "pathPrefix" : "/album/",
+              "testData" : [
+                "http://www.jamendo.com/album/12345",
+                "http://www.jamendo.com/album/10"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

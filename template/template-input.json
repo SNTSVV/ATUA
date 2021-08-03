@@ -1,0 +1,139 @@
+{
+  "CreateUserAccount" : { 
+    "Windows": [
+      "org.wikipedia.LoginActivity"
+    ],
+    "DataFields" : {
+      "username" : {
+        "resourceIdPatterns" : [
+          "create_account_username"
+        ]
+      },
+      "password" : {
+        "resourceIdPatterns" : [
+          "create_account_password",
+          "password_edit_text_input"
+        ]
+      },
+      "passwordConfirm" : {
+        "resourceIdPatterns" : [
+          "create_account_password_repeat"
+        ]
+      },
+      "email" : {
+        "resourceIdPatterns" : [
+          "create_account_email"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "username" : "duc123456",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "chanhduc@gmail.com"
+      },
+      {
+        "username" : "duc123457",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123457@gmail.com"
+      },
+      {
+        "username" : "duc123458",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123458@gmail.com"
+      },
+      {
+        "username" : "duc123459",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123459@gmail.com"
+      },
+      {
+        "username" : "duc123460",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123460@gmail.com"
+      },
+      {
+        "username" : "duc123461",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123461@gmail.com"
+      },
+      {
+        "username" : "duc123462",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123462@gmail.com"
+      },
+      {
+        "username" : "duc123463",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123463@gmail.com"
+      },
+      {
+        "username" : "duc123464",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123464@gmail.com"
+      },
+      {
+        "username" : "duc123465",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123465@gmail.com"
+      },
+      {
+        "username" : "duc123465",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123465@gmail.com"
+      },
+      {
+        "username" : "duc1234567",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc1234567@gmail.com"
+      },
+      {
+        "username" : "duc12345678",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc12345678@gmail.com"
+      },
+      {
+        "username" : "duc123456789",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "duc123456789@gmail.com"
+      }
+    ]
+  },
+  "LoginAccount" : {
+    "DataFields" : {
+      "username" : {
+        "resourceIdPatterns" : [
+          "login_username"
+        ]
+      },
+      "password" : {
+        "resourceIdPatterns" : [
+          "login_password",
+          "password_edit_text_input"
+        ]
+      }
+    },
+    "Instances" : [
+      {
+        "username" : "duc123456",
+        "password" : "svvduc123456",
+        "passwordConfirm": "svvduc123456",
+        "email": "chanhduc@gmail.com"
+      }
+    ]
+  }
+}

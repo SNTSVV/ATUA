@@ -1,0 +1,112 @@
+{
+  "activities" : [
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidgetConfigure",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    },
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidget4x2Configure",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    },
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidgetHourlyConfigure",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    },
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidget4x2ConfigureBigClock",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    },
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidget4x1Configure",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    },
+    {
+      "name" : "com.yahoo.mobile.client.android.weather.WeatherWidgetSmallConfigure",
+      "intent-filters" : [
+        {
+          "actions" : [
+            "android.appwidget.action.APPWIDGET_CONFIGURE",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WIDGET_IMAGE_READY",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_UPDATED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_FORECAST_CHANGED",
+            "com.yahoo.mobile.client.android.weathersdk.action.ACTION_WEATHER_ALERT_CHANGED"
+          ],
+          "categories" : [
+          ],
+          "data" : [
+          ]
+        }
+      ]
+    }
+  ]
+}
