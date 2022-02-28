@@ -1,3 +1,5 @@
+The software ATUA includes the following components.
+
 DroidMate, an automated execution generator for Android apps.
 Copyright (C) 2012-2018. Saarland University
 
