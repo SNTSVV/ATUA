@@ -740,6 +740,7 @@ class PhaseTwoStrategy(
             it.alwaysUseRandomInput = true
             it.stopWhenHavingTestPath = false
         }
+        setRandomExplorationBudget(currentState)
     }
 
     private fun setRandomExploration(randomExplorationTask: RandomExplorationTask,
@@ -754,6 +755,7 @@ class PhaseTwoStrategy(
             it.setMaxiumAttempt((10 * scaleFactor).toInt())
             it.stopWhenHavingTestPath = stopWhenTestPathIdentified
         }
+        setRandomExplorationBudget(currentState)
         log.info("Cannot find path the target node.")
         log.info("Random exploration")
         phaseState = PhaseState.P2_RANDOM_EXPLORATION

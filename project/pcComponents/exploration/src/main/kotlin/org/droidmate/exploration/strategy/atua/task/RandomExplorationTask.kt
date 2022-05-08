@@ -582,13 +582,17 @@ class RandomExplorationTask constructor(
                 )
             )
         }
-        val chosenWidget = if (unexploredWidgets.any { lessExercisedWidgets.contains(it) })
-            unexploredWidgets.filter { lessExercisedWidgets.contains(it) }.random()
-        else
-            lessExercisedWidgets.random()
-        log.info("Widget: $chosenWidget")
-        return doRandomActionOnWidget(chosenWidget, currentState)
-    }
+
+            val chosenWidget = if (unexploredWidgets.any { lessExercisedWidgets.contains(it) })
+                unexploredWidgets.filter { lessExercisedWidgets.contains(it) }.random()
+            else if (lessExercisedWidgets.isNotEmpty())
+                lessExercisedWidgets.random()
+            else
+                unexploredWidgets.random()
+            log.info("Widget: $chosenWidget")
+
+            return doRandomActionOnWidget(chosenWidget, currentState)
+        }
 
     private fun goToUnexploredStates(
         currentAbstractState: AbstractState,

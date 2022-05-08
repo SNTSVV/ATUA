@@ -101,7 +101,8 @@ fun Path.unzip(targetDirectory: Path): Path {
 			Files.createFile(fileSystem.getPath(fName))
 			val fileOutput = FileOutputStream(fName)
 			while (bis.available() > 0) {
-				fileOutput.write(bis.read())
+//				fileOutput.write(bis.read())
+				fileOutput.write(bis.readBytes())
 			}
 			fileOutput.close()
 		}

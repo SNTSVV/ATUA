@@ -245,8 +245,10 @@ class ExerciseTargetComponentTask private constructor(
         var action: ExplorationAction? = null
         if (fillingData && !fillDataTask.isTaskEnd(currentState))
             action = fillDataTask.chooseAction(currentState)
-        else
+        else if (fillingData) {
             fillingData = false
+            dataFilled = true
+        }
         if (action != null) {
             return action
         }

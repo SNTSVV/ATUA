@@ -364,7 +364,7 @@ class PhaseOneStrategy(
 
         if (targetWindow != currentAppState.window) {
             if (strategyTask !is GoToTargetWindowTask) {
-                if (isTargetWindow(currentAppState)) {
+                if (isTargetWindow(currentAppState) && isTargetAbstractState(currentAppState)) {
                     resetStrategyTask(currentState)
                     val oldTargetWindow = targetWindow
                     targetWindow = currentAppState.window
