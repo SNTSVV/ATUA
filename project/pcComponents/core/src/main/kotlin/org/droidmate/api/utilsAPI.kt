@@ -33,7 +33,7 @@ import java.time.LocalDate
 private val log by lazy { LoggerFactory.getLogger("API-Command") }
 
 internal fun setup(args: Array<String>): ConfigurationWrapper {
-	println(copyRight)
+//	println(copyRight)
 
 	LogbackUtilsRequiringLogbackLog.cleanLogsDir()  // FIXME this logPath crap should use our config properties
 	log.info("Bootstrapping DroidMate: building ${ConfigurationWrapper::class.java.simpleName} from args " +

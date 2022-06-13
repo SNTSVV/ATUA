@@ -42,7 +42,7 @@ apply plugin: 'kotlin'
 repositories {
 	mavenCentral()
 	jcenter()
-	mavenLocal()
+//	mavenLocal()
 	maven { url = "https://jitpack.io" }
 }
 

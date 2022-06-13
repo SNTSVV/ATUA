@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CsvFileAttributes">
+    <option name="attributeMap">
+      <map>
+        <entry key="/output/de.rampro.activitydiary/DSTG/AbstractStates/AbstractState_092e0836-2fe7-3577-9ce8-2f068a342969.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/ae2dbdeb-9b38-e82c-8390-3aaaf930f8a6_c6eb437e-6693-23be-9c4d-c03dc48b3438.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/b4a5ef8c-4b13-424d-8a08-6c4ba90b52c7_c332624d-0a04-d3b9-9894-df0c67fce433.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/e9721cb0-6dd7-e12a-bed4-996fcbcff1a4_73622f9d-41d0-05f2-48c4-ac5c9fc8166c.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

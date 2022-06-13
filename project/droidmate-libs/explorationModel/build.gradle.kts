@@ -33,7 +33,7 @@ apply (plugin="maven-publish")
 repositories {
 	mavenCentral()
 	maven { url = uri("https://jitpack.io") }
-	mavenLocal()
+//	mavenLocal()
 }
 
 dependencies {
@@ -43,9 +43,8 @@ dependencies {
 //			require("[2.4.1, 2.5[")
 //		}
 //	}
-
-	compile ("org.droidmate:deviceDaemonLib:2.4.4-RC1")
-
+//	compile ("org.droidmate:deviceDaemonLib:2.4.4-RC1")
+	compile (project(":deviceDaemonLib"))
 	implementation ("com.natpryce:konfig:1.6.6.0")  // configuration library
 	implementation ("org.slf4j:slf4j-api:1.7.25")
 

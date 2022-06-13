@@ -13,7 +13,7 @@ import java.nio.file.Paths
 buildscript {
 	repositories {
 		mavenCentral()
-		mavenLocal()
+//		mavenLocal()
 	}
 	apply from: file("${rootProject.projectDir}/versions.gradle") // contains kotlin_version
 	dependencies {
@@ -41,7 +41,7 @@ allprojects {
 		maven { url = 'https://jitpack.io'	}
 		jcenter()
 		mavenCentral()
-		mavenLocal()
+//		mavenLocal()
 	}
 
 	apply from: file("${rootProject.projectDir}/versions.gradle")

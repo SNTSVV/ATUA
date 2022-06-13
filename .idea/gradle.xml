@@ -16,7 +16,7 @@
             <option value="$PROJECT_DIR$/project" />
             <option value="$PROJECT_DIR$/project/deviceComponents" />
             <option value="$PROJECT_DIR$/project/droidmate-libs" />
-            <option value="$PROJECT_DIR$/project/droidmate-libs/deviceCommonLib/deviceDaemonLib" />
+            <option value="$PROJECT_DIR$/project/droidmate-libs/deviceDaemonLib" />
             <option value="$PROJECT_DIR$/project/droidmate-libs/droidmate-common" />
             <option value="$PROJECT_DIR$/project/droidmate-libs/explorationModel" />
             <option value="$PROJECT_DIR$/project/pcComponents" />
@@ -26,5 +26,6 @@
         </option>
       </GradleProjectSettings>
     </option>
+    <option name="offlineMode" value="true" />
   </component>
 </project>

@@ -1,8 +1,9 @@
 rootProject.name = "deviceComponents"
 
-def libDir = new File("../deviceCommonLib/deviceDaemonLib")
+def libDir = new File("../droidmate-libs/deviceDaemonLib")
 if( libDir.exists) {
-	includeBuild('../deviceCommonLib/deviceDaemonLib')
+	includeBuild('../droidmate-libs/deviceDaemonLib')
+	project(':deviceDaemonLib').projectDir = new File(libDir)
 }
 
 //includeBuild('deviceControlDaemon') // not working -> can't parse gradle module dependency

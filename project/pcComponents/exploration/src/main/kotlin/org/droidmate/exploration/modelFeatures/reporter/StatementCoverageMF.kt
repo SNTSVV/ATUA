@@ -878,7 +878,7 @@ class StatementCoverageMF(private val statementsLogOutputDir: Path,
 
         @JvmStatic
         private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
+        private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
         @JvmStatic
         private val log: Logger by lazy { LoggerFactory.getLogger(StatementCoverageMF::class.java) }

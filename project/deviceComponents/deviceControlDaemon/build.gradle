@@ -81,7 +81,7 @@ repositories {
 	}
 	google()
 	maven { url 'https://jitpack.io' }
-	mavenLocal()
+//	mavenLocal()
 }
 
 configurations.all {
@@ -95,12 +95,13 @@ configurations.all {
 	}
 }
 dependencies {
-	implementation group: 'org.droidmate', name: 'deviceDaemonLib', version: project.ext.driverLib_version
+//	implementation group: 'org.droidmate', name: 'deviceDaemonLib', version: project.ext.driverLib_version
 //	implementation(dmDriverLib) {
 //		version {
 //			strictly driverLib_version
 //		}
 //	}
+	implementation project(":deviceDaemonLib")
 	def core_version = "1.5.0"
 
 	implementation "androidx.core:core:$core_version"

@@ -28,8 +28,9 @@
 */
 
 dependencies {
-	compile project(":explorationModel")
 	compile project(":common")
+	compile project(":explorationModel")
+
 /*	compile (project.ext.dmExplorationModel) {
 		// includes platformInterfaceLib
 	}

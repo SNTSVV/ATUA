@@ -48,7 +48,7 @@ apply (plugin="maven-publish")
 
 repositories {
 	mavenCentral()
-	mavenLocal()
+//	mavenLocal()
 }
 
 dependencies {
