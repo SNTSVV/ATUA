@@ -95,7 +95,7 @@ open class ExploreCommandBuilder(
                                 includePlots = cfg[ConfigProperties.Report.includePlots]
                             ),
                             ApiActionTraceMF(reportDir, resourceDir),
-                            ActivitySeenSummaryMF(reportDir, resourceDir),
+//                            ActivitySeenSummaryMF(reportDir, resourceDir),
                             ActionTraceMF(reportDir, resourceDir),
                             WidgetApiTraceMF(reportDir, resourceDir),
                             VisualizationGraphMF(reportDir, resourceDir)

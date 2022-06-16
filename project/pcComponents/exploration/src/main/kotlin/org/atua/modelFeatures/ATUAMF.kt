@@ -88,8 +88,8 @@ class ATUAMF(
     private var portraitVisibleScreenSurface = Rectangle.empty()
     private var landscapeScreenSurface = Rectangle.empty()
     private var landscapeVisibleScreenSurface = Rectangle.empty()
-    private val targetWidgetFileName = "autaut-report.txt"
-    override val coroutineContext: CoroutineContext = CoroutineName("RegressionTestingModelFeature") + Job()
+    private val targetWidgetFileName = "atua-report.txt"
+    override val coroutineContext: CoroutineContext = CoroutineName("ATUA_ModelFeature") + Job()
     var statementMF: StatementCoverageMF? = null
     private var crashlist: CrashListMF? = null
     var wtg: EWTG = EWTG()

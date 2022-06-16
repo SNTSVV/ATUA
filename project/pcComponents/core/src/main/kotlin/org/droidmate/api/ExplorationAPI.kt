@@ -89,8 +89,7 @@ object ExplorationAPI {
 
 	@JvmStatic
 	fun defaultReporter(cfg: ConfigurationWrapper): MutableList<ModelFeatureI> =
-		mutableListOf(VisualizationGraphMF(cfg.droidmateOutputReportDirPath, cfg.resourceDir),
-				ActivitySeenSummaryMF(cfg.droidmateOutputReportDirPath,cfg.resourceDir))
+		mutableListOf(VisualizationGraphMF(cfg.droidmateOutputReportDirPath, cfg.resourceDir))
 
 	@JvmStatic
 	fun buildFromConfig(cfg: ConfigurationWrapper) = ExploreCommandBuilder.fromConfig(cfg)

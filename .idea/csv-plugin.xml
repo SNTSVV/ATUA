@@ -10,10 +10,52 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/output/de.rampro.activitydiary/DSTG/AbstractStates/AbstractState_8ecdfe70-3368-3872-a912-b5b9ccbd7dc8.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/DSTG/AbstractStates/AbstractState_9a8521c0-9d37-3f0d-a3e6-e061fc652013.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/23199e6c-9b5e-47fa-f87c-1b2bf9565874_11e27402-4285-d981-e744-f0c1a07de9fb.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/4ccc7cdf-0381-da2e-222e-f99e6179eaa8_860215d0-55d7-36cb-5b64-928fb3cf4745.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/9aa8eb59-7f36-e19b-700b-6818dd2ef215_4343883f-c008-2169-18a6-04ff1e0031e3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/output/de.rampro.activitydiary/states/ae2dbdeb-9b38-e82c-8390-3aaaf930f8a6_c6eb437e-6693-23be-9c4d-c03dc48b3438.csv">
           <value>
             <Attribute>
               <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/de.rampro.activitydiary/states/ae2f33eb-8a9a-81e0-8391-b0aae892925a_50abd531-aba2-dec2-260e-51f1099aef3c.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
             </Attribute>
           </value>
         </entry>

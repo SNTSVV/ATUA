@@ -604,7 +604,6 @@ class AttributeValuationMap {
 
     fun dump(bufferedWriter: BufferedWriter, dumpedAttributeValuationSets: ArrayList<String>, abstractState: AbstractState ) {
         bufferedWriter.write(this.dump(abstractState))
-
         dumpedAttributeValuationSets.add(this.avmId)
         if (parentAttributeValuationMapId!= "") {
             if (!dumpedAttributeValuationSets.contains(parentAttributeValuationMapId)) {
