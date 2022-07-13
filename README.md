@@ -2,7 +2,8 @@
 ATUA is a test automation tool for mobile Apps. It focuses on testing methods updated in each software release. The tool aims to maximize the coverage of updated methods and their instructions with a reduced set of inputs.
 
 The following video gives a brief explanation of ATUA with an illustrative example.
-[![ATUA Tool demonstration](Opening.jpg)](http://www.youtube.com/watch?v=RqQ1z_Nkaqo "ATUA Tool demonstration")
+<a href="http://www.youtube.com/watch?v=RqQ1z_Nkaqo"><img src="Opening.jpg" width="600"></a>
+<!-- [![ATUA Tool demonstration](Opening.jpg)](http://www.youtube.com/watch?v=RqQ1z_Nkaqo "ATUA Tool demonstration") -->
 
 # Instruction
 You can clone this git and following the manual to work with ATUA.
