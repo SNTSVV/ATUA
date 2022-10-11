@@ -6,7 +6,7 @@ The following video gives a brief explanation of ATUA with an illustrative examp
 <!-- [![ATUA Tool demonstration](Opening.jpg)](http://www.youtube.com/watch?v=RqQ1z_Nkaqo "ATUA Tool demonstration") -->
 
 # Instruction
-You can clone this git and following the manual to work with ATUA.
+You can clone this git and follow the manual to work with ATUA.
 https://github.com/SNTSVV/ATUA/blob/master/ATUAManual.pdf
 
 **In addition, we create a docker for facilitating the running of the toolset. [Please refer to this repo for ATUA-Docker](https://github.com/SNTSVV/ATUA-docker).**
