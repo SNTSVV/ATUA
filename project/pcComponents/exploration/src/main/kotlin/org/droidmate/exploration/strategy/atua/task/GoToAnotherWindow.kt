@@ -465,10 +465,9 @@ open class GoToAnotherWindow constructor(
                 nextPathType = computeNextPathType(nextPathType,includeResetAction)
             }
         } else {
-            val curentPathType = nextPathType
             while (possiblePaths.isEmpty()) {
                 possiblePaths.addAll(atuaStrategy.phaseStrategy.getPathsToExploreStates(currentState,nextPathType))
-                if (computeNextPathType(curentPathType,includeResetAction)==PathFindingHelper.PathType.NORMAL)
+                if (computeNextPathType(nextPathType,includeResetAction)==PathFindingHelper.PathType.NORMAL)
                     break
                 nextPathType = computeNextPathType(nextPathType,includeResetAction)
             }
