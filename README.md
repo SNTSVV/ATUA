@@ -11,7 +11,7 @@ https://github.com/SNTSVV/ATUA/blob/master/ATUAManual.pdf
 
 **In addition, we create a docker for facilitating the running of the toolset. [Please refer to this repo for ATUA-Docker](https://github.com/SNTSVV/ATUA-docker).**
 # Benchmark
-https://dropit.uni.lu/invitations?share=dcd5714e8c826a80286c
+The benchmark used in the paper can be downloaded via https://zenodo.org/record/6643688/files/subjectApps.zip?download=1
 
 # Licensing
 This software is © University of Luxembourg and is licensed under the GPLv3 license. See COPYING.txt
